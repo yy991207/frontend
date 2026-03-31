@@ -1,0 +1,18 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Sidebar from './components/Sidebar/Sidebar'
+import HomePage from './pages/Home/HomePage'
+import SkillsPage from './pages/Skills/SkillsPage'
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+        <Sidebar />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/skills" element={<SkillsPage />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
+  )
+}
