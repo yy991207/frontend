@@ -41,10 +41,11 @@ export default function Sidebar() {
       <div className={styles.topRow}>
         <button
           type="button"
-          className={styles.iconButton}
+          className={`${styles.iconButton} ${styles.tooltipTarget}`}
           onClick={() => setExpanded((value) => !value)}
           aria-expanded={expanded}
           aria-label={expanded ? '收起侧边栏' : '展开侧边栏'}
+          data-tooltip={expanded ? '收起侧边栏' : '展开侧边栏'}
         >
           {expanded ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
         </button>
@@ -58,10 +59,11 @@ export default function Sidebar() {
           <button
             key={item.key}
             type="button"
-            className={`${styles.navRow} ${isActive(item.path) ? styles.navRowActive : ''} ${
+            className={`${styles.navRow} ${styles.tooltipTarget} ${isActive(item.path) ? styles.navRowActive : ''} ${
               item.key === 'home' ? styles.homeRow : ''
             }`}
             onClick={() => handleItemClick(item.path)}
+            data-tooltip={item.label}
           >
             <span className={styles.iconCell}>{item.icon}</span>
             <span className={styles.labelCell}>{item.label}</span>
@@ -71,11 +73,15 @@ export default function Sidebar() {
 
       <div className={styles.sectionTitle}>智能伙伴</div>
 
-      <button type="button" className={styles.partnerRow}>
+      <button
+        type="button"
+        className={`${styles.partnerRow} ${styles.tooltipTarget}`}
+        data-tooltip="智能伙伴"
+      >
         <span className={styles.iconCell}>
           <RobotOutlined />
         </span>
-        <span className={styles.labelCell}>杨金玮的智能伙伴</span>
+        <span className={styles.labelCell}>智能伙伴</span>
       </button>
 
       <div className={styles.spacer} />
@@ -86,7 +92,7 @@ export default function Sidebar() {
           <UserOutlined />
         </span>
         <div className={styles.footerPanel}>
-          <span className={styles.userName}>杨金玮</span>
+          <span className={styles.userName}>用户</span>
           <div className={styles.footerTools}>
             <button type="button" className={styles.toolButton} aria-label="最近使用">
               <HistoryOutlined />

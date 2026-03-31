@@ -1,10 +1,11 @@
+import { useEffect, useRef, useState } from 'react'
 import { Avatar, Input, Tabs } from 'antd'
 import {
-  PlusCircleOutlined,
   AudioOutlined,
   ArrowUpOutlined,
   BarChartOutlined,
   BgColorsOutlined,
+  CloseOutlined,
   FileTextOutlined,
   SnippetsOutlined,
   GlobalOutlined,
@@ -13,6 +14,12 @@ import {
   PictureOutlined,
   FileExcelOutlined,
   MessageOutlined,
+  PaperClipOutlined,
+  FileAddOutlined,
+  PlusOutlined,
+  RightOutlined,
+  ThunderboltOutlined,
+  ToolOutlined,
 } from '@ant-design/icons'
 import homeAvatar from '../../assets/home-avatar.png'
 import styles from './home.module.less'
@@ -28,6 +35,13 @@ const QUICK_ACTIONS = [
   { icon: <PictureOutlined />, label: '生成图片' },
   { icon: <FileExcelOutlined />, label: 'Excel' },
   { icon: <MessageOutlined />, label: '对话模式' },
+]
+
+const ATTACHMENT_ACTIONS = [
+  { key: 'upload', label: '上传文件或图片', icon: <PaperClipOutlined /> },
+  { key: 'doc', label: '添加飞书云文档', icon: <FileAddOutlined /> },
+  { key: 'skill', label: '技能', icon: <ThunderboltOutlined />, hasArrow: true },
+  { key: 'tool', label: '工具', icon: <ToolOutlined />, hasArrow: true },
 ]
 
 // 卡片改成内容预览，避免继续只显示一块纯色封面。
@@ -104,6 +118,24 @@ const TAB_ITEMS = ['最佳实践', '推荐指令', '我的指令'].map((label) =
 }))
 
 export default function HomePage() {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const composerRef = useRef<HTMLDivElement | null>(null)
+
+  // 输入区弹层点击外部自动关闭，避免菜单打开后一直停留在页面上。
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!composerRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+    }
+  }, [])
+
   return (
     <main className={styles.page}>
       {/* 头像 + 问候 */}
@@ -113,27 +145,49 @@ export default function HomePage() {
           src={<img src={homeAvatar} alt="张容悟头像" />}
           className={styles.heroAvatar}
         />
-        <h1 className={styles.greeting}>Hi 张容悟，有什么可以帮你的？</h1>
+        <h1 className={styles.greeting}>Hi～ 有什么可以帮你的？</h1>
       </div>
 
       {/* 输入框 */}
-      <div className={styles.inputWrap}>
-        <button className={styles.iconBtn} onClick={() => console.log('+')}>
-          <PlusCircleOutlined />
-        </button>
-        <Input
-          style={{ flex: 1, border: 'none', boxShadow: 'none', background: 'transparent', fontSize: 14 }}
-          variant="borderless"
-          placeholder="总结罗振宇 2026 跨年演讲金句，生成一组图片"
-        />
-        <span className={styles.tabHint}>Tab</span>
-        <div className={styles.inputActions}>
-          <button className={styles.iconBtn}>
-            <AudioOutlined />
-          </button>
-          <button className={`${styles.iconBtn} ${styles.sendBtn}`}>
-            <ArrowUpOutlined />
-          </button>
+      <div ref={composerRef} className={styles.composerWrap}>
+        <div className={styles.inputWrap}>
+          <div className={styles.attachTriggerWrap}>
+            <button
+              type="button"
+              className={`${styles.iconBtn} ${styles.attachBtn} ${menuOpen ? styles.attachBtnActive : ''}`}
+              aria-expanded={menuOpen}
+              aria-haspopup="menu"
+              onClick={() => setMenuOpen((value) => !value)}
+            >
+              {menuOpen ? <CloseOutlined /> : <PlusOutlined />}
+            </button>
+            {!menuOpen ? <div className={styles.attachTooltip}>上传附件/技能等</div> : null}
+          </div>
+          <Input
+            style={{ flex: 1, border: 'none', boxShadow: 'none', background: 'transparent', fontSize: 14 }}
+            variant="borderless"
+            placeholder="想做点什么呢～"
+          />
+          <span className={styles.tabHint}>Tab</span>
+          <div className={styles.inputActions}>
+            <button type="button" className={styles.iconBtn}>
+              <AudioOutlined />
+            </button>
+            <button type="button" className={`${styles.iconBtn} ${styles.sendBtn}`}>
+              <ArrowUpOutlined />
+            </button>
+          </div>
+        </div>
+        <div className={`${styles.attachMenu} ${menuOpen ? styles.attachMenuOpen : ''}`} role="menu">
+          {ATTACHMENT_ACTIONS.map((action) => (
+            <button key={action.key} type="button" className={styles.attachMenuItem}>
+              <span className={styles.attachMenuMain}>
+                <span className={styles.attachMenuIcon}>{action.icon}</span>
+                <span>{action.label}</span>
+              </span>
+              {action.hasArrow ? <RightOutlined className={styles.attachMenuArrow} /> : null}
+            </button>
+          ))}
         </div>
       </div>
 

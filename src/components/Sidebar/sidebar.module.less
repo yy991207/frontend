@@ -1,4 +1,6 @@
 .sidebar {
+  position: relative;
+  z-index: 30;
   width: 68px;
   height: 100vh;
   padding: 8px 10px 12px;
@@ -8,7 +10,7 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  overflow: hidden;
+  overflow: visible;
   transition: width 0.28s ease, box-shadow 0.28s ease;
 }
 
@@ -40,6 +42,51 @@
   border: none;
   background: transparent;
   cursor: pointer;
+}
+
+.tooltipTarget {
+  position: relative;
+}
+
+.sidebar:not(.sidebarExpanded) .tooltipTarget:hover::before,
+.sidebar:not(.sidebarExpanded) .tooltipTarget:hover::after {
+  opacity: 1;
+}
+
+.sidebar:not(.sidebarExpanded) .tooltipTarget::before,
+.sidebar:not(.sidebarExpanded) .tooltipTarget::after {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.sidebar:not(.sidebarExpanded) .tooltipTarget::before {
+  content: '';
+  position: absolute;
+  left: calc(100% + 5px);
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  background: rgba(17, 24, 39, 0.96);
+  transform: translateY(-50%) rotate(45deg);
+  z-index: 59;
+}
+
+.sidebar:not(.sidebarExpanded) .tooltipTarget::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 9px);
+  top: 50%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(17, 24, 39, 0.96);
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.18);
+  transform: translateY(-50%);
+  z-index: 60;
 }
 
 .iconButton {
