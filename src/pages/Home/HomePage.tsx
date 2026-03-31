@@ -138,73 +138,77 @@ export default function HomePage() {
 
   return (
     <main className={styles.page}>
-      {/* 头像 + 问候 */}
-      <div className={styles.hero}>
-        <Avatar
-          size={92}
-          src={<img src={homeAvatar} alt="张容悟头像" />}
-          className={styles.heroAvatar}
-        />
-        <h1 className={styles.greeting}>Hi～ 有什么可以帮你的？</h1>
-      </div>
+      <section className={styles.panel}>
+        <div className={styles.panelContent}>
+          {/* 头像 + 问候 */}
+          <div className={styles.hero}>
+            <Avatar
+              size={92}
+              src={<img src={homeAvatar} alt="张容悟头像" />}
+              className={styles.heroAvatar}
+            />
+            <h1 className={styles.greeting}>Hi～ 有什么可以帮你的？</h1>
+          </div>
 
-      {/* 输入框 */}
-      <div ref={composerRef} className={styles.composerWrap}>
-        <div className={styles.inputWrap}>
-          <div className={styles.attachTriggerWrap}>
-            <button
-              type="button"
-              className={`${styles.iconBtn} ${styles.attachBtn} ${menuOpen ? styles.attachBtnActive : ''}`}
-              aria-expanded={menuOpen}
-              aria-haspopup="menu"
-              onClick={() => setMenuOpen((value) => !value)}
-            >
-              {menuOpen ? <CloseOutlined /> : <PlusOutlined />}
-            </button>
-            {!menuOpen ? <div className={styles.attachTooltip}>上传附件/技能等</div> : null}
+          {/* 输入框 */}
+          <div ref={composerRef} className={styles.composerWrap}>
+            <div className={styles.inputWrap}>
+              <div className={styles.attachTriggerWrap}>
+                <button
+                  type="button"
+                  className={`${styles.iconBtn} ${styles.attachBtn} ${menuOpen ? styles.attachBtnActive : ''}`}
+                  aria-expanded={menuOpen}
+                  aria-haspopup="menu"
+                  onClick={() => setMenuOpen((value) => !value)}
+                >
+                  {menuOpen ? <CloseOutlined /> : <PlusOutlined />}
+                </button>
+                {!menuOpen ? <div className={styles.attachTooltip}>上传附件/技能等</div> : null}
+              </div>
+              <Input
+                style={{ flex: 1, border: 'none', boxShadow: 'none', background: 'transparent', fontSize: 14 }}
+                variant="borderless"
+                placeholder="想做点什么呢～"
+              />
+              <span className={styles.tabHint}>Tab</span>
+              <div className={styles.inputActions}>
+                <button type="button" className={styles.iconBtn}>
+                  <AudioOutlined />
+                </button>
+                <button type="button" className={`${styles.iconBtn} ${styles.sendBtn}`}>
+                  <ArrowUpOutlined />
+                </button>
+              </div>
+            </div>
+            <div className={`${styles.attachMenu} ${menuOpen ? styles.attachMenuOpen : ''}`} role="menu">
+              {ATTACHMENT_ACTIONS.map((action) => (
+                <button key={action.key} type="button" className={styles.attachMenuItem}>
+                  <span className={styles.attachMenuMain}>
+                    <span className={styles.attachMenuIcon}>{action.icon}</span>
+                    <span>{action.label}</span>
+                  </span>
+                  {action.hasArrow ? <RightOutlined className={styles.attachMenuArrow} /> : null}
+                </button>
+              ))}
+            </div>
           </div>
-          <Input
-            style={{ flex: 1, border: 'none', boxShadow: 'none', background: 'transparent', fontSize: 14 }}
-            variant="borderless"
-            placeholder="想做点什么呢～"
-          />
-          <span className={styles.tabHint}>Tab</span>
-          <div className={styles.inputActions}>
-            <button type="button" className={styles.iconBtn}>
-              <AudioOutlined />
-            </button>
-            <button type="button" className={`${styles.iconBtn} ${styles.sendBtn}`}>
-              <ArrowUpOutlined />
-            </button>
-          </div>
-        </div>
-        <div className={`${styles.attachMenu} ${menuOpen ? styles.attachMenuOpen : ''}`} role="menu">
-          {ATTACHMENT_ACTIONS.map((action) => (
-            <button key={action.key} type="button" className={styles.attachMenuItem}>
-              <span className={styles.attachMenuMain}>
-                <span className={styles.attachMenuIcon}>{action.icon}</span>
+
+          {/* 快捷指令 */}
+          <div className={`${styles.quickActions} scroll-x-hidden`}>
+            {QUICK_ACTIONS.map((action) => (
+              <div key={action.label} className={styles.quickTag}>
+                <span className={styles.quickTagIcon}>{action.icon}</span>
                 <span>{action.label}</span>
-              </span>
-              {action.hasArrow ? <RightOutlined className={styles.attachMenuArrow} /> : null}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 快捷指令 */}
-      <div className={`${styles.quickActions} scroll-x-hidden`}>
-        {QUICK_ACTIONS.map((action) => (
-          <div key={action.label} className={styles.quickTag}>
-            <span className={styles.quickTagIcon}>{action.icon}</span>
-            <span>{action.label}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* Tab + 卡片 */}
-      <div className={styles.bottom}>
-        <Tabs items={TAB_ITEMS} />
-      </div>
+          {/* Tab + 卡片 */}
+          <div className={styles.bottom}>
+            <Tabs items={TAB_ITEMS} />
+          </div>
+        </div>
+      </section>
     </main>
   )
 }

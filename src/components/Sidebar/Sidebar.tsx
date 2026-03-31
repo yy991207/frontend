@@ -17,7 +17,7 @@ import styles from './sidebar.module.less'
 
 const NAV_ITEMS = [
   { key: 'home', label: '新建', icon: <PlusOutlined />, path: '/' },
-  { key: 'library', label: '库', icon: <BookOutlined /> },
+  { key: 'library', label: '库', icon: <BookOutlined />, path: '/library' },
   { key: 'skills', label: '技能', icon: <ThunderboltOutlined />, path: '/skills' },
   { key: 'discover', label: '发现', icon: <CompassOutlined /> },
   { key: 'apps', label: '开发应用', icon: <AppstoreAddOutlined /> },
@@ -50,7 +50,7 @@ export default function Sidebar() {
           {expanded ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
         </button>
         <div className={styles.panelHead}>
-          <span className={styles.brandName}>飞书 aily</span>
+          <span className={styles.brandName}>果仁助手</span>
         </div>
       </div>
 
