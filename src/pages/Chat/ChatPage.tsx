@@ -52,6 +52,7 @@ export default function ChatPage() {
   const timerRef = useRef<number | null>(null)
   const composerRef = useRef<HTMLDivElement | null>(null)
   const [attachMenuOpen, setAttachMenuOpen] = useState(false)
+  const [toolMenuOpen, setToolMenuOpen] = useState(false)
   const [toolInfoOpen, setToolInfoOpen] = useState(false)
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
   const [knowledgeEnabled, setKnowledgeEnabled] = useState(false)
@@ -162,6 +163,7 @@ export default function ChatPage() {
     const handlePointerDown = (event: MouseEvent) => {
       if (!composerRef.current?.contains(event.target as Node)) {
         setAttachMenuOpen(false)
+        setToolMenuOpen(false)
         setToolInfoOpen(false)
       }
     }
@@ -179,6 +181,7 @@ export default function ChatPage() {
 
     setDraft('')
     setAttachMenuOpen(false)
+    setToolMenuOpen(false)
     setToolInfoOpen(false)
     startAssistantReply(value)
   }
@@ -314,82 +317,95 @@ export default function ChatPage() {
                 </button>
               )}
             </div>
-            <div className={`${styles.attachMenu} ${attachMenuOpen ? styles.attachMenuOpen : ''}`} role="menu">
-              {ATTACHMENT_ACTIONS.map((action) => (
-                action.key === 'tool' ? (
-                  <div key={action.key} className={styles.attachMenuGroup}>
-                    <button type="button" className={`${styles.attachMenuItem} ${styles.attachMenuItemActive}`}>
+            <div
+              className={`${styles.attachMenuLayer} ${attachMenuOpen ? styles.attachMenuLayerOpen : ''}`}
+              onMouseLeave={() => {
+                setToolMenuOpen(false)
+                setToolInfoOpen(false)
+              }}
+            >
+              <div className={styles.attachMenu} role="menu">
+                {ATTACHMENT_ACTIONS.map((action) =>
+                  action.key === 'tool' ? (
+                    <button
+                      key={action.key}
+                      type="button"
+                      className={`${styles.attachMenuItem} ${toolMenuOpen ? styles.attachMenuItemActive : ''}`}
+                      onMouseEnter={() => setToolMenuOpen(true)}
+                    >
                       <span className={styles.attachMenuMain}>
                         <span className={styles.attachMenuIcon}>{action.icon}</span>
                         <span>{action.label}</span>
                       </span>
                       <RightOutlined className={styles.attachMenuArrow} />
                     </button>
+                  ) : (
+                    <button key={action.key} type="button" className={styles.attachMenuItem} onMouseEnter={() => setToolMenuOpen(false)}>
+                      <span className={styles.attachMenuMain}>
+                        <span className={styles.attachMenuIcon}>{action.icon}</span>
+                        <span>{action.label}</span>
+                      </span>
+                      {action.hasArrow ? <RightOutlined className={styles.attachMenuArrow} /> : null}
+                    </button>
+                  ),
+                )}
+              </div>
 
-                    <div className={styles.toolSubmenu}>
-                      <div className={styles.toolSubmenuHeader}>
-                        <span>工具</span>
-                        <button
-                          type="button"
-                          className={styles.toolInfoButton}
-                          aria-label="工具说明"
-                          onClick={() => setToolInfoOpen((value) => !value)}
-                        >
-                          <InfoCircleOutlined />
-                        </button>
-                        {toolInfoOpen ? (
-                          <div className={styles.toolInfoPopover}>
-                            默认内置飞书相关工具：知识问答、消息、妙记、云文档、多维表格、日程、任务
-                          </div>
-                        ) : null}
-                      </div>
-
-                      <div className={styles.toolItem}>
-                        <span className={styles.toolItemMain}>
-                          <GlobalOutlined />
-                          <span>互联网检索</span>
-                        </span>
-                        <button
-                          type="button"
-                          className={`${styles.switchButton} ${webSearchEnabled ? styles.switchButtonOn : ''}`}
-                          onClick={() => setWebSearchEnabled((value) => !value)}
-                        >
-                          <span className={styles.switchThumb} />
-                        </button>
-                      </div>
-
-                      <div className={styles.toolItem}>
-                        <span className={styles.toolItemMain}>
-                          <LinkOutlined />
-                          <span>自定义知识</span>
-                        </span>
-                        <button
-                          type="button"
-                          className={`${styles.switchButton} ${knowledgeEnabled ? styles.switchButtonOn : ''}`}
-                          onClick={() => setKnowledgeEnabled((value) => !value)}
-                        >
-                          <span className={styles.switchThumb} />
-                        </button>
-                      </div>
-
-                      <button type="button" className={`${styles.toolItem} ${styles.toolManageButton}`}>
-                        <span className={styles.toolItemMain}>
-                          <SettingOutlined />
-                          <span>工具管理</span>
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button key={action.key} type="button" className={styles.attachMenuItem}>
-                    <span className={styles.attachMenuMain}>
-                      <span className={styles.attachMenuIcon}>{action.icon}</span>
-                      <span>{action.label}</span>
-                    </span>
-                    {action.hasArrow ? <RightOutlined className={styles.attachMenuArrow} /> : null}
+              <div className={`${styles.toolSubmenu} ${toolMenuOpen ? styles.toolSubmenuOpen : ''}`}>
+                <div className={styles.toolSubmenuHeader}>
+                  <span>工具</span>
+                  <button
+                    type="button"
+                    className={styles.toolInfoButton}
+                    aria-label="工具说明"
+                    onClick={() => setToolInfoOpen((value) => !value)}
+                  >
+                    <InfoCircleOutlined />
                   </button>
-                )
-              ))}
+                  {toolInfoOpen ? (
+                    <div className={styles.toolInfoPopover}>
+                      默认内置飞书相关工具：知识问答、消息、妙记、云文档、多维表格、日程、任务
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className={styles.toolItem}>
+                  <span className={styles.toolItemMain}>
+                    <GlobalOutlined />
+                    <span>互联网检索</span>
+                  </span>
+                  <button
+                    type="button"
+                    className={`${styles.switchButton} ${webSearchEnabled ? styles.switchButtonOn : ''}`}
+                    onClick={() => setWebSearchEnabled((value) => !value)}
+                  >
+                    <span className={styles.switchThumb} />
+                  </button>
+                </div>
+
+                <div className={styles.toolItem}>
+                  <span className={styles.toolItemMain}>
+                    <LinkOutlined />
+                    <span>自定义知识</span>
+                  </span>
+                  <button
+                    type="button"
+                    className={`${styles.switchButton} ${knowledgeEnabled ? styles.switchButtonOn : ''}`}
+                    onClick={() => setKnowledgeEnabled((value) => !value)}
+                  >
+                    <span className={styles.switchThumb} />
+                  </button>
+                </div>
+
+                <button type="button" className={`${styles.toolItem} ${styles.toolManageButton}`}>
+                  <span className={styles.attachMenuMain}>
+                    <span className={styles.toolItemMain}>
+                      <SettingOutlined />
+                      <span>工具管理</span>
+                    </span>
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
           <div className={styles.footerHint}>AI 生成内容可能有误，请核实重要信息</div>
