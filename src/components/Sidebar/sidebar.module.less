@@ -1,75 +1,211 @@
 .sidebar {
-  width: 240px;
+  width: 68px;
   height: 100vh;
-  background-color: #ffffff;
-  border-right: 1px solid #f0f0f0;
+  padding: 8px 10px 12px;
+  background:
+    linear-gradient(180deg, #f8fafc 0%, #f8fafc 24%, #ffffff 100%);
+  border-right: 1px solid #eef2f7;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.28s ease, box-shadow 0.28s ease;
 }
 
-.logo {
-  height: 56px;
-  display: flex;
+.sidebarExpanded {
+  width: 292px;
+  box-shadow: 14px 0 28px rgba(15, 23, 42, 0.06);
+}
+
+.topRow,
+.navRow,
+.partnerRow,
+.footerRow {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
-  padding: 0 16px;
-  border-bottom: 1px solid #f0f0f0;
-  font-size: 15px;
-  font-weight: 600;
-  color: #1a1a1a;
-  cursor: default;
-  user-select: none;
+  width: 100%;
+  min-width: 0;
 }
 
-.nav {
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.topRow {
+  min-height: 44px;
+  margin-bottom: 8px;
 }
 
-.navItem {
+.iconButton,
+.navRow,
+.partnerRow,
+.toolButton {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.iconButton {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+  font-size: 18px;
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+
+  &:hover {
+    background: #eef2f7;
+    color: #111827;
+  }
+}
+
+.panelHead,
+.sectionTitle,
+.labelCell,
+.footerPanel {
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity 0.2s ease, transform 0.24s ease;
+  pointer-events: none;
+}
+
+.sidebarExpanded .panelHead,
+.sidebarExpanded .sectionTitle,
+.sidebarExpanded .labelCell,
+.sidebarExpanded .footerPanel {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.panelHead {
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 40px;
-  padding: 0 12px;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #374151;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-  border: none;
-  background: transparent;
-  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.brandName {
+  color: #111827;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.navRow,
+.partnerRow {
+  min-height: 44px;
+  padding: 0;
+  border-radius: 16px;
+  color: #4b5563;
   text-align: left;
+  transition: background-color 0.18s ease, color 0.18s ease;
 
   &:hover {
-    background-color: #f3f4f6;
+    background: #f3f4f6;
+    color: #111827;
   }
 }
 
-.navItemActive {
-  background-color: #f3f4f6;
-  color: #1677ff;
+.homeRow {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(226, 232, 240, 0.75);
+}
 
-  .navIcon {
-    color: #1677ff;
+.navRowActive {
+  background: #eff6ff;
+  color: #0f6bff;
+
+  .iconCell {
+    color: #0f6bff;
   }
 }
 
-.newBtn {
-  background-color: #f5f5f5;
-
-  &:hover {
-    background-color: #ebebeb;
-  }
-}
-
-.navIcon {
-  font-size: 16px;
+.iconCell {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
   color: #6b7280;
+}
+
+.labelCell {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: inherit;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.sectionTitle {
+  margin: 18px 0 10px 12px;
+  color: #9ca3af;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.partnerRow {
+  margin-bottom: 8px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.footerRow {
+  min-height: 48px;
+  padding-top: 10px;
+  border-top: 1px solid #eef2f7;
+}
+
+.footerPanel {
+  min-width: 0;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.userName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.footerTools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolButton {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 16px;
+  transition: background-color 0.18s ease, color 0.18s ease;
+
+  &:hover {
+    background: #f3f4f6;
+    color: #111827;
+  }
 }

@@ -8,10 +8,12 @@ export default function App() {
     <BrowserRouter>
       <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
         <Sidebar />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/skills" element={<SkillsPage />} />
-        </Routes>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex' }}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/skills" element={<SkillsPage />} />
+          </Routes>
+        </div>
       </div>
     </BrowserRouter>
   )

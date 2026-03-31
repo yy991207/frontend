@@ -14,6 +14,7 @@ import {
   FileExcelOutlined,
   MessageOutlined,
 } from '@ant-design/icons'
+import homeAvatar from '../../assets/home-avatar.png'
 import styles from './home.module.less'
 
 const QUICK_ACTIONS = [
@@ -107,9 +108,11 @@ export default function HomePage() {
     <main className={styles.page}>
       {/* 头像 + 问候 */}
       <div className={styles.hero}>
-        <Avatar size={84} className={styles.heroAvatar}>
-          AI
-        </Avatar>
+        <Avatar
+          size={92}
+          src={<img src={homeAvatar} alt="张容悟头像" />}
+          className={styles.heroAvatar}
+        />
         <h1 className={styles.greeting}>Hi 张容悟，有什么可以帮你的？</h1>
       </div>
 

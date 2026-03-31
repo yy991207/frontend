@@ -1,45 +1,102 @@
-import { AppstoreOutlined, PlusOutlined, ThunderboltOutlined } from '@ant-design/icons'
+import { useState } from 'react'
+import {
+  AppstoreAddOutlined,
+  BookOutlined,
+  CompassOutlined,
+  HistoryOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  PlusOutlined,
+  RobotOutlined,
+  SettingOutlined,
+  ThunderboltOutlined,
+  UserOutlined,
+} from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import styles from './sidebar.module.less'
+
+const NAV_ITEMS = [
+  { key: 'home', label: '新建', icon: <PlusOutlined />, path: '/' },
+  { key: 'library', label: '库', icon: <BookOutlined /> },
+  { key: 'skills', label: '技能', icon: <ThunderboltOutlined />, path: '/skills' },
+  { key: 'discover', label: '发现', icon: <CompassOutlined /> },
+  { key: 'apps', label: '开发应用', icon: <AppstoreAddOutlined /> },
+]
 
 export default function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
+  const [expanded, setExpanded] = useState(false)
 
-  const isActive = (path: string) => location.pathname === path
+  const isActive = (path?: string) => (path ? location.pathname === path : false)
+
+  const handleItemClick = (path?: string) => {
+    if (path) {
+      navigate(path)
+    }
+  }
 
   return (
-    <aside className={styles.sidebar}>
-      {/* Logo */}
-      <div className={styles.logo}>
-        <AppstoreOutlined style={{ fontSize: 20, color: '#6b7280' }} />
-        <span>飞书 aily</span>
+    <aside className={`${styles.sidebar} ${expanded ? styles.sidebarExpanded : ''}`}>
+      <div className={styles.topRow}>
+        <button
+          type="button"
+          className={styles.iconButton}
+          onClick={() => setExpanded((value) => !value)}
+          aria-expanded={expanded}
+          aria-label={expanded ? '收起侧边栏' : '展开侧边栏'}
+        >
+          {expanded ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
+        </button>
+        <div className={styles.panelHead}>
+          <span className={styles.brandName}>飞书 aily</span>
+        </div>
       </div>
 
-      {/* 导航区 */}
       <nav className={styles.nav}>
-        {/* 新建 */}
-        <button
-          className={`${styles.navItem} ${styles.newBtn}`}
-          onClick={() => console.log('新建')}
-        >
-          <span className={styles.navIcon}>
-            <PlusOutlined />
-          </span>
-          新建
-        </button>
-
-        {/* 技能 */}
-        <button
-          className={`${styles.navItem} ${isActive('/skills') ? styles.navItemActive : ''}`}
-          onClick={() => navigate('/skills')}
-        >
-          <span className={styles.navIcon}>
-            <ThunderboltOutlined />
-          </span>
-          技能
-        </button>
+        {NAV_ITEMS.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            className={`${styles.navRow} ${isActive(item.path) ? styles.navRowActive : ''} ${
+              item.key === 'home' ? styles.homeRow : ''
+            }`}
+            onClick={() => handleItemClick(item.path)}
+          >
+            <span className={styles.iconCell}>{item.icon}</span>
+            <span className={styles.labelCell}>{item.label}</span>
+          </button>
+        ))}
       </nav>
+
+      <div className={styles.sectionTitle}>智能伙伴</div>
+
+      <button type="button" className={styles.partnerRow}>
+        <span className={styles.iconCell}>
+          <RobotOutlined />
+        </span>
+        <span className={styles.labelCell}>杨金玮的智能伙伴</span>
+      </button>
+
+      <div className={styles.spacer} />
+
+      {/* 底部这一行沿用同样的两列结构，保证展开时名字和工具按钮从图标轨道右侧拉开。 */}
+      <div className={styles.footerRow}>
+        <span className={styles.iconCell}>
+          <UserOutlined />
+        </span>
+        <div className={styles.footerPanel}>
+          <span className={styles.userName}>杨金玮</span>
+          <div className={styles.footerTools}>
+            <button type="button" className={styles.toolButton} aria-label="最近使用">
+              <HistoryOutlined />
+            </button>
+            <button type="button" className={styles.toolButton} aria-label="设置">
+              <SettingOutlined />
+            </button>
+          </div>
+        </div>
+      </div>
     </aside>
   )
 }
