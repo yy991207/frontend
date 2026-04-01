@@ -200,6 +200,10 @@ function extractSkillItemsFromResponse(data: SkillApiResponse) {
   return normalizeSkillItems(skills)
 }
 
+function buildSkillNameSet(items: SkillApiItem[]) {
+  return new Set(items.map((item) => item.skillName || item.id).filter(Boolean))
+}
+
 function getFeaturedCardPresentation(index: number) {
   if (index % 3 === 0) {
     return {
@@ -320,7 +324,37 @@ export default function SkillsPage() {
           throw new Error(data.msg || '技能接口返回失败')
         }
 
-        setFeaturedSkills(extractSkillItemsFromResponse(data))
+        const featuredItems = extractSkillItemsFromResponse(data)
+
+        let mergedFeaturedItems = featuredItems
+        try {
+          const manageRequestUrl = new URL(skillApiConfig.manageEndpoint)
+          if (!manageRequestUrl.pathname.includes(encodeURIComponent(skillApiConfig.userId))) {
+            manageRequestUrl.searchParams.set('user_id', skillApiConfig.userId)
+          }
+
+          const manageResponse = await fetch(manageRequestUrl.toString(), {
+            signal: controller.signal,
+          })
+
+          if (manageResponse.ok) {
+            const manageData = (await manageResponse.json()) as SkillApiResponse
+            if (manageData.success) {
+              const addedItems = extractSkillItemsFromResponse(manageData)
+              const addedSkillNames = buildSkillNameSet(addedItems)
+              mergedFeaturedItems = featuredItems.map((item) => ({
+                ...item,
+                isSelected: item.isSelected || addedSkillNames.has(item.skillName || item.id),
+              }))
+            }
+          }
+        } catch {
+          if (controller.signal.aborted) {
+            return
+          }
+        }
+
+        setFeaturedSkills(mergedFeaturedItems)
         setFeaturedSkillsError('')
       } catch {
         if (controller.signal.aborted) {
