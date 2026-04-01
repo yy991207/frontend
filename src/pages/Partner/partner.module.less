@@ -16,6 +16,311 @@
   overflow: hidden;
 }
 
+// 设置页面布局
+.settingsContainer {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+// 左侧设置菜单
+.settingsSidebar {
+  width: 280px;
+  min-width: 280px;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+}
+
+.settingsSidebarHeader {
+  padding: 20px 16px 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.settingsSidebarTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.settingsMenu {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+}
+
+.settingsMenuItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #374151;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.16s ease;
+  text-align: left;
+
+  &:hover {
+    background: #f3f4f6;
+  }
+}
+
+.settingsMenuItemActive {
+  background: #eff6ff !important;
+  color: #2563eb;
+
+  .settingsMenuIcon {
+    color: #2563eb;
+  }
+}
+
+.settingsMenuIcon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 16px;
+}
+
+.settingsMenuLabel {
+  flex: 1;
+  font-weight: 500;
+}
+
+.settingsMenuArrow {
+  font-size: 12px;
+  color: #9ca3af;
+  transition: transform 0.2s ease;
+}
+
+.settingsMenuArrowOpen {
+  transform: rotate(180deg);
+}
+
+.settingsSubMenu {
+  padding-left: 42px;
+  padding-bottom: 4px;
+}
+
+.settingsSubMenuItem {
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.16s ease, color 0.16s ease;
+
+  &:hover {
+    background: #f3f4f6;
+    color: #374151;
+  }
+}
+
+.settingsSubMenuItemActive {
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+// 右侧设置内容
+.settingsContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+}
+
+.settingsContentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.settingsHint {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.closeSettingsBtn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.16s ease;
+
+  &:hover {
+    background: #f3f4f6;
+  }
+}
+
+.settingsContentBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+}
+
+// 设置内容样式
+.settingContent {
+  max-width: 800px;
+}
+
+.settingTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px;
+}
+
+.settingDesc {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 24px;
+}
+
+.settingCard {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.avatarRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.avatarName {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  flex: 1;
+}
+
+.editBtn {
+  padding: 6px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.16s ease;
+
+  &:hover {
+    background: #f9fafb;
+  }
+}
+
+.settingTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 12px;
+}
+
+.settingTab {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease;
+
+  &:hover {
+    background: #f3f4f6;
+    color: #374151;
+  }
+}
+
+.settingTabActive {
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.cardTag {
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.cardDesc {
+  flex: 1;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.markdownContent {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #374151;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin: 20px 0 12px;
+  }
+
+  p {
+    margin: 0 0 12px;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  li {
+    margin-bottom: 8px;
+  }
+}
+
+// 原有对话页面样式
 .header {
   display: flex;
   align-items: center;
@@ -545,6 +850,11 @@
   .messages {
     padding: 12px 32px 24px;
   }
+
+  .settingsSidebar {
+    width: 240px;
+    min-width: 240px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -576,5 +886,17 @@
   .attachMenu,
   .toolSubmenu {
     width: min(268px, calc(100vw - 42px));
+  }
+
+  .settingsContainer {
+    flex-direction: column;
+  }
+
+  .settingsSidebar {
+    width: 100%;
+    min-width: 100%;
+    max-height: 40%;
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
   }
 }
