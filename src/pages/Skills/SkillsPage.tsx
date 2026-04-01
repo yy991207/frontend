@@ -77,8 +77,8 @@ const FEATURED_SKILLS = [
     title: '营销文案创作',
     description: '用于为任意页面撰写、改写或优化营销文案，包括首页、落地页、定价页、功能页...',
     toneClassName: 'skillCardAmber',
-    tags: ['营销', '写作'],
-    count: '2.1k 次添加',
+    tags: ['果仁数据源'],
+    count: '',
     icon: <StarFilled />,
   },
   {
@@ -86,8 +86,8 @@ const FEATURED_SKILLS = [
     title: '内容选题规划',
     description: '用于规划内容策略、决定创作方向或确定选题。当用户提及以下内容时适用：内容策...',
     toneClassName: 'skillCardIndigo',
-    tags: ['营销', '规划'],
-    count: '2.4k 次添加',
+    tags: ['果仁数据源'],
+    count: '',
     icon: <ShareAltOutlined />,
   },
   {
@@ -95,8 +95,8 @@ const FEATURED_SKILLS = [
     title: '产品路线图设计',
     description: '使用 RICE、MoSCoW 等优先级框架以及依赖关系映射来制定产品路线图，并支持路...',
     toneClassName: 'skillCardGreen',
-    tags: ['产品', '规划'],
-    count: '1.7k 次添加',
+    tags: ['果仁数据源'],
+    count: '',
     icon: <SwapOutlined />,
   },
 ]
@@ -605,8 +605,8 @@ export default function SkillsPage() {
         isSelected: item.isSelected,
         toneClassName: presentation.toneClassName,
         icon: presentation.icon,
-        tags: ['官方'],
-        count: '实时更新',
+        tags: ['果仁数据源'],
+        count: '',
       }
     })
   }, [featuredSkills])
@@ -743,7 +743,7 @@ export default function SkillsPage() {
                           </span>
                         ))}
                       </div>
-                      <span className={styles.featuredCount}>{item.count}</span>
+                      {item.count ? <span className={styles.featuredCount}>{item.count}</span> : null}
                     </div>
                     {'isSelected' in item ? (
                       <div className={styles.featuredActionBar}>
