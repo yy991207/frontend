@@ -179,74 +179,76 @@ export default function HomePage() {
     <main className={styles.page}>
       <section className={styles.panel}>
         <div className={styles.panelContent}>
-          <div className={styles.topSection}>
-            <div className={styles.hero}>
-              <Avatar size={92} src={<img src={homeAvatar} alt="张容悟头像" />} className={styles.heroAvatar} />
-              <h1 className={styles.greeting}>Hi 杨金玮，有什么可以帮你的？</h1>
-            </div>
+          <div className={styles.centerStage}>
+            <div className={styles.topSection}>
+              <div className={styles.hero}>
+                <Avatar size={92} src={<img src={homeAvatar} alt="张容悟头像" />} className={styles.heroAvatar} />
+                <h1 className={styles.greeting}>Hi ～，有什么可以帮你的？</h1>
+              </div>
 
-            <div ref={composerRef} className={styles.composerWrap}>
-              <div className={styles.inputWrap}>
-                <div className={styles.attachTriggerWrap}>
-                  <button
-                    type="button"
-                    className={`${styles.iconBtn} ${styles.attachBtn} ${menuOpen ? styles.attachBtnActive : ''}`}
-                    aria-expanded={menuOpen}
-                    aria-haspopup="menu"
-                    onClick={() => setMenuOpen((value) => !value)}
-                  >
-                    {menuOpen ? <CloseOutlined /> : <PlusOutlined />}
-                  </button>
-                  {!menuOpen ? <div className={styles.attachTooltip}>上传附件/技能等</div> : null}
+              <div ref={composerRef} className={styles.composerWrap}>
+                <div className={styles.inputWrap}>
+                  <div className={styles.attachTriggerWrap}>
+                    <button
+                      type="button"
+                      className={`${styles.iconBtn} ${styles.attachBtn} ${menuOpen ? styles.attachBtnActive : ''}`}
+                      aria-expanded={menuOpen}
+                      aria-haspopup="menu"
+                      onClick={() => setMenuOpen((value) => !value)}
+                    >
+                      {menuOpen ? <CloseOutlined /> : <PlusOutlined />}
+                    </button>
+                    {!menuOpen ? <div className={styles.attachTooltip}>上传附件/技能等</div> : null}
+                  </div>
+                  <Input
+                    value={prompt}
+                    onChange={(event) => setPrompt(event.target.value)}
+                    onPressEnter={handleSend}
+                    style={{ flex: 1, border: 'none', boxShadow: 'none', background: 'transparent', fontSize: 14 }}
+                    variant="borderless"
+                    placeholder="@特定群组，总结群聊信息"
+                  />
+                  <span className={styles.tabHint}>Tab</span>
+                  <div className={styles.inputActions}>
+                    <button type="button" className={styles.iconBtn}>
+                      <AudioOutlined />
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.iconBtn} ${styles.sendBtn} ${!prompt.trim() ? styles.sendBtnDisabled : ''}`}
+                      onClick={handleSend}
+                      disabled={!prompt.trim()}
+                    >
+                      <ArrowUpOutlined />
+                    </button>
+                  </div>
                 </div>
-                <Input
-                  value={prompt}
-                  onChange={(event) => setPrompt(event.target.value)}
-                  onPressEnter={handleSend}
-                  style={{ flex: 1, border: 'none', boxShadow: 'none', background: 'transparent', fontSize: 14 }}
-                  variant="borderless"
-                  placeholder="@特定群组，总结群聊信息"
-                />
-                <span className={styles.tabHint}>Tab</span>
-                <div className={styles.inputActions}>
-                  <button type="button" className={styles.iconBtn}>
-                    <AudioOutlined />
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.iconBtn} ${styles.sendBtn} ${!prompt.trim() ? styles.sendBtnDisabled : ''}`}
-                    onClick={handleSend}
-                    disabled={!prompt.trim()}
-                  >
-                    <ArrowUpOutlined />
-                  </button>
+                <div className={`${styles.attachMenu} ${menuOpen ? styles.attachMenuOpen : ''}`} role="menu">
+                  {ATTACHMENT_ACTIONS.map((action) => (
+                    <button key={action.key} type="button" className={styles.attachMenuItem}>
+                      <span className={styles.attachMenuMain}>
+                        <span className={styles.attachMenuIcon}>{action.icon}</span>
+                        <span>{action.label}</span>
+                      </span>
+                      {action.hasArrow ? <RightOutlined className={styles.attachMenuArrow} /> : null}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <div className={`${styles.attachMenu} ${menuOpen ? styles.attachMenuOpen : ''}`} role="menu">
-                {ATTACHMENT_ACTIONS.map((action) => (
-                  <button key={action.key} type="button" className={styles.attachMenuItem}>
-                    <span className={styles.attachMenuMain}>
-                      <span className={styles.attachMenuIcon}>{action.icon}</span>
-                      <span>{action.label}</span>
-                    </span>
-                    {action.hasArrow ? <RightOutlined className={styles.attachMenuArrow} /> : null}
-                  </button>
+
+              <div className={styles.quickActions}>
+                {QUICK_ACTIONS.map((action) => (
+                  <div key={action.label} className={styles.quickTag}>
+                    <span className={styles.quickTagIcon}>{action.icon}</span>
+                    <span>{action.label}</span>
+                  </div>
                 ))}
               </div>
             </div>
 
-            <div className={styles.quickActions}>
-              {QUICK_ACTIONS.map((action) => (
-                <div key={action.label} className={styles.quickTag}>
-                  <span className={styles.quickTagIcon}>{action.icon}</span>
-                  <span>{action.label}</span>
-                </div>
-              ))}
+            <div className={styles.bottom}>
+              <Tabs items={tabItems} />
             </div>
-          </div>
-
-          <div className={styles.bottom}>
-            <Tabs items={tabItems} />
           </div>
         </div>
       </section>
