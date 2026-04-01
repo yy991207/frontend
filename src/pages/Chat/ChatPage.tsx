@@ -544,12 +544,16 @@ export default function ChatPage() {
                 {!attachMenuOpen ? <div className={styles.attachTooltip}>上传附件/技能等</div> : null}
               </div>
               <input
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault()
-                    handleSend()
+                      value={draft}
+                      onChange={(event) => setDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+                          return
+                        }
+
+                        if (event.key === 'Enter') {
+                          event.preventDefault()
+                          handleSend()
                   }
                 }}
                 className={styles.composerInput}
