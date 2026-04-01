@@ -15,7 +15,6 @@ import {
   PlusOutlined,
   RightOutlined,
   SettingOutlined,
-  StarOutlined,
   ThunderboltOutlined,
   ToolOutlined,
 } from '@ant-design/icons'
@@ -254,16 +253,6 @@ export default function ChatPage() {
                         <CopyOutlined />
                         <span>复制</span>
                       </button>
-                    </div>
-                    <div className={styles.assistantHoverBar}>
-                      <span>结果评分</span>
-                      <div className={styles.starRow}>
-                        {Array.from({ length: 5 }).map((_, index) => (
-                          <button key={index} type="button" className={styles.starButton} aria-label={`评分 ${index + 1}`}>
-                            <StarOutlined />
-                          </button>
-                        ))}
-                      </div>
                     </div>
                   </div>
                 )}
