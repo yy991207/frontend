@@ -13,11 +13,42 @@ import {
   ThunderboltOutlined,
   UploadOutlined,
 } from '@ant-design/icons'
+import skillConfigText from '../../../config.yaml?raw'
 import homeAvatar from '../../assets/home-avatar.png'
 import styles from './skills.module.less'
 
 type SkillsMode = 'discover' | 'manage'
 type ManageTab = 'added' | 'created'
+
+type SkillApiConfig = {
+  endpoint: string
+  userId: string
+  userIdParam: string
+}
+
+type SkillApiItem = {
+  name: string
+  chinese_name: string
+  description: string
+}
+
+type SkillApiResponse = {
+  success: boolean
+  code: string
+  msg: string
+  data?: {
+    skills?: SkillApiItem[]
+    total?: number
+  }
+}
+
+type ManageSkillCard = {
+  id: string
+  title: string
+  description: string
+  toneClassName: 'manageCardGreen' | 'manageCardAmber'
+  icon: React.ReactNode
+}
 
 const CREATE_OPTIONS = [
   {
@@ -64,56 +95,86 @@ const FEATURED_SKILLS = [
   },
 ]
 
-const MANAGE_SKILLS = [
-  {
-    id: 1,
-    title: '技能调试优化',
-    description: '用于检查、测试或优化某个技能。包括：验证技能描述是否能被正确触发、优化描述表达、检查技能在目标环境中是否可用，以及根据特定...',
-    toneClassName: 'manageCardGreen',
-    icon: <CheckCircleFilled />,
-  },
-  {
-    id: 2,
-    title: '季度/年度业务汇报',
-    description: '围绕指标达成、业务进展、问题与对策输出结构化业务汇报。',
-    toneClassName: 'manageCardAmber',
-    icon: <ShareAltOutlined />,
-  },
-  {
-    id: 3,
-    title: '商业计划书',
-    description: '强调市场机会、产品与商业模式、竞争、团队、财务与风险，形成可评审 BP。',
-    toneClassName: 'manageCardGreen',
-    icon: <ShareAltOutlined />,
-  },
-  {
-    id: 4,
-    title: '企业调研报告',
-    description: '基于官方与公开信息输出公司概况、业务结构、竞争位置、经营与风险的结构化研究。',
-    toneClassName: 'manageCardAmber',
-    icon: <ShareAltOutlined />,
-  },
-  {
-    id: 5,
-    title: '活动营销方案',
-    description: '明确目标人群、核心卖点、传播节奏、渠道策略和风险预案，形成可执行活动方案。',
-    toneClassName: 'manageCardGreen',
-    icon: <ShareAltOutlined />,
-  },
-  {
-    id: 6,
-    title: '项目启动报告',
-    description: '梳理目标、范围、里程碑、接口协同、分工和风险，形成可共享的启动说明。',
-    toneClassName: 'manageCardAmber',
+function parseSimpleYaml(rawText: string) {
+  return rawText.split(/\r?\n/).reduce<Record<string, string>>((result, line) => {
+    const trimmedLine = line.trim()
+
+    if (!trimmedLine || trimmedLine.startsWith('#')) {
+      return result
+    }
+
+    const separatorIndex = trimmedLine.indexOf(':')
+
+    if (separatorIndex === -1) {
+      return result
+    }
+
+    const key = trimmedLine.slice(0, separatorIndex).trim()
+    const value = trimmedLine.slice(separatorIndex + 1).trim().replace(/^['"]|['"]$/g, '')
+
+    if (key) {
+      result[key] = value
+    }
+
+    return result
+  }, {})
+}
+
+function parseSkillApiConfig(rawText: string): SkillApiConfig {
+  const parsedConfig = parseSimpleYaml(rawText)
+  const baseUrl = parsedConfig.url
+  const skillPath = parsedConfig.skill_path
+  const userId = parsedConfig.user_id
+  const userIdParam = parsedConfig.skill_user_id_param
+
+  if (!baseUrl || !skillPath || !userId || !userIdParam) {
+    throw new Error('config.yaml 缺少 url、skill_path、user_id 或 skill_user_id_param 配置')
+  }
+
+  return {
+    endpoint: new URL(skillPath, baseUrl).toString(),
+    userId,
+    userIdParam,
+  }
+}
+
+function getManageCardPresentation(index: number) {
+  if (index % 3 === 0) {
+    return {
+      toneClassName: 'manageCardGreen' as const,
+      icon: <CheckCircleFilled />,
+    }
+  }
+
+  if (index % 3 === 1) {
+    return {
+      toneClassName: 'manageCardAmber' as const,
+      icon: <ShareAltOutlined />,
+    }
+  }
+
+  return {
+    toneClassName: 'manageCardGreen' as const,
     icon: <ThunderboltOutlined />,
-  },
-]
+  }
+}
 
 export default function SkillsPage() {
   const [mode, setMode] = useState<SkillsMode>('discover')
   const [createOpen, setCreateOpen] = useState(false)
   const [manageTab, setManageTab] = useState<ManageTab>('added')
+  const [addedSkills, setAddedSkills] = useState<SkillApiItem[]>([])
+  const [addedSkillsLoading, setAddedSkillsLoading] = useState(false)
+  const [addedSkillsError, setAddedSkillsError] = useState('')
   const createWrapRef = useRef<HTMLDivElement | null>(null)
+  const skillApiConfig = useMemo(() => {
+    try {
+      // 接口地址和 userId 统一从 config.yaml 读取，避免页面里写死环境配置。
+      return parseSkillApiConfig(skillConfigText)
+    } catch {
+      return null
+    }
+  }, [])
 
   // 创建菜单点外部自动关闭，避免弹层停留在页面上。
   useEffect(() => {
@@ -130,7 +191,97 @@ export default function SkillsPage() {
     }
   }, [])
 
-  const manageList = useMemo(() => (manageTab === 'added' ? MANAGE_SKILLS : []), [manageTab])
+  useEffect(() => {
+    if (mode !== 'manage' || manageTab !== 'added') {
+      return
+    }
+
+    if (!skillApiConfig) {
+      setAddedSkills([])
+      setAddedSkillsError('技能配置读取失败，请检查 config.yaml')
+      setAddedSkillsLoading(false)
+      return
+    }
+
+    const controller = new AbortController()
+
+    const loadAddedSkills = async () => {
+      setAddedSkillsLoading(true)
+      setAddedSkillsError('')
+
+      try {
+        // 这里直接按配置组装请求地址，保证地址和用户参数都来自 config.yaml。
+        const requestUrl = new URL(skillApiConfig.endpoint)
+        requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
+
+        const response = await fetch(requestUrl.toString(), {
+          signal: controller.signal,
+        })
+
+        if (!response.ok) {
+          throw new Error('技能接口请求失败')
+        }
+
+        const data = (await response.json()) as SkillApiResponse
+
+        if (!data.success) {
+          throw new Error(data.msg || '技能接口返回失败')
+        }
+
+        const nextSkills = Array.isArray(data.data?.skills) ? data.data.skills : []
+
+        setAddedSkills(nextSkills)
+        setAddedSkillsError('')
+      } catch {
+        if (controller.signal.aborted) {
+          return
+        }
+
+        setAddedSkills([])
+        setAddedSkillsError('技能加载失败，请检查接口配置或服务状态')
+      } finally {
+        if (!controller.signal.aborted) {
+          setAddedSkillsLoading(false)
+        }
+      }
+    }
+
+    loadAddedSkills()
+
+    return () => {
+      controller.abort()
+    }
+  }, [mode, manageTab, skillApiConfig])
+
+  const manageList = useMemo<ManageSkillCard[]>(() => {
+    if (manageTab !== 'added') {
+      return []
+    }
+
+    return addedSkills.map((item, index) => {
+      const presentation = getManageCardPresentation(index)
+
+      return {
+        id: item.name,
+        title: item.chinese_name,
+        description: item.description,
+        toneClassName: presentation.toneClassName,
+        icon: presentation.icon,
+      }
+    })
+  }, [addedSkills, manageTab])
+
+  const manageEmptyText = useMemo(() => {
+    if (manageTab === 'created') {
+      return '还没有创建任何技能'
+    }
+
+    if (addedSkillsError) {
+      return addedSkillsError
+    }
+
+    return '还没有添加任何技能'
+  }, [addedSkillsError, manageTab])
 
   return (
     <main className={styles.page}>
@@ -318,7 +469,9 @@ export default function SkillsPage() {
               </button>
             </div>
 
-            {manageList.length > 0 ? (
+            {manageTab === 'added' && addedSkillsLoading ? (
+              <div className={styles.manageStatus}>技能加载中...</div>
+            ) : manageList.length > 0 ? (
               <div className={styles.manageGrid}>
                 {manageList.map((item) => (
                   <article key={item.id} className={styles.manageCard}>
@@ -330,7 +483,6 @@ export default function SkillsPage() {
                     </div>
                     <div className={styles.manageTitleRow}>
                       <h3 className={styles.manageCardTitle}>{item.title}</h3>
-                      <span className={styles.builtinTag}>内置</span>
                     </div>
                     <p className={styles.manageCardDesc}>{item.description}</p>
                     <button type="button" className={styles.useButton}>
@@ -346,7 +498,7 @@ export default function SkillsPage() {
                   <span className={styles.balloonMain} />
                   <span className={styles.balloonString} />
                 </div>
-                <p className={styles.emptyText}>还没有创建任何技能</p>
+                <p className={styles.emptyText}>{manageEmptyText}</p>
               </div>
             )}
           </div>

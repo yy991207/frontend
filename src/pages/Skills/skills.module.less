@@ -656,10 +656,11 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px 22px;
+  align-items: stretch;
 }
 
 .manageCard {
-  min-height: 212px;
+  height: 228px;
   border-radius: 20px;
   border: 1px solid rgba(226, 232, 240, 0.95);
   background: #ffffff;
@@ -707,6 +708,10 @@
   line-height: 1.35;
   font-weight: 700;
   color: #111827;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .builtinTag {
@@ -722,6 +727,11 @@
   color: #6b7280;
   font-size: 15px;
   line-height: 1.75;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: calc(1.75em * 3);
 }
 
 .useButton {
@@ -734,6 +744,18 @@
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.manageStatus {
+  min-height: 240px;
+  border-radius: 20px;
+  border: 1px dashed rgba(226, 232, 240, 0.95);
+  background: #f8fafc;
+  color: #6b7280;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .manageEmpty {

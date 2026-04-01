@@ -1,0 +1,4 @@
+user_id: 123456
+url: http://192.168.30.238:8000/
+skill_path: /api/v1/skills
+skill_user_id_param: userid
