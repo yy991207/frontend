@@ -84,8 +84,9 @@ export default function Sidebar() {
 
       <button
         type="button"
-        className={`${styles.partnerRow} ${styles.tooltipTarget}`}
+        className={`${styles.partnerRow} ${styles.tooltipTarget} ${location.pathname === '/partner' ? styles.navRowActive : ''}`}
         data-tooltip="智能伙伴"
+        onClick={() => navigate('/partner')}
       >
         <span className={styles.iconCell}>
           <RobotOutlined />

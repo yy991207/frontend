@@ -1,0 +1,580 @@
+.page {
+  flex: 1;
+  min-width: 0;
+  padding: 12px;
+  background: linear-gradient(180deg, #f4f7fb 0%, #eef3f8 100%);
+}
+
+.panel {
+  height: 100%;
+  border-radius: 28px;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 12px;
+}
+
+.title {
+  color: #374151;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.headerButton {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #4b5563;
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 116px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.userRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.userMessageWrap {
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.userBubble {
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: #eef2ff;
+  color: #374151;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.userActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #9ca3af;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.16s ease;
+}
+
+.userMessageWrap:hover .userActions {
+  opacity: 1;
+}
+
+.assistantRow {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.assistantMessageWrap {
+  position: relative;
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.assistantText {
+  color: #374151;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.assistantFooter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.assistantHoverBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #6b7280;
+  font-size: 14px;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.assistantMessageWrap:hover .assistantHoverBar {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.starRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.starButton {
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.inlineAction {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.loadingDots {
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #9ca3af;
+  animation: pulse 1s infinite ease-in-out;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.24s;
+}
+
+.composerArea {
+  position: relative;
+  padding: 0 28px 16px;
+}
+
+.composerWrap {
+  position: relative;
+}
+
+.composer {
+  height: 58px;
+  border-radius: 28px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 0 14px;
+}
+
+.attachTriggerWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.attachButton {
+  background: #ffffff;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+.attachButtonActive {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.attachTooltip {
+  position: absolute;
+  left: -6px;
+  bottom: calc(100% + 10px);
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(17, 24, 39, 0.96);
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.18);
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 22px;
+    top: 100%;
+    width: 12px;
+    height: 7px;
+    background: rgba(17, 24, 39, 0.96);
+    clip-path: polygon(50% 100%, 0 0, 100% 0);
+  }
+}
+
+.attachTriggerWrap:hover .attachTooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.attachMenuLayer {
+  position: absolute;
+  left: 12px;
+  bottom: calc(100% + 12px);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+  transform-origin: bottom left;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.2s ease;
+}
+
+.attachMenuLayerOpen {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.attachMenu {
+  width: 268px;
+  padding: 10px;
+  border-radius: 18px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+}
+
+.attachMenuItem {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 14px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #374151;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease;
+
+  &:hover {
+    background: #f8fafc;
+    color: #111827;
+  }
+}
+
+.attachMenuItemActive {
+  background: #f3f4f6;
+}
+
+.attachMenuMain {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.attachMenuIcon {
+  width: 18px;
+  display: inline-flex;
+  justify-content: center;
+  color: #4b5563;
+  font-size: 16px;
+}
+
+.attachMenuArrow {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.toolSubmenu {
+  width: 330px;
+  border-radius: 18px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+  opacity: 0;
+  transform: translate(-8px, 8px) scale(0.98);
+  transform-origin: left top;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.2s ease;
+  overflow: hidden;
+}
+
+.toolSubmenuOpen {
+  opacity: 1;
+  transform: translate(0, 0) scale(1);
+  pointer-events: auto;
+}
+
+.toolSubmenuHeader {
+  position: relative;
+  padding: 16px 16px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.toolInfoButton {
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.toolInfoPopover {
+  position: absolute;
+  left: -6px;
+  bottom: calc(100% + 8px);
+  width: 320px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(17, 24, 39, 0.96);
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.6;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.18);
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 120px;
+    top: 100%;
+    width: 12px;
+    height: 7px;
+    background: rgba(17, 24, 39, 0.96);
+    clip-path: polygon(50% 100%, 0 0, 100% 0);
+  }
+}
+
+.toolItem {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 16px;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #374151;
+  font-size: 16px;
+}
+
+.toolItemMain {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toolManageButton {
+  border-top: 1px solid rgba(226, 232, 240, 0.9);
+  justify-content: flex-start;
+  cursor: pointer;
+}
+
+.switchButton {
+  width: 32px;
+  height: 20px;
+  border-radius: 999px;
+  border: none;
+  background: #d1d5db;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.16s ease;
+}
+
+.switchButtonOn {
+  background: #2563eb;
+}
+
+.switchThumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #ffffff;
+  transform: translateX(0);
+  transition: transform 0.16s ease;
+}
+
+.switchButtonOn .switchThumb {
+  transform: translateX(12px);
+}
+
+.composerInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #111827;
+  font-size: 16px;
+
+  &::placeholder {
+    color: #9ca3af;
+  }
+}
+
+.circleButton {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.iconButton {
+  border: none;
+  background: transparent;
+  color: #374151;
+  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sendButton {
+  background: #111827;
+  color: #ffffff;
+  font-size: 18px;
+}
+
+.sendButtonDisabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+.stopButton {
+  background: #111827;
+  color: #ffffff;
+}
+
+.stopInner {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.footerHint {
+  margin-top: 10px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+@keyframes pulse {
+  0%,
+  80%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+
+  40% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+@media (max-width: 900px) {
+  .messages {
+    padding: 12px 32px 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 8px;
+  }
+
+  .panel {
+    border-radius: 22px;
+  }
+
+  .messages {
+    padding: 12px 18px 18px;
+  }
+
+  .composerArea {
+    padding: 0 14px 14px;
+  }
+
+  .attachTooltip {
+    display: none;
+  }
+
+  .attachMenuLayer {
+    left: 0;
+    flex-direction: column;
+  }
+
+  .attachMenu,
+  .toolSubmenu {
+    width: min(268px, calc(100vw - 42px));
+  }
+}
