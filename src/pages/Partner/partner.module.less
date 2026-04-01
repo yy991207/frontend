@@ -19,7 +19,33 @@
 // 设置页面布局
 .settingsContainer {
   display: flex;
+  flex-direction: column;
   height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.settingsTopBar {
+  min-height: 58px;
+  padding: 0 20px;
+  border-bottom: 1px solid #eef2f7;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.settingsTopTitle {
+  margin: 0;
+  color: #111827;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.settingsSplitPanel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
   overflow: hidden;
 }
 
@@ -137,6 +163,7 @@
 .settingsContent {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background: #ffffff;
@@ -176,6 +203,7 @@
 
 .settingsContentBody {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 24px 32px;
 }
@@ -438,6 +466,26 @@
     border-color: #2563eb;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
   }
+}
+
+// 对话页面顶部栏
+.chatTopBar {
+  min-height: 58px;
+  padding: 0 22px;
+  border-bottom: 1px solid #eef2f7;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+// 对话页面主内容区
+.chatMainPanel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 // 原有对话页面样式

@@ -453,74 +453,70 @@ export default function PartnerPage() {
     <main className={styles.page}>
       <section className={styles.panel}>
         {isSettingsOpen ? (
-          // 设置页面 - 左右分区布局
-          <div className={styles.settingsContainer}>
-            {/* 左侧设置菜单 */}
-            <div className={styles.settingsSidebar}>
-              <div className={styles.settingsSidebarHeader}>
-                <h2 className={styles.settingsSidebarTitle}>智能伙伴设置</h2>
-              </div>
-              <div className={styles.settingsMenu}>
-                {SETTING_MENU_ITEMS.map((item) => (
-                  <div key={item.key}>
-                    <button
-                      type="button"
-                      className={`${styles.settingsMenuItem} ${activeSettingKey === item.key ? styles.settingsMenuItemActive : ''}`}
-                      onClick={() => {
-                        if (item.children) {
-                          toggleExpanded(item.key)
-                        } else {
-                          handleSettingClick(item.key)
-                        }
-                      }}
-                    >
-                      <span className={styles.settingsMenuIcon}>{item.icon}</span>
-                      <span className={styles.settingsMenuLabel}>{item.label}</span>
-                      {item.children && (
-                        <DownOutlined
-                          className={`${styles.settingsMenuArrow} ${expandedKeys.includes(item.key) ? styles.settingsMenuArrowOpen : ''}`}
-                        />
-                      )}
-                    </button>
-                    {item.children && expandedKeys.includes(item.key) && (
-                      <div className={styles.settingsSubMenu}>
-                        {item.children.map((child) => (
-                          <button
-                            key={child.key}
-                            type="button"
-                            className={`${styles.settingsSubMenuItem} ${activeSettingKey === child.key ? styles.settingsSubMenuItemActive : ''}`}
-                            onClick={() => handleSettingClick(child.key)}
-                          >
-                            {child.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+          <>
+            <div className={styles.settingsTopBar}>
+              <h2 className={styles.settingsTopTitle}>智能伙伴设置</h2>
+              <button
+                type="button"
+                className={styles.closeSettingsBtn}
+                onClick={() => setIsSettingsOpen(false)}
+                aria-label="关闭设置"
+              >
+                <CloseOutlined />
+              </button>
             </div>
 
-            {/* 右侧设置详情 */}
-            <div className={styles.settingsContent}>
-              <div className={styles.settingsContentHeader}>
-                <span className={styles.settingsHint}></span>
-                <button
-                  type="button"
-                  className={styles.closeSettingsBtn}
-                  onClick={() => setIsSettingsOpen(false)}
-                  aria-label="关闭设置"
-                >
-                  <CloseOutlined />
-                </button>
+            <div className={styles.settingsSplitPanel}>
+              <div className={styles.settingsSidebar}>
+                <div className={styles.settingsMenu}>
+                  {SETTING_MENU_ITEMS.map((item) => (
+                    <div key={item.key}>
+                      <button
+                        type="button"
+                        className={`${styles.settingsMenuItem} ${activeSettingKey === item.key ? styles.settingsMenuItemActive : ''}`}
+                        onClick={() => {
+                          if (item.children) {
+                            toggleExpanded(item.key)
+                          } else {
+                            handleSettingClick(item.key)
+                          }
+                        }}
+                      >
+                        <span className={styles.settingsMenuIcon}>{item.icon}</span>
+                        <span className={styles.settingsMenuLabel}>{item.label}</span>
+                        {item.children ? (
+                          <DownOutlined
+                            className={`${styles.settingsMenuArrow} ${expandedKeys.includes(item.key) ? styles.settingsMenuArrowOpen : ''}`}
+                          />
+                        ) : null}
+                      </button>
+                      {item.children && expandedKeys.includes(item.key) ? (
+                        <div className={styles.settingsSubMenu}>
+                          {item.children.map((child) => (
+                            <button
+                              key={child.key}
+                              type="button"
+                              className={`${styles.settingsSubMenuItem} ${activeSettingKey === child.key ? styles.settingsSubMenuItemActive : ''}`}
+                              onClick={() => handleSettingClick(child.key)}
+                            >
+                              {child.label}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className={styles.settingsContentBody}>{renderSettingContent()}</div>
+
+              <div className={styles.settingsContent}>
+                <div className={styles.settingsContentBody}>{renderSettingContent()}</div>
+              </div>
             </div>
-          </div>
+          </>
         ) : (
-          // 对话页面
           <>
-            <header className={styles.header}>
+            <header className={styles.chatTopBar}>
               <h1 className={styles.title}>{agentName}</h1>
               <div className={styles.headerActions}>
                 <button type="button" className={styles.headerButton} aria-label="分享">
@@ -540,192 +536,194 @@ export default function PartnerPage() {
               </div>
             </header>
 
-            <div className={styles.messages}>
-              {messages.map((message) =>
-                message.role === 'user' ? (
-                  <div key={message.id} className={styles.userRow}>
-                    <div className={styles.userMessageWrap}>
-                      <div className={styles.userBubble}>{message.content}</div>
-                      <div className={styles.userActions}>
-                        <span>{message.timestamp}</span>
-                        <button type="button" className={styles.inlineAction} onClick={() => handleCopy(message.content)}>
-                          <CopyOutlined />
-                          <span>复制</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div key={message.id} className={styles.assistantRow}>
-                    {message.loading ? (
-                      <div className={styles.loadingDots}>
-                        <span className={styles.dot} />
-                        <span className={styles.dot} />
-                        <span className={styles.dot} />
-                      </div>
-                    ) : (
-                      <div className={styles.assistantMessageWrap}>
-                        <div className={styles.assistantText}>{message.content}</div>
-                        <div className={styles.assistantFooter}>
+            <div className={styles.chatMainPanel}>
+              <div className={styles.messages}>
+                {messages.map((message) =>
+                  message.role === 'user' ? (
+                    <div key={message.id} className={styles.userRow}>
+                      <div className={styles.userMessageWrap}>
+                        <div className={styles.userBubble}>{message.content}</div>
+                        <div className={styles.userActions}>
+                          <span>{message.timestamp}</span>
                           <button type="button" className={styles.inlineAction} onClick={() => handleCopy(message.content)}>
                             <CopyOutlined />
                             <span>复制</span>
                           </button>
                         </div>
-                        <div className={styles.assistantHoverBar}>
-                          <span>结果评分</span>
-                          <div className={styles.starRow}>
-                            {Array.from({ length: 5 }).map((_, index) => (
-                              <button key={index} type="button" className={styles.starButton} aria-label={`评分 ${index + 1}`}>
-                                <StarOutlined />
-                              </button>
-                            ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div key={message.id} className={styles.assistantRow}>
+                      {message.loading ? (
+                        <div className={styles.loadingDots}>
+                          <span className={styles.dot} />
+                          <span className={styles.dot} />
+                          <span className={styles.dot} />
+                        </div>
+                      ) : (
+                        <div className={styles.assistantMessageWrap}>
+                          <div className={styles.assistantText}>{message.content}</div>
+                          <div className={styles.assistantFooter}>
+                            <button type="button" className={styles.inlineAction} onClick={() => handleCopy(message.content)}>
+                              <CopyOutlined />
+                              <span>复制</span>
+                            </button>
+                          </div>
+                          <div className={styles.assistantHoverBar}>
+                            <span>结果评分</span>
+                            <div className={styles.starRow}>
+                              {Array.from({ length: 5 }).map((_, index) => (
+                                <button key={index} type="button" className={styles.starButton} aria-label={`评分 ${index + 1}`}>
+                                  <StarOutlined />
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                ),
-              )}
-            </div>
-
-            <div className={styles.composerArea}>
-              <div ref={composerRef} className={styles.composerWrap}>
-                <div className={styles.composer}>
-                  <div className={styles.attachTriggerWrap}>
-                    <button
-                      type="button"
-                      className={`${styles.circleButton} ${styles.attachButton} ${attachMenuOpen ? styles.attachButtonActive : ''}`}
-                      aria-label={attachMenuOpen ? '关闭上传菜单' : '打开上传菜单'}
-                      aria-expanded={attachMenuOpen}
-                      onClick={() => setAttachMenuOpen((value) => !value)}
-                    >
-                      {attachMenuOpen ? <CloseOutlined /> : <PlusOutlined />}
-                    </button>
-                    {!attachMenuOpen ? <div className={styles.attachTooltip}>上传附件/技能等</div> : null}
-                  </div>
-                  <input
-                    value={draft}
-                    onChange={(event) => setDraft(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault()
-                        handleSend()
-                      }
-                    }}
-                    className={styles.composerInput}
-                    placeholder="下一步要做什么？"
-                  />
-                  <button type="button" className={styles.iconButton} aria-label="语音输入">
-                    <AudioOutlined />
-                  </button>
-                  {isResponding ? (
-                    <button type="button" className={`${styles.circleButton} ${styles.stopButton}`} onClick={handleStop}>
-                      <span className={styles.stopInner} />
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className={`${styles.circleButton} ${styles.sendButton} ${!draft.trim() ? styles.sendButtonDisabled : ''}`}
-                      onClick={handleSend}
-                      disabled={!draft.trim()}
-                    >
-                      <ArrowUpOutlined />
-                    </button>
-                  )}
-                </div>
-                <div
-                  className={`${styles.attachMenuLayer} ${attachMenuOpen ? styles.attachMenuLayerOpen : ''}`}
-                  onMouseLeave={() => {
-                    setToolMenuOpen(false)
-                    setToolInfoOpen(false)
-                  }}
-                >
-                  <div className={styles.attachMenu} role="menu">
-                    {ATTACHMENT_ACTIONS.map((action) =>
-                      action.key === 'tool' ? (
-                        <button
-                          key={action.key}
-                          type="button"
-                          className={`${styles.attachMenuItem} ${toolMenuOpen ? styles.attachMenuItemActive : ''}`}
-                          onMouseEnter={() => setToolMenuOpen(true)}
-                        >
-                          <span className={styles.attachMenuMain}>
-                            <span className={styles.attachMenuIcon}>{action.icon}</span>
-                            <span>{action.label}</span>
-                          </span>
-                          <RightOutlined className={styles.attachMenuArrow} />
-                        </button>
-                      ) : (
-                        <button key={action.key} type="button" className={styles.attachMenuItem} onMouseEnter={() => setToolMenuOpen(false)}>
-                          <span className={styles.attachMenuMain}>
-                            <span className={styles.attachMenuIcon}>{action.icon}</span>
-                            <span>{action.label}</span>
-                          </span>
-                          {action.hasArrow ? <RightOutlined className={styles.attachMenuArrow} /> : null}
-                        </button>
-                      ),
-                    )}
-                  </div>
-
-                  <div className={`${styles.toolSubmenu} ${toolMenuOpen ? styles.toolSubmenuOpen : ''}`}>
-                    <div className={styles.toolSubmenuHeader}>
-                      <span>工具</span>
-                      <button
-                        type="button"
-                        className={styles.toolInfoButton}
-                        aria-label="工具说明"
-                        onClick={() => setToolInfoOpen((value) => !value)}
-                      >
-                        <InfoCircleOutlined />
-                      </button>
-                      {toolInfoOpen ? (
-                        <div className={styles.toolInfoPopover}>
-                          默认内置飞书相关工具：知识问答、消息、妙记、云文档、多维表格、日程、任务
-                        </div>
-                      ) : null}
+                      )}
                     </div>
-
-                    <div className={styles.toolItem}>
-                      <span className={styles.toolItemMain}>
-                        <GlobalOutlined />
-                        <span>互联网检索</span>
-                      </span>
-                      <button
-                        type="button"
-                        className={`${styles.switchButton} ${webSearchEnabled ? styles.switchButtonOn : ''}`}
-                        onClick={() => setWebSearchEnabled((value) => !value)}
-                      >
-                        <span className={styles.switchThumb} />
-                      </button>
-                    </div>
-
-                    <div className={styles.toolItem}>
-                      <span className={styles.toolItemMain}>
-                        <LinkOutlined />
-                        <span>自定义知识</span>
-                      </span>
-                      <button
-                        type="button"
-                        className={`${styles.switchButton} ${knowledgeEnabled ? styles.switchButtonOn : ''}`}
-                        onClick={() => setKnowledgeEnabled((value) => !value)}
-                      >
-                        <span className={styles.switchThumb} />
-                      </button>
-                    </div>
-
-                    <button type="button" className={`${styles.toolItem} ${styles.toolManageButton}`}>
-                      <span className={styles.attachMenuMain}>
-                        <span className={styles.toolItemMain}>
-                          <SettingOutlined />
-                          <span>工具管理</span>
-                        </span>
-                      </span>
-                    </button>
-                  </div>
-                </div>
+                  ),
+                )}
               </div>
-              <div className={styles.footerHint}>AI 生成内容可能有误，请核实重要信息</div>
+
+              <div className={styles.composerArea}>
+                <div ref={composerRef} className={styles.composerWrap}>
+                  <div className={styles.composer}>
+                    <div className={styles.attachTriggerWrap}>
+                      <button
+                        type="button"
+                        className={`${styles.circleButton} ${styles.attachButton} ${attachMenuOpen ? styles.attachButtonActive : ''}`}
+                        aria-label={attachMenuOpen ? '关闭上传菜单' : '打开上传菜单'}
+                        aria-expanded={attachMenuOpen}
+                        onClick={() => setAttachMenuOpen((value) => !value)}
+                      >
+                        {attachMenuOpen ? <CloseOutlined /> : <PlusOutlined />}
+                      </button>
+                      {!attachMenuOpen ? <div className={styles.attachTooltip}>上传附件/技能等</div> : null}
+                    </div>
+                    <input
+                      value={draft}
+                      onChange={(event) => setDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault()
+                          handleSend()
+                        }
+                      }}
+                      className={styles.composerInput}
+                      placeholder="下一步要做什么？"
+                    />
+                    <button type="button" className={styles.iconButton} aria-label="语音输入">
+                      <AudioOutlined />
+                    </button>
+                    {isResponding ? (
+                      <button type="button" className={`${styles.circleButton} ${styles.stopButton}`} onClick={handleStop}>
+                        <span className={styles.stopInner} />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className={`${styles.circleButton} ${styles.sendButton} ${!draft.trim() ? styles.sendButtonDisabled : ''}`}
+                        onClick={handleSend}
+                        disabled={!draft.trim()}
+                      >
+                        <ArrowUpOutlined />
+                      </button>
+                    )}
+                  </div>
+                  <div
+                    className={`${styles.attachMenuLayer} ${attachMenuOpen ? styles.attachMenuLayerOpen : ''}`}
+                    onMouseLeave={() => {
+                      setToolMenuOpen(false)
+                      setToolInfoOpen(false)
+                    }}
+                  >
+                    <div className={styles.attachMenu} role="menu">
+                      {ATTACHMENT_ACTIONS.map((action) =>
+                        action.key === 'tool' ? (
+                          <button
+                            key={action.key}
+                            type="button"
+                            className={`${styles.attachMenuItem} ${toolMenuOpen ? styles.attachMenuItemActive : ''}`}
+                            onMouseEnter={() => setToolMenuOpen(true)}
+                          >
+                            <span className={styles.attachMenuMain}>
+                              <span className={styles.attachMenuIcon}>{action.icon}</span>
+                              <span>{action.label}</span>
+                            </span>
+                            <RightOutlined className={styles.attachMenuArrow} />
+                          </button>
+                        ) : (
+                          <button key={action.key} type="button" className={styles.attachMenuItem} onMouseEnter={() => setToolMenuOpen(false)}>
+                            <span className={styles.attachMenuMain}>
+                              <span className={styles.attachMenuIcon}>{action.icon}</span>
+                              <span>{action.label}</span>
+                            </span>
+                            {action.hasArrow ? <RightOutlined className={styles.attachMenuArrow} /> : null}
+                          </button>
+                        ),
+                      )}
+                    </div>
+
+                    <div className={`${styles.toolSubmenu} ${toolMenuOpen ? styles.toolSubmenuOpen : ''}`}>
+                      <div className={styles.toolSubmenuHeader}>
+                        <span>工具</span>
+                        <button
+                          type="button"
+                          className={styles.toolInfoButton}
+                          aria-label="工具说明"
+                          onClick={() => setToolInfoOpen((value) => !value)}
+                        >
+                          <InfoCircleOutlined />
+                        </button>
+                        {toolInfoOpen ? (
+                          <div className={styles.toolInfoPopover}>
+                            默认内置飞书相关工具：知识问答、消息、妙记、云文档、多维表格、日程、任务
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div className={styles.toolItem}>
+                        <span className={styles.toolItemMain}>
+                          <GlobalOutlined />
+                          <span>互联网检索</span>
+                        </span>
+                        <button
+                          type="button"
+                          className={`${styles.switchButton} ${webSearchEnabled ? styles.switchButtonOn : ''}`}
+                          onClick={() => setWebSearchEnabled((value) => !value)}
+                        >
+                          <span className={styles.switchThumb} />
+                        </button>
+                      </div>
+
+                      <div className={styles.toolItem}>
+                        <span className={styles.toolItemMain}>
+                          <LinkOutlined />
+                          <span>自定义知识</span>
+                        </span>
+                        <button
+                          type="button"
+                          className={`${styles.switchButton} ${knowledgeEnabled ? styles.switchButtonOn : ''}`}
+                          onClick={() => setKnowledgeEnabled((value) => !value)}
+                        >
+                          <span className={styles.switchThumb} />
+                        </button>
+                      </div>
+
+                      <button type="button" className={`${styles.toolItem} ${styles.toolManageButton}`}>
+                        <span className={styles.attachMenuMain}>
+                          <span className={styles.toolItemMain}>
+                            <SettingOutlined />
+                            <span>工具管理</span>
+                          </span>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.footerHint}>AI 生成内容可能有误，请核实重要信息</div>
+              </div>
             </div>
           </>
         )}
