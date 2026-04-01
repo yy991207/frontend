@@ -27,6 +27,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import homeTabsUrl from '../../../mock_json/home-tabs.json?url'
 import homeAvatar from '../../assets/home-avatar.png'
+import { resolveQuickActionToolType } from '../../services/chatService'
 import styles from './home.module.less'
 
 const QUICK_ACTIONS = [
@@ -193,6 +194,7 @@ export default function HomePage() {
     navigate('/chat', {
       state: {
         initialPrompt: value,
+        toolType: resolveQuickActionToolType(value),
       },
     })
   }
