@@ -17,7 +17,7 @@ import homeAvatar from '../../assets/home-avatar.png'
 import styles from './sidebar.module.less'
 
 const NAV_ITEMS = [
-  { key: 'home', label: '新建', icon: <PlusOutlined />, path: '/' },
+  { key: 'home', label: '新建', icon: <PlusOutlined /> },
   { key: 'library', label: '库', icon: <BookOutlined />, path: '/library' },
   { key: 'skills', label: '技能', icon: <ThunderboltOutlined />, path: '/skills' },
   { key: 'discover', label: '发现', icon: <CompassOutlined /> },
