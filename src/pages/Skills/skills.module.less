@@ -718,6 +718,7 @@
 }
 
 .manageCard {
+  position: relative;
   height: 228px;
   border-radius: 20px;
   border: 1px solid rgba(226, 232, 240, 0.95);
@@ -751,6 +752,65 @@
   color: #9ca3af;
   font-size: 20px;
   cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.manageMenuRoot {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.manageCardMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 108px;
+  padding: 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(226, 232, 240, 0.96);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.manageCardMenuItem {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #374151;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease;
+
+  &:hover:not(:disabled) {
+    background: #f3f4f6;
+    color: #111827;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.manageCardMenuItemDanger {
+  color: #dc2626;
+
+  &:hover:not(:disabled) {
+    background: #fef2f2;
+    color: #b91c1c;
+  }
 }
 
 .manageTitleRow {
