@@ -13,6 +13,7 @@ import {
   UserOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
+import homeAvatar from '../../assets/home-avatar.png'
 import styles from './sidebar.module.less'
 
 const NAV_ITEMS = [
@@ -49,9 +50,17 @@ export default function Sidebar() {
         >
           {expanded ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
         </button>
-        <div className={styles.panelHead}>
+        <button
+          type="button"
+          className={styles.panelHead}
+          onClick={() => navigate('/')}
+          aria-label="返回果仁助手首页"
+        >
+          <span className={styles.brandAvatarWrap}>
+            <img src={homeAvatar} alt="果仁助手头像" className={styles.brandAvatar} />
+          </span>
           <span className={styles.brandName}>果仁助手</span>
-        </div>
+        </button>
       </div>
 
       <nav className={styles.nav}>
