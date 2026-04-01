@@ -18,7 +18,21 @@ import {
   ThunderboltOutlined,
   ToolOutlined,
 } from '@ant-design/icons'
+import chatConfigText from '../../../config.yaml?raw'
 import { useLocation } from 'react-router-dom'
+import {
+  createChatSession,
+  downloadSessionFileContent,
+  extractCourseTableFilePath,
+  parseChatApiConfig,
+  parseCourseTableContent,
+  readSseStream,
+  streamChatMessage,
+  type ChatApiConfig,
+  type ChatReference,
+  type CourseItem,
+  type ToolCall,
+} from '../../services/chatService'
 import styles from './chat.module.less'
 
 type ChatMessage = {
@@ -27,9 +41,71 @@ type ChatMessage = {
   content: string
   timestamp: string
   loading?: boolean
+  sessionId?: string
+  toolCalls?: ToolCall[]
+  references?: ChatReference[]
+  courses?: CourseItem[]
 }
 
-const MOCK_REPLY = '您好！我是飞书AI助手，很高兴为您服务。有什么我可以帮助您的吗？'
+function getToolDisplayTitle(toolCall: ToolCall) {
+  const label = typeof toolCall.toolDisplay?.tool_label === 'string' ? toolCall.toolDisplay.tool_label : ''
+  return label || toolCall.name
+}
+
+function getToolDisplaySummary(toolCall: ToolCall) {
+  const items = Array.isArray(toolCall.toolDisplay?.items) ? toolCall.toolDisplay.items : []
+
+  if (toolCall.status === 'running') {
+    return '工具执行中...'
+  }
+
+  if (items.length > 0) {
+    return `已返回 ${items.length} 条结果`
+  }
+
+  return '工具执行完成'
+}
+
+function upsertToolCall(message: ChatMessage, nextToolCall: ToolCall): ChatMessage {
+  const toolCalls = message.toolCalls ?? []
+  const existingToolCall = toolCalls.find((item) => item.runId === nextToolCall.runId)
+
+  if (!existingToolCall) {
+    return {
+      ...message,
+      toolCalls: [...toolCalls, nextToolCall],
+    }
+  }
+
+  return {
+    ...message,
+    toolCalls: toolCalls.map((item) =>
+      item.runId === nextToolCall.runId
+        ? {
+            ...item,
+            ...nextToolCall,
+            input: Object.keys(nextToolCall.input).length ? nextToolCall.input : item.input,
+          }
+        : item,
+    ),
+  }
+}
+
+async function loadCourseTable(
+  chatApiConfig: ChatApiConfig,
+  sessionId: string,
+  toolCall: ToolCall,
+  signal: AbortSignal,
+): Promise<CourseItem[]> {
+  const filePath = extractCourseTableFilePath(toolCall)
+
+  if (!filePath) {
+    return []
+  }
+
+  const rawContent = await downloadSessionFileContent(chatApiConfig, sessionId, filePath, signal)
+  return parseCourseTableContent(rawContent)
+}
 
 const ATTACHMENT_ACTIONS = [
   { key: 'upload', label: '上传文件或图片', icon: <PaperClipOutlined /> },
@@ -48,7 +124,7 @@ function formatTime(date: Date) {
 
 export default function ChatPage() {
   const location = useLocation()
-  const timerRef = useRef<number | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
   const composerRef = useRef<HTMLDivElement | null>(null)
   const [attachMenuOpen, setAttachMenuOpen] = useState(false)
   const [toolMenuOpen, setToolMenuOpen] = useState(false)
@@ -56,10 +132,23 @@ export default function ChatPage() {
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
   const [knowledgeEnabled, setKnowledgeEnabled] = useState(false)
   const [draft, setDraft] = useState('')
+  const [requestError, setRequestError] = useState('')
+  const chatApiConfig = useMemo<ChatApiConfig | null>(() => {
+    try {
+      return parseChatApiConfig(chatConfigText)
+    } catch {
+      return null
+    }
+  }, [])
 
   const initialPrompt = useMemo(() => {
-    const value = location.state as { initialPrompt?: string } | null
+    const value = location.state as { initialPrompt?: string; toolType?: string | null } | null
     return value?.initialPrompt?.trim() ?? ''
+  }, [location.state])
+
+  const initialToolType = useMemo(() => {
+    const value = location.state as { initialPrompt?: string; toolType?: string | null } | null
+    return value?.toolType ?? null
   }, [location.state])
 
   const initialConversation = useMemo(() => {
@@ -90,7 +179,163 @@ export default function ChatPage() {
   )
   const [isResponding, setIsResponding] = useState(() => Boolean(initialConversation))
 
-  const startAssistantReply = (prompt: string) => {
+  const runAssistantReply = async (prompt: string, loadingMessageId: string, toolType: string | null = null) => {
+    if (!chatApiConfig) {
+      setRequestError('聊天配置读取失败，请检查 config.yaml')
+      const replyTime = formatTime(new Date())
+      setMessages((prev) =>
+        prev.map((item) =>
+          item.id === loadingMessageId
+            ? {
+                ...item,
+                content: '聊天配置读取失败，请检查 config.yaml',
+                timestamp: replyTime,
+                loading: false,
+              }
+            : item,
+        ),
+      )
+      setIsResponding(false)
+      return
+    }
+    setRequestError('')
+
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
+    try {
+      const { sessionId } = await createChatSession(chatApiConfig, controller.signal)
+      setMessages((prev) =>
+        prev.map((item) =>
+          item.id === loadingMessageId
+            ? {
+                ...item,
+                sessionId,
+              }
+            : item,
+        ),
+      )
+
+      const stream = await streamChatMessage(
+        chatApiConfig,
+        sessionId,
+        {
+          message: prompt,
+          tool_type: toolType,
+        },
+        controller.signal,
+      )
+
+      await readSseStream(stream, {
+        onTextDelta(chunk) {
+          const replyTime = formatTime(new Date())
+          setMessages((prev) =>
+            prev.map((item) =>
+              item.id === loadingMessageId
+                ? {
+                    ...item,
+                    content: `${item.content}${chunk}`,
+                    timestamp: replyTime,
+                    loading: false,
+                  }
+                : item,
+            ),
+          )
+        },
+        onToolStart(toolCall) {
+          setMessages((prev) =>
+            prev.map((item) =>
+              item.id === loadingMessageId
+                ? upsertToolCall(item, toolCall)
+                : item,
+            ),
+          )
+        },
+        onToolEnd(toolCall) {
+          void loadCourseTable(chatApiConfig, sessionId, toolCall, controller.signal)
+            .then((courses) => {
+              if (!courses.length) {
+                return
+              }
+
+              setMessages((prev) =>
+                prev.map((item) =>
+                  item.id === loadingMessageId
+                    ? {
+                        ...upsertToolCall(item, toolCall),
+                        courses,
+                      }
+                    : item,
+                ),
+              )
+            })
+            .catch(() => {
+              // 课程文件下载失败时保持普通工具卡展示，不阻断主回答。
+            })
+
+          setMessages((prev) =>
+            prev.map((item) =>
+              item.id === loadingMessageId
+                ? upsertToolCall(item, toolCall)
+                : item,
+            ),
+          )
+        },
+        onReferences(references) {
+          setMessages((prev) =>
+            prev.map((item) =>
+              item.id === loadingMessageId
+                ? {
+                    ...item,
+                    references,
+                  }
+                : item,
+            ),
+          )
+        },
+      })
+
+      const replyTime = formatTime(new Date())
+      setMessages((prev) =>
+        prev.map((item) =>
+          item.id === loadingMessageId
+            ? {
+                ...item,
+                timestamp: replyTime,
+                loading: false,
+              }
+            : item,
+        ),
+      )
+    } catch (error) {
+      if (controller.signal.aborted) {
+        return
+      }
+
+      const replyTime = formatTime(new Date())
+      setMessages((prev) =>
+        prev.map((item) =>
+          item.id === loadingMessageId
+            ? {
+                ...item,
+                content: '请求失败，请稍后重试。',
+                timestamp: replyTime,
+                loading: false,
+              }
+            : item,
+        ),
+      )
+      setRequestError(error instanceof Error ? error.message : '请求失败，请稍后重试。')
+    } finally {
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null
+      }
+
+      setIsResponding(false)
+    }
+  }
+
+  const startAssistantReply = async (prompt: string, toolType: string | null = null) => {
     const now = new Date()
     const userMessage: ChatMessage = {
       id: `user-${now.getTime()}`,
@@ -109,23 +354,7 @@ export default function ChatPage() {
     setMessages((prev) => [...prev, userMessage, loadingMessage])
     setIsResponding(true)
 
-    timerRef.current = window.setTimeout(() => {
-      const replyTime = formatTime(new Date())
-      setMessages((prev) =>
-        prev.map((item) =>
-          item.id === loadingMessage.id
-            ? {
-                ...item,
-                content: MOCK_REPLY,
-                timestamp: replyTime,
-                loading: false,
-              }
-            : item,
-        ),
-      )
-      setIsResponding(false)
-      timerRef.current = null
-    }, 1600)
+    await runAssistantReply(prompt, loadingMessage.id, toolType)
   }
 
   useEffect(() => {
@@ -133,30 +362,13 @@ export default function ChatPage() {
       return
     }
 
-    timerRef.current = window.setTimeout(() => {
-      const replyTime = formatTime(new Date())
-      setMessages((prev) =>
-        prev.map((item) =>
-          item.id === initialConversation.loadingMessage.id
-            ? {
-                ...item,
-                content: MOCK_REPLY,
-                timestamp: replyTime,
-                loading: false,
-              }
-            : item,
-        ),
-      )
-      setIsResponding(false)
-      timerRef.current = null
-    }, 1600)
+    setRequestError('')
+    void runAssistantReply(initialPrompt, initialConversation.loadingMessage.id, initialToolType)
 
     return () => {
-      if (timerRef.current) {
-        window.clearTimeout(timerRef.current)
-      }
+      abortControllerRef.current?.abort()
     }
-  }, [initialConversation])
+  }, [initialConversation, initialPrompt, initialToolType])
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -182,16 +394,22 @@ export default function ChatPage() {
     setAttachMenuOpen(false)
     setToolMenuOpen(false)
     setToolInfoOpen(false)
-    startAssistantReply(value)
+    void startAssistantReply(value)
   }
 
   const handleStop = () => {
-    if (timerRef.current) {
-      window.clearTimeout(timerRef.current)
-      timerRef.current = null
-    }
-
-    setMessages((prev) => prev.filter((item) => !item.loading))
+    abortControllerRef.current?.abort()
+    abortControllerRef.current = null
+    setMessages((prev) =>
+      prev.map((item) =>
+        item.loading
+          ? {
+              ...item,
+              loading: false,
+            }
+          : item,
+      ),
+    )
     setIsResponding(false)
   }
 
@@ -223,42 +441,91 @@ export default function ChatPage() {
         </header>
 
         <div className={styles.messages}>
-          {messages.map((message) =>
-            message.role === 'user' ? (
-              <div key={message.id} className={styles.userRow}>
-                <div className={styles.userMessageWrap}>
-                  <div className={styles.userBubble}>{message.content}</div>
-                  <div className={styles.userActions}>
-                    <span>{message.timestamp}</span>
-                    <button type="button" className={styles.inlineAction} onClick={() => handleCopy(message.content)}>
-                      <CopyOutlined />
-                      <span>复制</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div key={message.id} className={styles.assistantRow}>
-                {message.loading ? (
-                  <div className={styles.loadingDots}>
-                    <span className={styles.dot} />
-                    <span className={styles.dot} />
-                    <span className={styles.dot} />
-                  </div>
-                ) : (
-                  <div className={styles.assistantMessageWrap}>
-                    <div className={styles.assistantText}>{message.content}</div>
-                    <div className={styles.assistantFooter}>
+          <div className={styles.messageColumn}>
+            {messages.map((message) =>
+              message.role === 'user' ? (
+                <div key={message.id} className={styles.userRow}>
+                  <div className={styles.userMessageWrap}>
+                    <div className={styles.userBubble}>{message.content}</div>
+                    <div className={styles.userActions}>
+                      <span>{message.timestamp}</span>
                       <button type="button" className={styles.inlineAction} onClick={() => handleCopy(message.content)}>
                         <CopyOutlined />
                         <span>复制</span>
                       </button>
                     </div>
                   </div>
-                )}
-              </div>
-            ),
-          )}
+                </div>
+              ) : (
+                <div key={message.id} className={styles.assistantRow}>
+                  {message.loading ? (
+                    <div className={styles.loadingDots}>
+                      <span className={styles.dot} />
+                      <span className={styles.dot} />
+                      <span className={styles.dot} />
+                    </div>
+                  ) : (
+                    <div className={styles.assistantMessageWrap}>
+                      {message.toolCalls?.length ? (
+                        <div className={styles.toolCallList}>
+                          {message.toolCalls.map((toolCall) => (
+                            <div key={toolCall.runId} className={styles.toolCard}>
+                              <div className={styles.toolCardHeader}>
+                                <span className={styles.toolCardTitle}>{getToolDisplayTitle(toolCall)}</span>
+                                <span className={styles.toolCardStatus}>{toolCall.status === 'running' ? '执行中' : '已完成'}</span>
+                              </div>
+                              <div className={styles.toolCardSummary}>{getToolDisplaySummary(toolCall)}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                      {message.courses?.length ? (
+                        <div className={styles.courseCard}>
+                          <div className={styles.courseCardHeader}>
+                            <span className={styles.courseCardTitle}>课程推荐</span>
+                            <span className={styles.courseCardMeta}>{message.courses.length} 门课程</span>
+                          </div>
+                          <div className={styles.courseList}>
+                            {message.courses.map((course) => (
+                              <div key={`${course.resourceId || course.title}-${course.duration || ''}`} className={styles.courseItem}>
+                                <div className={styles.courseItemTitleRow}>
+                                  <span className={styles.courseItemTitle}>{course.title}</span>
+                                  {course.duration ? <span className={styles.courseItemDuration}>{course.duration}</span> : null}
+                                </div>
+                                {course.description ? <div className={styles.courseItemDesc}>{course.description}</div> : null}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+                      <div className={styles.assistantText}>{message.content}</div>
+                      {message.references?.length ? (
+                        <div className={styles.referenceList}>
+                          {message.references.map((reference, index) => (
+                            <a
+                              key={`${reference.title || 'ref'}-${index}`}
+                              className={styles.referenceItem}
+                              href={reference.url || '#'}
+                              target={reference.url ? '_blank' : undefined}
+                              rel={reference.url ? 'noreferrer' : undefined}
+                            >
+                              {reference.title || reference.url || `参考资料 ${index + 1}`}
+                            </a>
+                          ))}
+                        </div>
+                      ) : null}
+                      <div className={styles.assistantFooter}>
+                        <button type="button" className={styles.inlineAction} onClick={() => handleCopy(message.content)}>
+                          <CopyOutlined />
+                          <span>复制</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ),
+            )}
+          </div>
         </div>
 
         <div className={styles.composerArea}>
@@ -397,7 +664,7 @@ export default function ChatPage() {
               </div>
             </div>
           </div>
-          <div className={styles.footerHint}>AI 生成内容可能有误，请核实重要信息</div>
+          <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>
         </div>
       </section>
     </main>

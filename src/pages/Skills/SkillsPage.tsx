@@ -21,15 +21,19 @@ type SkillsMode = 'discover' | 'manage'
 type ManageTab = 'added' | 'created'
 
 type SkillApiConfig = {
-  endpoint: string
+  featuredEndpoint: string
+  manageEndpoint: string
+  addSkillEndpoint: string
   userId: string
   userIdParam: string
 }
 
 type SkillApiItem = {
-  name: string
-  chinese_name: string
+  id: string
+  skillName: string
+  title: string
   description: string
+  isSelected: boolean
 }
 
 type SkillApiResponse = {
@@ -124,17 +128,96 @@ function parseSkillApiConfig(rawText: string): SkillApiConfig {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
   const skillPath = parsedConfig.skill_path
+  const managePath = parsedConfig.view_user_skills_path
+  const addPath = parsedConfig.add_user_skills_path
   const userId = parsedConfig.user_id
   const userIdParam = parsedConfig.skill_user_id_param
 
-  if (!baseUrl || !skillPath || !userId || !userIdParam) {
-    throw new Error('config.yaml 缺少 url、skill_path、user_id 或 skill_user_id_param 配置')
+  if (!baseUrl || !skillPath || !managePath || !addPath || !userId || !userIdParam) {
+    throw new Error('config.yaml 缺少 url、skill_path、view_user_skills_path、add_user_skills_path、user_id 或 skill_user_id_param 配置')
+  }
+
+  const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`
+  const managePathWithUser = managePath.includes('{user_id}')
+    ? managePath.replace('{user_id}', encodeURIComponent(userId))
+    : managePath
+  const addPathWithUser = addPath.includes('{user_id}')
+    ? addPath.replace('{user_id}', encodeURIComponent(userId))
+    : addPath
+
+  return {
+    featuredEndpoint: new URL(skillPath, normalizedBaseUrl).toString(),
+    manageEndpoint: new URL(managePathWithUser, normalizedBaseUrl).toString(),
+    addSkillEndpoint: new URL(addPathWithUser, normalizedBaseUrl).toString(),
+    userId,
+    userIdParam,
+  }
+}
+
+function readSkillField(item: Record<string, unknown>, keys: string[]) {
+  const value = keys.find((key) => typeof item[key] === 'string' && item[key])
+  return value ? String(item[value]).trim() : ''
+}
+
+function normalizeSkillItems(items: unknown[]) {
+  return items
+    .map((item, index) => {
+      if (!item || typeof item !== 'object') {
+        return null
+      }
+
+      const value = item as Record<string, unknown>
+      const title = readSkillField(value, ['chinese_name', 'chinesename', 'chineseName', 'name'])
+      const description = readSkillField(value, ['description', 'desc'])
+      const skillName = readSkillField(value, ['name', 'skill_name', 'skillName'])
+
+      if (!title) {
+        return null
+      }
+
+      const id = readSkillField(value, ['id']) || skillName || `${title}-${index}`
+      const isSelected = Boolean(value.is_selected ?? value.isSelected)
+
+      return {
+        id,
+        skillName,
+        title,
+        description,
+        isSelected,
+      }
+    })
+    .filter((item): item is SkillApiItem => item !== null)
+}
+
+function extractSkillItemsFromResponse(data: SkillApiResponse) {
+  const payload = data.data as Record<string, unknown> | undefined
+  const skills = Array.isArray(payload?.skills)
+    ? payload.skills
+    : Array.isArray(payload?.items)
+      ? payload.items
+      : []
+
+  return normalizeSkillItems(skills)
+}
+
+function getFeaturedCardPresentation(index: number) {
+  if (index % 3 === 0) {
+    return {
+      toneClassName: 'skillCardAmber' as const,
+      icon: <StarFilled />,
+    }
+  }
+
+  if (index % 3 === 1) {
+    return {
+      toneClassName: 'skillCardIndigo' as const,
+      icon: <ShareAltOutlined />,
+    }
   }
 
   return {
-    endpoint: new URL(skillPath, baseUrl).toString(),
-    userId,
-    userIdParam,
+    toneClassName: 'skillCardGreen' as const,
+    icon: <SwapOutlined />,
   }
 }
 
@@ -163,10 +246,16 @@ export default function SkillsPage() {
   const [mode, setMode] = useState<SkillsMode>('discover')
   const [createOpen, setCreateOpen] = useState(false)
   const [manageTab, setManageTab] = useState<ManageTab>('added')
+  const [featuredSkills, setFeaturedSkills] = useState<SkillApiItem[]>([])
+  const [featuredSkillsLoading, setFeaturedSkillsLoading] = useState(false)
+  const [featuredSkillsError, setFeaturedSkillsError] = useState('')
+  const [addSkillSuccessMessage, setAddSkillSuccessMessage] = useState('')
+  const [skillActionLoadingId, setSkillActionLoadingId] = useState<string | null>(null)
   const [addedSkills, setAddedSkills] = useState<SkillApiItem[]>([])
   const [addedSkillsLoading, setAddedSkillsLoading] = useState(false)
   const [addedSkillsError, setAddedSkillsError] = useState('')
   const createWrapRef = useRef<HTMLDivElement | null>(null)
+  const successToastTimerRef = useRef<number | null>(null)
   const skillApiConfig = useMemo(() => {
     try {
       // 接口地址和 userId 统一从 config.yaml 读取，避免页面里写死环境配置。
@@ -192,6 +281,119 @@ export default function SkillsPage() {
   }, [])
 
   useEffect(() => {
+    return () => {
+      if (successToastTimerRef.current !== null) {
+        window.clearTimeout(successToastTimerRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!skillApiConfig) {
+      setFeaturedSkills([])
+      setFeaturedSkillsError('技能配置读取失败，请检查 config.yaml')
+      setFeaturedSkillsLoading(false)
+      return
+    }
+
+    const controller = new AbortController()
+
+    const loadFeaturedSkills = async () => {
+      setFeaturedSkillsLoading(true)
+      setFeaturedSkillsError('')
+
+      try {
+        const requestUrl = new URL(skillApiConfig.featuredEndpoint)
+        requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
+
+        const response = await fetch(requestUrl.toString(), {
+          signal: controller.signal,
+        })
+
+        if (!response.ok) {
+          throw new Error('技能接口请求失败')
+        }
+
+        const data = (await response.json()) as SkillApiResponse
+
+        if (!data.success) {
+          throw new Error(data.msg || '技能接口返回失败')
+        }
+
+        setFeaturedSkills(extractSkillItemsFromResponse(data))
+        setFeaturedSkillsError('')
+      } catch {
+        if (controller.signal.aborted) {
+          return
+        }
+
+        setFeaturedSkills([])
+        setFeaturedSkillsError('技能加载失败，请检查接口配置或服务状态')
+      } finally {
+        if (!controller.signal.aborted) {
+          setFeaturedSkillsLoading(false)
+        }
+      }
+    }
+
+    loadFeaturedSkills()
+
+    return () => {
+      controller.abort()
+    }
+  }, [skillApiConfig])
+
+  const handleUseSkill = async (skill: SkillApiItem) => {
+    if (!skillApiConfig || skillActionLoadingId === skill.id) {
+      return
+    }
+
+    setSkillActionLoadingId(skill.id)
+
+    try {
+      const requestUrl = new URL(skillApiConfig.addSkillEndpoint)
+      requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
+
+      const response = await fetch(requestUrl.toString(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          skill_name: skill.skillName || skill.id,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('添加技能失败')
+      }
+
+      setFeaturedSkills((previous) =>
+        previous.map((item) =>
+          item.id === skill.id
+            ? {
+                ...item,
+                isSelected: true,
+              }
+            : item,
+        ),
+      )
+
+      setAddSkillSuccessMessage('添加成功，快到管理技能中查看吧')
+      if (successToastTimerRef.current !== null) {
+        window.clearTimeout(successToastTimerRef.current)
+      }
+      successToastTimerRef.current = window.setTimeout(() => {
+        setAddSkillSuccessMessage('')
+      }, 2600)
+    } catch {
+      // 保持页面轻量交互，失败时不阻断其它操作。
+    } finally {
+      setSkillActionLoadingId(null)
+    }
+  }
+
+  useEffect(() => {
     if (mode !== 'manage' || manageTab !== 'added') {
       return
     }
@@ -210,9 +412,10 @@ export default function SkillsPage() {
       setAddedSkillsError('')
 
       try {
-        // 这里直接按配置组装请求地址，保证地址和用户参数都来自 config.yaml。
-        const requestUrl = new URL(skillApiConfig.endpoint)
-        requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
+        const requestUrl = new URL(skillApiConfig.manageEndpoint)
+        if (!requestUrl.pathname.includes(encodeURIComponent(skillApiConfig.userId))) {
+          requestUrl.searchParams.set('user_id', skillApiConfig.userId)
+        }
 
         const response = await fetch(requestUrl.toString(), {
           signal: controller.signal,
@@ -228,9 +431,7 @@ export default function SkillsPage() {
           throw new Error(data.msg || '技能接口返回失败')
         }
 
-        const nextSkills = Array.isArray(data.data?.skills) ? data.data.skills : []
-
-        setAddedSkills(nextSkills)
+        setAddedSkills(extractSkillItemsFromResponse(data))
         setAddedSkillsError('')
       } catch {
         if (controller.signal.aborted) {
@@ -262,14 +463,32 @@ export default function SkillsPage() {
       const presentation = getManageCardPresentation(index)
 
       return {
-        id: item.name,
-        title: item.chinese_name,
+        id: item.id,
+        title: item.title,
         description: item.description,
         toneClassName: presentation.toneClassName,
         icon: presentation.icon,
       }
     })
   }, [addedSkills, manageTab])
+
+  const featuredList = useMemo(() => {
+    return featuredSkills.map((item, index) => {
+      const presentation = getFeaturedCardPresentation(index)
+
+      return {
+        id: item.id,
+        skillName: item.skillName,
+        title: item.title,
+        description: item.description,
+        isSelected: item.isSelected,
+        toneClassName: presentation.toneClassName,
+        icon: presentation.icon,
+        tags: ['官方'],
+        count: '实时更新',
+      }
+    })
+  }, [featuredSkills])
 
   const manageEmptyText = useMemo(() => {
     if (manageTab === 'created') {
@@ -288,6 +507,7 @@ export default function SkillsPage() {
       <section className={styles.panel}>
         {mode === 'discover' ? (
           <div className={styles.discoverPage}>
+            {addSkillSuccessMessage ? <div className={styles.successToast}>{addSkillSuccessMessage}</div> : null}
             <div className={styles.heroBlock}>
               <div className={styles.heroActions}>
                 <div ref={createWrapRef} className={styles.createWrap}>
@@ -389,7 +609,7 @@ export default function SkillsPage() {
               </div>
 
               <div className={styles.featuredGrid}>
-                {FEATURED_SKILLS.map((item) => (
+                {(featuredList.length > 0 ? featuredList : FEATURED_SKILLS).map((item) => (
                   <article key={item.id} className={styles.featuredCard}>
                     <div className={`${styles.featuredBadge} ${styles[item.toneClassName]}`}>{item.icon}</div>
                     <h3 className={styles.featuredTitle}>{item.title}</h3>
@@ -404,9 +624,23 @@ export default function SkillsPage() {
                       </div>
                       <span className={styles.featuredCount}>{item.count}</span>
                     </div>
+                    {'isSelected' in item ? (
+                      <div className={styles.featuredActionBar}>
+                        <button
+                          type="button"
+                          className={styles.featuredActionButton}
+                          onClick={() => handleUseSkill(item)}
+                          disabled={skillActionLoadingId === item.id}
+                        >
+                          {skillActionLoadingId === item.id ? '处理中...' : item.isSelected ? '使用' : '添加'}
+                        </button>
+                      </div>
+                    ) : null}
                   </article>
                 ))}
               </div>
+              {featuredSkillsLoading ? <div className={styles.manageStatus}>技能加载中...</div> : null}
+              {!featuredSkillsLoading && featuredSkillsError ? <div className={styles.manageStatus}>{featuredSkillsError}</div> : null}
             </section>
           </div>
         ) : (

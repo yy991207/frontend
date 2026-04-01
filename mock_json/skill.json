@@ -1,0 +1,479 @@
+{
+  "success": true,
+  "code": "200",
+  "msg": "success",
+  "data": {
+    "skills": [
+      {
+        "name": "ai-drawing",
+        "chinese_name": "AI 绘图",
+        "description": "AI 绘图工具 - 基于知识库资料和用户描述生成图片。支持指定画风、尺寸等配置参数。当用户要求生成图片、绘制插图、创作图像时激活此技能。",
+        "template": "帮我画一张关于 /主题 的图片，风格是 /风格",
+        "placeholders": [
+          "主题",
+          "风格"
+        ],
+        "config_fields": [
+          {
+            "key": "style",
+            "label": "画风",
+            "type": "select",
+            "required": false,
+            "default": "写实",
+            "options": [
+              {
+                "label": "写实",
+                "value": "写实"
+              },
+              {
+                "label": "卡通",
+                "value": "卡通"
+              },
+              {
+                "label": "水彩",
+                "value": "水彩"
+              },
+              {
+                "label": "油画",
+                "value": "油画"
+              },
+              {
+                "label": "素描",
+                "value": "素描"
+              },
+              {
+                "label": "动漫",
+                "value": "动漫"
+              }
+            ],
+            "min": null,
+            "max": null,
+            "placeholder": null
+          }
+        ],
+        "is_selected": false
+      },
+      {
+        "name": "ai-infographic",
+        "chinese_name": "AI 信息图",
+        "description": "AI 信息图工具 - 基于知识库资料和用户内容生成精美信息图（HTML 文件）。支持列表、流程、层级、对比、图表等多种模板。当用户要求制作信息图、可视化图表、数据展示图时激活此技能。",
+        "template": "帮我制作一张关于 /主题 的信息图，类型是 /类型",
+        "placeholders": [
+          "主题",
+          "类型"
+        ],
+        "config_fields": [
+          {
+            "key": "template_type",
+            "label": "模板类型",
+            "type": "select",
+            "required": false,
+            "default": "list",
+            "options": [
+              {
+                "label": "列表",
+                "value": "list"
+              },
+              {
+                "label": "流程",
+                "value": "process"
+              },
+              {
+                "label": "层级",
+                "value": "hierarchy"
+              },
+              {
+                "label": "对比",
+                "value": "comparison"
+              },
+              {
+                "label": "图表",
+                "value": "chart"
+              }
+            ],
+            "min": null,
+            "max": null,
+            "placeholder": null
+          }
+        ],
+        "is_selected": false
+      },
+      {
+        "name": "ai-music",
+        "chinese_name": "AI 音乐",
+        "description": "AI 音乐工具 - 基于知识库资料和用户描述生成音乐。支持指定流派、时长、情绪风格等配置参数。当用户要求生成音乐、创作旋律、制作背景音乐时激活此技能。",
+        "template": "帮我创作一首 /风格 的音乐，主题是 /主题 ，时长 /时长 秒",
+        "placeholders": [
+          "风格",
+          "主题",
+          "时长"
+        ],
+        "config_fields": [
+          {
+            "key": "genre",
+            "label": "流派",
+            "type": "select",
+            "required": false,
+            "default": "pop",
+            "options": [
+              {
+                "label": "流行",
+                "value": "pop"
+              },
+              {
+                "label": "古典",
+                "value": "classical"
+              },
+              {
+                "label": "电子",
+                "value": "electronic"
+              },
+              {
+                "label": "爵士",
+                "value": "jazz"
+              },
+              {
+                "label": "摇滚",
+                "value": "rock"
+              },
+              {
+                "label": "民谣",
+                "value": "folk"
+              }
+            ],
+            "min": null,
+            "max": null,
+            "placeholder": null
+          },
+          {
+            "key": "duration",
+            "label": "时长",
+            "type": "select",
+            "required": false,
+            "default": 30,
+            "options": [
+              {
+                "label": "15秒",
+                "value": 15
+              },
+              {
+                "label": "30秒",
+                "value": 30
+              },
+              {
+                "label": "60秒",
+                "value": 60
+              }
+            ],
+            "min": null,
+            "max": null,
+            "placeholder": null
+          }
+        ],
+        "is_selected": false
+      },
+      {
+        "name": "ai-programming",
+        "chinese_name": "AI 编程",
+        "description": "AI 编程工具 - 根据需求生成代码并在沙箱中执行验证，输出可运行的程序或脚本。支持 Python、JavaScript、Shell 等多种语言及常见框架。当用户要求编写程序、脚本、代码片段、数据处理、自动化任务、调试代码或运行代码时激活此技能。",
+        "template": "帮我编写一个程序：/需求",
+        "placeholders": [
+          "需求"
+        ],
+        "config_fields": [],
+        "is_selected": false
+      },
+      {
+        "name": "ai-subject",
+        "chinese_name": "AI 学科",
+        "description": "AI+学科工具 - 基于知识库资料为指定学科生成互动 HTML 网页，适合教学演示、知识练习和可视化讲解。支持指定学科、年级、互动类型等配置参数。当用户要求生成学科网页、互动练习、知识可视化、教学页面时激活此技能。",
+        "template": "帮我生成一个 /学科 的互动网页，主题是 /主题",
+        "placeholders": [
+          "学科",
+          "主题"
+        ],
+        "config_fields": [
+          {
+            "key": "subject",
+            "label": "学科",
+            "type": "select",
+            "required": false,
+            "default": "数学",
+            "options": [
+              {
+                "label": "数学",
+                "value": "数学"
+              },
+              {
+                "label": "物理",
+                "value": "物理"
+              },
+              {
+                "label": "化学",
+                "value": "化学"
+              },
+              {
+                "label": "生物",
+                "value": "生物"
+              },
+              {
+                "label": "语文",
+                "value": "语文"
+              },
+              {
+                "label": "英语",
+                "value": "英语"
+              }
+            ],
+            "min": null,
+            "max": null,
+            "placeholder": null
+          }
+        ],
+        "is_selected": false
+      },
+      {
+        "name": "ai-video",
+        "chinese_name": "AI 视频",
+        "description": "AI 视频工具 - 基于知识库资料和用户描述生成视频。支持指定时长和宽高比。当用户要求生成视频、制作动画、创作短片时激活此技能。",
+        "template": "帮我生成一个关于 /主题 的视频，时长 /时长 秒",
+        "placeholders": [
+          "主题",
+          "时长"
+        ],
+        "config_fields": [
+          {
+            "key": "duration",
+            "label": "时长",
+            "type": "select",
+            "required": false,
+            "default": "5s",
+            "options": [
+              {
+                "label": "5秒",
+                "value": "5s"
+              },
+              {
+                "label": "10秒",
+                "value": "10s"
+              }
+            ],
+            "min": null,
+            "max": null,
+            "placeholder": null
+          },
+          {
+            "key": "aspect_ratio",
+            "label": "宽高比",
+            "type": "select",
+            "required": false,
+            "default": "16:9",
+            "options": [
+              {
+                "label": "16:9 横屏",
+                "value": "16:9"
+              },
+              {
+                "label": "9:16 竖屏",
+                "value": "9:16"
+              },
+              {
+                "label": "4:3",
+                "value": "4:3"
+              },
+              {
+                "label": "1:1 方形",
+                "value": "1:1"
+              }
+            ],
+            "min": null,
+            "max": null,
+            "placeholder": null
+          }
+        ],
+        "is_selected": false
+      },
+      {
+        "name": "ai-writing",
+        "chinese_name": "AI 写作",
+        "description": "AI 写作工具 - 基于知识库资料生成文章、报告、文案、摘要等各类文本内容。支持指定文体、字数、语气风格等配置参数。当用户要求撰写、起草、生成文章或报告时激活此技能。",
+        "template": "帮我写一篇关于 /主题 的 /文体 ，要求 /字数 字左右",
+        "placeholders": [
+          "主题",
+          "文体",
+          "字数"
+        ],
+        "config_fields": [
+          {
+            "key": "style",
+            "label": "文体",
+            "type": "select",
+            "required": false,
+            "default": "文章",
+            "options": [
+              {
+                "label": "文章",
+                "value": "文章"
+              },
+              {
+                "label": "报告",
+                "value": "报告"
+              },
+              {
+                "label": "文案",
+                "value": "文案"
+              },
+              {
+                "label": "摘要",
+                "value": "摘要"
+              },
+              {
+                "label": "新闻稿",
+                "value": "新闻稿"
+              }
+            ],
+            "min": null,
+            "max": null,
+            "placeholder": null
+          },
+          {
+            "key": "max_words",
+            "label": "字数",
+            "type": "select",
+            "required": false,
+            "default": 1000,
+            "options": [
+              {
+                "label": "300字",
+                "value": 300
+              },
+              {
+                "label": "500字",
+                "value": 500
+              },
+              {
+                "label": "1000字",
+                "value": 1000
+              },
+              {
+                "label": "2000字",
+                "value": 2000
+              },
+              {
+                "label": "3000字",
+                "value": 3000
+              }
+            ],
+            "min": null,
+            "max": null,
+            "placeholder": null
+          }
+        ],
+        "is_selected": false
+      },
+      {
+        "name": "explore",
+        "chinese_name": "课程探索",
+        "description": "探索工具 - 基于知识库全量视频资源，AI 智能生成个性化课表推荐。当用户要求探索课程、推荐课程列表、生成课表时激活此技能。",
+        "template": "帮我规划一个关于 /主题 的课表，要求 /数量 门课程，总时长 /总时长 分钟",
+        "placeholders": [
+          "主题",
+          "数量",
+          "总时长"
+        ],
+        "config_fields": [
+          {
+            "key": "count",
+            "label": "课程数量",
+            "type": "select",
+            "required": false,
+            "default": 5,
+            "options": [
+              {
+                "label": "3门",
+                "value": 3
+              },
+              {
+                "label": "5门",
+                "value": 5
+              },
+              {
+                "label": "8门",
+                "value": 8
+              },
+              {
+                "label": "10门",
+                "value": 10
+              }
+            ],
+            "min": null,
+            "max": null,
+            "placeholder": null
+          },
+          {
+            "key": "total_duration",
+            "label": "总时长",
+            "type": "select",
+            "required": false,
+            "default": 60,
+            "options": [
+              {
+                "label": "30分钟",
+                "value": 30
+              },
+              {
+                "label": "60分钟",
+                "value": 60
+              },
+              {
+                "label": "90分钟",
+                "value": 90
+              },
+              {
+                "label": "120分钟",
+                "value": 120
+              },
+              {
+                "label": "不限",
+                "value": 0
+              }
+            ],
+            "min": null,
+            "max": null,
+            "placeholder": null
+          },
+          {
+            "key": "difficulty",
+            "label": "难度",
+            "type": "select",
+            "required": false,
+            "default": "不限",
+            "options": [
+              {
+                "label": "不限",
+                "value": "不限"
+              },
+              {
+                "label": "入门",
+                "value": "入门"
+              },
+              {
+                "label": "进阶",
+                "value": "进阶"
+              },
+              {
+                "label": "高级",
+                "value": "高级"
+              }
+            ],
+            "min": null,
+            "max": null,
+            "placeholder": null
+          }
+        ],
+        "is_selected": false
+      }
+    ],
+    "total": 8
+  }
+}
