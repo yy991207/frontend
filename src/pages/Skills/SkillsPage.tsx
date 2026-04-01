@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeftOutlined,
   CheckCircleFilled,
@@ -24,6 +24,7 @@ type SkillApiConfig = {
   featuredEndpoint: string
   manageEndpoint: string
   addSkillEndpoint: string
+  removeSkillEndpointTemplate: string
   userId: string
   userIdParam: string
 }
@@ -48,6 +49,7 @@ type SkillApiResponse = {
 
 type ManageSkillCard = {
   id: string
+  skillName: string
   title: string
   description: string
   toneClassName: 'manageCardGreen' | 'manageCardAmber'
@@ -124,31 +126,39 @@ function parseSimpleYaml(rawText: string) {
   }, {})
 }
 
+function buildAbsoluteUrl(baseUrl: string, path: string) {
+  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
+}
+
 function parseSkillApiConfig(rawText: string): SkillApiConfig {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
   const skillPath = parsedConfig.skill_path
   const managePath = parsedConfig.view_user_skills_path
   const addPath = parsedConfig.add_user_skills_path
+  const removePath = parsedConfig.del_user_skills_path
   const userId = parsedConfig.user_id
   const userIdParam = parsedConfig.skill_user_id_param
 
-  if (!baseUrl || !skillPath || !managePath || !addPath || !userId || !userIdParam) {
-    throw new Error('config.yaml 缺少 url、skill_path、view_user_skills_path、add_user_skills_path、user_id 或 skill_user_id_param 配置')
+  if (!baseUrl || !skillPath || !managePath || !addPath || !removePath || !userId || !userIdParam) {
+    throw new Error('config.yaml 缺少 url、skill_path、view_user_skills_path、add_user_skills_path、del_user_skills_path、user_id 或 skill_user_id_param 配置')
   }
 
-  const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`
   const managePathWithUser = managePath.includes('{user_id}')
     ? managePath.replace('{user_id}', encodeURIComponent(userId))
     : managePath
   const addPathWithUser = addPath.includes('{user_id}')
     ? addPath.replace('{user_id}', encodeURIComponent(userId))
     : addPath
+  const removePathWithUser = removePath.includes('{user_id}')
+    ? removePath.replace('{user_id}', encodeURIComponent(userId))
+    : removePath
 
   return {
-    featuredEndpoint: new URL(skillPath, normalizedBaseUrl).toString(),
-    manageEndpoint: new URL(managePathWithUser, normalizedBaseUrl).toString(),
-    addSkillEndpoint: new URL(addPathWithUser, normalizedBaseUrl).toString(),
+    featuredEndpoint: buildAbsoluteUrl(baseUrl, skillPath),
+    manageEndpoint: buildAbsoluteUrl(baseUrl, managePathWithUser),
+    addSkillEndpoint: buildAbsoluteUrl(baseUrl, addPathWithUser),
+    removeSkillEndpointTemplate: buildAbsoluteUrl(baseUrl, removePathWithUser),
     userId,
     userIdParam,
   }
@@ -169,7 +179,7 @@ function normalizeSkillItems(items: unknown[]) {
       const value = item as Record<string, unknown>
       const title = readSkillField(value, ['chinese_name', 'chinesename', 'chineseName', 'name'])
       const description = readSkillField(value, ['description', 'desc'])
-      const skillName = readSkillField(value, ['name', 'skill_name', 'skillName'])
+      const skillName = readSkillField(value, ['skill_name', 'skillName', 'name'])
 
       if (!title) {
         return null
@@ -258,6 +268,8 @@ export default function SkillsPage() {
   const [addedSkills, setAddedSkills] = useState<SkillApiItem[]>([])
   const [addedSkillsLoading, setAddedSkillsLoading] = useState(false)
   const [addedSkillsError, setAddedSkillsError] = useState('')
+  const [removeSkillLoadingId, setRemoveSkillLoadingId] = useState<string | null>(null)
+  const [openManageMenuId, setOpenManageMenuId] = useState<string | null>(null)
   const createWrapRef = useRef<HTMLDivElement | null>(null)
   const successToastTimerRef = useRef<number | null>(null)
   const skillApiConfig = useMemo(() => {
@@ -275,6 +287,10 @@ export default function SkillsPage() {
       if (!createWrapRef.current?.contains(event.target as Node)) {
         setCreateOpen(false)
       }
+
+      if (event.target instanceof Element && !event.target.closest('[data-manage-menu-root="true"]')) {
+        setOpenManageMenuId(null)
+      }
     }
 
     document.addEventListener('pointerdown', handlePointerDown)
@@ -283,6 +299,66 @@ export default function SkillsPage() {
       document.removeEventListener('pointerdown', handlePointerDown)
     }
   }, [])
+
+  const fetchAddedSkills = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!skillApiConfig) {
+        setAddedSkills([])
+        setAddedSkillsError('技能配置读取失败，请检查 config.yaml')
+        setAddedSkillsLoading(false)
+        return [] as SkillApiItem[]
+      }
+
+      setAddedSkillsLoading(true)
+      setAddedSkillsError('')
+
+      try {
+        const requestUrl = new URL(skillApiConfig.manageEndpoint)
+        requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
+
+        const response = await fetch(requestUrl.toString(), {
+          signal,
+        })
+
+        if (!response.ok) {
+          throw new Error('技能接口请求失败')
+        }
+
+        const data = (await response.json()) as SkillApiResponse
+
+        if (!data.success) {
+          throw new Error(data.msg || '技能接口返回失败')
+        }
+
+        const nextSkills = extractSkillItemsFromResponse(data)
+        const addedSkillNames = buildSkillNameSet(nextSkills)
+
+        setAddedSkills(nextSkills)
+        setFeaturedSkills((previous) =>
+          previous.map((item) => ({
+            ...item,
+            isSelected: addedSkillNames.has(item.skillName || item.id),
+          })),
+        )
+        setAddedSkillsError('')
+
+        return nextSkills
+      } catch {
+        if (signal?.aborted) {
+          return [] as SkillApiItem[]
+        }
+
+        setAddedSkills([])
+        setAddedSkillsError('技能加载失败，请检查接口配置或服务状态')
+        return [] as SkillApiItem[]
+      } finally {
+        if (!signal?.aborted) {
+          setAddedSkillsLoading(false)
+        }
+      }
+    },
+    [skillApiConfig],
+  )
 
   useEffect(() => {
     return () => {
@@ -329,9 +405,7 @@ export default function SkillsPage() {
         let mergedFeaturedItems = featuredItems
         try {
           const manageRequestUrl = new URL(skillApiConfig.manageEndpoint)
-          if (!manageRequestUrl.pathname.includes(encodeURIComponent(skillApiConfig.userId))) {
-            manageRequestUrl.searchParams.set('user_id', skillApiConfig.userId)
-          }
+          manageRequestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
 
           const manageResponse = await fetch(manageRequestUrl.toString(), {
             signal: controller.signal,
@@ -432,61 +506,73 @@ export default function SkillsPage() {
       return
     }
 
-    if (!skillApiConfig) {
-      setAddedSkills([])
-      setAddedSkillsError('技能配置读取失败，请检查 config.yaml')
-      setAddedSkillsLoading(false)
-      return
-    }
-
     const controller = new AbortController()
 
-    const loadAddedSkills = async () => {
-      setAddedSkillsLoading(true)
-      setAddedSkillsError('')
-
-      try {
-        const requestUrl = new URL(skillApiConfig.manageEndpoint)
-        if (!requestUrl.pathname.includes(encodeURIComponent(skillApiConfig.userId))) {
-          requestUrl.searchParams.set('user_id', skillApiConfig.userId)
-        }
-
-        const response = await fetch(requestUrl.toString(), {
-          signal: controller.signal,
-        })
-
-        if (!response.ok) {
-          throw new Error('技能接口请求失败')
-        }
-
-        const data = (await response.json()) as SkillApiResponse
-
-        if (!data.success) {
-          throw new Error(data.msg || '技能接口返回失败')
-        }
-
-        setAddedSkills(extractSkillItemsFromResponse(data))
-        setAddedSkillsError('')
-      } catch {
-        if (controller.signal.aborted) {
-          return
-        }
-
-        setAddedSkills([])
-        setAddedSkillsError('技能加载失败，请检查接口配置或服务状态')
-      } finally {
-        if (!controller.signal.aborted) {
-          setAddedSkillsLoading(false)
-        }
-      }
-    }
-
-    loadAddedSkills()
+    void fetchAddedSkills(controller.signal)
 
     return () => {
       controller.abort()
     }
-  }, [mode, manageTab, skillApiConfig])
+  }, [fetchAddedSkills, manageTab, mode])
+
+  const handleShareSkill = async (skill: ManageSkillCard) => {
+    setOpenManageMenuId(null)
+
+    try {
+      await navigator.clipboard.writeText(`${skill.title}\n${skill.description}`)
+    } catch {
+      // 分享文案复制失败时，不额外打断页面交互。
+    }
+  }
+
+  const handleRemoveSkill = async (skill: ManageSkillCard) => {
+    if (!skillApiConfig || removeSkillLoadingId === skill.id) {
+      return
+    }
+
+    const currentSkillName = skill.skillName || skill.id
+
+    if (!currentSkillName) {
+      return
+    }
+
+    setRemoveSkillLoadingId(skill.id)
+    setOpenManageMenuId(null)
+
+    try {
+      const deleteEndpoint = skillApiConfig.removeSkillEndpointTemplate.includes('{skill_name}')
+        ? skillApiConfig.removeSkillEndpointTemplate.replace('{skill_name}', encodeURIComponent(currentSkillName))
+        : skillApiConfig.removeSkillEndpointTemplate
+      const requestUrl = new URL(deleteEndpoint)
+
+      requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
+      requestUrl.searchParams.set('skill_name', currentSkillName)
+
+      const response = await fetch(requestUrl.toString(), {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('移除技能失败')
+      }
+
+      const responseText = await response.text()
+
+      if (responseText) {
+        const data = JSON.parse(responseText) as SkillApiResponse
+
+        if (!data.success) {
+          throw new Error(data.msg || '移除技能失败')
+        }
+      }
+
+      await fetchAddedSkills()
+    } catch {
+      setAddedSkillsError('移除技能失败，请稍后重试')
+    } finally {
+      setRemoveSkillLoadingId(null)
+    }
+  }
 
   const manageList = useMemo<ManageSkillCard[]>(() => {
     if (manageTab !== 'added') {
@@ -498,6 +584,7 @@ export default function SkillsPage() {
 
       return {
         id: item.id,
+        skillName: item.skillName,
         title: item.title,
         description: item.description,
         toneClassName: presentation.toneClassName,
@@ -745,9 +832,33 @@ export default function SkillsPage() {
                   <article key={item.id} className={styles.manageCard}>
                     <div className={styles.manageCardHead}>
                       <span className={`${styles.manageCardIcon} ${styles[item.toneClassName]}`}>{item.icon}</span>
-                      <button type="button" className={styles.moreButton} aria-label="更多操作">
-                        <EllipsisOutlined />
-                      </button>
+                      <div className={styles.manageMenuRoot} data-manage-menu-root="true">
+                        <button
+                          type="button"
+                          className={styles.moreButton}
+                          aria-label="更多操作"
+                          aria-expanded={openManageMenuId === item.id}
+                          onClick={() => setOpenManageMenuId((previous) => (previous === item.id ? null : item.id))}
+                          disabled={removeSkillLoadingId === item.id}
+                        >
+                          <EllipsisOutlined />
+                        </button>
+                        {openManageMenuId === item.id ? (
+                          <div className={styles.manageCardMenu}>
+                            <button type="button" className={styles.manageCardMenuItem} onClick={() => handleShareSkill(item)}>
+                              分享
+                            </button>
+                            <button
+                              type="button"
+                              className={`${styles.manageCardMenuItem} ${styles.manageCardMenuItemDanger}`}
+                              onClick={() => handleRemoveSkill(item)}
+                              disabled={removeSkillLoadingId === item.id}
+                            >
+                              {removeSkillLoadingId === item.id ? '移除中...' : '移除'}
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                     <div className={styles.manageTitleRow}>
                       <h3 className={styles.manageCardTitle}>{item.title}</h3>
