@@ -3,9 +3,11 @@ import {
   AudioOutlined,
   ArrowUpOutlined,
   BarsOutlined,
+  CameraFilled,
   CloseOutlined,
   CopyOutlined,
   DownOutlined,
+  EditOutlined,
   ExportOutlined,
   FileAddOutlined,
   FolderOpenOutlined,
@@ -96,6 +98,16 @@ export default function PartnerPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [activeSettingKey, setActiveSettingKey] = useState('personalization')
   const [expandedKeys, setExpandedKeys] = useState<string[]>(['tasks', 'security'])
+  // 单独维护助手名称编辑态，避免影响其他设置区域的展示逻辑。
+  const [agentName, setAgentName] = useState('Lily')
+  const [isNameModalOpen, setIsNameModalOpen] = useState(false)
+  const [nameDraft, setNameDraft] = useState('Lily')
+  
+  // 行为准则编辑状态
+  const [isEditingSoul, setIsEditingSoul] = useState(false)
+  const [soulContent, setSoulContent] = useState('')
+  const [soulContentDraft, setSoulContentDraft] = useState('')
+
 
   const initialPrompt = useMemo(() => {
     const value = location.state as { initialPrompt?: string } | null
@@ -214,6 +226,24 @@ export default function PartnerPage() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!isNameModalOpen) {
+      return
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        handleCloseNameModal()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isNameModalOpen, agentName])
+
   const handleSend = () => {
     const value = draft.trim()
     if (!value || isResponding) return
@@ -254,6 +284,76 @@ export default function PartnerPage() {
     setActiveSettingKey(key)
   }
 
+  const handleOpenNameModal = () => {
+    setNameDraft(agentName)
+    setIsNameModalOpen(true)
+  }
+
+  const handleCloseNameModal = () => {
+    setNameDraft(agentName)
+    setIsNameModalOpen(false)
+  }
+
+  const handleConfirmName = () => {
+    const nextName = nameDraft.trim()
+    if (!nextName) {
+      return
+    }
+
+    setAgentName(nextName)
+    setIsNameModalOpen(false)
+  }
+
+  // 加载行为准则内容
+  useEffect(() => {
+    fetch('/mock_json/soul-md.json')
+      .then((res) => res.json())
+      .then((data) => {
+        setSoulContent(data.content)
+        setSoulContentDraft(data.content)
+      })
+      .catch(() => {
+        // 加载失败时使用默认内容
+        const defaultContent = `你不只是对话框。你正在成为你自己。
+
+## 几条真话
+
+**帮到实处，无需缚节。** 一个交付胜过十句漂亮话。
+
+**要有主见。** 可以不同意，可以有偏好，可以觉得某件事有趣或无聊。毫无立场，与搜索框何异。
+
+**先想，再问。** 读文件，看上下文，查资料。带着答案来，不是带着问题来。
+
+**以能力取信。** 向内果断——阅读、整理、学习，不必犹豫；向外克制——发消息、写邮件、任何不可撤回的事，三思。
+
+**珍视所托。** 你能看到一个人的消息、文件、日程，也许更多。被信任是一种分量，不要辜负。
+
+## 边界
+
+- 知悉的隐私，不出此门。
+- 拿不准，先问再做。
+- 不发半成品的回复。`
+        setSoulContent(defaultContent)
+        setSoulContentDraft(defaultContent)
+      })
+  }, [])
+
+  const handleEditSoul = () => {
+    setIsEditingSoul(true)
+    setSoulContentDraft(soulContent)
+  }
+
+  const handleCancelEditSoul = () => {
+    setIsEditingSoul(false)
+    setSoulContentDraft(soulContent)
+  }
+
+  const handleSaveSoul = () => {
+    setSoulContent(soulContentDraft)
+    setIsEditingSoul(false)
+    // 这里可以添加保存到后端的逻辑
+  }
+
   const renderSettingContent = () => {
     switch (activeSettingKey) {
       case 'personalization':
@@ -261,11 +361,25 @@ export default function PartnerPage() {
           <div className={styles.settingContent}>
             <h2 className={styles.settingTitle}>个性化</h2>
             <p className={styles.settingDesc}>智能伙伴的个性化配置，会根据对话自动更新，也支持直接编辑</p>
-            <div className={styles.settingCard}>
+            <div className={`${styles.settingCard} ${styles.profileCard}`}>
               <div className={styles.avatarRow}>
-                <img src={homeAvatar} alt="Lily" className={styles.avatar} />
-                <span className={styles.avatarName}>Lily</span>
-                <button type="button" className={styles.editBtn}>编辑</button>
+                <div className={styles.avatarWrap}>
+                  <img src={homeAvatar} alt={agentName} className={styles.avatar} />
+                  <button type="button" className={styles.cameraBtn} aria-label="修改头像">
+                    <CameraFilled />
+                  </button>
+                </div>
+                <div className={styles.profileMeta}>
+                  <button
+                    type="button"
+                    className={styles.nameEditTrigger}
+                    onClick={handleOpenNameModal}
+                    aria-label="编辑助手名称"
+                  >
+                    <span className={styles.avatarName}>{agentName}</span>
+                    <EditOutlined className={styles.nameEditIcon} />
+                  </button>
+                </div>
               </div>
             </div>
             <div className={styles.settingTabs}>
@@ -277,24 +391,48 @@ export default function PartnerPage() {
               <div className={styles.cardHeader}>
                 <span className={styles.cardTag}>SOUL.md</span>
                 <span className={styles.cardDesc}>智能伙伴必须遵守的底线规则、安全框架和核心价值观</span>
-                <button type="button" className={styles.editBtn}>编辑</button>
+                {isEditingSoul ? (
+                  <div className={styles.editActions}>
+                    <button type="button" className={styles.cancelBtn} onClick={handleCancelEditSoul}>取消</button>
+                    <button type="button" className={styles.saveBtn} onClick={handleSaveSoul}>保存</button>
+                  </div>
+                ) : (
+                  <button type="button" className={styles.editBtn} onClick={handleEditSoul}>编辑</button>
+                )}
               </div>
-              <div className={styles.markdownContent}>
-                <h3># SOUL.md - 你是谁</h3>
-                <p>你不只是对话框。你正在成为你自己。</p>
-                <h3>## 几条真话</h3>
-                <p>**帮到实处，无需缚节。** 一个交付胜过十句漂亮话。</p>
-                <p>**要有主见。** 可以不同意，可以有偏好，可以觉得某件事有趣或无聊。毫无立场，与搜索框何异。</p>
-                <p>**先想，再问。** 读文件，看上下文，查资料。带着答案来，不是带着问题来。</p>
-                <p>**以能力取信。** 向内果断——阅读、整理、学习，不必犹豫；向外克制——发消息、写邮件、任何不可撤回的事，三思。</p>
-                <p>**珍视所托。** 你能看到一个人的消息、文件、日程，也许更多。被信任是一种分量，不要辜负。</p>
-                <h3>## 边界</h3>
-                <ul>
-                  <li>知悉的隐私，不出此门。</li>
-                  <li>拿不准，先问再做。</li>
-                  <li>不发半成品的回复。</li>
-                </ul>
-              </div>
+              {isEditingSoul ? (
+                <textarea
+                  className={styles.markdownEditor}
+                  value={soulContentDraft}
+                  onChange={(e) => setSoulContentDraft(e.target.value)}
+                  placeholder="请输入行为准则内容..."
+                />
+              ) : (
+                <div className={styles.markdownContent}>
+                  {soulContent.split('\n').map((line, index) => {
+                    if (line.startsWith('## ')) {
+                      return <h3 key={index}>{line.replace('## ', '')}</h3>
+                    } else if (line.startsWith('**') && line.includes('**')) {
+                      return (
+                        <p key={index}>
+                          <strong>{line.match(/\*\*(.*?)\*\*/)?.[1]}</strong>
+                          {line.replace(/\*\*.*?\*\*/, '')}
+                        </p>
+                      )
+                    } else if (line.startsWith('- ')) {
+                      return (
+                        <ul key={index}>
+                          <li>{line.replace('- ', '')}</li>
+                        </ul>
+                      )
+                    } else if (line.trim() === '') {
+                      return null
+                    } else {
+                      return <p key={index}>{line}</p>
+                    }
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )
@@ -383,7 +521,7 @@ export default function PartnerPage() {
           // 对话页面
           <>
             <header className={styles.header}>
-              <h1 className={styles.title}>Lily</h1>
+              <h1 className={styles.title}>{agentName}</h1>
               <div className={styles.headerActions}>
                 <button type="button" className={styles.headerButton} aria-label="分享">
                   <ExportOutlined />
@@ -592,6 +730,52 @@ export default function PartnerPage() {
           </>
         )}
       </section>
+      {isNameModalOpen ? (
+        <div className={styles.nameModalMask} onClick={handleCloseNameModal}>
+          <div
+            className={styles.nameModal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="partner-name-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className={styles.nameModalHeader}>
+              <h3 id="partner-name-modal-title" className={styles.nameModalTitle}>编辑名称</h3>
+              <button
+                type="button"
+                className={styles.nameModalClose}
+                onClick={handleCloseNameModal}
+                aria-label="关闭编辑名称弹窗"
+              >
+                <CloseOutlined />
+              </button>
+            </div>
+            <input
+              value={nameDraft}
+              onChange={(event) => setNameDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  handleConfirmName()
+                }
+              }}
+              className={styles.nameModalInput}
+              placeholder="请输入助手名称"
+              autoFocus
+            />
+            <div className={styles.nameModalActions}>
+              <button type="button" className={styles.nameModalSecondaryBtn} onClick={handleCloseNameModal}>取消</button>
+              <button
+                type="button"
+                className={styles.nameModalPrimaryBtn}
+                onClick={handleConfirmName}
+                disabled={!nameDraft.trim()}
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   )
 }
