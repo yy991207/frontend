@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   AudioOutlined,
   ArrowUpOutlined,
+  BarsOutlined,
   CloseOutlined,
   CopyOutlined,
-  EllipsisOutlined,
   ExportOutlined,
   FileAddOutlined,
   FolderOpenOutlined,
@@ -209,7 +209,7 @@ export default function PartnerPage() {
     <main className={styles.page}>
       <section className={styles.panel}>
         <header className={styles.header}>
-          <h1 className={styles.title}>Lily</h1>
+          <h1 className={styles.title}>智能伙伴</h1>
           <div className={styles.headerActions}>
             <button type="button" className={styles.headerButton} aria-label="分享">
               <ExportOutlined />
@@ -217,8 +217,8 @@ export default function PartnerPage() {
             <button type="button" className={styles.headerButton} aria-label="文件夹">
               <FolderOpenOutlined />
             </button>
-            <button type="button" className={styles.headerButton} aria-label="更多">
-              <EllipsisOutlined />
+            <button type="button" className={styles.headerButton} aria-label="设置">
+              <BarsOutlined />
             </button>
           </div>
         </header>

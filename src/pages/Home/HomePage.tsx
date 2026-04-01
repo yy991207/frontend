@@ -25,6 +25,7 @@ import {
   ToolOutlined,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
+import homeTabsUrl from '../../../mock_json/home-tabs.json?url'
 import homeAvatar from '../../assets/home-avatar.png'
 import styles from './home.module.less'
 
@@ -48,34 +49,66 @@ const ATTACHMENT_ACTIONS = [
   { key: 'tool', label: '工具', icon: <ToolOutlined />, hasArrow: true },
 ]
 
-const BEST_PRACTICE_ITEMS = [
-  { id: 1, coverClassName: 'practiceCoverSketch', coverText: 'AlbertYang: 战略规划者 × 效率优化师', title: '个人工作画像生成', type: '图片', views: '2,826', uses: '55,656' },
-  { id: 2, coverClassName: 'practiceCoverDocument', coverText: 'OpenAI 关停 Sora 及多模态生成市场分析报告', title: 'Sora关停及多模态市场分析', type: '云文档', views: '87', uses: '781' },
-  { id: 3, coverClassName: 'practiceCoverOrange', coverText: 'AI INDUSTRY 洞察周报', title: 'AI 行业洞察周报', type: '报告', views: '1,393', uses: '11,062' },
-  { id: 4, coverClassName: 'practiceCoverDashboard', coverText: '项目进度概览数据分析看板', title: '直播同款 | 总结多维表数据深洞察', type: '仪表盘', views: '775', uses: '2,867' },
-  { id: 5, coverClassName: 'practiceCoverCoffee', coverText: 'Q1工作复盘与Q2规划汇报', title: 'Q1复盘&Q2规划｜季度汇报框架', type: 'PPT', views: '232', uses: '1,715' },
-  { id: 6, coverClassName: 'practiceCoverWhitepaper', coverText: '白话讲解 OpenClaw', title: '白话讲解OpenClaw', type: '云文档', views: '1,958', uses: '10,816' },
-  { id: 7, coverClassName: 'practiceCoverBlue', coverText: '团队AI工作方式升级方案', title: 'AI 提效指南｜团队工作方式升级方案', type: 'PPT', views: '176', uses: '693' },
-  { id: 8, coverClassName: 'practiceCoverPurple', coverText: 'Booc 文创周边包装', title: '文创周边包装 / 品牌设计', type: '图片', views: '803', uses: '3,079' },
-  { id: 9, coverClassName: 'practiceCoverAigc', coverText: 'The Evolution of AIGC', title: 'The Evolution of AIGC', type: 'PPT', views: '418', uses: '2,216' },
-  { id: 10, coverClassName: 'practiceCoverNature', coverText: '自然 美学 有机设计', title: '自然 美学 有机设计', type: '图片', views: '1,084', uses: '6,241' },
-  { id: 11, coverClassName: 'practiceCoverSpring', coverText: '春日奇遇记 2026', title: '春日奇遇记', type: '图片', views: '526', uses: '1,962' },
-  { id: 12, coverClassName: 'practiceCoverDark', coverText: 'Harness Engineering', title: 'Harness Engineering: AI Agent 协作框架概览', type: '云文档', views: '1,302', uses: '8,442' },
-]
+const DEFAULT_EMPTY_PROMPT_TEXT = '暂无指令，请在对话运行后创建指令'
 
-const RECOMMENDED_PROMPTS = [
-  { id: 1, icon: '📰', title: '每周人工智能新闻汇总', summary: '搜索汇总上周最有价值的 AI 行业新闻资讯，重点关注 Google、微软...' },
-  { id: 2, icon: '👨‍💼', title: '企业员工每周工作总结', summary: '基于我的上周的飞书任务、飞书日程、飞书云文档、飞书妙记内容...' },
-  { id: 3, icon: '📈', title: '电商行业的销售业绩可视化', summary: '基于我上传的文件，通过可视化方法分析数据，生成包含核心指标...' },
-  { id: 4, icon: '📄', title: '产品调研报告和竞品分析', summary: '收集整理产品或行业名称主要公司的发展现状、产品功能、市场定...' },
-  { id: 5, icon: '📊', title: '企业舆情监控和市场策略报告', summary: '请基于提供的信息，生成一份关于{企业名称}在起始时间至结束时...' },
-  { id: 6, icon: '🔨', title: '产品发布的官网介绍和预热文案', summary: '{产品名称} 将于{发布时间}发布，帮我搜索互联网和企业知识，制作...' },
-  { id: 7, icon: '🟩', title: '大模型技术演进与市场格局综述', summary: '请详细总结今年国内外发布的所有主流大语言模型，包括具体发布...' },
-  { id: 8, icon: '🍅', title: '番茄工作法计时器管理工具', summary: '帮我生成一个「番茄工作法计时器」页面，包含任务列表、任务设置...' },
-  { id: 9, icon: '✈️', title: '企业团建活动策划方案对象', summary: '设计 3-5 个团建方案，团建人数为{团建人数}，时间安排为{团建...' },
-  { id: 10, icon: '🏷️', title: '产品和服务定价策略分析', summary: '作为资深产品定价策略专家 AI 助手，需为{产品或服务名称}制定科...' },
-  { id: 11, icon: '📊', title: '企业年度财务报表详细解读', summary: '基于我上传的财务报表 PDF 文件，进行财报信息解读、分析维度包...' },
-  { id: 12, icon: '👥', title: '产品和行业战略竞争格局分析', summary: '收集整理产品/行业名称的信息并生成一份完整的行业战略报告，...' },
+type PracticeItem = {
+  id: number
+  coverClassName: string
+  coverText: string
+  title: string
+  type: string
+  views: string
+  uses: string
+}
+
+type PromptItem = {
+  id: number
+  icon: string
+  title: string
+  summary: string
+}
+
+type PracticeTab = {
+  key: string
+  label: string
+  contentType: 'practice-cards'
+  items: PracticeItem[]
+}
+
+type PromptTab = {
+  key: string
+  label: string
+  contentType: 'prompt-cards'
+  items: PromptItem[]
+  emptyText?: string
+}
+
+type HomeTab = PracticeTab | PromptTab
+
+type HomeTabsMockData = {
+  tabs: HomeTab[]
+}
+
+const DEFAULT_HOME_TABS: HomeTab[] = [
+  {
+    key: 'best-practice',
+    label: '最佳实践',
+    contentType: 'practice-cards',
+    items: [],
+  },
+  {
+    key: 'recommended-prompts',
+    label: '推荐指令',
+    contentType: 'prompt-cards',
+    items: [],
+  },
+  {
+    key: 'my-prompts',
+    label: '我的指令',
+    contentType: 'prompt-cards',
+    emptyText: DEFAULT_EMPTY_PROMPT_TEXT,
+    items: [],
+  },
 ]
 
 function getContentTypeIcon(type: string) {
@@ -91,6 +124,9 @@ export default function HomePage() {
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [prompt, setPrompt] = useState('')
+  const [homeTabs, setHomeTabs] = useState<HomeTab[]>(DEFAULT_HOME_TABS)
+  const [tabsLoading, setTabsLoading] = useState(true)
+  const [tabsError, setTabsError] = useState('')
   const composerRef = useRef<HTMLDivElement | null>(null)
 
   // 输入区弹层点击外部自动关闭，避免菜单打开后一直停留在页面上。
@@ -108,6 +144,47 @@ export default function HomePage() {
     }
   }, [])
 
+  useEffect(() => {
+    let disposed = false
+
+    // 首页三块内容统一从 mock_json 里读取，后面替换成真实接口时结构也能直接复用。
+    const loadHomeTabs = async () => {
+      try {
+        const response = await fetch(homeTabsUrl)
+
+        if (!response.ok) {
+          throw new Error('mock json 请求失败')
+        }
+
+        const data = (await response.json()) as HomeTabsMockData
+
+        if (disposed) {
+          return
+        }
+
+        setHomeTabs(data.tabs)
+        setTabsError('')
+      } catch {
+        if (disposed) {
+          return
+        }
+
+        setHomeTabs(DEFAULT_HOME_TABS)
+        setTabsError('首页内容加载失败，请检查 mock_json/home-tabs.json')
+      } finally {
+        if (!disposed) {
+          setTabsLoading(false)
+        }
+      }
+    }
+
+    loadHomeTabs()
+
+    return () => {
+      disposed = true
+    }
+  }, [])
+
   const handleSend = () => {
     const value = prompt.trim()
     if (!value) return
@@ -120,60 +197,83 @@ export default function HomePage() {
     })
   }
 
-  const tabItems = [
-    {
-      key: '最佳实践',
-      label: '最佳实践',
-      children: (
-        <div className={styles.practiceGrid}>
-          {BEST_PRACTICE_ITEMS.map((item) => (
-            <article key={item.id} className={styles.practiceCard}>
-              <div className={`${styles.practiceCover} ${styles[item.coverClassName]}`}>
-                <span className={styles.practiceCoverText}>{item.coverText}</span>
-              </div>
-              <div className={styles.practiceTitle}>{item.title}</div>
-              <div className={styles.practiceMeta}>
-                <span className={styles.practiceMetaItem}>
-                  {getContentTypeIcon(item.type)}
-                  <span>{item.type}</span>
-                </span>
-                <span className={styles.practiceMetaItem}>
-                  <EyeOutlined />
-                  <span>{item.views}</span>
-                </span>
-                <span className={styles.practiceMetaItem}>
-                  <NodeIndexOutlined />
-                  <span>{item.uses}</span>
-                </span>
-              </div>
-            </article>
-          ))}
-        </div>
-      ),
-    },
-    {
-      key: '推荐指令',
-      label: '推荐指令',
-      children: (
-        <div className={styles.promptGrid}>
-          {RECOMMENDED_PROMPTS.map((item) => (
-            <article key={item.id} className={styles.promptCard}>
-              <div className={styles.promptTitle}>
-                <span>{item.icon}</span>
-                <span>{item.title}</span>
-              </div>
-              <p className={styles.promptSummary}>{item.summary}</p>
-            </article>
-          ))}
-        </div>
-      ),
-    },
-    {
-      key: '我的指令',
-      label: '我的指令',
-      children: <div className={styles.emptyCommands}>暂无指令，请在对话运行后创建指令</div>,
-    },
-  ]
+  const renderPracticeCards = (items: PracticeItem[]) => {
+    if (tabsLoading) {
+      return <div className={styles.emptyCommands}>内容加载中...</div>
+    }
+
+    if (tabsError) {
+      return <div className={styles.emptyCommands}>{tabsError}</div>
+    }
+
+    if (!items.length) {
+      return <div className={styles.emptyCommands}>暂无题卡</div>
+    }
+
+    return (
+      <div className={styles.practiceGrid}>
+        {items.map((item) => (
+          <article key={item.id} className={styles.practiceCard}>
+            <div className={`${styles.practiceCover} ${styles[item.coverClassName]}`}>
+              <span className={styles.practiceCoverText}>{item.coverText}</span>
+            </div>
+            <div className={styles.practiceTitle}>{item.title}</div>
+            <div className={styles.practiceMeta}>
+              <span className={styles.practiceMetaItem}>
+                {getContentTypeIcon(item.type)}
+                <span>{item.type}</span>
+              </span>
+              <span className={styles.practiceMetaItem}>
+                <EyeOutlined />
+                <span>{item.views}</span>
+              </span>
+              <span className={styles.practiceMetaItem}>
+                <NodeIndexOutlined />
+                <span>{item.uses}</span>
+              </span>
+            </div>
+          </article>
+        ))}
+      </div>
+    )
+  }
+
+  const renderPromptCards = (items: PromptItem[], emptyText = DEFAULT_EMPTY_PROMPT_TEXT) => {
+    if (tabsLoading) {
+      return <div className={styles.emptyCommands}>内容加载中...</div>
+    }
+
+    if (tabsError) {
+      return <div className={styles.emptyCommands}>{tabsError}</div>
+    }
+
+    if (!items.length) {
+      return <div className={styles.emptyCommands}>{emptyText}</div>
+    }
+
+    return (
+      <div className={styles.promptGrid}>
+        {items.map((item) => (
+          <article key={item.id} className={styles.promptCard}>
+            <div className={styles.promptTitle}>
+              <span>{item.icon}</span>
+              <span>{item.title}</span>
+            </div>
+            <p className={styles.promptSummary}>{item.summary}</p>
+          </article>
+        ))}
+      </div>
+    )
+  }
+
+  const tabItems = homeTabs.map((tab) => ({
+    key: tab.key,
+    label: tab.label,
+    children:
+      tab.contentType === 'practice-cards'
+        ? renderPracticeCards(tab.items)
+        : renderPromptCards(tab.items, tab.emptyText),
+  }))
 
   return (
     <main className={styles.page}>
