@@ -22,6 +22,7 @@ import {
   ToolOutlined,
 } from '@ant-design/icons'
 import { useLocation } from 'react-router-dom'
+import homeAvatar from '../../assets/home-avatar.png'
 import styles from './partner.module.less'
 
 type ChatMessage = {
@@ -262,7 +263,7 @@ export default function PartnerPage() {
             <p className={styles.settingDesc}>智能伙伴的个性化配置，会根据对话自动更新，也支持直接编辑</p>
             <div className={styles.settingCard}>
               <div className={styles.avatarRow}>
-                <div className={styles.avatar} />
+                <img src={homeAvatar} alt="Lily" className={styles.avatar} />
                 <span className={styles.avatarName}>Lily</span>
                 <button type="button" className={styles.editBtn}>编辑</button>
               </div>
