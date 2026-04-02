@@ -8,6 +8,7 @@ import {
   getDefaultConfig,
   deleteChatSession,
 } from '../../services/chatSessionService'
+import { DeleteConfirmModal } from '../common/DeleteConfirmModal'
 import styles from './chatSessionHistory.module.less'
 
 // 加载配置
@@ -94,6 +95,8 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
   }>({ today: [], within7Days: [], beyond7Days: [] })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [deleteTargetSession, setDeleteTargetSession] = useState<ChatSession | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   const loadSessions = useCallback(async () => {
     try {
@@ -126,13 +129,17 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
 
   const handleDeleteSession = async (session: ChatSession) => {
     try {
+      setDeleteLoading(true)
       const config = await loadConfig()
       await deleteChatSession(config, session.session_id)
       // 删除成功后重新加载列表
       await loadSessions()
+      setDeleteTargetSession(null)
     } catch (err) {
       console.error('删除会话失败:', err)
       alert(err instanceof Error ? err.message : '删除会话失败')
+    } finally {
+      setDeleteLoading(false)
     }
   }
 
@@ -145,7 +152,7 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
     >
       <MessageOutlined className={styles.sessionIcon} />
       <span className={styles.sessionName}>{getSessionDisplayName(session)}</span>
-      <SessionMenu session={session} onDelete={handleDeleteSession} />
+      <SessionMenu session={session} onDelete={setDeleteTargetSession} />
     </div>
   )
 
@@ -188,36 +195,51 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
 
   // 展开状态：显示完整面板
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <HistoryOutlined className={styles.headerIcon} />
-        <span className={styles.headerTitle}>会话历史</span>
+    <>
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <HistoryOutlined className={styles.headerIcon} />
+          <span className={styles.headerTitle}>会话历史</span>
+        </div>
+
+        <div className={styles.content}>
+          {loading && <div className={styles.loading}>加载中...</div>}
+
+          {!loading && error && (
+            <div className={styles.error}>
+              <div>{error}</div>
+              <button onClick={loadSessions} className={styles.retryButton}>
+                重试
+              </button>
+            </div>
+          )}
+
+          {!loading && !error && !hasAnySessions && (
+            <div className={styles.empty}>暂无会话记录</div>
+          )}
+
+          {!loading && !error && hasAnySessions && (
+            <>
+              {renderSection('今天', sessions.today)}
+              {renderSection('7天内', sessions.within7Days, sessions.today.length > 0)}
+              {renderSection('7天外', sessions.beyond7Days, sessions.today.length > 0 || sessions.within7Days.length > 0)}
+            </>
+          )}
+        </div>
       </div>
 
-      <div className={styles.content}>
-        {loading && <div className={styles.loading}>加载中...</div>}
-
-        {!loading && error && (
-          <div className={styles.error}>
-            <div>{error}</div>
-            <button onClick={loadSessions} className={styles.retryButton}>
-              重试
-            </button>
-          </div>
-        )}
-
-        {!loading && !error && !hasAnySessions && (
-          <div className={styles.empty}>暂无会话记录</div>
-        )}
-
-        {!loading && !error && hasAnySessions && (
-          <>
-            {renderSection('今天', sessions.today)}
-            {renderSection('7天内', sessions.within7Days, sessions.today.length > 0)}
-            {renderSection('7天外', sessions.beyond7Days, sessions.today.length > 0 || sessions.within7Days.length > 0)}
-          </>
-        )}
-      </div>
-    </div>
+      <DeleteConfirmModal
+        open={Boolean(deleteTargetSession)}
+        title="删除会话"
+        description="确认删除后将无法恢复，是否继续？"
+        loading={deleteLoading}
+        onCancel={() => setDeleteTargetSession(null)}
+        onConfirm={() => {
+          if (deleteTargetSession) {
+            void handleDeleteSession(deleteTargetSession)
+          }
+        }}
+      />
+    </>
   )
 }

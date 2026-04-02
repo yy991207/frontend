@@ -3,6 +3,7 @@ import {
   AudioOutlined,
   ArrowUpOutlined,
   CopyOutlined,
+  DeleteOutlined,
   EllipsisOutlined,
   ExportOutlined,
   FolderOpenOutlined,
@@ -10,6 +11,7 @@ import {
 import chatConfigText from '../../../config.yaml?raw'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AttachmentMenu, type AttachmentSkillItem } from '../../components/common/AttachmentMenu'
+import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal'
 import {
   createChatSession,
   downloadSessionFileContent,
@@ -23,6 +25,12 @@ import {
   type CourseItem,
   type ToolCall,
 } from '../../services/chatService'
+import {
+  deleteChatSession,
+  getDefaultConfig,
+  parseChatSessionConfig,
+  type ChatSessionConfig,
+} from '../../services/chatSessionService'
 import styles from './chat.module.less'
 
 type SkillItem = AttachmentSkillItem
@@ -146,6 +154,20 @@ function buildAbsoluteUrl(baseUrl: string, path: string) {
   return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
 }
 
+async function loadChatSessionConfig(): Promise<ChatSessionConfig> {
+  try {
+    const response = await fetch('/config.yaml')
+    if (response.ok) {
+      const rawText = await response.text()
+      return parseChatSessionConfig(rawText)
+    }
+  } catch {
+    // ignore and fallback
+  }
+
+  return getDefaultConfig()
+}
+
 function parseSkillApiConfig(rawText: string) {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
@@ -218,12 +240,18 @@ export default function ChatPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const abortControllerRef = useRef<AbortController | null>(null)
+  const headerMenuRef = useRef<HTMLDivElement | null>(null)
   const [skills, setSkills] = useState<SkillItem[]>([])
   const [skillsLoading, setSkillsLoading] = useState(false)
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
   const [knowledgeEnabled, setKnowledgeEnabled] = useState(false)
   const [draft, setDraft] = useState('')
   const [requestError, setRequestError] = useState('')
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [initialSessionId, setInitialSessionId] = useState<string | null>(null)
   const chatApiConfig = useMemo<ChatApiConfig | null>(() => {
     try {
       return parseChatApiConfig(chatConfigText)
@@ -277,6 +305,10 @@ export default function ChatPage() {
     initialConversation ? [initialConversation.userMessage, initialConversation.loadingMessage] : [],
   )
   const [isResponding, setIsResponding] = useState(() => Boolean(initialConversation))
+  const currentSessionId = useMemo(() => {
+    const messageSessionId = [...messages].reverse().find((message) => message.sessionId)?.sessionId
+    return initialSessionId || messageSessionId || null
+  }, [initialSessionId, messages])
 
   // 获取用户技能列表
   const fetchSkills = useCallback(async (signal?: AbortSignal) => {
@@ -507,6 +539,27 @@ export default function ChatPage() {
     }
   }, [initialConversation, initialPrompt, initialToolType])
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    setInitialSessionId(params.get('sessionId'))
+  }, [location.search])
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!headerMenuRef.current?.contains(event.target as Node)) {
+        setHeaderMenuOpen(false)
+      }
+    }
+
+    if (headerMenuOpen) {
+      document.addEventListener('mousedown', handlePointerDown)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+    }
+  }, [headerMenuOpen])
+
   const handleSend = () => {
     const value = draft.trim()
     if (!value || isResponding) return
@@ -545,12 +598,35 @@ export default function ChatPage() {
     setIsResponding(false)
   }
 
-  const handleCopy = async (content: string) => {
+  const handleCopy = async (messageId: string, content: string) => {
     if (!content) return
     try {
       await navigator.clipboard.writeText(content)
+      setCopiedMessageId(messageId)
+      window.setTimeout(() => {
+        setCopiedMessageId((current) => (current === messageId ? null : current))
+      }, 2000)
     } catch {
       // 复制失败时不额外打断页面交互。
+    }
+  }
+
+  const handleDeleteCurrentSession = async () => {
+    if (!currentSessionId) {
+      return
+    }
+
+    try {
+      setDeleteLoading(true)
+      const config = await loadChatSessionConfig()
+      await deleteChatSession(config, currentSessionId)
+      setDeleteConfirmOpen(false)
+      setHeaderMenuOpen(false)
+      navigate('/')
+    } catch (error) {
+      setRequestError(error instanceof Error ? error.message : '删除会话失败')
+    } finally {
+      setDeleteLoading(false)
     }
   }
 
@@ -566,9 +642,31 @@ export default function ChatPage() {
             <button type="button" className={styles.headerButton} aria-label="文件夹">
               <FolderOpenOutlined />
             </button>
-            <button type="button" className={styles.headerButton} aria-label="更多">
-              <EllipsisOutlined />
-            </button>
+            <div ref={headerMenuRef} className={styles.headerMenuContainer}>
+              <button
+                type="button"
+                className={styles.headerButton}
+                aria-label="更多"
+                onClick={() => setHeaderMenuOpen((value) => !value)}
+              >
+                <EllipsisOutlined />
+              </button>
+              {headerMenuOpen ? (
+                <div className={styles.headerMenuDropdown}>
+                  <button
+                    type="button"
+                    className={styles.headerMenuItem}
+                    onClick={() => {
+                      setDeleteConfirmOpen(true)
+                      setHeaderMenuOpen(false)
+                    }}
+                  >
+                    <DeleteOutlined className={styles.headerMenuItemIcon} />
+                    <span>删除当前会话</span>
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
         </header>
 
@@ -581,9 +679,9 @@ export default function ChatPage() {
                     <div className={styles.userBubble}>{message.content}</div>
                     <div className={styles.userActions}>
                       <span>{message.timestamp}</span>
-                      <button type="button" className={styles.inlineAction} onClick={() => handleCopy(message.content)}>
+                      <button type="button" className={styles.inlineAction} onClick={() => handleCopy(message.id, message.content)}>
                         <CopyOutlined />
-                        <span>复制</span>
+                        <span>{copiedMessageId === message.id ? '已复制' : '复制'}</span>
                       </button>
                     </div>
                   </div>
@@ -647,9 +745,9 @@ export default function ChatPage() {
                         </div>
                       ) : null}
                       <div className={styles.assistantFooter}>
-                        <button type="button" className={styles.inlineAction} onClick={() => handleCopy(message.content)}>
+                        <button type="button" className={styles.inlineAction} onClick={() => handleCopy(message.id, message.content)}>
                           <CopyOutlined />
-                          <span>复制</span>
+                          <span>{copiedMessageId === message.id ? '已复制' : '复制'}</span>
                         </button>
                       </div>
                     </div>
@@ -714,6 +812,14 @@ export default function ChatPage() {
           <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>
         </div>
       </section>
+      <DeleteConfirmModal
+        open={deleteConfirmOpen}
+        title="删除当前会话"
+        description="确认删除后将无法恢复，是否继续？"
+        loading={deleteLoading}
+        onCancel={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleDeleteCurrentSession}
+      />
     </main>
   )
 }

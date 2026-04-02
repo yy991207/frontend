@@ -329,6 +329,7 @@ export default function PartnerPage() {
   const [knowledgeEnabled, setKnowledgeEnabled] = useState(false)
   const [draft, setDraft] = useState('')
   const [requestError, setRequestError] = useState('')
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [activeSettingKey, setActiveSettingKey] = useState('personalization')
   const [expandedKeys, setExpandedKeys] = useState<string[]>(['tasks', 'security'])
@@ -793,10 +794,14 @@ export default function PartnerPage() {
     setIsResponding(false)
   }
 
-  const handleCopy = async (content: string) => {
+  const handleCopy = async (messageId: string, content: string) => {
     if (!content) return
     try {
       await navigator.clipboard.writeText(content)
+      setCopiedMessageId(messageId)
+      window.setTimeout(() => {
+        setCopiedMessageId((current) => (current === messageId ? null : current))
+      }, 2000)
     } catch {
       // 复制失败时不额外打断页面交互。
     }
@@ -1126,9 +1131,9 @@ export default function PartnerPage() {
                           <div className={styles.userBubble}>{message.content}</div>
                           <div className={styles.userActions}>
                             <span>{message.timestamp}</span>
-                            <button type="button" className={styles.inlineAction} onClick={() => handleCopy(message.content)}>
+                            <button type="button" className={styles.inlineAction} onClick={() => handleCopy(message.id, message.content)}>
                               <CopyOutlined />
-                              <span>复制</span>
+                              <span>{copiedMessageId === message.id ? '已复制' : '复制'}</span>
                             </button>
                           </div>
                         </div>
@@ -1192,9 +1197,9 @@ export default function PartnerPage() {
                               </div>
                             ) : null}
                             <div className={styles.assistantFooter}>
-                              <button type="button" className={styles.inlineAction} onClick={() => handleCopy(message.content)}>
+                              <button type="button" className={styles.inlineAction} onClick={() => handleCopy(message.id, message.content)}>
                                 <CopyOutlined />
-                                <span>复制</span>
+                                <span>{copiedMessageId === message.id ? '已复制' : '复制'}</span>
                               </button>
                             </div>
                           </div>
