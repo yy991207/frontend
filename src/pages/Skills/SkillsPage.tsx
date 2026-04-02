@@ -71,36 +71,6 @@ const CREATE_OPTIONS = [
   },
 ]
 
-const FEATURED_SKILLS = [
-  {
-    id: 1,
-    title: '营销文案创作',
-    description: '用于为任意页面撰写、改写或优化营销文案，包括首页、落地页、定价页、功能页...',
-    toneClassName: 'skillCardAmber',
-    tags: ['果仁数据源'],
-    count: '',
-    icon: <StarFilled />,
-  },
-  {
-    id: 2,
-    title: '内容选题规划',
-    description: '用于规划内容策略、决定创作方向或确定选题。当用户提及以下内容时适用：内容策...',
-    toneClassName: 'skillCardIndigo',
-    tags: ['果仁数据源'],
-    count: '',
-    icon: <ShareAltOutlined />,
-  },
-  {
-    id: 3,
-    title: '产品路线图设计',
-    description: '使用 RICE、MoSCoW 等优先级框架以及依赖关系映射来制定产品路线图，并支持路...',
-    toneClassName: 'skillCardGreen',
-    tags: ['果仁数据源'],
-    count: '',
-    icon: <SwapOutlined />,
-  },
-]
-
 function parseSimpleYaml(rawText: string) {
   return rawText.split(/\r?\n/).reduce<Record<string, string>>((result, line) => {
     const trimmedLine = line.trim()
@@ -360,6 +330,12 @@ export default function SkillsPage() {
     [skillApiConfig],
   )
 
+  const openManageSkills = useCallback(async () => {
+    setMode('manage')
+    setManageTab('added')
+    await fetchAddedSkills()
+  }, [fetchAddedSkills])
+
   useEffect(() => {
     return () => {
       if (successToastTimerRef.current !== null) {
@@ -456,6 +432,11 @@ export default function SkillsPage() {
       return
     }
 
+    if (skill.isSelected) {
+      await openManageSkills()
+      return
+    }
+
     setSkillActionLoadingId(skill.id)
 
     try {
@@ -494,6 +475,8 @@ export default function SkillsPage() {
       successToastTimerRef.current = window.setTimeout(() => {
         setAddSkillSuccessMessage('')
       }, 2600)
+
+      await fetchAddedSkills()
     } catch {
       // 保持页面轻量交互，失败时不阻断其它操作。
     } finally {
@@ -658,7 +641,7 @@ export default function SkillsPage() {
                   </div>
                 </div>
 
-                <button type="button" className={styles.manageButton} onClick={() => setMode('manage')}>
+                <button type="button" className={styles.manageButton} onClick={() => void openManageSkills()}>
                   <SettingOutlined />
                   <span>管理技能</span>
                 </button>
@@ -729,24 +712,16 @@ export default function SkillsPage() {
                 </button>
               </div>
 
-              <div className={styles.featuredGrid}>
-                {(featuredList.length > 0 ? featuredList : FEATURED_SKILLS).map((item) => (
+              {featuredList.length > 0 ? (
+                <div className={styles.featuredGrid}>
+                  {featuredList.map((item) => (
                   <article key={item.id} className={styles.featuredCard}>
                     <div className={`${styles.featuredBadge} ${styles[item.toneClassName]}`}>{item.icon}</div>
                     <h3 className={styles.featuredTitle}>{item.title}</h3>
                     <p className={styles.featuredDesc}>{item.description}</p>
-                    <div className={styles.featuredMeta}>
-                      <div className={styles.featuredTags}>
-                        {item.tags.map((tag) => (
-                          <span key={tag} className={styles.featuredTag}>
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                      {item.count ? <span className={styles.featuredCount}>{item.count}</span> : null}
-                    </div>
                     {'isSelected' in item ? (
                       <div className={styles.featuredActionBar}>
+                        <span className={styles.featuredActionSource}>果仁数据源</span>
                         <button
                           type="button"
                           className={styles.featuredActionButton}
@@ -758,10 +733,12 @@ export default function SkillsPage() {
                       </div>
                     ) : null}
                   </article>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : null}
               {featuredSkillsLoading ? <div className={styles.manageStatus}>技能加载中...</div> : null}
               {!featuredSkillsLoading && featuredSkillsError ? <div className={styles.manageStatus}>{featuredSkillsError}</div> : null}
+              {!featuredSkillsLoading && !featuredSkillsError && featuredList.length === 0 ? <div className={styles.manageStatus}>暂无技能数据</div> : null}
             </section>
           </div>
         ) : (
@@ -864,9 +841,9 @@ export default function SkillsPage() {
                       <h3 className={styles.manageCardTitle}>{item.title}</h3>
                     </div>
                     <p className={styles.manageCardDesc}>{item.description}</p>
-                    <button type="button" className={styles.useButton}>
-                      立即使用
-                    </button>
+                      <button type="button" className={styles.useButton} onClick={() => void openManageSkills()}>
+                        立即使用
+                      </button>
                   </article>
                 ))}
               </div>
