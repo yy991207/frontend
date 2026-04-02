@@ -3,6 +3,7 @@ import {
   AppstoreAddOutlined,
   BookOutlined,
   CompassOutlined,
+  LoadingOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   PlusOutlined,
@@ -11,7 +12,9 @@ import {
   UserOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
+import chatConfigText from '../../../config.yaml?raw'
 import homeAvatar from '../../assets/home-avatar.png'
+import { createNewChatPagePath } from '../../services/chatService'
 import ChatSessionHistory from '../ChatSessionHistory/ChatSessionHistory'
 import styles from './sidebar.module.less'
 
@@ -27,12 +30,32 @@ export default function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const [expanded, setExpanded] = useState(false)
+  const [creatingSession, setCreatingSession] = useState(false)
 
   const isActive = (path?: string) => (path ? location.pathname === path : false)
 
   const handleItemClick = (path?: string) => {
     if (path) {
       navigate(path)
+    }
+  }
+
+  const handleCreateSession = async () => {
+    if (creatingSession) {
+      return
+    }
+
+    setCreatingSession(true)
+
+    try {
+      // 这里先创建空会话再跳转，避免 chat 页面首次进入时还拿不到真实的 sessionId。
+      const chatPagePath = await createNewChatPagePath(chatConfigText)
+      navigate(chatPagePath, { state: null })
+    } catch (error) {
+      console.error('创建会话失败:', error)
+      alert(error instanceof Error ? error.message : '创建会话失败，请稍后重试')
+    } finally {
+      setCreatingSession(false)
     }
   }
 
@@ -70,11 +93,21 @@ export default function Sidebar() {
             className={`${styles.navRow} ${styles.tooltipTarget} ${isActive(item.path) ? styles.navRowActive : ''} ${
               item.key === 'home' ? styles.homeRow : ''
             }`}
-            onClick={() => handleItemClick(item.path)}
-            data-tooltip={item.label}
+            onClick={() => {
+              if (item.key === 'home') {
+                void handleCreateSession()
+                return
+              }
+
+              handleItemClick(item.path)
+            }}
+            data-tooltip={item.key === 'home' && creatingSession ? '新建中...' : item.label}
+            aria-busy={item.key === 'home' ? creatingSession : undefined}
           >
-            <span className={styles.iconCell}>{item.icon}</span>
-            <span className={styles.labelCell}>{item.label}</span>
+            <span className={styles.iconCell}>
+              {item.key === 'home' && creatingSession ? <LoadingOutlined /> : item.icon}
+            </span>
+            <span className={styles.labelCell}>{item.key === 'home' && creatingSession ? '新建中...' : item.label}</span>
           </button>
         ))}
       </nav>

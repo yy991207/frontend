@@ -4,6 +4,12 @@ export type ChatApiConfig = {
   streamEndpointBase: string
 }
 
+const DEFAULT_CHAT_API_CONFIG: ChatApiConfig = {
+  userId: '123456',
+  createSessionEndpoint: 'http://192.168.30.238:8000/api/v1/chat/sessions',
+  streamEndpointBase: 'http://192.168.30.238:8000/api/v1/chat/sessions',
+}
+
 export type ToolCall = {
   name: string
   runId: string
@@ -99,14 +105,15 @@ function parseSimpleYaml(rawText: string) {
 
 export function parseChatApiConfig(rawText: string): ChatApiConfig {
   const parsedConfig = parseSimpleYaml(rawText)
-  const baseUrl = parsedConfig.url
-  const userId = parsedConfig.user_id
+  const baseUrl = parsedConfig.url || new URL(DEFAULT_CHAT_API_CONFIG.createSessionEndpoint).origin
+  const userId = parsedConfig.user_id || DEFAULT_CHAT_API_CONFIG.userId
 
   if (!baseUrl || !userId) {
     throw new Error('config.yaml 缺少 url 或 user_id 配置')
   }
 
-  const sessionBaseUrl = new URL('/api/v1/chat/sessions', baseUrl).toString()
+  const createChatSessionPath = parsedConfig.create_chat_session_path || '/api/v1/chat/sessions'
+  const sessionBaseUrl = new URL(createChatSessionPath, baseUrl).toString()
 
   return {
     userId,
@@ -147,6 +154,16 @@ export async function createChatSession(config: ChatApiConfig, signal?: AbortSig
   return {
     sessionId: extractSessionId(data),
   }
+}
+
+export function buildChatPagePath(sessionId: string): string {
+  return `/chat?sessionId=${encodeURIComponent(sessionId)}`
+}
+
+export async function createNewChatPagePath(rawConfigText: string, signal?: AbortSignal): Promise<string> {
+  const config = parseChatApiConfig(rawConfigText)
+  const { sessionId } = await createChatSession(config, signal)
+  return buildChatPagePath(sessionId)
 }
 
 export async function streamChatMessage(

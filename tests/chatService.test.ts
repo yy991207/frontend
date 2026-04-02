@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
+  createNewChatPagePath,
   extractSessionId,
   extractCourseTableFilePath,
   extractReferences,
@@ -10,6 +11,12 @@ import {
   readSseStream,
   resolveQuickActionToolType,
 } from '../src/services/chatService.ts'
+
+const CUSTOM_CREATE_SESSION_CONFIG = `
+user_id: user-001
+url: http://example.com/
+create_chat_session_path: /custom/chat/sessions
+`
 
 test('parseChatApiConfig builds session endpoints from config yaml', () => {
   const config = parseChatApiConfig([
@@ -20,6 +27,14 @@ test('parseChatApiConfig builds session endpoints from config yaml', () => {
   assert.equal(config.userId, 'user123')
   assert.equal(config.createSessionEndpoint, 'http://127.0.0.1:8000/api/v1/chat/sessions')
   assert.equal(config.streamEndpointBase, 'http://127.0.0.1:8000/api/v1/chat/sessions')
+})
+
+test('parseChatApiConfig 会读取 config.yaml 里的 create_chat_session_path', () => {
+  const config = parseChatApiConfig(CUSTOM_CREATE_SESSION_CONFIG)
+
+  assert.equal(config.userId, 'user-001')
+  assert.equal(config.createSessionEndpoint, 'http://example.com/custom/chat/sessions')
+  assert.equal(config.streamEndpointBase, 'http://example.com/custom/chat/sessions')
 })
 
 test('extractSessionId prefers top-level session_id', () => {
@@ -170,4 +185,40 @@ test('parseCourseTableContent parses fenced json course list', () => {
 
 test('extractReferences returns empty list for invalid payload', () => {
   assert.deepEqual(extractReferences({ data: { references: 'bad-data' } }), [])
+})
+
+test('createNewChatPagePath 会先创建会话，再返回 chat 页面地址', async () => {
+  const originalFetch = globalThis.fetch
+  const fetchCalls: Array<{ input: string; init?: RequestInit }> = []
+
+  globalThis.fetch = async (input: string | URL | Request, init?: RequestInit) => {
+    fetchCalls.push({
+      input: String(input),
+      init,
+    })
+
+    return new Response(
+      JSON.stringify({
+        session_id: 'session 001',
+      }),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+  }
+
+  try {
+    const path = await createNewChatPagePath(CUSTOM_CREATE_SESSION_CONFIG)
+
+    assert.equal(path, '/chat?sessionId=session%20001')
+    assert.equal(fetchCalls.length, 1)
+    assert.equal(fetchCalls[0]?.input, 'http://example.com/custom/chat/sessions')
+    assert.equal(fetchCalls[0]?.init?.method, 'POST')
+    assert.equal(fetchCalls[0]?.init?.body, JSON.stringify({ user_id: 'user-001' }))
+  } finally {
+    globalThis.fetch = originalFetch
+  }
 })
