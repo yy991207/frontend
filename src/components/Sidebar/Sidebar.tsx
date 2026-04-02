@@ -94,7 +94,9 @@ export default function Sidebar() {
       </button>
 
       {/* 会话历史组件 */}
-      <ChatSessionHistory expanded={expanded} />
+      <div className={styles.sessionHistoryWrapper}>
+        <ChatSessionHistory expanded={expanded} onExpand={() => setExpanded(true)} />
+      </div>
 
       <div className={styles.spacer} />
 

@@ -26,9 +26,10 @@ async function loadConfig(): Promise<ChatSessionConfig> {
 
 interface ChatSessionHistoryProps {
   expanded: boolean
+  onExpand?: () => void
 }
 
-export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps) {
+export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHistoryProps) {
   const [sessions, setSessions] = useState<{
     today: ChatSession[]
     within7Days: ChatSession[]
@@ -36,7 +37,6 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
   }>({ today: [], within7Days: [], beyond7Days: [] })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isOpen, setIsOpen] = useState(false)
 
   const loadSessions = useCallback(async () => {
     try {
@@ -64,7 +64,7 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
   }
 
   const handleToggle = () => {
-    setIsOpen(!isOpen)
+    onExpand?.()
   }
 
   const renderSessionItem = (session: ChatSession) => (
