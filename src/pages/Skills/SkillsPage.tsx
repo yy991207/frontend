@@ -3,8 +3,10 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import {
   ArrowLeftOutlined,
   CheckCircleFilled,
+  CloseOutlined,
   DownOutlined,
   EllipsisOutlined,
+  FileZipOutlined,
   PlusOutlined,
   SearchOutlined,
   SettingOutlined,
@@ -16,11 +18,14 @@ import {
 } from '@ant-design/icons'
 import skillConfigText from '../../../config.yaml?raw'
 import homeAvatar from '../../assets/home-avatar.png'
+import { fetchCreatedSkills as fetchCreatedSkillsFromApi, parseCustomSkillListApiConfig } from '../../services/customSkillListService'
 import { buildSkillInitialPrompt, extractSkillItemsFromResponse, type SkillApiResponse, type SkillItem as SkillApiItem } from '../../services/skillPromptService'
+import { parseSkillUploadApiConfig, uploadCustomSkill, type UploadedSkillSummary } from '../../services/skillUploadService'
 import styles from './skills.module.less'
 
 type SkillsMode = 'discover' | 'manage'
 type ManageTab = 'added' | 'created'
+type CreateOptionKey = 'chat' | 'upload'
 
 type SkillApiConfig = {
   featuredEndpoint: string
@@ -41,7 +46,12 @@ type ManageSkillCard = {
   icon: React.ReactNode
 }
 
-const CREATE_OPTIONS = [
+const CREATE_OPTIONS: Array<{
+  key: CreateOptionKey
+  title: string
+  description: string
+  icon: React.ReactNode
+}> = [
   {
     key: 'chat',
     title: '使用对话创建',
@@ -51,7 +61,7 @@ const CREATE_OPTIONS = [
   {
     key: 'upload',
     title: '上传技能',
-    description: '上传 .zip、.skill 文件或文件夹',
+    description: '上传 .zip、.skill 或 .md 文件',
     icon: <UploadOutlined />,
   },
 ]
@@ -60,7 +70,7 @@ function parseSimpleYaml(rawText: string) {
   return rawText.split(/\r?\n/).reduce<Record<string, string>>((result, line) => {
     const trimmedLine = line.trim()
 
-    if (!trimmedLine || trimmedLine.startsWith('#')) {
+    if (!trimmedLine || trimmedLine.startsWith('#') || trimmedLine.startsWith('//')) {
       return result
     }
 
@@ -180,14 +190,41 @@ export default function SkillsPage() {
   const [addedSkills, setAddedSkills] = useState<SkillApiItem[]>([])
   const [addedSkillsLoading, setAddedSkillsLoading] = useState(false)
   const [addedSkillsError, setAddedSkillsError] = useState('')
+  const [createdSkills, setCreatedSkills] = useState<SkillApiItem[]>([])
+  const [createdSkillsLoading, setCreatedSkillsLoading] = useState(false)
+  const [createdSkillsError, setCreatedSkillsError] = useState('')
   const [removeSkillLoadingId, setRemoveSkillLoadingId] = useState<string | null>(null)
   const [openManageMenuId, setOpenManageMenuId] = useState<string | null>(null)
+  const [uploadModalOpen, setUploadModalOpen] = useState(false)
+  const [uploadingSkill, setUploadingSkill] = useState(false)
+  const [isUploadDragging, setIsUploadDragging] = useState(false)
+  const [uploadNotice, setUploadNotice] = useState('')
+  const [uploadedSkillSummary, setUploadedSkillSummary] = useState<UploadedSkillSummary | null>(null)
   const createWrapRef = useRef<HTMLDivElement | null>(null)
   const successToastTimerRef = useRef<number | null>(null)
+  const uploadNoticeTimerRef = useRef<number | null>(null)
+  const uploadInputRef = useRef<HTMLInputElement | null>(null)
+  const uploadRequestControllerRef = useRef<AbortController | null>(null)
   const skillApiConfig = useMemo(() => {
     try {
       // 接口地址和 userId 统一从 config.yaml 读取，避免页面里写死环境配置。
       return parseSkillApiConfig(skillConfigText)
+    } catch {
+      return null
+    }
+  }, [])
+  const skillUploadApiConfig = useMemo(() => {
+    try {
+      // 上传技能单独读 upload_skill_path，避免和列表接口配置混在一起。
+      return parseSkillUploadApiConfig(skillConfigText)
+    } catch {
+      return null
+    }
+  }, [])
+  const customSkillListApiConfig = useMemo(() => {
+    try {
+      // “我创建的”单独走 list_user_skills_path，和“我添加的”接口隔离开。
+      return parseCustomSkillListApiConfig(skillConfigText)
     } catch {
       return null
     }
@@ -278,6 +315,213 @@ export default function SkillsPage() {
     await fetchAddedSkills()
   }, [fetchAddedSkills])
 
+  const fetchCreatedSkills = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!customSkillListApiConfig) {
+        setCreatedSkills([])
+        setCreatedSkillsError('技能配置读取失败，请检查 config.yaml')
+        setCreatedSkillsLoading(false)
+        return [] as SkillApiItem[]
+      }
+
+      setCreatedSkillsLoading(true)
+      setCreatedSkillsError('')
+
+      try {
+        const nextSkills = await fetchCreatedSkillsFromApi(customSkillListApiConfig, signal)
+        setCreatedSkills(nextSkills)
+        setCreatedSkillsError('')
+        return nextSkills
+      } catch {
+        if (signal?.aborted) {
+          return [] as SkillApiItem[]
+        }
+
+        setCreatedSkills([])
+        setCreatedSkillsError('技能加载失败，请检查接口配置或服务状态')
+        return [] as SkillApiItem[]
+      } finally {
+        if (!signal?.aborted) {
+          setCreatedSkillsLoading(false)
+        }
+      }
+    },
+    [customSkillListApiConfig],
+  )
+
+  const showUploadNotice = useCallback((message: string) => {
+    setUploadNotice(message)
+
+    if (uploadNoticeTimerRef.current !== null) {
+      window.clearTimeout(uploadNoticeTimerRef.current)
+    }
+
+    uploadNoticeTimerRef.current = window.setTimeout(() => {
+      setUploadNotice('')
+    }, 2600)
+  }, [])
+
+  const handleCloseUploadModal = useCallback(() => {
+    uploadRequestControllerRef.current?.abort()
+    uploadRequestControllerRef.current = null
+    setUploadModalOpen(false)
+    setUploadingSkill(false)
+    setIsUploadDragging(false)
+    setUploadedSkillSummary(null)
+
+    if (uploadInputRef.current) {
+      uploadInputRef.current.value = ''
+    }
+  }, [])
+
+  const handleOpenUploadModal = useCallback(() => {
+    setCreateOpen(false)
+    setUploadModalOpen(true)
+    setUploadingSkill(false)
+    setIsUploadDragging(false)
+    setUploadedSkillSummary(null)
+
+    if (uploadInputRef.current) {
+      uploadInputRef.current.value = ''
+    }
+  }, [])
+
+  const handleUploadSkillFile = useCallback(
+    async (file: File) => {
+      if (!skillUploadApiConfig) {
+        showUploadNotice('技能上传配置读取失败，请检查 config.yaml')
+        return
+      }
+
+      // 用户可能连续切换文件或直接关闭弹窗，这里先终止旧请求，避免旧响应覆盖新状态。
+      uploadRequestControllerRef.current?.abort()
+      const controller = new AbortController()
+      uploadRequestControllerRef.current = controller
+
+      setUploadingSkill(true)
+      setIsUploadDragging(false)
+      setUploadedSkillSummary(null)
+
+      try {
+        const result = await uploadCustomSkill(skillUploadApiConfig, file, controller.signal)
+
+        if (controller.signal.aborted) {
+          return
+        }
+
+        if (!result.success) {
+          showUploadNotice(result.msg || '技能上传失败，请稍后重试')
+          return
+        }
+
+        setUploadedSkillSummary(
+          result.data ?? {
+            skillId: '',
+            skillName: file.name.replace(/\.[^.]+$/, ''),
+            description: '',
+          },
+        )
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return
+        }
+
+        showUploadNotice(error instanceof Error ? error.message : '技能上传失败，请稍后重试')
+      } finally {
+        if (uploadRequestControllerRef.current === controller) {
+          uploadRequestControllerRef.current = null
+        }
+
+        if (!controller.signal.aborted) {
+          setUploadingSkill(false)
+        }
+
+        if (uploadInputRef.current) {
+          uploadInputRef.current.value = ''
+        }
+      }
+    },
+    [showUploadNotice, skillUploadApiConfig],
+  )
+
+  const handleCreateOptionClick = useCallback(
+    (optionKey: CreateOptionKey) => {
+      if (optionKey === 'upload') {
+        handleOpenUploadModal()
+        return
+      }
+
+      setCreateOpen(false)
+    },
+    [handleOpenUploadModal],
+  )
+
+  const handleOpenUploadPicker = useCallback(() => {
+    if (!uploadingSkill) {
+      uploadInputRef.current?.click()
+    }
+  }, [uploadingSkill])
+
+  const handleUploadInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
+
+      if (file) {
+        void handleUploadSkillFile(file)
+      }
+    },
+    [handleUploadSkillFile],
+  )
+
+  const handleUploadDragEnter = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsUploadDragging(true)
+  }, [])
+
+  const handleUploadDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'copy'
+    setIsUploadDragging(true)
+  }, [])
+
+  const handleUploadDragLeave = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+
+    if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) {
+      return
+    }
+
+    setIsUploadDragging(false)
+  }, [])
+
+  const handleUploadDrop = useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault()
+      setIsUploadDragging(false)
+
+      if (uploadingSkill) {
+        return
+      }
+
+      const file = event.dataTransfer.files?.[0]
+
+      if (file) {
+        void handleUploadSkillFile(file)
+      }
+    },
+    [handleUploadSkillFile, uploadingSkill],
+  )
+
+  const handleUploadDropzoneKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault()
+        handleOpenUploadPicker()
+      }
+    },
+    [handleOpenUploadPicker],
+  )
+
   useEffect(() => {
     if (initialMode === 'manage') {
       void openManageSkills()
@@ -289,6 +533,12 @@ export default function SkillsPage() {
       if (successToastTimerRef.current !== null) {
         window.clearTimeout(successToastTimerRef.current)
       }
+
+      if (uploadNoticeTimerRef.current !== null) {
+        window.clearTimeout(uploadNoticeTimerRef.current)
+      }
+
+      uploadRequestControllerRef.current?.abort()
     }
   }, [])
 
@@ -458,6 +708,21 @@ export default function SkillsPage() {
     }
   }, [fetchAddedSkills, manageTab, mode])
 
+  useEffect(() => {
+    if (mode !== 'manage' || manageTab !== 'created') {
+      return
+    }
+
+    const controller = new AbortController()
+
+    // 只有切到“我创建的”时才请求自定义技能，避免额外接口开销。
+    void fetchCreatedSkills(controller.signal)
+
+    return () => {
+      controller.abort()
+    }
+  }, [fetchCreatedSkills, manageTab, mode])
+
   const handleShareSkill = async (skill: ManageSkillCard) => {
     setOpenManageMenuId(null)
 
@@ -518,11 +783,9 @@ export default function SkillsPage() {
   }
 
   const manageList = useMemo<ManageSkillCard[]>(() => {
-    if (manageTab !== 'added') {
-      return []
-    }
+    const sourceSkills = manageTab === 'created' ? createdSkills : addedSkills
 
-    return addedSkills.map((item, index) => {
+    return sourceSkills.map((item, index) => {
       const presentation = getManageCardPresentation(index)
 
       return {
@@ -535,7 +798,9 @@ export default function SkillsPage() {
         icon: presentation.icon,
       }
     })
-  }, [addedSkills, manageTab])
+  }, [addedSkills, createdSkills, manageTab])
+
+  const manageLoading = manageTab === 'created' ? createdSkillsLoading : addedSkillsLoading
 
   const featuredList = useMemo(() => {
     return featuredSkills.map((item, index) => {
@@ -558,7 +823,7 @@ export default function SkillsPage() {
 
   const manageEmptyText = useMemo(() => {
     if (manageTab === 'created') {
-      return '还没有创建任何技能'
+      return createdSkillsError || '还没有创建任何技能'
     }
 
     if (addedSkillsError) {
@@ -566,7 +831,7 @@ export default function SkillsPage() {
     }
 
     return '还没有添加任何技能'
-  }, [addedSkillsError, manageTab])
+  }, [addedSkillsError, createdSkillsError, manageTab])
 
   const handleLaunchSkill = useCallback(
     (skill: Pick<SkillApiItem, 'id' | 'skillName' | 'template' | 'title' | 'description'>) => {
@@ -607,7 +872,12 @@ export default function SkillsPage() {
                   </button>
                   <div className={`${styles.createMenu} ${createOpen ? styles.createMenuOpen : ''}`} role="menu">
                     {CREATE_OPTIONS.map((option) => (
-                      <button key={option.key} type="button" className={styles.createMenuItem}>
+                      <button
+                        key={option.key}
+                        type="button"
+                        className={styles.createMenuItem}
+                        onClick={() => handleCreateOptionClick(option.key)}
+                      >
                         <span className={styles.createMenuIcon}>{option.icon}</span>
                         <span className={styles.createMenuText}>
                           <span className={styles.createMenuTitle}>{option.title}</span>
@@ -748,7 +1018,12 @@ export default function SkillsPage() {
                   </button>
                   <div className={`${styles.createMenu} ${createOpen ? styles.createMenuOpen : ''}`} role="menu">
                     {CREATE_OPTIONS.map((option) => (
-                      <button key={option.key} type="button" className={styles.createMenuItem}>
+                      <button
+                        key={option.key}
+                        type="button"
+                        className={styles.createMenuItem}
+                        onClick={() => handleCreateOptionClick(option.key)}
+                      >
                         <span className={styles.createMenuIcon}>{option.icon}</span>
                         <span className={styles.createMenuText}>
                           <span className={styles.createMenuTitle}>{option.title}</span>
@@ -778,7 +1053,7 @@ export default function SkillsPage() {
               </button>
             </div>
 
-            {manageTab === 'added' && addedSkillsLoading ? (
+            {manageLoading ? (
               <div className={styles.manageStatus}>技能加载中...</div>
             ) : manageList.length > 0 ? (
               <div className={styles.manageGrid}>
@@ -786,33 +1061,35 @@ export default function SkillsPage() {
                   <article key={item.id} className={styles.manageCard}>
                     <div className={styles.manageCardHead}>
                       <span className={`${styles.manageCardIcon} ${styles[item.toneClassName]}`}>{item.icon}</span>
-                      <div className={styles.manageMenuRoot} data-manage-menu-root="true">
-                        <button
-                          type="button"
-                          className={styles.moreButton}
-                          aria-label="更多操作"
-                          aria-expanded={openManageMenuId === item.id}
-                          onClick={() => setOpenManageMenuId((previous) => (previous === item.id ? null : item.id))}
-                          disabled={removeSkillLoadingId === item.id}
-                        >
-                          <EllipsisOutlined />
-                        </button>
-                        {openManageMenuId === item.id ? (
-                          <div className={styles.manageCardMenu}>
-                            <button type="button" className={styles.manageCardMenuItem} onClick={() => handleShareSkill(item)}>
-                              分享
-                            </button>
-                            <button
-                              type="button"
-                              className={`${styles.manageCardMenuItem} ${styles.manageCardMenuItemDanger}`}
-                              onClick={() => handleRemoveSkill(item)}
-                              disabled={removeSkillLoadingId === item.id}
-                            >
-                              {removeSkillLoadingId === item.id ? '移除中...' : '移除'}
-                            </button>
-                          </div>
-                        ) : null}
-                      </div>
+                      {manageTab === 'added' ? (
+                        <div className={styles.manageMenuRoot} data-manage-menu-root="true">
+                          <button
+                            type="button"
+                            className={styles.moreButton}
+                            aria-label="更多操作"
+                            aria-expanded={openManageMenuId === item.id}
+                            onClick={() => setOpenManageMenuId((previous) => (previous === item.id ? null : item.id))}
+                            disabled={removeSkillLoadingId === item.id}
+                          >
+                            <EllipsisOutlined />
+                          </button>
+                          {openManageMenuId === item.id ? (
+                            <div className={styles.manageCardMenu}>
+                              <button type="button" className={styles.manageCardMenuItem} onClick={() => handleShareSkill(item)}>
+                                分享
+                              </button>
+                              <button
+                                type="button"
+                                className={`${styles.manageCardMenuItem} ${styles.manageCardMenuItemDanger}`}
+                                onClick={() => handleRemoveSkill(item)}
+                                disabled={removeSkillLoadingId === item.id}
+                              >
+                                {removeSkillLoadingId === item.id ? '移除中...' : '移除'}
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                     <div className={styles.manageTitleRow}>
                       <h3 className={styles.manageCardTitle}>{item.title}</h3>
@@ -837,6 +1114,98 @@ export default function SkillsPage() {
           </div>
         )}
       </section>
+      {uploadNotice ? <div className={styles.uploadNotice}>{uploadNotice}</div> : null}
+      {uploadModalOpen ? (
+        <div className={styles.uploadModalMask} onClick={handleCloseUploadModal}>
+          <div
+            className={styles.uploadModal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="skill-upload-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className={styles.uploadModalHeader}>
+              <h3 id="skill-upload-modal-title" className={styles.uploadModalTitle}>
+                {uploadedSkillSummary ? '技能基础信息' : '上传技能'}
+              </h3>
+              <button
+                type="button"
+                className={styles.uploadModalClose}
+                onClick={handleCloseUploadModal}
+                aria-label="关闭上传技能弹窗"
+              >
+                <CloseOutlined />
+              </button>
+            </div>
+
+            {uploadedSkillSummary ? (
+              <div className={styles.uploadSkillPanel}>
+                <label className={styles.uploadSkillField}>
+                  <span className={styles.uploadSkillLabel}>展示名称</span>
+                  <input className={styles.uploadSkillInput} value={uploadedSkillSummary?.skillName ?? ''} readOnly />
+                </label>
+
+                <label className={styles.uploadSkillField}>
+                  <span className={styles.uploadSkillLabel}>描述</span>
+                  <textarea className={styles.uploadSkillTextarea} value={uploadedSkillSummary?.description ?? ''} readOnly />
+                </label>
+
+                <div className={styles.uploadSkillField}>
+                  <span className={styles.uploadSkillLabel}>图标</span>
+                  <div className={styles.uploadSkillIconPlaceholder} aria-hidden="true" />
+                </div>
+
+                <div className={styles.uploadSkillField}>
+                  <span className={styles.uploadSkillLabel}>标签</span>
+                  <div className={styles.uploadSkillSelect} aria-hidden="true">
+                    <span className={styles.uploadSkillSelectValue} />
+                    <DownOutlined />
+                  </div>
+                </div>
+
+                <div className={styles.uploadSkillActions}>
+                  <button type="button" className={styles.uploadSkillPrimaryButton} onClick={handleCloseUploadModal}>
+                    完成
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className={styles.uploadModalBody}>
+                <input ref={uploadInputRef} type="file" className={styles.uploadFileInput} onChange={handleUploadInputChange} />
+                <div
+                  className={`${styles.uploadDropzone} ${isUploadDragging ? styles.uploadDropzoneActive : ''} ${uploadingSkill ? styles.uploadDropzoneBusy : ''}`}
+                  role="button"
+                  tabIndex={uploadingSkill ? -1 : 0}
+                  aria-disabled={uploadingSkill}
+                  onClick={handleOpenUploadPicker}
+                  onKeyDown={handleUploadDropzoneKeyDown}
+                  onDragEnter={handleUploadDragEnter}
+                  onDragOver={handleUploadDragOver}
+                  onDragLeave={handleUploadDragLeave}
+                  onDrop={handleUploadDrop}
+                >
+                  <div className={styles.uploadIllustration} aria-hidden="true">
+                    <span className={`${styles.uploadIllustrationCard} ${styles.uploadIllustrationZip}`}>
+                      <FileZipOutlined />
+                    </span>
+                    <span className={`${styles.uploadIllustrationCard} ${styles.uploadIllustrationSkill}`}>
+                      <ThunderboltOutlined />
+                    </span>
+                  </div>
+                  <div className={styles.uploadDropText}>
+                    {uploadingSkill ? '文件上传中，请稍候...' : '拖拽文件至此，或点击选择文件'}
+                  </div>
+                </div>
+
+                <ul className={styles.uploadTips}>
+                  <li>上传根目录下包含 SKILL.md 文件的 .zip、.skill 或 .md 文件</li>
+                  <li>SKILL.md 应包含 YAML 格式编写的技能名称和描述</li>
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
     </main>
   )
 }
