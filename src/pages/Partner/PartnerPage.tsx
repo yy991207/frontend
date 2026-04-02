@@ -341,8 +341,12 @@ export default function PartnerPage() {
   const [isEditingSoul, setIsEditingSoul] = useState(false)
   const [soulContent, setSoulContent] = useState('')
   const [soulContentDraft, setSoulContentDraft] = useState('')
+  const [isEditingUser, setIsEditingUser] = useState(false)
   const [userContent, setUserContent] = useState('')
+  const [userContentDraft, setUserContentDraft] = useState('')
+  const [isEditingIdentity, setIsEditingIdentity] = useState(false)
   const [identityContent, setIdentityContent] = useState('')
+  const [identityContentDraft, setIdentityContentDraft] = useState('')
   const [partnerConfigLoading, setPartnerConfigLoading] = useState(false)
   const [partnerConfigError, setPartnerConfigError] = useState('')
   const chatApiConfig = useMemo<ChatApiConfig | null>(() => {
@@ -454,7 +458,9 @@ export default function PartnerPage() {
         setSoulContent(config.soulContent)
         setSoulContentDraft(config.soulContent)
         setUserContent(config.userContent)
+        setUserContentDraft(config.userContent)
         setIdentityContent(config.identityContent)
+        setIdentityContentDraft(config.identityContent)
       } catch (error) {
         if (!controller.signal.aborted) {
           setPartnerConfigError(error instanceof Error ? error.message : '智能伙伴配置加载失败')
@@ -841,10 +847,42 @@ export default function PartnerPage() {
     // 这里可以添加保存到后端的逻辑
   }
 
+  const handleEditUser = () => {
+    setIsEditingUser(true)
+    setUserContentDraft(userContent)
+  }
+
+  const handleCancelEditUser = () => {
+    setIsEditingUser(false)
+    setUserContentDraft(userContent)
+  }
+
+  const handleSaveUser = () => {
+    setUserContent(userContentDraft)
+    setIsEditingUser(false)
+  }
+
+  const handleEditIdentity = () => {
+    setIsEditingIdentity(true)
+    setIdentityContentDraft(identityContent)
+  }
+
+  const handleCancelEditIdentity = () => {
+    setIsEditingIdentity(false)
+    setIdentityContentDraft(identityContent)
+  }
+
+  const handleSaveIdentity = () => {
+    setIdentityContent(identityContentDraft)
+    setIsEditingIdentity(false)
+  }
+
   const renderSettingContent = () => {
     switch (activeSettingKey) {
       case 'personalization':
         const currentContent = configTab === 'soul' ? soulContent : configTab === 'user' ? userContent : identityContent
+        const currentDraft = configTab === 'soul' ? soulContentDraft : configTab === 'user' ? userContentDraft : identityContentDraft
+        const isEditingCurrent = configTab === 'soul' ? isEditingSoul : configTab === 'user' ? isEditingUser : isEditingIdentity
         const currentLabel = configTab === 'soul' ? 'SOUL.md' : configTab === 'user' ? 'USER.md' : 'IDENTITY.md'
         const currentDescription =
           configTab === 'soul'
@@ -852,6 +890,15 @@ export default function PartnerPage() {
             : configTab === 'user'
               ? '关于当前用户的画像、协作习惯和偏好记录'
               : '智能伙伴的身份、风格、签名与角色设定'
+        const handleEditCurrent = configTab === 'soul' ? handleEditSoul : configTab === 'user' ? handleEditUser : handleEditIdentity
+        const handleCancelCurrent = configTab === 'soul' ? handleCancelEditSoul : configTab === 'user' ? handleCancelEditUser : handleCancelEditIdentity
+        const handleSaveCurrent = configTab === 'soul' ? handleSaveSoul : configTab === 'user' ? handleSaveUser : handleSaveIdentity
+        const handleDraftChange =
+          configTab === 'soul'
+            ? setSoulContentDraft
+            : configTab === 'user'
+              ? setUserContentDraft
+              : setIdentityContentDraft
 
         return (
           <div className={styles.settingContent}>
@@ -907,20 +954,20 @@ export default function PartnerPage() {
               <div className={styles.cardHeader}>
                 <span className={styles.cardTag}>{currentLabel}</span>
                 <span className={styles.cardDesc}>{currentDescription}</span>
-                {configTab === 'soul' && isEditingSoul ? (
+                {isEditingCurrent ? (
                   <div className={styles.editActions}>
-                    <button type="button" className={styles.cancelBtn} onClick={handleCancelEditSoul}>取消</button>
-                    <button type="button" className={styles.saveBtn} onClick={handleSaveSoul}>保存</button>
+                    <button type="button" className={styles.cancelBtn} onClick={handleCancelCurrent}>取消</button>
+                    <button type="button" className={styles.saveBtn} onClick={handleSaveCurrent}>保存</button>
                   </div>
-                ) : configTab === 'soul' ? (
-                  <button type="button" className={styles.editBtn} onClick={handleEditSoul}>编辑</button>
-                ) : null}
+                ) : (
+                  <button type="button" className={styles.editBtn} onClick={handleEditCurrent}>编辑</button>
+                )}
               </div>
-              {configTab === 'soul' && isEditingSoul ? (
+              {isEditingCurrent ? (
                 <textarea
                   className={styles.markdownEditor}
-                  value={soulContentDraft}
-                  onChange={(e) => setSoulContentDraft(e.target.value)}
+                  value={currentDraft}
+                  onChange={(e) => handleDraftChange(e.target.value)}
                   placeholder="请输入行为准则内容..."
                 />
               ) : (
