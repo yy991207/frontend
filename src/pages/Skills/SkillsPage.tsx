@@ -18,7 +18,7 @@ import {
 } from '@ant-design/icons'
 import skillConfigText from '../../../config.yaml?raw'
 import homeAvatar from '../../assets/home-avatar.png'
-import { fetchCreatedSkills as fetchCreatedSkillsFromApi, parseCustomSkillListApiConfig } from '../../services/customSkillListService'
+import { deleteCreatedSkill as deleteCreatedSkillFromApi, fetchCreatedSkills as fetchCreatedSkillsFromApi, parseCustomSkillListApiConfig } from '../../services/customSkillListService'
 import { buildSkillInitialPrompt, extractSkillItemsFromResponse, type SkillApiResponse, type SkillItem as SkillApiItem } from '../../services/skillPromptService'
 import { parseSkillUploadApiConfig, uploadCustomSkill, type UploadedSkillSummary } from '../../services/skillUploadService'
 import styles from './skills.module.less'
@@ -173,6 +173,15 @@ function getManageCardPresentation(index: number) {
     toneClassName: 'manageCardGreen' as const,
     icon: <ThunderboltOutlined />,
   }
+}
+
+function getUploadedSkillPresentation(skillName: string) {
+  const normalizedSkillName = skillName.trim()
+  const toneSeed = normalizedSkillName
+    ? Array.from(normalizedSkillName).reduce((total, char) => total + char.charCodeAt(0), 0)
+    : 0
+
+  return getManageCardPresentation(toneSeed)
 }
 
 export default function SkillsPage() {
@@ -782,6 +791,31 @@ export default function SkillsPage() {
     }
   }
 
+  const handleDeleteCreatedSkill = async (skill: ManageSkillCard) => {
+    if (!customSkillListApiConfig || removeSkillLoadingId === skill.id) {
+      return
+    }
+
+    const currentSkillName = skill.skillName || skill.id
+
+    if (!currentSkillName) {
+      return
+    }
+
+    setRemoveSkillLoadingId(skill.id)
+    setOpenManageMenuId(null)
+
+    try {
+      await deleteCreatedSkillFromApi(customSkillListApiConfig, currentSkillName)
+      await fetchCreatedSkills()
+    } catch {
+      // 复用顶部提示，删除失败时给用户即时反馈。
+      showUploadNotice('删除技能失败，请稍后重试')
+    } finally {
+      setRemoveSkillLoadingId(null)
+    }
+  }
+
   const manageList = useMemo<ManageSkillCard[]>(() => {
     const sourceSkills = manageTab === 'created' ? createdSkills : addedSkills
 
@@ -832,6 +866,14 @@ export default function SkillsPage() {
 
     return '还没有添加任何技能'
   }, [addedSkillsError, createdSkillsError, manageTab])
+
+  const uploadedSkillPresentation = useMemo(() => {
+    if (!uploadedSkillSummary) {
+      return null
+    }
+
+    return getUploadedSkillPresentation(uploadedSkillSummary.skillName || uploadedSkillSummary.skillId)
+  }, [uploadedSkillSummary])
 
   const handleLaunchSkill = useCallback(
     (skill: Pick<SkillApiItem, 'id' | 'skillName' | 'template' | 'title' | 'description'>) => {
@@ -1061,7 +1103,7 @@ export default function SkillsPage() {
                   <article key={item.id} className={styles.manageCard}>
                     <div className={styles.manageCardHead}>
                       <span className={`${styles.manageCardIcon} ${styles[item.toneClassName]}`}>{item.icon}</span>
-                      {manageTab === 'added' ? (
+                      {manageTab === 'added' || manageTab === 'created' ? (
                         <div className={styles.manageMenuRoot} data-manage-menu-root="true">
                           <button
                             type="button"
@@ -1075,17 +1117,30 @@ export default function SkillsPage() {
                           </button>
                           {openManageMenuId === item.id ? (
                             <div className={styles.manageCardMenu}>
-                              <button type="button" className={styles.manageCardMenuItem} onClick={() => handleShareSkill(item)}>
-                                分享
-                              </button>
-                              <button
-                                type="button"
-                                className={`${styles.manageCardMenuItem} ${styles.manageCardMenuItemDanger}`}
-                                onClick={() => handleRemoveSkill(item)}
-                                disabled={removeSkillLoadingId === item.id}
-                              >
-                                {removeSkillLoadingId === item.id ? '移除中...' : '移除'}
-                              </button>
+                              {manageTab === 'added' ? (
+                                <>
+                                  <button type="button" className={styles.manageCardMenuItem} onClick={() => handleShareSkill(item)}>
+                                    分享
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={`${styles.manageCardMenuItem} ${styles.manageCardMenuItemDanger}`}
+                                    onClick={() => handleRemoveSkill(item)}
+                                    disabled={removeSkillLoadingId === item.id}
+                                  >
+                                    {removeSkillLoadingId === item.id ? '移除中...' : '移除'}
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className={`${styles.manageCardMenuItem} ${styles.manageCardMenuItemDanger}`}
+                                  onClick={() => handleDeleteCreatedSkill(item)}
+                                  disabled={removeSkillLoadingId === item.id}
+                                >
+                                  {removeSkillLoadingId === item.id ? '删除中...' : '删除'}
+                                </button>
+                              )}
                             </div>
                           ) : null}
                         </div>
@@ -1140,6 +1195,16 @@ export default function SkillsPage() {
 
             {uploadedSkillSummary ? (
               <div className={styles.uploadSkillPanel}>
+                <div className={styles.uploadSkillField}>
+                  <span className={styles.uploadSkillLabel}>图标</span>
+                  <span
+                    className={`${styles.manageCardIcon} ${styles.uploadSkillIconPreview} ${uploadedSkillPresentation ? styles[uploadedSkillPresentation.toneClassName] : ''}`}
+                    aria-hidden="true"
+                  >
+                    {uploadedSkillPresentation?.icon}
+                  </span>
+                </div>
+
                 <label className={styles.uploadSkillField}>
                   <span className={styles.uploadSkillLabel}>展示名称</span>
                   <input className={styles.uploadSkillInput} value={uploadedSkillSummary?.skillName ?? ''} readOnly />
@@ -1149,11 +1214,6 @@ export default function SkillsPage() {
                   <span className={styles.uploadSkillLabel}>描述</span>
                   <textarea className={styles.uploadSkillTextarea} value={uploadedSkillSummary?.description ?? ''} readOnly />
                 </label>
-
-                <div className={styles.uploadSkillField}>
-                  <span className={styles.uploadSkillLabel}>图标</span>
-                  <div className={styles.uploadSkillIconPlaceholder} aria-hidden="true" />
-                </div>
 
                 <div className={styles.uploadSkillField}>
                   <span className={styles.uploadSkillLabel}>标签</span>

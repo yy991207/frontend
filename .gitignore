@@ -1,6 +1,7 @@
 # Logs
 logs
 tests/*
+!tests/customSkillListService.test.ts
 !tests/skillUploadService.test.ts
 !tests/skillUploadModal.test.ts
 *.log

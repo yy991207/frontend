@@ -1,11 +1,16 @@
 user_id: 123456
 url: http://192.168.30.238:8000/
+//我添加的
 skill_path: /api/v1/skills
 add_user_skills_path: /api/v1/users/{user_id}/skills
 view_user_skills_path: /api/v1/users/{user_id}/skills
 del_user_skills_path: /api/v1/users/{user_id}/skills/{skill_name}
 skill_user_id_param: user_id
+//我创建的
 list_user_skills_path: /api/v1/skills/custom
+del_user_skill_path: /api/v1/skills/custom/{skill_name}
+
+
 
 // 智能伙伴配置页面
 view_partner_config_path: /api/v1/agent
