@@ -5,3 +5,8 @@ add_user_skills_path: /api/v1/users/{user_id}/skills
 view_user_skills_path: /api/v1/users/{user_id}/skills
 del_user_skills_path: /api/v1/users/{user_id}/skills/{skill_name}
 skill_user_id_param: userid
+
+// 智能伙伴配置页面
+view_partner_config_path: /api/v1/agent
+update_partner_config_path: /api/v1/agent
+

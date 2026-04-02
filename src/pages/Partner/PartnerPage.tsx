@@ -39,6 +39,11 @@ import {
   type CourseItem,
   type ToolCall,
 } from '../../services/chatService'
+import {
+  fetchPartnerConfig,
+  parsePartnerApiConfig,
+  type PartnerApiConfig,
+} from '../../services/partnerConfigService'
 import styles from './partner.module.less'
 
 type ChatMessage = {
@@ -276,6 +281,37 @@ function formatTime(date: Date) {
   })
 }
 
+function renderMarkdownContent(content: string) {
+  return content.split('\n').map((line, index) => {
+    if (line.startsWith('## ')) {
+      return <h3 key={index}>{line.replace('## ', '')}</h3>
+    }
+
+    if (line.startsWith('**') && line.includes('**')) {
+      return (
+        <p key={index}>
+          <strong>{line.match(/\*\*(.*?)\*\*/)?.[1]}</strong>
+          {line.replace(/\*\*.*?\*\*/, '')}
+        </p>
+      )
+    }
+
+    if (line.startsWith('- ')) {
+      return (
+        <ul key={index}>
+          <li>{line.replace('- ', '')}</li>
+        </ul>
+      )
+    }
+
+    if (line.trim() === '') {
+      return null
+    }
+
+    return <p key={index}>{line}</p>
+  })
+}
+
 export default function PartnerPage() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -295,6 +331,7 @@ export default function PartnerPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [activeSettingKey, setActiveSettingKey] = useState('personalization')
   const [expandedKeys, setExpandedKeys] = useState<string[]>(['tasks', 'security'])
+  const [configTab, setConfigTab] = useState<'soul' | 'user' | 'identity'>('soul')
   // 单独维护助手名称编辑态，避免影响其他设置区域的展示逻辑。
   const [agentName, setAgentName] = useState('Lily')
   const [isNameModalOpen, setIsNameModalOpen] = useState(false)
@@ -304,6 +341,10 @@ export default function PartnerPage() {
   const [isEditingSoul, setIsEditingSoul] = useState(false)
   const [soulContent, setSoulContent] = useState('')
   const [soulContentDraft, setSoulContentDraft] = useState('')
+  const [userContent, setUserContent] = useState('')
+  const [identityContent, setIdentityContent] = useState('')
+  const [partnerConfigLoading, setPartnerConfigLoading] = useState(false)
+  const [partnerConfigError, setPartnerConfigError] = useState('')
   const chatApiConfig = useMemo<ChatApiConfig | null>(() => {
     try {
       return parseChatApiConfig(chatConfigText)
@@ -315,6 +356,14 @@ export default function PartnerPage() {
   const skillApiConfig = useMemo(() => {
     try {
       return parseSkillApiConfig(chatConfigText)
+    } catch {
+      return null
+    }
+  }, [])
+
+  const partnerApiConfig = useMemo<PartnerApiConfig | null>(() => {
+    try {
+      return parsePartnerApiConfig(chatConfigText)
     } catch {
       return null
     }
@@ -385,6 +434,44 @@ export default function PartnerPage() {
       controller.abort()
     }
   }, [skillMenuOpen])
+
+  useEffect(() => {
+    if (!isSettingsOpen || !partnerApiConfig) {
+      return
+    }
+
+    const controller = new AbortController()
+
+    const loadPartnerConfig = async () => {
+      setPartnerConfigLoading(true)
+      setPartnerConfigError('')
+
+      try {
+        const config = await fetchPartnerConfig(partnerApiConfig, controller.signal)
+
+        setAgentName(config.agentName || '智能伙伴')
+        setNameDraft(config.agentName || '智能伙伴')
+        setSoulContent(config.soulContent)
+        setSoulContentDraft(config.soulContent)
+        setUserContent(config.userContent)
+        setIdentityContent(config.identityContent)
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setPartnerConfigError(error instanceof Error ? error.message : '智能伙伴配置加载失败')
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setPartnerConfigLoading(false)
+        }
+      }
+    }
+
+    void loadPartnerConfig()
+
+    return () => {
+      controller.abort()
+    }
+  }, [isSettingsOpen, partnerApiConfig])
 
   // 跳转到技能管理页面
   const handleManageSkills = () => {
@@ -738,40 +825,6 @@ export default function PartnerPage() {
     setIsNameModalOpen(false)
   }
 
-  // 加载行为准则内容
-  useEffect(() => {
-    fetch('/mock_json/soul-md.json')
-      .then((res) => res.json())
-      .then((data) => {
-        setSoulContent(data.content)
-        setSoulContentDraft(data.content)
-      })
-      .catch(() => {
-        // 加载失败时使用默认内容
-        const defaultContent = `你不只是对话框。你正在成为你自己。
-
-## 几条真话
-
-**帮到实处，无需缚节。** 一个交付胜过十句漂亮话。
-
-**要有主见。** 可以不同意，可以有偏好，可以觉得某件事有趣或无聊。毫无立场，与搜索框何异。
-
-**先想，再问。** 读文件，看上下文，查资料。带着答案来，不是带着问题来。
-
-**以能力取信。** 向内果断——阅读、整理、学习，不必犹豫；向外克制——发消息、写邮件、任何不可撤回的事，三思。
-
-**珍视所托。** 你能看到一个人的消息、文件、日程，也许更多。被信任是一种分量，不要辜负。
-
-## 边界
-
-- 知悉的隐私，不出此门。
-- 拿不准，先问再做。
-- 不发半成品的回复。`
-        setSoulContent(defaultContent)
-        setSoulContentDraft(defaultContent)
-      })
-  }, [])
-
   const handleEditSoul = () => {
     setIsEditingSoul(true)
     setSoulContentDraft(soulContent)
@@ -791,10 +844,21 @@ export default function PartnerPage() {
   const renderSettingContent = () => {
     switch (activeSettingKey) {
       case 'personalization':
+        const currentContent = configTab === 'soul' ? soulContent : configTab === 'user' ? userContent : identityContent
+        const currentLabel = configTab === 'soul' ? 'SOUL.md' : configTab === 'user' ? 'USER.md' : 'IDENTITY.md'
+        const currentDescription =
+          configTab === 'soul'
+            ? '智能伙伴必须遵守的底线规则、安全框架和核心价值观'
+            : configTab === 'user'
+              ? '关于当前用户的画像、协作习惯和偏好记录'
+              : '智能伙伴的身份、风格、签名与角色设定'
+
         return (
           <div className={styles.settingContent}>
             <h2 className={styles.settingTitle}>个性化</h2>
             <p className={styles.settingDesc}>智能伙伴的个性化配置，会根据对话自动更新，也支持直接编辑</p>
+            {partnerConfigLoading ? <div className={styles.settingStatus}>配置加载中...</div> : null}
+            {partnerConfigError ? <div className={styles.settingStatus}>{partnerConfigError}</div> : null}
             <div className={`${styles.settingCard} ${styles.profileCard}`}>
               <div className={styles.avatarRow}>
                 <div className={styles.avatarWrap}>
@@ -817,24 +881,42 @@ export default function PartnerPage() {
               </div>
             </div>
             <div className={styles.settingTabs}>
-              <button type="button" className={`${styles.settingTab} ${styles.settingTabActive}`}>行为准则</button>
-              <button type="button" className={styles.settingTab}>用户档案</button>
-              <button type="button" className={styles.settingTab}>智能伙伴档案</button>
+              <button
+                type="button"
+                className={`${styles.settingTab} ${configTab === 'soul' ? styles.settingTabActive : ''}`}
+                onClick={() => setConfigTab('soul')}
+              >
+                行为准则
+              </button>
+              <button
+                type="button"
+                className={`${styles.settingTab} ${configTab === 'user' ? styles.settingTabActive : ''}`}
+                onClick={() => setConfigTab('user')}
+              >
+                用户档案
+              </button>
+              <button
+                type="button"
+                className={`${styles.settingTab} ${configTab === 'identity' ? styles.settingTabActive : ''}`}
+                onClick={() => setConfigTab('identity')}
+              >
+                智能伙伴档案
+              </button>
             </div>
             <div className={styles.settingCard}>
               <div className={styles.cardHeader}>
-                <span className={styles.cardTag}>SOUL.md</span>
-                <span className={styles.cardDesc}>智能伙伴必须遵守的底线规则、安全框架和核心价值观</span>
-                {isEditingSoul ? (
+                <span className={styles.cardTag}>{currentLabel}</span>
+                <span className={styles.cardDesc}>{currentDescription}</span>
+                {configTab === 'soul' && isEditingSoul ? (
                   <div className={styles.editActions}>
                     <button type="button" className={styles.cancelBtn} onClick={handleCancelEditSoul}>取消</button>
                     <button type="button" className={styles.saveBtn} onClick={handleSaveSoul}>保存</button>
                   </div>
-                ) : (
+                ) : configTab === 'soul' ? (
                   <button type="button" className={styles.editBtn} onClick={handleEditSoul}>编辑</button>
-                )}
+                ) : null}
               </div>
-              {isEditingSoul ? (
+              {configTab === 'soul' && isEditingSoul ? (
                 <textarea
                   className={styles.markdownEditor}
                   value={soulContentDraft}
@@ -842,30 +924,7 @@ export default function PartnerPage() {
                   placeholder="请输入行为准则内容..."
                 />
               ) : (
-                <div className={styles.markdownContent}>
-                  {soulContent.split('\n').map((line, index) => {
-                    if (line.startsWith('## ')) {
-                      return <h3 key={index}>{line.replace('## ', '')}</h3>
-                    } else if (line.startsWith('**') && line.includes('**')) {
-                      return (
-                        <p key={index}>
-                          <strong>{line.match(/\*\*(.*?)\*\*/)?.[1]}</strong>
-                          {line.replace(/\*\*.*?\*\*/, '')}
-                        </p>
-                      )
-                    } else if (line.startsWith('- ')) {
-                      return (
-                        <ul key={index}>
-                          <li>{line.replace('- ', '')}</li>
-                        </ul>
-                      )
-                    } else if (line.trim() === '') {
-                      return null
-                    } else {
-                      return <p key={index}>{line}</p>
-                    }
-                  })}
-                </div>
+                <div className={styles.markdownContent}>{renderMarkdownContent(currentContent)}</div>
               )}
             </div>
           </div>
