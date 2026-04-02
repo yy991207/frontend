@@ -15,6 +15,7 @@ export type ChatSessionConfig = {
   baseUrl: string
   userId: string
   viewChatSessionsPath: string
+  delChatSessionPath: string
 }
 
 // 从 config.yaml 读取的配置
@@ -22,6 +23,7 @@ const DEFAULT_CONFIG: ChatSessionConfig = {
   baseUrl: 'http://192.168.30.238:8000/',
   userId: '123456',
   viewChatSessionsPath: '/api/v1/chat/sessions',
+  delChatSessionPath: '/api/v1/chat/sessions',
 }
 
 /**
@@ -53,6 +55,7 @@ export function parseChatSessionConfig(rawText: string): ChatSessionConfig {
   const baseUrl = config.url || DEFAULT_CONFIG.baseUrl
   const userId = config.user_id || DEFAULT_CONFIG.userId
   const viewChatSessionsPath = config.view_chat_sessions_path || DEFAULT_CONFIG.viewChatSessionsPath
+  const delChatSessionPath = config.del_chat_session_path || DEFAULT_CONFIG.delChatSessionPath
 
   if (!baseUrl || !userId || !viewChatSessionsPath) {
     throw new Error('config.yaml 缺少 url、user_id 或 view_chat_sessions_path 配置')
@@ -62,6 +65,7 @@ export function parseChatSessionConfig(rawText: string): ChatSessionConfig {
     baseUrl,
     userId,
     viewChatSessionsPath,
+    delChatSessionPath,
   }
 }
 
@@ -144,4 +148,29 @@ export function groupSessionsByTime(sessions: ChatSession[]): {
  */
 export function getSessionDisplayName(session: ChatSession): string {
   return session.session_name ?? '话题'
+}
+
+/**
+ * 删除会话
+ */
+export async function deleteChatSession(
+  config: ChatSessionConfig,
+  sessionId: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  // 替换路径中的 {session_id} 占位符
+  const path = config.delChatSessionPath.replace('{session_id}', sessionId)
+  const url = new URL(path, config.baseUrl)
+
+  const response = await fetch(url.toString(), {
+    method: 'DELETE',
+    headers: {
+      Accept: 'application/json',
+    },
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error('删除会话失败')
+  }
 }
