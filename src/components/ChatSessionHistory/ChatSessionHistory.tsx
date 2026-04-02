@@ -126,7 +126,7 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
     if (expanded) {
       loadSessions()
     }
-  }, [expanded, loadSessions])
+  }, [expanded, loadSessions, location.pathname, location.search])
 
   const handleSessionClick = (sessionId: string) => {
     navigate(`/chat?sessionId=${sessionId}`)
