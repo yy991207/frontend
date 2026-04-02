@@ -12,6 +12,7 @@ import {
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import homeAvatar from '../../assets/home-avatar.png'
+import ChatSessionHistory from '../ChatSessionHistory/ChatSessionHistory'
 import styles from './sidebar.module.less'
 
 const NAV_ITEMS = [
@@ -91,6 +92,9 @@ export default function Sidebar() {
         </span>
         <span className={styles.labelCell}>智能伙伴</span>
       </button>
+
+      {/* 会话历史组件 */}
+      <ChatSessionHistory expanded={expanded} />
 
       <div className={styles.spacer} />
 
