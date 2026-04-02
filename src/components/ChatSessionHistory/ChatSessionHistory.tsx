@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { HistoryOutlined, MoreOutlined, DeleteOutlined, MessageOutlined } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
 import type { ChatSession, ChatSessionConfig } from '../../services/chatSessionService'
 import {
   fetchChatSessions,
@@ -88,6 +89,7 @@ function SessionMenu({ session, onDelete }: SessionMenuProps) {
 }
 
 export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHistoryProps) {
+  const navigate = useNavigate()
   const [sessions, setSessions] = useState<{
     today: ChatSession[]
     within7Days: ChatSession[]
@@ -120,7 +122,7 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
   }, [expanded, loadSessions])
 
   const handleSessionClick = (sessionId: string) => {
-    console.log('点击会话:', sessionId)
+    navigate(`/chat?sessionId=${sessionId}`)
   }
 
   const handleToggle = () => {

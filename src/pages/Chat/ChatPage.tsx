@@ -28,7 +28,9 @@ import {
 import {
   deleteChatSession,
   getDefaultConfig,
+  getChatSession,
   parseChatSessionConfig,
+  type ChatSessionDetail,
   type ChatSessionConfig,
 } from '../../services/chatSessionService'
 import styles from './chat.module.less'
@@ -166,6 +168,16 @@ async function loadChatSessionConfig(): Promise<ChatSessionConfig> {
   }
 
   return getDefaultConfig()
+}
+
+function mapSessionDetailToMessages(session: ChatSessionDetail): ChatMessage[] {
+  return session.messages.map((message) => ({
+    id: message.message_id,
+    role: message.role,
+    content: message.content,
+    timestamp: formatTime(new Date(message.created_at)),
+    sessionId: session.session_id,
+  }))
 }
 
 function parseSkillApiConfig(rawText: string) {
@@ -543,6 +555,34 @@ export default function ChatPage() {
     const params = new URLSearchParams(location.search)
     setInitialSessionId(params.get('sessionId'))
   }, [location.search])
+
+  useEffect(() => {
+    if (!initialSessionId) {
+      return
+    }
+
+    const controller = new AbortController()
+
+    const loadSessionDetail = async () => {
+      try {
+        const config = await loadChatSessionConfig()
+        const session = await getChatSession(config, initialSessionId, controller.signal)
+        setMessages(mapSessionDetailToMessages(session))
+        setIsResponding(false)
+        setRequestError('')
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setRequestError(error instanceof Error ? error.message : '获取会话详情失败')
+        }
+      }
+    }
+
+    void loadSessionDetail()
+
+    return () => {
+      controller.abort()
+    }
+  }, [initialSessionId])
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {

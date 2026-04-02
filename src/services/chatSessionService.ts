@@ -6,6 +6,24 @@ export type ChatSession = {
   updated_at: string
 }
 
+export type ChatSessionMessage = {
+  message_id: string
+  role: 'user' | 'assistant'
+  content: string
+  tool_calls: unknown[]
+  references: unknown[]
+  skill_output: unknown
+  created_at: string
+}
+
+export type ChatSessionDetail = ChatSession & {
+  theme_id: string | null
+  tool_type: string | null
+  tool_config: unknown
+  message_count: number
+  messages: ChatSessionMessage[]
+}
+
 export type ChatSessionsResponse = {
   sessions: ChatSession[]
   total: number
@@ -16,6 +34,7 @@ export type ChatSessionConfig = {
   userId: string
   viewChatSessionsPath: string
   delChatSessionPath: string
+  getChatSessionPath: string
 }
 
 // 从 config.yaml 读取的配置
@@ -24,6 +43,7 @@ const DEFAULT_CONFIG: ChatSessionConfig = {
   userId: '123456',
   viewChatSessionsPath: '/api/v1/chat/sessions',
   delChatSessionPath: '/api/v1/chat/sessions',
+  getChatSessionPath: '/api/v1/chat/sessions/{session_id}',
 }
 
 /**
@@ -56,6 +76,7 @@ export function parseChatSessionConfig(rawText: string): ChatSessionConfig {
   const userId = config.user_id || DEFAULT_CONFIG.userId
   const viewChatSessionsPath = config.view_chat_sessions_path || DEFAULT_CONFIG.viewChatSessionsPath
   const delChatSessionPath = config.del_chat_session_path || DEFAULT_CONFIG.delChatSessionPath
+  const getChatSessionPath = config.get_chat_session_path || DEFAULT_CONFIG.getChatSessionPath
 
   if (!baseUrl || !userId || !viewChatSessionsPath) {
     throw new Error('config.yaml 缺少 url、user_id 或 view_chat_sessions_path 配置')
@@ -66,6 +87,7 @@ export function parseChatSessionConfig(rawText: string): ChatSessionConfig {
     userId,
     viewChatSessionsPath,
     delChatSessionPath,
+    getChatSessionPath,
   }
 }
 
@@ -173,4 +195,27 @@ export async function deleteChatSession(
   if (!response.ok) {
     throw new Error('删除会话失败')
   }
+}
+
+export async function getChatSession(
+  config: ChatSessionConfig,
+  sessionId: string,
+  signal?: AbortSignal,
+): Promise<ChatSessionDetail> {
+  const path = config.getChatSessionPath.replace('{session_id}', sessionId)
+  const url = new URL(path, config.baseUrl)
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error('获取会话详情失败')
+  }
+
+  return (await response.json()) as ChatSessionDetail
 }
