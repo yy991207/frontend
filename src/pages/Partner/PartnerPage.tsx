@@ -1451,15 +1451,6 @@ export default function PartnerPage() {
             <input
               value={nameDraft}
               onChange={(event) => setNameDraft(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
-                  return
-                }
-
-                if (event.key === 'Enter') {
-                  handleConfirmName()
-                }
-              }}
               className={styles.nameModalInput}
               placeholder="请输入助手名称"
               autoFocus
