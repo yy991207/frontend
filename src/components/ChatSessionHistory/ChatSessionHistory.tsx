@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { HistoryOutlined, MoreOutlined, DeleteOutlined, MessageOutlined } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import type { ChatSession, ChatSessionConfig } from '../../services/chatSessionService'
 import {
   fetchChatSessions,
@@ -90,6 +90,7 @@ function SessionMenu({ session, onDelete }: SessionMenuProps) {
 
 export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHistoryProps) {
   const navigate = useNavigate()
+  const location = useLocation()
   const [sessions, setSessions] = useState<{
     today: ChatSession[]
     within7Days: ChatSession[]
@@ -99,6 +100,12 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
   const [error, setError] = useState<string | null>(null)
   const [deleteTargetSession, setDeleteTargetSession] = useState<ChatSession | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+
+  // 获取当前会话 ID
+  const getCurrentSessionId = useCallback(() => {
+    const params = new URLSearchParams(location.search)
+    return params.get('sessionId')
+  }, [location.search])
 
   const loadSessions = useCallback(async () => {
     try {
@@ -137,6 +144,11 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
       // 删除成功后重新加载列表
       await loadSessions()
       setDeleteTargetSession(null)
+      // 如果删除的是当前正在查看的会话，跳转到首页
+      const currentSessionId = getCurrentSessionId()
+      if (currentSessionId === session.session_id) {
+        navigate('/')
+      }
     } catch (err) {
       console.error('删除会话失败:', err)
       alert(err instanceof Error ? err.message : '删除会话失败')
