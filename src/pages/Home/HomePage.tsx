@@ -245,14 +245,13 @@ export default function HomePage() {
     })
   }
 
-  // 选择技能后跳转到对话页面
+  // 选择技能后先进入输入态，和技能管理页“使用”保持一致。
   const handleSelectSkill = (skill: SkillItem) => {
-    navigate('/chat', {
-      state: {
-        initialPrompt: buildSkillInitialPrompt(skill),
-        toolType: skill.skillName || skill.id,
-      },
-    })
+    // 首页加号选技能后先进入输入态，和“使用/我创建的”保持一致，等用户确认内容后再发送。
+    setSelectedSkillName(skill.skillName || skill.id)
+    setSelectedSkillDescription(skill.description)
+    setPreferredToolType(skill.skillName || skill.id)
+    setPrompt(skill.template)
   }
 
   useEffect(() => {

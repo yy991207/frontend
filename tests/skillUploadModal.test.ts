@@ -23,7 +23,17 @@ test('skills page renders uploaded skill name, description and top notice', asyn
   assert.match(content, /uploadNotice/)
   assert.match(content, /uploadedSkillSummary\?\.skillName/)
   assert.match(content, /uploadedSkillSummary\?\.description/)
+  assert.match(content, /getUploadedSkillPresentation/)
+  assert.match(content, /uploadSkillIconPreview/)
   assert.match(content, />\s*完成\s*<\/button>/)
+})
+
+test('skills page wires created skill card menu to custom delete action', async () => {
+  const content = await read('pages/Skills/SkillsPage.tsx')
+
+  assert.match(content, /handleDeleteCreatedSkill/)
+  assert.match(content, /handleDeleteCreatedSkill\(item\)/)
+  assert.match(content, /删除中\.\.\./)
 })
 
 test('skills page styles include upload modal, drag area and skill info layout', async () => {
@@ -32,4 +42,5 @@ test('skills page styles include upload modal, drag area and skill info layout',
   assert.match(content, /\.uploadModalMask\s*\{/)
   assert.match(content, /\.uploadDropzone\s*\{/)
   assert.match(content, /\.uploadSkillField\s*\{/)
+  assert.match(content, /\.uploadSkillIconPreview\s*\{/)
 })

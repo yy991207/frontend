@@ -38,7 +38,12 @@ import {
   type ChatSessionDetail,
   type ChatSessionConfig,
 } from '../../services/chatSessionService'
-import { buildSkillInitialPrompt, extractSkillItemsFromResponse, type SkillApiResponse } from '../../services/skillPromptService'
+import {
+  buildSkillDisplayName,
+  buildSkillInitialPrompt,
+  extractSkillItemsFromResponse,
+  type SkillApiResponse,
+} from '../../services/skillPromptService'
 import styles from './chat.module.less'
 
 type SkillItem = AttachmentSkillItem
@@ -209,6 +214,9 @@ export default function ChatPage() {
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
   const [knowledgeEnabled, setKnowledgeEnabled] = useState(false)
   const [draft, setDraft] = useState('')
+  const [preferredToolType, setPreferredToolType] = useState<string | null>(null)
+  const [selectedSkillName, setSelectedSkillName] = useState('')
+  const [selectedSkillDescription, setSelectedSkillDescription] = useState('')
   const [requestError, setRequestError] = useState('')
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false)
@@ -670,8 +678,20 @@ export default function ChatPage() {
     const value = draft.trim()
     if (!value || isResponding) return
 
+    const outgoingPrompt = selectedSkillName
+      ? buildSkillInitialPrompt({
+          skillName: selectedSkillName,
+          template: value,
+          title: selectedSkillName,
+        })
+      : value
+    const outgoingToolType = selectedSkillName ? preferredToolType || selectedSkillName : null
+
     setDraft('')
-    void startAssistantReply(value)
+    setPreferredToolType(null)
+    setSelectedSkillName('')
+    setSelectedSkillDescription('')
+    void startAssistantReply(outgoingPrompt, outgoingToolType)
   }
 
   // 跳转到技能管理页面
@@ -683,9 +703,13 @@ export default function ChatPage() {
     })
   }
 
-  // 选择技能后触发对话
+  // 选择技能后先进入输入态，和技能管理页“使用”保持一致。
   const handleSelectSkill = (skill: SkillItem) => {
-    void startAssistantReply(buildSkillInitialPrompt(skill), skill.skillName || skill.id)
+    // 加号选择技能后先进入输入态，用户还能继续补充模板参数，再统一发送。
+    setSelectedSkillName(skill.skillName || skill.id)
+    setSelectedSkillDescription(skill.description)
+    setPreferredToolType(skill.skillName || skill.id)
+    setDraft(skill.template)
   }
 
   const handleStop = () => {
@@ -895,6 +919,15 @@ export default function ChatPage() {
                 onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
                 onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
               />
+              {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
+              {selectedSkillName ? (
+                <span className={styles.skillTagWrap}>
+                  <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
+                  {selectedSkillDescription ? (
+                    <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
+                  ) : null}
+                </span>
+              ) : null}
               <input
                       value={draft}
                       onChange={(event) => setDraft(event.target.value)}
