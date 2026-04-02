@@ -3,12 +3,10 @@ import {
   AppstoreAddOutlined,
   BookOutlined,
   CompassOutlined,
-  HistoryOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   PlusOutlined,
   RobotOutlined,
-  SettingOutlined,
   ThunderboltOutlined,
   UserOutlined,
 } from '@ant-design/icons'
@@ -103,14 +101,6 @@ export default function Sidebar() {
         </span>
         <div className={styles.footerPanel}>
           <span className={styles.userName}>用户</span>
-          <div className={styles.footerTools}>
-            <button type="button" className={styles.toolButton} aria-label="最近使用">
-              <HistoryOutlined />
-            </button>
-            <button type="button" className={styles.toolButton} aria-label="设置">
-              <SettingOutlined />
-            </button>
-          </div>
         </div>
       </div>
     </aside>
