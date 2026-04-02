@@ -1,6 +1,7 @@
 export type PartnerApiConfig = {
   userId: string
   viewConfigEndpoint: string
+  updateConfigEndpoint: string
 }
 
 export type PartnerConfig = {
@@ -20,6 +21,12 @@ type PartnerConfigResponse = {
     }
     memories?: Record<string, { content?: string }>
   }
+}
+
+export type PartnerConfigUpdateField = 'agent_name' | 'SOUL.md' | 'USER.md' | 'IDENTITY.md'
+
+type PartnerConfigUpdateResponse = {
+  success?: boolean
 }
 
 function parseSimpleYaml(rawText: string) {
@@ -55,15 +62,17 @@ export function parsePartnerApiConfig(rawText: string): PartnerApiConfig {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
   const viewPartnerConfigPath = parsedConfig.view_partner_config_path
+  const updatePartnerConfigPath = parsedConfig.update_partner_config_path
   const userId = parsedConfig.user_id
 
-  if (!baseUrl || !viewPartnerConfigPath || !userId) {
-    throw new Error('config.yaml 缺少 url、view_partner_config_path 或 user_id 配置')
+  if (!baseUrl || !viewPartnerConfigPath || !updatePartnerConfigPath || !userId) {
+    throw new Error('config.yaml 缺少 url、view_partner_config_path、update_partner_config_path 或 user_id 配置')
   }
 
   return {
     userId,
     viewConfigEndpoint: buildAbsoluteUrl(baseUrl, viewPartnerConfigPath),
+    updateConfigEndpoint: buildAbsoluteUrl(baseUrl, updatePartnerConfigPath),
   }
 }
 
@@ -97,4 +106,52 @@ export async function fetchPartnerConfig(config: PartnerApiConfig, signal?: Abor
   }
 
   return extractPartnerConfig(data)
+}
+
+export function buildPartnerConfigUpdatePayload(field: PartnerConfigUpdateField, value: string) {
+  if (field === 'agent_name') {
+    return {
+      agent_name: value,
+    }
+  }
+
+  if (field === 'USER.md') {
+    return {
+      USER_md: value,
+    }
+  }
+
+  return {
+    [field]: value,
+  }
+}
+
+export async function updatePartnerConfig(
+  config: PartnerApiConfig,
+  field: PartnerConfigUpdateField,
+  value: string,
+  signal?: AbortSignal,
+) {
+  const requestUrl = new URL(config.updateConfigEndpoint)
+  requestUrl.searchParams.set('user_id', config.userId)
+
+  const response = await fetch(requestUrl.toString(), {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(buildPartnerConfigUpdatePayload(field, value)),
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error('智能伙伴配置更新失败')
+  }
+
+  const data = (await response.json()) as PartnerConfigUpdateResponse
+
+  if (!data.success) {
+    throw new Error('智能伙伴配置更新返回失败')
+  }
 }

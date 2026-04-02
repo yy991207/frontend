@@ -42,6 +42,7 @@ import {
 import {
   fetchPartnerConfig,
   parsePartnerApiConfig,
+  updatePartnerConfig,
   type PartnerApiConfig,
 } from '../../services/partnerConfigService'
 import styles from './partner.module.less'
@@ -823,12 +824,19 @@ export default function PartnerPage() {
 
   const handleConfirmName = () => {
     const nextName = nameDraft.trim()
-    if (!nextName) {
+    if (!nextName || !partnerApiConfig) {
       return
     }
 
-    setAgentName(nextName)
-    setIsNameModalOpen(false)
+    void updatePartnerConfig(partnerApiConfig, 'agent_name', nextName)
+      .then(() => {
+        setAgentName(nextName)
+        setIsNameModalOpen(false)
+        setPartnerConfigError('')
+      })
+      .catch((error) => {
+        setPartnerConfigError(error instanceof Error ? error.message : '智能伙伴配置更新失败')
+      })
   }
 
   const handleEditSoul = () => {
@@ -842,9 +850,19 @@ export default function PartnerPage() {
   }
 
   const handleSaveSoul = () => {
-    setSoulContent(soulContentDraft)
-    setIsEditingSoul(false)
-    // 这里可以添加保存到后端的逻辑
+    if (!partnerApiConfig) {
+      return
+    }
+
+    void updatePartnerConfig(partnerApiConfig, 'SOUL.md', soulContentDraft)
+      .then(() => {
+        setSoulContent(soulContentDraft)
+        setIsEditingSoul(false)
+        setPartnerConfigError('')
+      })
+      .catch((error) => {
+        setPartnerConfigError(error instanceof Error ? error.message : '智能伙伴配置更新失败')
+      })
   }
 
   const handleEditUser = () => {
@@ -858,8 +876,19 @@ export default function PartnerPage() {
   }
 
   const handleSaveUser = () => {
-    setUserContent(userContentDraft)
-    setIsEditingUser(false)
+    if (!partnerApiConfig) {
+      return
+    }
+
+    void updatePartnerConfig(partnerApiConfig, 'USER.md', userContentDraft)
+      .then(() => {
+        setUserContent(userContentDraft)
+        setIsEditingUser(false)
+        setPartnerConfigError('')
+      })
+      .catch((error) => {
+        setPartnerConfigError(error instanceof Error ? error.message : '智能伙伴配置更新失败')
+      })
   }
 
   const handleEditIdentity = () => {
@@ -873,8 +902,19 @@ export default function PartnerPage() {
   }
 
   const handleSaveIdentity = () => {
-    setIdentityContent(identityContentDraft)
-    setIsEditingIdentity(false)
+    if (!partnerApiConfig) {
+      return
+    }
+
+    void updatePartnerConfig(partnerApiConfig, 'IDENTITY.md', identityContentDraft)
+      .then(() => {
+        setIdentityContent(identityContentDraft)
+        setIsEditingIdentity(false)
+        setPartnerConfigError('')
+      })
+      .catch((error) => {
+        setPartnerConfigError(error instanceof Error ? error.message : '智能伙伴配置更新失败')
+      })
   }
 
   const renderSettingContent = () => {
