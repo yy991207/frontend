@@ -27,6 +27,10 @@ import {
   type ToolCall,
 } from '../../services/chatService'
 import {
+  createChatStreamBridge,
+  type ChatStreamBridge,
+} from '../../services/chatStreamBridgeService'
+import {
   deleteChatSession,
   getDefaultConfig,
   getChatSession,
@@ -253,6 +257,7 @@ export default function ChatPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const abortControllerRef = useRef<AbortController | null>(null)
+  const streamBridgeRef = useRef<ChatStreamBridge | null>(null)
   const headerMenuRef = useRef<HTMLDivElement | null>(null)
   const [skills, setSkills] = useState<SkillItem[]>([])
   const [skillsLoading, setSkillsLoading] = useState(false)
@@ -264,7 +269,6 @@ export default function ChatPage() {
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
-  const [initialSessionId, setInitialSessionId] = useState<string | null>(null)
   const chatApiConfig = useMemo<ChatApiConfig | null>(() => {
     try {
       return parseChatApiConfig(chatConfigText)
@@ -281,6 +285,11 @@ export default function ChatPage() {
     }
   }, [])
 
+  const routeSessionId = useMemo(() => {
+    const params = new URLSearchParams(location.search)
+    return params.get('sessionId')
+  }, [location.search])
+
   const initialPrompt = useMemo(() => {
     const value = location.state as { initialPrompt?: string; toolType?: string | null } | null
     return value?.initialPrompt?.trim() ?? ''
@@ -292,7 +301,7 @@ export default function ChatPage() {
   }, [location.state])
 
   const initialConversation = useMemo(() => {
-    if (!initialPrompt) {
+    if (!initialPrompt || routeSessionId) {
       return null
     }
 
@@ -312,16 +321,48 @@ export default function ChatPage() {
         loading: true,
       },
     }
-  }, [initialPrompt])
+  }, [initialPrompt, routeSessionId])
 
   const [messages, setMessages] = useState<ChatMessage[]>(() =>
     initialConversation ? [initialConversation.userMessage, initialConversation.loadingMessage] : [],
   )
+  const messagesRef = useRef<ChatMessage[]>(messages)
   const [isResponding, setIsResponding] = useState(() => Boolean(initialConversation))
   const currentSessionId = useMemo(() => {
     const messageSessionId = [...messages].reverse().find((message) => message.sessionId)?.sessionId
-    return initialSessionId || messageSessionId || null
-  }, [initialSessionId, messages])
+    return routeSessionId || messageSessionId || null
+  }, [routeSessionId, messages])
+
+  const syncSessionToRoute = useCallback((sessionId: string) => {
+    navigate(
+      {
+        pathname: location.pathname,
+        search: `?sessionId=${sessionId}`,
+      },
+      { replace: true, state: null },
+    )
+  }, [location.pathname, navigate])
+
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
+
+  useEffect(() => {
+    const streamBridge = createChatStreamBridge((snapshot) => {
+      const nextMessages = snapshot.messages as ChatMessage[]
+      messagesRef.current = nextMessages
+      setMessages(nextMessages)
+      setIsResponding(snapshot.status === 'streaming')
+      setRequestError(snapshot.status === 'error' ? (snapshot.error ?? '请求失败，请稍后重试。') : '')
+    })
+
+    streamBridgeRef.current = streamBridge
+
+    return () => {
+      streamBridgeRef.current?.destroy()
+      streamBridgeRef.current = null
+    }
+  }, [])
 
   // 获取用户技能列表
   const fetchSkills = useCallback(async (signal?: AbortSignal) => {
@@ -361,13 +402,19 @@ export default function ChatPage() {
     }
   }, [skillApiConfig])
 
-  const runAssistantReply = async (prompt: string, loadingMessageId: string, toolType: string | null = null) => {
+  const runAssistantReply = async (
+    prompt: string,
+    userMessage: ChatMessage,
+    loadingMessage: ChatMessage,
+    baseMessages: ChatMessage[],
+    toolType: string | null = null,
+  ) => {
     if (!chatApiConfig) {
       setRequestError('聊天配置读取失败，请检查 config.yaml')
       const replyTime = formatTime(new Date())
       setMessages((prev) =>
         prev.map((item) =>
-          item.id === loadingMessageId
+          item.id === loadingMessage.id
             ? {
                 ...item,
                 content: '聊天配置读取失败，请检查 config.yaml',
@@ -384,19 +431,49 @@ export default function ChatPage() {
 
     const controller = new AbortController()
     abortControllerRef.current = controller
+    let usingSharedBridge = false
 
     try {
-      const { sessionId } = await createChatSession(chatApiConfig, controller.signal)
-      setMessages((prev) =>
-        prev.map((item) =>
-          item.id === loadingMessageId
-            ? {
-                ...item,
-                sessionId,
-              }
-            : item,
-        ),
+      let sessionId = currentSessionId
+
+      // 会话一旦创建成功，就必须复用同一个 sessionId，避免刷新或继续追问时被拆成新会话。
+      if (!sessionId) {
+        const createdSession = await createChatSession(chatApiConfig, controller.signal)
+        sessionId = createdSession.sessionId
+      }
+
+      const nextMessages = baseMessages.map((item) =>
+        item.id === userMessage.id || item.id === loadingMessage.id
+          ? {
+              ...item,
+              sessionId,
+            }
+          : item,
       )
+
+      messagesRef.current = nextMessages
+      setMessages(nextMessages)
+      syncSessionToRoute(sessionId)
+
+      const streamBridge = streamBridgeRef.current
+
+      if (streamBridge) {
+        await streamBridge.startStream({
+          sessionId,
+          config: chatApiConfig,
+          payload: {
+            message: prompt,
+            tool_type: toolType,
+          },
+          messages: nextMessages,
+          loadingMessageId: loadingMessage.id,
+        })
+        usingSharedBridge = true
+        if (abortControllerRef.current === controller) {
+          abortControllerRef.current = null
+        }
+        return
+      }
 
       const stream = await streamChatMessage(
         chatApiConfig,
@@ -413,7 +490,7 @@ export default function ChatPage() {
           const replyTime = formatTime(new Date())
           setMessages((prev) =>
             prev.map((item) =>
-              item.id === loadingMessageId
+              item.id === loadingMessage.id
                 ? {
                     ...item,
                     content: `${item.content}${chunk}`,
@@ -427,7 +504,7 @@ export default function ChatPage() {
         onToolStart(toolCall) {
           setMessages((prev) =>
             prev.map((item) =>
-              item.id === loadingMessageId
+              item.id === loadingMessage.id
                 ? upsertToolCall(item, toolCall)
                 : item,
             ),
@@ -442,7 +519,7 @@ export default function ChatPage() {
 
               setMessages((prev) =>
                 prev.map((item) =>
-                  item.id === loadingMessageId
+                  item.id === loadingMessage.id
                     ? {
                         ...upsertToolCall(item, toolCall),
                         courses,
@@ -457,7 +534,7 @@ export default function ChatPage() {
 
           setMessages((prev) =>
             prev.map((item) =>
-              item.id === loadingMessageId
+              item.id === loadingMessage.id
                 ? upsertToolCall(item, toolCall)
                 : item,
             ),
@@ -466,7 +543,7 @@ export default function ChatPage() {
         onReferences(references) {
           setMessages((prev) =>
             prev.map((item) =>
-              item.id === loadingMessageId
+              item.id === loadingMessage.id
                 ? {
                     ...item,
                     references,
@@ -480,7 +557,7 @@ export default function ChatPage() {
       const replyTime = formatTime(new Date())
       setMessages((prev) =>
         prev.map((item) =>
-          item.id === loadingMessageId
+          item.id === loadingMessage.id
             ? {
                 ...item,
                 timestamp: replyTime,
@@ -497,7 +574,7 @@ export default function ChatPage() {
       const replyTime = formatTime(new Date())
       setMessages((prev) =>
         prev.map((item) =>
-          item.id === loadingMessageId
+          item.id === loadingMessage.id
             ? {
                 ...item,
                 content: '请求失败，请稍后重试。',
@@ -513,7 +590,9 @@ export default function ChatPage() {
         abortControllerRef.current = null
       }
 
-      setIsResponding(false)
+      if (!usingSharedBridge) {
+        setIsResponding(false)
+      }
     }
   }
 
@@ -533,57 +612,98 @@ export default function ChatPage() {
       loading: true,
     }
 
-    setMessages((prev) => [...prev, userMessage, loadingMessage])
+    const nextMessages = [...messagesRef.current, userMessage, loadingMessage]
+    messagesRef.current = nextMessages
+    setMessages(nextMessages)
     setIsResponding(true)
 
-    await runAssistantReply(prompt, loadingMessage.id, toolType)
+    await runAssistantReply(prompt, userMessage, loadingMessage, nextMessages, toolType)
   }
 
   useEffect(() => {
-    if (!initialConversation) {
+    if (!initialConversation || routeSessionId) {
       return
     }
 
     setRequestError('')
-    void runAssistantReply(initialPrompt, initialConversation.loadingMessage.id, initialToolType)
+    void runAssistantReply(
+      initialPrompt,
+      initialConversation.userMessage,
+      initialConversation.loadingMessage,
+      [initialConversation.userMessage, initialConversation.loadingMessage],
+      initialToolType,
+    )
 
     return () => {
       abortControllerRef.current?.abort()
     }
-  }, [initialConversation, initialPrompt, initialToolType])
+  }, [initialConversation, initialPrompt, initialToolType, routeSessionId])
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search)
-    setInitialSessionId(params.get('sessionId'))
-  }, [location.search])
-
-  useEffect(() => {
-    if (!initialSessionId) {
+    if (!routeSessionId) {
       return
     }
 
-    const controller = new AbortController()
+    let cancelled = false
+    let controller: AbortController | null = null
 
-    const loadSessionDetail = async () => {
+    const restoreSession = async () => {
+      const streamBridge = streamBridgeRef.current
+
+      if (streamBridge) {
+        // 刷新后优先尝试从共享流快照恢复，避免正在返回的 stream 被页面状态重置打断展示。
+        const snapshot = await streamBridge.subscribe(routeSessionId)
+
+        if (cancelled) {
+          return
+        }
+
+        if (snapshot) {
+          const nextMessages = snapshot.messages as ChatMessage[]
+          messagesRef.current = nextMessages
+          setMessages(nextMessages)
+          setIsResponding(snapshot.status === 'streaming')
+          setRequestError(snapshot.status === 'error' ? (snapshot.error ?? '请求失败，请稍后重试。') : '')
+          return
+        }
+      }
+
+      const hasCurrentSessionMessages = messagesRef.current.some((message) => message.sessionId === routeSessionId)
+
+      if (hasCurrentSessionMessages) {
+        return
+      }
+
+      controller = new AbortController()
+
       try {
         const config = await loadChatSessionConfig()
-        const session = await getChatSession(config, initialSessionId, controller.signal)
-        setMessages(mapSessionDetailToMessages(session))
+        const session = await getChatSession(config, routeSessionId, controller.signal)
+
+        if (cancelled) {
+          return
+        }
+
+        const nextMessages = mapSessionDetailToMessages(session)
+        messagesRef.current = nextMessages
+        setMessages(nextMessages)
         setIsResponding(false)
         setRequestError('')
       } catch (error) {
-        if (!controller.signal.aborted) {
+        if (!controller.signal.aborted && !cancelled) {
           setRequestError(error instanceof Error ? error.message : '获取会话详情失败')
         }
       }
     }
 
-    void loadSessionDetail()
+    void restoreSession()
 
     return () => {
-      controller.abort()
+      cancelled = true
+      streamBridgeRef.current?.unsubscribe(routeSessionId)
+      controller?.abort()
     }
-  }, [initialSessionId])
+  }, [routeSessionId])
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -624,6 +744,21 @@ export default function ChatPage() {
   }
 
   const handleStop = () => {
+    if (currentSessionId && streamBridgeRef.current?.stopStream(currentSessionId)) {
+      setMessages((prev) =>
+        prev.map((item) =>
+          item.loading
+            ? {
+                ...item,
+                loading: false,
+              }
+            : item,
+        ),
+      )
+      setIsResponding(false)
+      return
+    }
+
     abortControllerRef.current?.abort()
     abortControllerRef.current = null
     setMessages((prev) =>
