@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   ArrowLeftOutlined,
   CheckCircleFilled,
@@ -227,7 +228,9 @@ function getManageCardPresentation(index: number) {
 }
 
 export default function SkillsPage() {
-  const [mode, setMode] = useState<SkillsMode>('discover')
+  const location = useLocation()
+  const initialMode = (location.state as { mode?: SkillsMode } | null)?.mode === 'manage' ? 'manage' : 'discover'
+  const [mode, setMode] = useState<SkillsMode>(initialMode)
   const [createOpen, setCreateOpen] = useState(false)
   const [manageTab, setManageTab] = useState<ManageTab>('added')
   const [featuredSkills, setFeaturedSkills] = useState<SkillApiItem[]>([])
@@ -335,6 +338,12 @@ export default function SkillsPage() {
     setManageTab('added')
     await fetchAddedSkills()
   }, [fetchAddedSkills])
+
+  useEffect(() => {
+    if (initialMode === 'manage') {
+      void openManageSkills()
+    }
+  }, [initialMode, openManageSkills])
 
   useEffect(() => {
     return () => {

@@ -517,7 +517,11 @@ export default function ChatPage() {
 
   // 跳转到技能管理页面
   const handleManageSkills = () => {
-    navigate('/skills')
+    navigate('/skills', {
+      state: {
+        mode: 'manage',
+      },
+    })
   }
 
   // 选择技能后触发对话
