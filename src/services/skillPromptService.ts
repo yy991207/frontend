@@ -31,7 +31,7 @@ export function normalizeSkillItems(items: unknown[]): SkillItem[] {
       }
 
       const value = item as Record<string, unknown>
-      const title = readSkillField(value, ['chinese_name', 'chinesename', 'chineseName', 'name'])
+      const title = readSkillField(value, ['chinese_name', 'chinesename', 'chineseName', 'skill_name', 'skillName', 'name'])
       const description = readSkillField(value, ['description', 'desc'])
       const skillName = readSkillField(value, ['skill_name', 'skillName', 'name'])
       const template = readSkillField(value, ['template', 'prompt_template', 'promptTemplate'])
@@ -86,7 +86,7 @@ export function buildSkillInitialPrompt(skill: Pick<SkillItem, 'skillName' | 'te
   }
 
   if (skillName) {
-    return `/${skillName}`
+    return skillName
   }
 
   return skill.title.trim()

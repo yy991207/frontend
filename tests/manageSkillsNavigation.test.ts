@@ -40,3 +40,14 @@ test('skills page use actions jump to home page with skill template state', asyn
   assert.match(home, /location\.state/)
   assert.match(home, /setPrompt\(/)
 })
+
+test('skills page fetches and renders created skills when switching to 我创建的', async () => {
+  const skills = await read('pages/Skills/SkillsPage.tsx')
+
+  assert.match(skills, /createdSkills/)
+  assert.match(skills, /createdSkillsLoading/)
+  assert.match(skills, /createdSkillsError/)
+  assert.match(skills, /parseCustomSkillListApiConfig/)
+  assert.match(skills, /fetchCreatedSkills/)
+  assert.match(skills, /manageTab === 'created'/)
+})
