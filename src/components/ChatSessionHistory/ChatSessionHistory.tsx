@@ -1,11 +1,12 @@
-import { useEffect, useState, useCallback } from 'react'
-import { HistoryOutlined } from '@ant-design/icons'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { HistoryOutlined, MoreOutlined, DeleteOutlined, MessageOutlined } from '@ant-design/icons'
 import type { ChatSession, ChatSessionConfig } from '../../services/chatSessionService'
 import {
   fetchChatSessions,
   groupSessionsByTime,
   getSessionDisplayName,
   getDefaultConfig,
+  deleteChatSession,
 } from '../../services/chatSessionService'
 import styles from './chatSessionHistory.module.less'
 
@@ -27,6 +28,62 @@ async function loadConfig(): Promise<ChatSessionConfig> {
 interface ChatSessionHistoryProps {
   expanded: boolean
   onExpand?: () => void
+}
+
+// 会话菜单组件
+interface SessionMenuProps {
+  session: ChatSession
+  onDelete: (session: ChatSession) => void
+}
+
+function SessionMenu({ session, onDelete }: SessionMenuProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen])
+
+  const handleDelete = () => {
+    onDelete(session)
+    setIsOpen(false)
+  }
+
+  return (
+    <div className={styles.menuContainer} ref={menuRef}>
+      <button
+        type="button"
+        className={styles.moreButton}
+        onClick={(e) => {
+          e.stopPropagation()
+          setIsOpen(!isOpen)
+        }}
+      >
+        <MoreOutlined />
+      </button>
+
+      {isOpen && (
+        <div className={styles.menuDropdown}>
+          <button type="button" className={styles.menuItem} onClick={handleDelete}>
+            <DeleteOutlined className={styles.menuItemIcon} />
+            <span className={styles.menuItemText}>删除</span>
+          </button>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHistoryProps) {
@@ -67,6 +124,18 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
     onExpand?.()
   }
 
+  const handleDeleteSession = async (session: ChatSession) => {
+    try {
+      const config = await loadConfig()
+      await deleteChatSession(config, session.session_id)
+      // 删除成功后重新加载列表
+      await loadSessions()
+    } catch (err) {
+      console.error('删除会话失败:', err)
+      alert(err instanceof Error ? err.message : '删除会话失败')
+    }
+  }
+
   const renderSessionItem = (session: ChatSession) => (
     <div
       key={session.session_id}
@@ -74,7 +143,9 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
       onClick={() => handleSessionClick(session.session_id)}
       title={getSessionDisplayName(session)}
     >
+      <MessageOutlined className={styles.sessionIcon} />
       <span className={styles.sessionName}>{getSessionDisplayName(session)}</span>
+      <SessionMenu session={session} onDelete={handleDeleteSession} />
     </div>
   )
 

@@ -12,5 +12,6 @@ update_partner_config_path: /api/v1/agent
 
 //会话列表展示
 view_chat_sessions_path: /api/v1/chat/sessions
-
+del_chat_session_path: /api/v1/chat/sessions/{session_id}
+create_chat_session_path: /api/v1/chat/sessions
 
