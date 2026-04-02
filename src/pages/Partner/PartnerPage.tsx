@@ -26,6 +26,7 @@ import {
 import chatConfigText from '../../../config.yaml?raw'
 import { useLocation, useNavigate } from 'react-router-dom'
 import homeAvatar from '../../assets/home-avatar.png'
+import { renderMessageMarkdown } from '../../components/common/renderMessageMarkdown'
 import {
   createChatSession,
   downloadSessionFileContent,
@@ -1180,7 +1181,7 @@ export default function PartnerPage() {
                                 </div>
                               </div>
                             ) : null}
-                            <div className={styles.assistantText}>{message.content}</div>
+                            <div className={styles.assistantText}>{renderMessageMarkdown(message.content)}</div>
                             {message.references?.length ? (
                               <div className={styles.referenceList}>
                                 {message.references.map((reference, index) => (
