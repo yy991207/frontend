@@ -17,25 +17,28 @@ import {
   SnippetsOutlined,
   TableOutlined,
 } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import homeTabsUrl from '../../../mock_json/home-tabs.json?url'
 import homeAvatar from '../../assets/home-avatar.png'
 import chatConfigText from '../../../config.yaml?raw'
-import { AttachmentMenu, type AttachmentSkillItem } from '../../components/common/AttachmentMenu'
+import { AttachmentMenu } from '../../components/common/AttachmentMenu'
 import { resolveQuickActionToolType } from '../../services/chatService'
+import {
+  buildSkillDisplayName,
+  buildSkillInitialPrompt,
+  extractSkillItemsFromResponse,
+  type SkillApiResponse,
+  type SkillItem,
+} from '../../services/skillPromptService'
 import styles from './home.module.less'
 
-type SkillItem = AttachmentSkillItem
-
-type SkillApiResponse = {
-  success: boolean
-  code: string
-  msg: string
-  data?: {
-    skills?: unknown[]
-    total?: number
-  }
-}
+type HomeRouteState = {
+  initialPrompt?: string
+  toolType?: string | null
+  skillName?: string
+  skillDescription?: string
+  template?: string
+} | null
 
 function parseSimpleYaml(rawText: string) {
   return rawText.split(/\r?\n/).reduce<Record<string, string>>((result, line) => {
@@ -86,52 +89,6 @@ function parseSkillApiConfig(rawText: string) {
     userId,
     userIdParam,
   }
-}
-
-function readSkillField(item: Record<string, unknown>, keys: string[]) {
-  const value = keys.find((key) => typeof item[key] === 'string' && item[key])
-  return value ? String(item[value]).trim() : ''
-}
-
-function normalizeSkillItems(items: unknown[]): SkillItem[] {
-  return items
-    .map((item, index) => {
-      if (!item || typeof item !== 'object') {
-        return null
-      }
-
-      const value = item as Record<string, unknown>
-      const title = readSkillField(value, ['chinese_name', 'chinesename', 'chineseName', 'name'])
-      const description = readSkillField(value, ['description', 'desc'])
-      const skillName = readSkillField(value, ['skill_name', 'skillName', 'name'])
-
-      if (!title) {
-        return null
-      }
-
-      const id = readSkillField(value, ['id']) || skillName || `${title}-${index}`
-      const isSelected = Boolean(value.is_selected ?? value.isSelected)
-
-      return {
-        id,
-        skillName,
-        title,
-        description,
-        isSelected,
-      }
-    })
-    .filter((item): item is SkillItem => item !== null)
-}
-
-function extractSkillItemsFromResponse(data: SkillApiResponse) {
-  const payload = data.data as Record<string, unknown> | undefined
-  const skills = Array.isArray(payload?.skills)
-    ? payload.skills
-    : Array.isArray(payload?.items)
-      ? payload.items
-      : []
-
-  return normalizeSkillItems(skills)
 }
 
 const QUICK_ACTIONS = [
@@ -219,12 +176,16 @@ function getContentTypeIcon(type: string) {
 }
 
 export default function HomePage() {
+  const location = useLocation()
   const navigate = useNavigate()
   const [skills, setSkills] = useState<SkillItem[]>([])
   const [skillsLoading, setSkillsLoading] = useState(false)
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
   const [knowledgeEnabled, setKnowledgeEnabled] = useState(false)
   const [prompt, setPrompt] = useState('')
+  const [preferredToolType, setPreferredToolType] = useState<string | null>(null)
+  const [selectedSkillName, setSelectedSkillName] = useState('')
+  const [selectedSkillDescription, setSelectedSkillDescription] = useState('')
   const [homeTabs, setHomeTabs] = useState<HomeTab[]>(DEFAULT_HOME_TABS)
   const [tabsLoading, setTabsLoading] = useState(true)
   const [tabsError, setTabsError] = useState('')
@@ -288,11 +249,32 @@ export default function HomePage() {
   const handleSelectSkill = (skill: SkillItem) => {
     navigate('/chat', {
       state: {
-        initialPrompt: `使用技能：${skill.title}`,
+        initialPrompt: buildSkillInitialPrompt(skill),
         toolType: skill.skillName || skill.id,
       },
     })
   }
+
+  useEffect(() => {
+    const routeState = location.state as HomeRouteState
+
+    if (!routeState?.initialPrompt) {
+      return
+    }
+
+    // 技能页回到首页后，把技能标签和模板拆开渲染，输入框里只保留可编辑部分。
+    if (routeState.skillName) {
+      setSelectedSkillName(routeState.skillName.trim())
+      setSelectedSkillDescription(routeState.skillDescription?.trim() ?? '')
+      setPrompt(routeState.template?.trim() ?? '')
+    } else {
+      setSelectedSkillName('')
+      setSelectedSkillDescription('')
+      setPrompt(routeState.initialPrompt.trim())
+    }
+    setPreferredToolType(routeState.toolType ?? null)
+    navigate(location.pathname, { replace: true, state: null })
+  }, [location.pathname, location.state, navigate])
 
   useEffect(() => {
     let disposed = false
@@ -339,11 +321,22 @@ export default function HomePage() {
     const value = prompt.trim()
     if (!value) return
 
+    const outgoingPrompt = selectedSkillName
+      ? buildSkillInitialPrompt({
+          skillName: selectedSkillName,
+          template: value,
+          title: selectedSkillName,
+        })
+      : value
+
     setPrompt('')
+    setPreferredToolType(null)
+    setSelectedSkillName('')
+    setSelectedSkillDescription('')
     navigate('/chat', {
       state: {
-        initialPrompt: value,
-        toolType: resolveQuickActionToolType(value),
+        initialPrompt: outgoingPrompt,
+        toolType: preferredToolType || resolveQuickActionToolType(value),
       },
     })
   }
@@ -452,11 +445,20 @@ export default function HomePage() {
                     onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
                     onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
                   />
+                  {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
+                  {selectedSkillName ? (
+                    <span className={styles.skillTagWrap}>
+                      <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
+                      {selectedSkillDescription ? (
+                        <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
+                      ) : null}
+                    </span>
+                  ) : null}
                   <Input
                     value={prompt}
                     onChange={(event) => setPrompt(event.target.value)}
                     onPressEnter={handleSend}
-                    style={{ flex: 1, border: 'none', boxShadow: 'none', background: 'transparent', fontSize: 14 }}
+                    style={{ flex: 1, minWidth: 0, border: 'none', boxShadow: 'none', background: 'transparent', fontSize: 14 }}
                     variant="borderless"
                     placeholder="@特定群组，总结群聊信息"
                   />

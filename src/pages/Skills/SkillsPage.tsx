@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   ArrowLeftOutlined,
   CheckCircleFilled,
@@ -16,6 +16,7 @@ import {
 } from '@ant-design/icons'
 import skillConfigText from '../../../config.yaml?raw'
 import homeAvatar from '../../assets/home-avatar.png'
+import { buildSkillInitialPrompt, extractSkillItemsFromResponse, type SkillApiResponse, type SkillItem as SkillApiItem } from '../../services/skillPromptService'
 import styles from './skills.module.less'
 
 type SkillsMode = 'discover' | 'manage'
@@ -30,29 +31,12 @@ type SkillApiConfig = {
   userIdParam: string
 }
 
-type SkillApiItem = {
-  id: string
-  skillName: string
-  title: string
-  description: string
-  isSelected: boolean
-}
-
-type SkillApiResponse = {
-  success: boolean
-  code: string
-  msg: string
-  data?: {
-    skills?: SkillApiItem[]
-    total?: number
-  }
-}
-
 type ManageSkillCard = {
   id: string
   skillName: string
   title: string
   description: string
+  template: string
   toneClassName: 'manageCardGreen' | 'manageCardAmber'
   icon: React.ReactNode
 }
@@ -135,52 +119,6 @@ function parseSkillApiConfig(rawText: string): SkillApiConfig {
   }
 }
 
-function readSkillField(item: Record<string, unknown>, keys: string[]) {
-  const value = keys.find((key) => typeof item[key] === 'string' && item[key])
-  return value ? String(item[value]).trim() : ''
-}
-
-function normalizeSkillItems(items: unknown[]) {
-  return items
-    .map((item, index) => {
-      if (!item || typeof item !== 'object') {
-        return null
-      }
-
-      const value = item as Record<string, unknown>
-      const title = readSkillField(value, ['chinese_name', 'chinesename', 'chineseName', 'name'])
-      const description = readSkillField(value, ['description', 'desc'])
-      const skillName = readSkillField(value, ['skill_name', 'skillName', 'name'])
-
-      if (!title) {
-        return null
-      }
-
-      const id = readSkillField(value, ['id']) || skillName || `${title}-${index}`
-      const isSelected = Boolean(value.is_selected ?? value.isSelected)
-
-      return {
-        id,
-        skillName,
-        title,
-        description,
-        isSelected,
-      }
-    })
-    .filter((item): item is SkillApiItem => item !== null)
-}
-
-function extractSkillItemsFromResponse(data: SkillApiResponse) {
-  const payload = data.data as Record<string, unknown> | undefined
-  const skills = Array.isArray(payload?.skills)
-    ? payload.skills
-    : Array.isArray(payload?.items)
-      ? payload.items
-      : []
-
-  return normalizeSkillItems(skills)
-}
-
 function buildSkillNameSet(items: SkillApiItem[]) {
   return new Set(items.map((item) => item.skillName || item.id).filter(Boolean))
 }
@@ -229,6 +167,7 @@ function getManageCardPresentation(index: number) {
 
 export default function SkillsPage() {
   const location = useLocation()
+  const navigate = useNavigate()
   const initialMode = (location.state as { mode?: SkillsMode } | null)?.mode === 'manage' ? 'manage' : 'discover'
   const [mode, setMode] = useState<SkillsMode>(initialMode)
   const [createOpen, setCreateOpen] = useState(false)
@@ -437,12 +376,24 @@ export default function SkillsPage() {
   }, [skillApiConfig])
 
   const handleUseSkill = async (skill: SkillApiItem) => {
-    if (!skillApiConfig || skillActionLoadingId === skill.id) {
+    if (skillActionLoadingId === skill.id) {
       return
     }
 
     if (skill.isSelected) {
-      await openManageSkills()
+      navigate('/', {
+        state: {
+          initialPrompt: buildSkillInitialPrompt(skill),
+          toolType: skill.skillName || skill.id,
+          skillName: skill.skillName || skill.id,
+          skillDescription: skill.description,
+          template: skill.template,
+        },
+      })
+      return
+    }
+
+    if (!skillApiConfig) {
       return
     }
 
@@ -579,6 +530,7 @@ export default function SkillsPage() {
         skillName: item.skillName,
         title: item.title,
         description: item.description,
+        template: item.template,
         toneClassName: presentation.toneClassName,
         icon: presentation.icon,
       }
@@ -594,6 +546,7 @@ export default function SkillsPage() {
         skillName: item.skillName,
         title: item.title,
         description: item.description,
+        template: item.template,
         isSelected: item.isSelected,
         toneClassName: presentation.toneClassName,
         icon: presentation.icon,
@@ -614,6 +567,21 @@ export default function SkillsPage() {
 
     return '还没有添加任何技能'
   }, [addedSkillsError, manageTab])
+
+  const handleLaunchSkill = useCallback(
+    (skill: Pick<SkillApiItem, 'id' | 'skillName' | 'template' | 'title' | 'description'>) => {
+      navigate('/', {
+        state: {
+          initialPrompt: buildSkillInitialPrompt(skill),
+          toolType: skill.skillName || skill.id,
+          skillName: skill.skillName || skill.id,
+          skillDescription: skill.description,
+          template: skill.template,
+        },
+      })
+    },
+    [navigate],
+  )
 
   return (
     <main className={styles.page}>
@@ -850,7 +818,7 @@ export default function SkillsPage() {
                       <h3 className={styles.manageCardTitle}>{item.title}</h3>
                     </div>
                     <p className={styles.manageCardDesc}>{item.description}</p>
-                      <button type="button" className={styles.useButton} onClick={() => void openManageSkills()}>
+                      <button type="button" className={styles.useButton} onClick={() => handleLaunchSkill(item)}>
                         立即使用
                       </button>
                   </article>

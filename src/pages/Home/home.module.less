@@ -113,6 +113,67 @@
   }
 }
 
+.skillPrefix {
+  flex-shrink: 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.skillTagWrap {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.skillNameTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  color: #1677ff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.skillDescriptionTooltip {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 12px);
+  width: 320px;
+  max-width: min(320px, 62vw);
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(17, 24, 39, 0.96);
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1.7;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.18);
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 20;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 22px;
+    top: 100%;
+    width: 12px;
+    height: 7px;
+    background: rgba(17, 24, 39, 0.96);
+    clip-path: polygon(50% 100%, 0 0, 100% 0);
+  }
+}
+
+.skillTagWrap:hover .skillDescriptionTooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .inputActions {
   display: flex;
   align-items: center;

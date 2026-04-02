@@ -16,3 +16,5 @@ del_chat_session_path: /api/v1/chat/sessions/{session_id}
 create_chat_session_path: /api/v1/chat/sessions
 get_chat_session_path: /api/v1/chat/sessions/{session_id}
 
+//skill相关
+upload_skill_path: /api/v1/skills/custom/upload

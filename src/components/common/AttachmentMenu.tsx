@@ -20,6 +20,7 @@ export type AttachmentSkillItem = {
   skillName: string
   title: string
   description: string
+  template: string
   isSelected: boolean
 }
 

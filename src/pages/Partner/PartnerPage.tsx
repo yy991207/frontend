@@ -57,6 +57,7 @@ import {
   type ChatSessionConfig,
   type ChatSessionDetail,
 } from '../../services/chatSessionService'
+import { buildSkillInitialPrompt, extractSkillItemsFromResponse, type SkillApiResponse } from '../../services/skillPromptService'
 import styles from './partner.module.less'
 
 type ChatMessage = {
@@ -83,17 +84,8 @@ type SkillItem = {
   skillName: string
   title: string
   description: string
+  template: string
   isSelected: boolean
-}
-
-type SkillApiResponse = {
-  success: boolean
-  code: string
-  msg: string
-  data?: {
-    skills?: unknown[]
-    total?: number
-  }
 }
 
 function parseSimpleYaml(rawText: string) {
@@ -145,52 +137,6 @@ function parseSkillApiConfig(rawText: string) {
     userId,
     userIdParam,
   }
-}
-
-function readSkillField(item: Record<string, unknown>, keys: string[]) {
-  const value = keys.find((key) => typeof item[key] === 'string' && item[key])
-  return value ? String(item[value]).trim() : ''
-}
-
-function normalizeSkillItems(items: unknown[]): SkillItem[] {
-  return items
-    .map((item, index) => {
-      if (!item || typeof item !== 'object') {
-        return null
-      }
-
-      const value = item as Record<string, unknown>
-      const title = readSkillField(value, ['chinese_name', 'chinesename', 'chineseName', 'name'])
-      const description = readSkillField(value, ['description', 'desc'])
-      const skillName = readSkillField(value, ['skill_name', 'skillName', 'name'])
-
-      if (!title) {
-        return null
-      }
-
-      const id = readSkillField(value, ['id']) || skillName || `${title}-${index}`
-      const isSelected = Boolean(value.is_selected ?? value.isSelected)
-
-      return {
-        id,
-        skillName,
-        title,
-        description,
-        isSelected,
-      }
-    })
-    .filter((item): item is SkillItem => item !== null)
-}
-
-function extractSkillItemsFromResponse(data: SkillApiResponse) {
-  const payload = data.data as Record<string, unknown> | undefined
-  const skills = Array.isArray(payload?.skills)
-    ? payload.skills
-    : Array.isArray(payload?.items)
-      ? payload.items
-      : []
-
-  return normalizeSkillItems(skills)
 }
 
 async function loadChatSessionConfig(): Promise<ChatSessionConfig> {
@@ -532,7 +478,7 @@ export default function PartnerPage() {
     setSkillMenuOpen(false)
     setAttachMenuOpen(false)
     setSkillSearchQuery('')
-    void startAssistantReply(`使用技能：${skill.title}`, skill.skillName || skill.id)
+    void startAssistantReply(buildSkillInitialPrompt(skill), skill.skillName || skill.id)
   }
 
 
