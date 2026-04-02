@@ -12,7 +12,8 @@ test('chat page loads session detail and maps API messages into UI messages', as
   const content = await readFile(new URL('../src/pages/Chat/ChatPage.tsx', import.meta.url), 'utf8')
 
   assert.match(content, /getChatSession/)
-  assert.match(content, /initialSessionId/)
+  assert.match(content, /routeSessionId/)
+  assert.match(content, /const session = await getChatSession\(config, routeSessionId, controller\.signal\)/)
   assert.match(content, /message_id/)
   assert.match(content, /role: message\.role/)
   assert.match(content, /content: message\.content/)
