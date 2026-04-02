@@ -10,3 +10,7 @@ skill_user_id_param: userid
 view_partner_config_path: /api/v1/agent
 update_partner_config_path: /api/v1/agent
 
+//会话列表展示
+view_chat_sessions_path: /api/v1/chat/sessions
+
+
