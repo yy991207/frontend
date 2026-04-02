@@ -872,8 +872,7 @@
   left: 12px;
   bottom: calc(100% + 12px);
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  align-items: stretch;
   opacity: 0;
   transform: translateY(8px) scale(0.98);
   transform-origin: bottom left;
@@ -941,6 +940,9 @@
 }
 
 .toolSubmenu {
+  position: absolute;
+  left: calc(268px + 6px);
+  bottom: 0;
   width: 330px;
   border-radius: 18px;
   border: 1px solid rgba(226, 232, 240, 0.95);
@@ -1036,6 +1038,9 @@
 
 // 技能子菜单样式
 .skillSubmenu {
+  position: absolute;
+  left: calc(268px + 6px);
+  bottom: 0;
   width: 330px;
   max-height: 420px;
   border-radius: 18px;
@@ -1466,6 +1471,11 @@
   .attachMenuLayer {
     left: 0;
     flex-direction: column;
+  }
+
+  .toolSubmenu,
+  .skillSubmenu {
+    position: static;
   }
 
   .attachMenu,
