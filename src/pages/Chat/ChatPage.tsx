@@ -12,6 +12,7 @@ import chatConfigText from '../../../config.yaml?raw'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AttachmentMenu, type AttachmentSkillItem } from '../../components/common/AttachmentMenu'
 import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal'
+import { renderMessageMarkdown } from '../../components/common/renderMessageMarkdown'
 import {
   createChatSession,
   downloadSessionFileContent,
@@ -768,7 +769,7 @@ export default function ChatPage() {
                           </div>
                         </div>
                       ) : null}
-                      <div className={styles.assistantText}>{message.content}</div>
+                      <div className={styles.assistantText}>{renderMessageMarkdown(message.content)}</div>
                       {message.references?.length ? (
                         <div className={styles.referenceList}>
                           {message.references.map((reference, index) => (
