@@ -325,6 +325,13 @@ export default function PartnerPage() {
   const [activeSettingKey, setActiveSettingKey] = useState('personalization')
   const [expandedKeys, setExpandedKeys] = useState<string[]>(['tasks', 'security'])
   const [configTab, setConfigTab] = useState<'soul' | 'user' | 'identity'>('soul')
+
+  const clearSelectedSkill = () => {
+    setPreferredToolType(null)
+    setSelectedSkillName('')
+    setSelectedSkillDescription('')
+  }
+
   // 单独维护助手名称编辑态，避免影响其他设置区域的展示逻辑。
   const [agentName, setAgentName] = useState('Lily')
   const [isNameModalOpen, setIsNameModalOpen] = useState(false)
@@ -929,9 +936,7 @@ export default function PartnerPage() {
     const outgoingToolType = selectedSkillName ? preferredToolType || selectedSkillName : null
 
     setDraft('')
-    setPreferredToolType(null)
-    setSelectedSkillName('')
-    setSelectedSkillDescription('')
+    clearSelectedSkill()
     setAttachMenuOpen(false)
     setToolMenuOpen(false)
     setToolInfoOpen(false)
@@ -1406,6 +1411,14 @@ export default function PartnerPage() {
                     {selectedSkillName ? (
                       <span className={styles.skillTagWrap}>
                         <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
+                        <button
+                          type="button"
+                          className={styles.skillRemoveButton}
+                          aria-label="移除已选技能"
+                          onClick={clearSelectedSkill}
+                        >
+                          <CloseOutlined />
+                        </button>
                         {selectedSkillDescription ? (
                           <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
                         ) : null}
@@ -1416,6 +1429,12 @@ export default function PartnerPage() {
                       onChange={(event) => setDraft(event.target.value)}
                       onKeyDown={(event) => {
                         if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+                          return
+                        }
+
+                        if (event.key === 'Backspace' && !draft.trim() && selectedSkillName) {
+                          event.preventDefault()
+                          clearSelectedSkill()
                           return
                         }
 

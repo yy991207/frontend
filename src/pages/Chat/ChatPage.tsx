@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AudioOutlined,
   ArrowUpOutlined,
+  CloseOutlined,
   CopyOutlined,
   DeleteOutlined,
   EllipsisOutlined,
@@ -222,6 +223,13 @@ export default function ChatPage() {
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+
+  const clearSelectedSkill = () => {
+    setPreferredToolType(null)
+    setSelectedSkillName('')
+    setSelectedSkillDescription('')
+  }
+
   const chatApiConfig = useMemo<ChatApiConfig | null>(() => {
     try {
       return parseChatApiConfig(chatConfigText)
@@ -688,9 +696,7 @@ export default function ChatPage() {
     const outgoingToolType = selectedSkillName ? preferredToolType || selectedSkillName : null
 
     setDraft('')
-    setPreferredToolType(null)
-    setSelectedSkillName('')
-    setSelectedSkillDescription('')
+    clearSelectedSkill()
     void startAssistantReply(outgoingPrompt, outgoingToolType)
   }
 
@@ -923,6 +929,14 @@ export default function ChatPage() {
               {selectedSkillName ? (
                 <span className={styles.skillTagWrap}>
                   <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
+                  <button
+                    type="button"
+                    className={styles.skillRemoveButton}
+                    aria-label="移除已选技能"
+                    onClick={clearSelectedSkill}
+                  >
+                    <CloseOutlined />
+                  </button>
                   {selectedSkillDescription ? (
                     <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
                   ) : null}
@@ -933,6 +947,12 @@ export default function ChatPage() {
                       onChange={(event) => setDraft(event.target.value)}
                       onKeyDown={(event) => {
                         if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+                          return
+                        }
+
+                        if (event.key === 'Backspace' && !draft.trim() && selectedSkillName) {
+                          event.preventDefault()
+                          clearSelectedSkill()
                           return
                         }
 
