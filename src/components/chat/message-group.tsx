@@ -8,8 +8,9 @@ import {
 } from '@ant-design/icons'
 import { useMemo, useState } from 'react'
 
-import type { CourseItem, Message, MessageGroup, SkillOutputItem, ToolCall } from '../../core/messages/types'
+import type { CourseItem, Message, MessageGroup, ToolCall } from '../../core/messages/types'
 import {
+  extractAssistantOutputText,
   extractReasoningContentFromMessage,
   extractSubagentLabelFromMessage,
   extractTextFromMessage,
@@ -24,18 +25,6 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
-function stripSkillOutputUrlsFromText(text: string, skillOutput: SkillOutputItem[]): string {
-  let result = text
-  for (const item of skillOutput) {
-    const urlPattern = new RegExp(item.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')
-    result = result.replace(urlPattern, '')
-    const markdownLinkPattern = new RegExp(`\\[([^\\]]*)\\]\\(${item.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g')
-    result = result.replace(markdownLinkPattern, '$1')
-  }
-  result = result.replace(/\n{3,}/g, '\n\n').trim()
-  return result
 }
 
 function SkillOutputCard({
@@ -70,6 +59,7 @@ function SkillOutputCard({
 type MessageGroupSectionProps = {
   group: MessageGroup
   copiedMessageId: string | null
+  assistantCopyTargets: Record<string, string>
   onCopy: (messageId: string, content: string) => void
   getToolDisplayTitle: (toolCall: ToolCall) => string
   getToolDisplaySummary: (toolCall: ToolCall) => string
@@ -321,6 +311,7 @@ function ProcessingMessage({
 export function MessageGroupSection({
   group,
   copiedMessageId,
+  assistantCopyTargets,
   onCopy,
   getToolDisplayTitle,
   onOpenFile,
@@ -393,9 +384,8 @@ export function MessageGroupSection({
       return (
         <>
           {group.messages.map((message) => {
-            const textContent = message.skillOutput.length
-              ? stripSkillOutputUrlsFromText(extractTextFromMessage(message), message.skillOutput)
-              : extractTextFromMessage(message)
+            const textContent = extractAssistantOutputText(message)
+            const copyContent = assistantCopyTargets[message.id]
 
             return (
               <div key={message.id} className={styles.assistantRow}>
@@ -412,9 +402,11 @@ export function MessageGroupSection({
                       ))}
                     </div>
                   ) : null}
-                  <div className={styles.assistantFooter}>
-                    {renderCopyAction(message.id, textContent, copiedMessageId, onCopy)}
-                  </div>
+                  {copyContent ? (
+                    <div className={styles.assistantFooter}>
+                      {renderCopyAction(message.id, copyContent, copiedMessageId, onCopy)}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             )
