@@ -166,104 +166,101 @@ export function buildCourseTablePreviewHtml(courseTable: CourseTableArtifact): s
   <style>
     :root {
       color-scheme: light;
-      --bg-1: #eef6ff;
-      --bg-2: #f8fbff;
-      --panel: rgba(255, 255, 255, 0.95);
-      --line: #dbeafe;
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --line: rgba(15, 23, 42, 0.08);
       --text: #0f172a;
       --muted: #64748b;
-      --accent-a: #0ea5e9;
-      --accent-b: #14b8a6;
+      --accent: #14b8a6;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
       color: var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(186, 230, 253, 0.28) 0, transparent 42%),
-        linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 100%);
+      background: var(--bg);
     }
     .page {
-      max-width: 1100px;
+      max-width: 860px;
       margin: 0 auto;
-      padding: 40px 24px 72px;
+      padding: 28px 20px 56px;
     }
     .hero {
-      padding: 28px 30px;
-      border-radius: 24px;
-      background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
-      border: 1px solid rgba(186, 230, 253, 0.95);
-      box-shadow: 0 18px 44px rgba(14, 116, 144, 0.08);
-    }
-    .eyebrow {
-      color: #0f766e;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    h1 {
-      margin: 10px 0 8px;
-      font-size: 44px;
-      line-height: 1.16;
-    }
-    .summary {
-      margin: 0;
-      color: #475569;
-      font-size: 20px;
-      line-height: 1.7;
-    }
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-      margin-top: 20px;
-    }
-    .stat-card {
       padding: 20px 22px;
       border-radius: 18px;
       background: var(--panel);
       border: 1px solid var(--line);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    }
+    .eyebrow {
+      color: #0f766e;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 8px 0 6px;
+      font-size: 24px;
+      line-height: 1.35;
+    }
+    .summary {
+      margin: 0;
+      color: #475569;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .stat-card {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
     }
     .stat-card span {
       display: block;
       color: var(--muted);
-      font-size: 14px;
+      font-size: 12px;
     }
     .stat-card strong {
       display: block;
-      margin-top: 10px;
-      font-size: 34px;
+      margin-top: 8px;
+      font-size: 18px;
       line-height: 1.2;
     }
     .list {
       display: flex;
       flex-direction: column;
-      gap: 18px;
-      margin-top: 24px;
+      gap: 12px;
+      margin-top: 14px;
     }
     .course-card {
       display: flex;
-      gap: 18px;
+      gap: 14px;
       align-items: flex-start;
-      padding: 24px;
-      border-radius: 22px;
+      padding: 16px 18px;
+      border-radius: 18px;
       background: var(--panel);
       border: 1px solid var(--line);
-      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
     }
     .course-index {
-      width: 48px;
-      height: 48px;
-      border-radius: 16px;
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
       flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, var(--accent-a) 0%, var(--accent-b) 100%);
+      background: #14b8a6;
       color: #fff;
-      font-size: 22px;
+      font-size: 14px;
       font-weight: 700;
     }
     .course-body {
@@ -272,39 +269,30 @@ export function buildCourseTablePreviewHtml(courseTable: CourseTableArtifact): s
     }
     .course-body h3 {
       margin: 0;
-      font-size: 30px;
-      line-height: 1.45;
+      font-size: 15px;
+      line-height: 1.55;
     }
     .course-meta {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px 24px;
-      margin-top: 12px;
-      color: #475569;
-      font-size: 18px;
+      gap: 8px 16px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
       line-height: 1.6;
     }
     @media (max-width: 768px) {
       .page {
-        padding: 20px 14px 40px;
+        padding: 18px 14px 36px;
       }
       h1 {
-        font-size: 32px;
-      }
-      .summary {
-        font-size: 16px;
+        font-size: 20px;
       }
       .stats {
         grid-template-columns: 1fr;
       }
       .course-card {
-        padding: 18px;
-      }
-      .course-body h3 {
-        font-size: 22px;
-      }
-      .course-meta {
-        font-size: 15px;
+        padding: 14px 16px;
       }
     }
   </style>
