@@ -145,13 +145,23 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
   }, [content])
 
   const handleOpenInNewTab = useCallback(() => {
-    const url = isExternalUrl ? file.filepath : buildArtifactDownloadUrl({
+    if (isExternalUrl && content) {
+      const newWindow = window.open('', '_blank')
+      if (newWindow) {
+        newWindow.document.open()
+        newWindow.document.write(content)
+        newWindow.document.close()
+      }
+      return
+    }
+
+    const url = buildArtifactDownloadUrl({
       baseUrl: file.baseUrl ?? '',
       sessionId: file.sessionId ?? '',
       filepath: file.filepath,
     })
     window.open(url, '_blank')
-  }, [file, isExternalUrl])
+  }, [file, isExternalUrl, content])
 
   const handleDownload = useCallback(() => {
     const url = isExternalUrl ? file.filepath : buildArtifactDownloadUrl({
