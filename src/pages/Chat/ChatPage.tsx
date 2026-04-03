@@ -13,6 +13,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
 import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts-context'
 import { MessageList } from '../../components/chat/message-list'
+import { useStickToBottom } from '../../components/chat/use-stick-to-bottom'
 import { AttachmentMenu, type AttachmentSkillItem } from '../../components/common/AttachmentMenu'
 import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal'
 import { adaptChatMessages } from '../../core/messages/adapters'
@@ -269,7 +270,6 @@ function ChatPageContent() {
   const abortControllerRef = useRef<AbortController | null>(null)
   const streamBridgeRef = useRef<ChatStreamBridge | null>(null)
   const headerMenuRef = useRef<HTMLDivElement | null>(null)
-  const messagesViewportRef = useRef<HTMLDivElement | null>(null)
   const [skills, setSkills] = useState<SkillItem[]>([])
   const [skillsLoading, setSkillsLoading] = useState(false)
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
@@ -284,6 +284,8 @@ function ChatPageContent() {
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const stickToBottom = useStickToBottom()
+  const { containerRef: messagesViewportRef, scrollToBottom } = stickToBottom
 
   const clearSelectedSkill = () => {
     setPreferredToolType(null)
@@ -395,28 +397,19 @@ function ChatPageContent() {
     messagesRef.current = messages
   }, [messages])
 
-  const scrollMessagesToBottom = useCallback(() => {
-    if (!messagesViewportRef.current) {
-      return
-    }
-
-    messagesViewportRef.current.scrollTo({
-      top: messagesViewportRef.current.scrollHeight,
-      behavior: 'smooth',
-    })
-  }, [])
-
   useEffect(() => {
     requestAnimationFrame(() => {
-      scrollMessagesToBottom()
+      if (isResponding || sessionLoading || stickToBottom.isAtBottom) {
+        scrollToBottom({ smooth: true, forceScroll: sessionLoading })
+      }
 
       if (sessionLoading) {
         requestAnimationFrame(() => {
-          scrollMessagesToBottom()
+          scrollToBottom({ smooth: true, forceScroll: sessionLoading })
         })
       }
     })
-  }, [groupedMessages.length, isResponding, scrollMessagesToBottom, sessionLoading])
+  }, [groupedMessages.length, isResponding, scrollToBottom, sessionLoading, stickToBottom.isAtBottom])
 
   useEffect(() => {
     const streamBridge = createChatStreamBridge((snapshot) => {
