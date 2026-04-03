@@ -380,6 +380,7 @@ function PartnerPageContent() {
   const [selectedSkillDescription, setSelectedSkillDescription] = useState('')
   const [requestError, setRequestError] = useState('')
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
+  const [sessionLoading, setSessionLoading] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [activeSettingKey, setActiveSettingKey] = useState('personalization')
   const [expandedKeys, setExpandedKeys] = useState<string[]>(['tasks', 'security'])
@@ -909,6 +910,7 @@ function PartnerPageContent() {
 
   useEffect(() => {
     if (!routeSessionId) {
+      setSessionLoading(false)
       return
     }
 
@@ -916,6 +918,15 @@ function PartnerPageContent() {
     let controller: AbortController | null = null
 
     const restoreSession = async () => {
+      const hasCurrentSessionMessages = messagesRef.current.some((message) => message.sessionId === routeSessionId)
+
+      if (hasCurrentSessionMessages) {
+        setSessionLoading(false)
+        return
+      }
+
+      setSessionLoading(true)
+
       const streamBridge = streamBridgeRef.current
 
       if (streamBridge) {
@@ -932,14 +943,9 @@ function PartnerPageContent() {
           setMessages(nextMessages)
           setIsResponding(snapshot.status === 'streaming')
           setRequestError(snapshot.status === 'error' ? (snapshot.error ?? '请求失败，请稍后重试。') : '')
+          setSessionLoading(false)
           return
         }
-      }
-
-      const hasCurrentSessionMessages = messagesRef.current.some((message) => message.sessionId === routeSessionId)
-
-      if (hasCurrentSessionMessages) {
-        return
       }
 
       controller = new AbortController()
@@ -957,9 +963,11 @@ function PartnerPageContent() {
         setMessages(nextMessages)
         setIsResponding(false)
         setRequestError('')
+        setSessionLoading(false)
       } catch (error) {
         if (!controller.signal.aborted && !cancelled) {
           setRequestError(error instanceof Error ? error.message : '获取会话详情失败')
+          setSessionLoading(false)
         }
       }
     }
@@ -968,6 +976,7 @@ function PartnerPageContent() {
 
     return () => {
       cancelled = true
+      setSessionLoading(false)
       streamBridgeRef.current?.unsubscribe(routeSessionId)
       controller?.abort()
     }
@@ -1396,6 +1405,7 @@ function PartnerPageContent() {
                 <div className={styles.messageColumn}>
                   <MessageList
                     groups={groupedMessages}
+                    threadLoading={sessionLoading}
                     copiedMessageId={copiedMessageId}
                     assistantCopyTargets={assistantCopyTargets}
                     onCopy={handleCopy}

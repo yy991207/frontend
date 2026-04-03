@@ -19,3 +19,18 @@ test('chat page loads session detail and maps API messages into UI messages', as
   assert.match(content, /content: message\.content/)
   assert.match(content, /mapSessionDetailToMessages/)
 })
+
+test('chat and partner pages drive a dedicated session loading skeleton while restoring history', async () => {
+  const chatContent = await readFile(new URL('../src/pages/Chat/ChatPage.tsx', import.meta.url), 'utf8')
+  const partnerContent = await readFile(new URL('../src/pages/Partner/PartnerPage.tsx', import.meta.url), 'utf8')
+
+  assert.match(chatContent, /const \[sessionLoading, setSessionLoading\] = useState\(false\)/)
+  assert.match(chatContent, /threadLoading=\{sessionLoading\}/)
+  assert.match(chatContent, /setSessionLoading\(true\)/)
+  assert.match(chatContent, /setSessionLoading\(false\)/)
+
+  assert.match(partnerContent, /const \[sessionLoading, setSessionLoading\] = useState\(false\)/)
+  assert.match(partnerContent, /threadLoading=\{sessionLoading\}/)
+  assert.match(partnerContent, /setSessionLoading\(true\)/)
+  assert.match(partnerContent, /setSessionLoading\(false\)/)
+})
