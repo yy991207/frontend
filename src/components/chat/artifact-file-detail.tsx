@@ -6,7 +6,7 @@ import {
   LinkOutlined,
   CloseOutlined,
 } from '@ant-design/icons'
-import { Button, message, Segmented, Space } from 'antd'
+import { Button, message, Segmented } from 'antd'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useArtifacts, type ArtifactFile } from './artifacts-context'
@@ -24,6 +24,19 @@ type ArtifactFileDetailProps = {
 
 function formatDuration(duration: number): string {
   return `${duration.toFixed(1)} 分钟`
+}
+
+function getArtifactDisplayName(filepath: string): string {
+  if (filepath.startsWith('http://') || filepath.startsWith('https://')) {
+    try {
+      const url = new URL(filepath)
+      return url.pathname.split('/').pop() || filepath
+    } catch {
+      return filepath
+    }
+  }
+
+  return getFileName(filepath)
 }
 
 function CourseTablePreview({ courseTable }: { courseTable: NonNullable<ReturnType<typeof parseCourseTableArtifact>> }) {
@@ -72,15 +85,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
     return file.filepath.startsWith('http://') || file.filepath.startsWith('https://')
   }, [file.filepath])
   const displayFilename = useMemo(() => {
-    if (isExternalUrl) {
-      try {
-        const url = new URL(file.filepath)
-        return url.pathname.split('/').pop() || file.filepath
-      } catch {
-        return file.filepath
-      }
-    }
-    return getFileName(file.filepath)
+    return getArtifactDisplayName(file.filepath)
   }, [file.filepath, isExternalUrl])
 
   const { isCodeFile, language } = useMemo(() => {
@@ -264,8 +269,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
     <div className={styles.artifactPanel}>
       <div className={styles.artifactHeader}>
         <div className={styles.artifactHeaderLeft}>
-          <div className={styles.artifactTitle}>{displayFilename}</div>
-          {files.length > 1 && (
+          {files.length > 1 ? (
             <select
               className={styles.artifactFileSelect}
               value={file.filepath}
@@ -276,41 +280,70 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
             >
               {files.map((f) => (
                 <option key={f.filepath} value={f.filepath}>
-                  {f.filepath.startsWith('http') ? (() => {
-                    try { return new URL(f.filepath).pathname.split('/').pop() || f.filepath } catch { return f.filepath }
-                  })() : getFileName(f.filepath)}
+                  {getArtifactDisplayName(f.filepath)}
                 </option>
               ))}
             </select>
+          ) : (
+            <div className={styles.artifactTitle}>{displayFilename}</div>
           )}
         </div>
+
         <div className={styles.artifactHeaderCenter}>
           {showViewSwitcher && (
             <Segmented
+              className={styles.artifactModeSwitch}
               value={viewMode}
               onChange={(val) => setViewMode(val as 'code' | 'preview')}
               options={[
-                { label: '代码', value: 'code', icon: <CodeOutlined /> },
-                { label: '预览', value: 'preview', icon: <EyeOutlined /> },
+                { label: <CodeOutlined />, value: 'code', title: '代码' },
+                { label: <EyeOutlined />, value: 'preview', title: '预览' },
               ]}
             />
           )}
         </div>
+
         <div className={styles.artifactHeaderRight}>
-          <Space size="small">
+          <div className={styles.artifactActionBar}>
             {(isCodeFile || externalCodeFile) && (
-              <Button type="text" size="small" icon={<CopyOutlined />} onClick={handleCopy}>
-                复制
-              </Button>
+              <Button
+                type="text"
+                size="small"
+                className={styles.artifactIconButton}
+                icon={<CopyOutlined />}
+                aria-label="复制文件内容"
+                title="复制"
+                onClick={handleCopy}
+              />
             )}
-            <Button type="text" size="small" icon={<LinkOutlined />} onClick={handleOpenInNewTab}>
-              新窗口
-            </Button>
-            <Button type="text" size="small" icon={<DownloadOutlined />} onClick={handleDownload}>
-              下载
-            </Button>
-            <Button type="text" size="small" icon={<CloseOutlined />} onClick={handleClose} />
-          </Space>
+            <Button
+              type="text"
+              size="small"
+              className={styles.artifactIconButton}
+              icon={<LinkOutlined />}
+              aria-label="新窗口打开"
+              title="新窗口"
+              onClick={handleOpenInNewTab}
+            />
+            <Button
+              type="text"
+              size="small"
+              className={styles.artifactIconButton}
+              icon={<DownloadOutlined />}
+              aria-label="下载文件"
+              title="下载"
+              onClick={handleDownload}
+            />
+            <Button
+              type="text"
+              size="small"
+              className={styles.artifactIconButton}
+              icon={<CloseOutlined />}
+              aria-label="关闭预览"
+              title="关闭"
+              onClick={handleClose}
+            />
+          </div>
         </div>
       </div>
 
