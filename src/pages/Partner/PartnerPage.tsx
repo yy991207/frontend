@@ -365,6 +365,7 @@ function PartnerPageContent() {
   const abortControllerRef = useRef<AbortController | null>(null)
   const streamBridgeRef = useRef<ChatStreamBridge | null>(null)
   const composerRef = useRef<HTMLDivElement | null>(null)
+  const messagesViewportRef = useRef<HTMLDivElement | null>(null)
   const [attachMenuOpen, setAttachMenuOpen] = useState(false)
   const [toolMenuOpen, setToolMenuOpen] = useState(false)
   const [toolInfoOpen, setToolInfoOpen] = useState(false)
@@ -664,6 +665,29 @@ function PartnerPageContent() {
   useEffect(() => {
     messagesRef.current = messages
   }, [messages])
+
+  const scrollMessagesToBottom = useCallback(() => {
+    if (!messagesViewportRef.current) {
+      return
+    }
+
+    messagesViewportRef.current.scrollTo({
+      top: messagesViewportRef.current.scrollHeight,
+      behavior: 'smooth',
+    })
+  }, [])
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      scrollMessagesToBottom()
+
+      if (sessionLoading) {
+        requestAnimationFrame(() => {
+          scrollMessagesToBottom()
+        })
+      }
+    })
+  }, [groupedMessages.length, isResponding, scrollMessagesToBottom, sessionLoading])
 
   useEffect(() => {
     const streamBridge = createChatStreamBridge((snapshot) => {
@@ -1401,7 +1425,7 @@ function PartnerPageContent() {
             </header>
 
             <div className={styles.chatMainPanel}>
-              <div className={styles.messages}>
+              <div ref={messagesViewportRef} className={styles.messages}>
                 <div className={styles.messageColumn}>
                   <MessageList
                     groups={groupedMessages}

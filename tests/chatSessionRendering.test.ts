@@ -34,3 +34,30 @@ test('chat and partner pages drive a dedicated session loading skeleton while re
   assert.match(partnerContent, /setSessionLoading\(true\)/)
   assert.match(partnerContent, /setSessionLoading\(false\)/)
 })
+
+test('chat and partner pages keep the message viewport scrolled to the latest content during session loading', async () => {
+  const chatContent = await readFile(new URL('../src/pages/Chat/ChatPage.tsx', import.meta.url), 'utf8')
+  const partnerContent = await readFile(new URL('../src/pages/Partner/PartnerPage.tsx', import.meta.url), 'utf8')
+  const hookContent = await readFile(new URL('../src/components/chat/use-stick-to-bottom.ts', import.meta.url), 'utf8')
+
+  assert.match(hookContent, /export function useStickToBottom/)
+  assert.match(hookContent, /const containerRef = useRef<HTMLDivElement \| null>\(null\)/)
+  assert.match(hookContent, /const \[isAtBottom, setIsAtBottom\] = useState\(true\)/)
+  assert.match(hookContent, /scrollTo\(\{/)
+  assert.match(hookContent, /top: container\.scrollHeight/)
+  assert.match(hookContent, /behavior: smooth \? 'smooth' : 'auto'/)
+  assert.match(hookContent, /Math\.abs\(container\.scrollHeight - container\.clientHeight - container\.scrollTop\)/)
+  assert.match(hookContent, /setIsAtBottom\(distanceToBottom <= threshold\)/)
+  assert.match(hookContent, /if \(!isAtBottom && !forceScroll\) \{/)
+  assert.match(hookContent, /containerRef,\s*scrollToBottom,\s*isAtBottom/)
+
+  assert.match(chatContent, /useStickToBottom\(\)/)
+  assert.match(chatContent, /containerRef:\s*messagesViewportRef/)
+  assert.match(chatContent, /scrollToBottom\(\{ smooth: true, forceScroll: sessionLoading \}\)/)
+  assert.match(chatContent, /if \(isResponding \|\| sessionLoading \|\| stickToBottom\.isAtBottom\)/)
+
+  assert.match(partnerContent, /useStickToBottom\(\)/)
+  assert.match(partnerContent, /containerRef:\s*messagesViewportRef/)
+  assert.match(partnerContent, /scrollToBottom\(\{ smooth: true, forceScroll: sessionLoading \}\)/)
+  assert.match(partnerContent, /if \(isResponding \|\| sessionLoading \|\| stickToBottom\.isAtBottom\)/)
+})
