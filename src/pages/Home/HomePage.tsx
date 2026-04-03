@@ -74,6 +74,7 @@ function parseSkillApiConfig(rawText: string) {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
   const managePath = parsedConfig.view_user_skills_path
+  const listPath = parsedConfig.list_user_skills_path
   const userId = parsedConfig.user_id
   const userIdParam = parsedConfig.skill_user_id_param
 
@@ -85,8 +86,13 @@ function parseSkillApiConfig(rawText: string) {
     ? managePath.replace('{user_id}', encodeURIComponent(userId))
     : managePath
 
+  const listEndpoint = listPath
+    ? buildAbsoluteUrl(baseUrl, listPath)
+    : null
+
   return {
     manageEndpoint: buildAbsoluteUrl(baseUrl, managePathWithUser),
+    listEndpoint,
     userId,
     userIdParam,
   }
@@ -205,7 +211,7 @@ export default function HomePage() {
     }
   }, [])
 
-  // 获取用户技能列表
+  // 获取用户技能列表（我添加的 + 我创建的）
   const fetchSkills = useCallback(async (signal?: AbortSignal) => {
     if (!skillApiConfig) {
       setSkills([])
@@ -215,23 +221,37 @@ export default function HomePage() {
     setSkillsLoading(true)
 
     try {
-      const requestUrl = new URL(skillApiConfig.manageEndpoint)
-      requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
-
-      const response = await fetch(requestUrl.toString(), { signal })
-
-      if (!response.ok) {
-        throw new Error('技能接口请求失败')
+      const fetchAdded = async (): Promise<SkillItem[]> => {
+        const requestUrl = new URL(skillApiConfig.manageEndpoint)
+        requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
+        const response = await fetch(requestUrl.toString(), { signal })
+        if (!response.ok) throw new Error('技能接口请求失败')
+        const data = (await response.json()) as SkillApiResponse
+        if (!data.success) throw new Error(data.msg || '技能接口返回失败')
+        return extractSkillItemsFromResponse(data)
       }
 
-      const data = (await response.json()) as SkillApiResponse
-
-      if (!data.success) {
-        throw new Error(data.msg || '技能接口返回失败')
+      const fetchCreated = async (): Promise<SkillItem[]> => {
+        if (!skillApiConfig.listEndpoint) return []
+        const requestUrl = new URL(skillApiConfig.listEndpoint)
+        requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
+        const response = await fetch(requestUrl.toString(), { signal })
+        if (!response.ok) throw new Error('我创建的技能接口请求失败')
+        const data = (await response.json()) as SkillApiResponse
+        if (!data.success) throw new Error(data.msg || '我创建的技能接口返回失败')
+        return extractSkillItemsFromResponse(data)
       }
 
-      const nextSkills = extractSkillItemsFromResponse(data)
-      setSkills(nextSkills)
+      const [addedSkills, createdSkills] = await Promise.all([fetchAdded(), fetchCreated()])
+      const seen = new Set<string>()
+      const merged: SkillItem[] = []
+      for (const skill of [...addedSkills, ...createdSkills]) {
+        if (!seen.has(skill.id)) {
+          seen.add(skill.id)
+          merged.push(skill)
+        }
+      }
+      setSkills(merged)
     } catch {
       if (!signal?.aborted) {
         setSkills([])

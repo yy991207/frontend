@@ -4,19 +4,68 @@ import {
   BulbOutlined,
   CaretUpOutlined,
   CopyOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons'
 import { useMemo, useState } from 'react'
 
-import type { CourseItem, Message, MessageGroup, ToolCall } from '../../core/messages/types'
+import type { CourseItem, Message, MessageGroup, SkillOutputItem, ToolCall } from '../../core/messages/types'
 import {
   extractReasoningContentFromMessage,
   extractSubagentLabelFromMessage,
   extractTextFromMessage,
 } from '../../core/messages/utils'
 import styles from '../../pages/Chat/chat.module.less'
+import artifactStyles from './artifacts.module.less'
 import { ChainOfThought, ChainOfThoughtContent, ChainOfThoughtSearchResult, ChainOfThoughtSearchResults, ChainOfThoughtStep } from './chain-of-thought'
 import { MarkdownContent } from './markdown-content'
 import { ToolCallStep } from './tool-call'
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function stripSkillOutputUrlsFromText(text: string, skillOutput: SkillOutputItem[]): string {
+  let result = text
+  for (const item of skillOutput) {
+    const urlPattern = new RegExp(item.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')
+    result = result.replace(urlPattern, '')
+    const markdownLinkPattern = new RegExp(`\\[([^\\]]*)\\]\\(${item.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g')
+    result = result.replace(markdownLinkPattern, '$1')
+  }
+  result = result.replace(/\n{3,}/g, '\n\n').trim()
+  return result
+}
+
+function SkillOutputCard({
+  item,
+  onOpenFile,
+}: {
+  item: SkillOutputItem
+  onOpenFile?: (filepath: string) => void
+}) {
+  const extension = item.filename.split('.').pop()?.toLocaleLowerCase() || ''
+  const displayName = extension ? extension.toUpperCase() : 'FILE'
+
+  return (
+    <div
+      className={artifactStyles.inlineFileCard}
+      onClick={() => onOpenFile?.(item.url)}
+    >
+      <div className={artifactStyles.inlineFileCardIcon}>
+        <FileTextOutlined />
+      </div>
+      <div className={artifactStyles.inlineFileCardInfo}>
+        <div className={artifactStyles.inlineFileCardName}>{item.filename}</div>
+        <div className={artifactStyles.inlineFileCardType}>
+          {displayName} 文件 · {formatFileSize(item.size)}
+        </div>
+      </div>
+      <div className={artifactStyles.inlineFileCardAction}>点击预览 →</div>
+    </div>
+  )
+}
 
 type MessageGroupSectionProps = {
   group: MessageGroup
@@ -24,6 +73,7 @@ type MessageGroupSectionProps = {
   onCopy: (messageId: string, content: string) => void
   getToolDisplayTitle: (toolCall: ToolCall) => string
   getToolDisplaySummary: (toolCall: ToolCall) => string
+  onOpenFile?: (filepath: string) => void
 }
 
 type ProcessStep =
@@ -128,6 +178,7 @@ function renderProcessStep(
   step: ProcessStep,
   isLast: boolean,
   getToolDisplayTitle: MessageGroupSectionProps['getToolDisplayTitle'],
+  onOpenFile?: MessageGroupSectionProps['onOpenFile'],
 ) {
   if (step.type === 'reasoning') {
     return (
@@ -161,6 +212,7 @@ function renderProcessStep(
       messageId={step.messageId}
       isLast={isLast}
       getToolDisplayTitle={getToolDisplayTitle}
+      onOpenFile={onOpenFile}
     />
   )
 }
@@ -170,16 +222,20 @@ function ProcessingMessage({
   copiedMessageId,
   onCopy,
   getToolDisplayTitle,
+  onOpenFile,
 }: {
   message: Message
   copiedMessageId: string | null
   onCopy: (messageId: string, content: string) => void
   getToolDisplayTitle: MessageGroupSectionProps['getToolDisplayTitle']
+  onOpenFile?: MessageGroupSectionProps['onOpenFile']
 }) {
   const [showAbove, setShowAbove] = useState(true)
   const [showLastThinking, setShowLastThinking] = useState(true)
   const steps = useMemo(() => buildProcessSteps(message), [message])
-  const textContent = extractTextFromMessage(message)
+  const textContent = message.skillOutput.length
+    ? stripSkillOutputUrlsFromText(extractTextFromMessage(message), message.skillOutput)
+    : extractTextFromMessage(message)
 
   const lastActionStep = useMemo(() => {
     const actionSteps = steps.filter((step) => step.type !== 'reasoning')
@@ -232,8 +288,9 @@ function ProcessingMessage({
               step,
               index === aboveLastActionSteps.length - 1 && !lastReasoningStep,
               getToolDisplayTitle,
+              onOpenFile,
             )) : null}
-            {renderProcessStep(lastActionStep, !lastReasoningStep, getToolDisplayTitle)}
+            {renderProcessStep(lastActionStep, !lastReasoningStep, getToolDisplayTitle, onOpenFile)}
           </ChainOfThoughtContent>
         ) : null}
 
@@ -258,7 +315,7 @@ function ProcessingMessage({
             </button>
             {showLastThinking ? (
               <ChainOfThoughtContent>
-                {renderProcessStep(lastReasoningStep, true, getToolDisplayTitle)}
+                {renderProcessStep(lastReasoningStep, true, getToolDisplayTitle, onOpenFile)}
               </ChainOfThoughtContent>
             ) : null}
           </>
@@ -272,18 +329,10 @@ function ProcessingMessage({
             content={textContent}
             isStreaming={message.loading}
           />
-          {message.references.length ? (
-            <div className={styles.referenceList}>
-              {message.references.map((reference, index) => (
-                <a
-                  key={`${reference.title || 'ref'}-${index}`}
-                  className={styles.referenceItem}
-                  href={reference.url || '#'}
-                  target={reference.url ? '_blank' : undefined}
-                  rel={reference.url ? 'noreferrer' : undefined}
-                >
-                  {reference.title || reference.url || `参考资料 ${index + 1}`}
-                </a>
+          {message.skillOutput.length ? (
+            <div className={artifactStyles.fileList}>
+              {message.skillOutput.map((item, index) => (
+                <SkillOutputCard key={`${item.url}-${index}`} item={item} onOpenFile={onOpenFile} />
               ))}
             </div>
           ) : null}
@@ -301,6 +350,7 @@ export function MessageGroupSection({
   copiedMessageId,
   onCopy,
   getToolDisplayTitle,
+  onOpenFile,
 }: MessageGroupSectionProps) {
   switch (group.type) {
     case 'human':
@@ -330,6 +380,7 @@ export function MessageGroupSection({
                 copiedMessageId={copiedMessageId}
                 onCopy={onCopy}
                 getToolDisplayTitle={getToolDisplayTitle}
+                onOpenFile={onOpenFile}
               />
             </div>
           ))}
@@ -362,6 +413,7 @@ export function MessageGroupSection({
                 copiedMessageId={copiedMessageId}
                 onCopy={onCopy}
                 getToolDisplayTitle={getToolDisplayTitle}
+                onOpenFile={onOpenFile}
               />
             </div>
           ))}
@@ -372,7 +424,9 @@ export function MessageGroupSection({
       return (
         <>
           {group.messages.map((message) => {
-            const textContent = extractTextFromMessage(message)
+            const textContent = message.skillOutput.length
+              ? stripSkillOutputUrlsFromText(extractTextFromMessage(message), message.skillOutput)
+              : extractTextFromMessage(message)
 
             return (
               <div key={message.id} className={styles.assistantRow}>
@@ -382,18 +436,10 @@ export function MessageGroupSection({
                     content={textContent}
                     isStreaming={message.loading}
                   />
-                  {message.references.length ? (
-                    <div className={styles.referenceList}>
-                      {message.references.map((reference, index) => (
-                        <a
-                          key={`${reference.title || 'ref'}-${index}`}
-                          className={styles.referenceItem}
-                          href={reference.url || '#'}
-                          target={reference.url ? '_blank' : undefined}
-                          rel={reference.url ? 'noreferrer' : undefined}
-                        >
-                          {reference.title || reference.url || `参考资料 ${index + 1}`}
-                        </a>
+                  {message.skillOutput.length ? (
+                    <div className={artifactStyles.fileList}>
+                      {message.skillOutput.map((item, index) => (
+                        <SkillOutputCard key={`${item.url}-${index}`} item={item} onOpenFile={onOpenFile} />
                       ))}
                     </div>
                   ) : null}

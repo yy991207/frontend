@@ -69,6 +69,7 @@ function cloneMessages(messages: StreamBridgeMessage[]) {
     toolCalls: message.toolCalls ? [...message.toolCalls] : undefined,
     references: message.references ? [...message.references] : undefined,
     courses: message.courses ? [...message.courses] : undefined,
+    skillOutput: message.skillOutput ? [...message.skillOutput] : undefined,
   }))
 }
 
@@ -299,6 +300,13 @@ async function runStream(command: StartStreamCommand) {
         withLoadingMessage(state, (message) => ({
           ...message,
           references,
+        }))
+        broadcastSnapshot(command.sessionId)
+      },
+      onSkillOutput(skillOutput) {
+        withLoadingMessage(state, (message) => ({
+          ...message,
+          skillOutput,
         }))
         broadcastSnapshot(command.sessionId)
       },

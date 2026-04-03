@@ -1,0 +1,243 @@
+.artifactDrawer {
+  :global {
+    .ant-drawer-content {
+      border-radius: 16px 0 0 16px;
+    }
+    .ant-drawer-header {
+      display: none;
+    }
+  }
+}
+
+.artifactPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #ffffff;
+}
+
+.artifactHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fafbfc;
+  gap: 12px;
+  min-height: 56px;
+}
+
+.artifactHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.artifactHeaderCenter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.artifactHeaderRight {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.artifactTitle {
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.artifactFileSelect {
+  padding: 4px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 13px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.artifactBody {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.artifactMarkdownWrap {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 28px;
+}
+
+.artifactCodeWrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+  background: #f8fafc;
+}
+
+.artifactCode {
+  margin: 0;
+  padding: 0;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre;
+  tab-size: 2;
+  color: #0f172a;
+  overflow-x: auto;
+}
+
+.artifactIframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+  min-height: 0;
+}
+
+.artifactLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+/* File list styles */
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.fileCard {
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+
+  &:hover {
+    border-color: #bfdbfe;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
+  }
+
+  :global(.ant-card-body) {
+    padding: 0;
+  }
+}
+
+.fileCardInner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.fileCardIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.fileCardInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.fileCardName {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fileCardType {
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+/* Inline file card (used in tool-call steps) */
+.inlineFileCard {
+  margin-top: 10px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease;
+
+  &:hover {
+    background: #f1f5f9;
+    border-color: #bfdbfe;
+  }
+}
+
+.inlineFileCardIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.inlineFileCardInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.inlineFileCardName {
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inlineFileCardType {
+  color: #64748b;
+  font-size: 11px;
+  margin-top: 1px;
+}
+
+.inlineFileCardAction {
+  color: #94a3b8;
+  font-size: 12px;
+  flex-shrink: 0;
+}
