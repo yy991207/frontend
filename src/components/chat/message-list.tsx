@@ -8,7 +8,7 @@ type MessageListProps = {
   onCopy: (messageId: string, content: string) => void
   getToolDisplayTitle: (toolCall: ToolCall) => string
   getToolDisplaySummary: (toolCall: ToolCall) => string
-  onOpenFile?: (filepath: string) => void
+  onOpenFile?: (filepath: string, originalUrl?: string) => void
 }
 
 export function MessageList({

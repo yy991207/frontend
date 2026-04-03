@@ -50,6 +50,7 @@ export type ChatSessionConfig = {
   viewChatSessionsPath: string
   delChatSessionPath: string
   getChatSessionPath: string
+  viewGeneratedCodePath: string
 }
 
 // 从 config.yaml 读取的配置
@@ -59,6 +60,7 @@ const DEFAULT_CONFIG: ChatSessionConfig = {
   viewChatSessionsPath: '/api/v1/chat/sessions',
   delChatSessionPath: '/api/v1/chat/sessions',
   getChatSessionPath: '/api/v1/chat/sessions/{session_id}',
+  viewGeneratedCodePath: '/api/v1/chat/sessions/{session_id}/files/preview',
 }
 
 /**
@@ -92,6 +94,7 @@ export function parseChatSessionConfig(rawText: string): ChatSessionConfig {
   const viewChatSessionsPath = config.view_chat_sessions_path || DEFAULT_CONFIG.viewChatSessionsPath
   const delChatSessionPath = config.del_chat_session_path || DEFAULT_CONFIG.delChatSessionPath
   const getChatSessionPath = config.get_chat_session_path || DEFAULT_CONFIG.getChatSessionPath
+  const viewGeneratedCodePath = config.view_generated_code_path || DEFAULT_CONFIG.viewGeneratedCodePath
 
   if (!baseUrl || !userId || !viewChatSessionsPath) {
     throw new Error('config.yaml 缺少 url、user_id 或 view_chat_sessions_path 配置')
@@ -103,6 +106,7 @@ export function parseChatSessionConfig(rawText: string): ChatSessionConfig {
     viewChatSessionsPath,
     delChatSessionPath,
     getChatSessionPath,
+    viewGeneratedCodePath,
   }
 }
 

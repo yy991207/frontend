@@ -338,9 +338,9 @@ function ChatPageContent() {
 
   const { addFile, selectFile } = useArtifacts()
 
-  const handleOpenFile = useCallback((filepath: string) => {
+  const handleOpenFile = useCallback((filepath: string, originalUrl?: string) => {
     if (!currentSessionId || !sessionBaseUrl) return
-    const artifactFile = { filepath, sessionId: currentSessionId, baseUrl: sessionBaseUrl }
+    const artifactFile = { filepath, sessionId: currentSessionId, baseUrl: sessionBaseUrl, originalUrl }
     addFile(artifactFile)
     selectFile(artifactFile)
   }, [currentSessionId, sessionBaseUrl, addFile, selectFile])

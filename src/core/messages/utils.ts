@@ -99,6 +99,7 @@ function mergeConsecutiveAssistantMessages(messages: Message[]): Message[] {
       last.tool_calls = [...last.tool_calls, ...message.tool_calls]
       last.courses = [...last.courses, ...message.courses]
       last.references = [...last.references, ...message.references]
+      last.skillOutput = [...last.skillOutput, ...message.skillOutput]
 
       if (message.additional_kwargs.reasoning_content && !last.additional_kwargs.reasoning_content) {
         last.additional_kwargs.reasoning_content = message.additional_kwargs.reasoning_content

@@ -43,7 +43,7 @@ function SkillOutputCard({
   onOpenFile,
 }: {
   item: SkillOutputItem
-  onOpenFile?: (filepath: string) => void
+  onOpenFile?: (filepath: string, originalUrl?: string) => void
 }) {
   const extension = item.filename.split('.').pop()?.toLocaleLowerCase() || ''
   const displayName = extension ? extension.toUpperCase() : 'FILE'
@@ -51,7 +51,7 @@ function SkillOutputCard({
   return (
     <div
       className={artifactStyles.inlineFileCard}
-      onClick={() => onOpenFile?.(item.url)}
+      onClick={() => onOpenFile?.(item.url, item.url)}
     >
       <div className={artifactStyles.inlineFileCardIcon}>
         <FileTextOutlined />
@@ -73,7 +73,7 @@ type MessageGroupSectionProps = {
   onCopy: (messageId: string, content: string) => void
   getToolDisplayTitle: (toolCall: ToolCall) => string
   getToolDisplaySummary: (toolCall: ToolCall) => string
-  onOpenFile?: (filepath: string) => void
+  onOpenFile?: (filepath: string, originalUrl?: string) => void
 }
 
 type ProcessStep =
