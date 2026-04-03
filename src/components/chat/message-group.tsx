@@ -8,7 +8,7 @@ import {
 } from '@ant-design/icons'
 import { useMemo, useState } from 'react'
 
-import type { CourseItem, Message, MessageGroup, ToolCall } from '../../core/messages/types'
+import type { CourseItem, Message, MessageGroup, SkillOutputItem, ToolCall } from '../../core/messages/types'
 import {
   extractAssistantOutputText,
   extractReasoningContentFromMessage,
