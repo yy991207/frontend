@@ -1,4 +1,4 @@
-import type { ContentBlock, Message, MessageGroup } from './types'
+import type { ContentBlock, Message, MessageGroup, SkillOutputItem } from './types'
 
 export function extractTextFromMessage(message: Message): string {
   if (typeof message.content === 'string') {
@@ -9,6 +9,31 @@ export function extractTextFromMessage(message: Message): string {
     .map((block) => (block.type === 'text' ? block.text ?? '' : ''))
     .join('\n')
     .trim()
+}
+
+function stripSkillOutputUrlsFromText(text: string, skillOutput: SkillOutputItem[]): string {
+  let result = text
+
+  for (const item of skillOutput) {
+    const escapedUrl = item.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const urlPattern = new RegExp(escapedUrl, 'g')
+    const markdownLinkPattern = new RegExp(`\\[([^\\]]*)\\]\\(${escapedUrl}\\)`, 'g')
+
+    result = result.replace(urlPattern, '')
+    result = result.replace(markdownLinkPattern, '$1')
+  }
+
+  return result.replace(/\n{3,}/g, '\n\n').trim()
+}
+
+export function extractAssistantOutputText(message: Message): string {
+  const text = extractTextFromMessage(message)
+
+  if (!message.skillOutput.length) {
+    return text
+  }
+
+  return stripSkillOutputUrlsFromText(text, message.skillOutput)
 }
 
 export function extractContentFromMessage(message: Message): string {
@@ -139,4 +164,47 @@ export function groupMessages<T>(messages: Message[], mapper?: (group: MessageGr
   }
 
   return mapGroup(groups, mapper)
+}
+
+export function resolveAssistantCopyTargets(
+  messages: Message[],
+  options?: { excludeLastTurn?: boolean },
+): Record<string, string> {
+  const targets: Record<string, string> = {}
+  let currentTurnLastMessageId: string | null = null
+  let currentTurnTextParts: string[] = []
+
+  const finalizeCurrentTurn = () => {
+    if (!currentTurnLastMessageId || !currentTurnTextParts.length) {
+      currentTurnLastMessageId = null
+      currentTurnTextParts = []
+      return
+    }
+
+    targets[currentTurnLastMessageId] = currentTurnTextParts.join('\n\n').trim()
+    currentTurnLastMessageId = null
+    currentTurnTextParts = []
+  }
+
+  for (const message of messages) {
+    if (message.type === 'human' || message.role === 'user') {
+      finalizeCurrentTurn()
+      continue
+    }
+
+    const text = extractAssistantOutputText(message)
+
+    if (!text) {
+      continue
+    }
+
+    currentTurnLastMessageId = message.id
+    currentTurnTextParts.push(text)
+  }
+
+  if (!options?.excludeLastTurn) {
+    finalizeCurrentTurn()
+  }
+
+  return targets
 }

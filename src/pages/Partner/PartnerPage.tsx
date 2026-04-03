@@ -68,7 +68,7 @@ import {
 import { adaptChatMessages } from '../../core/messages/adapters'
 import { appendTextDeltaToStreamMessages } from '../../core/messages/streaming'
 import type { LegacyChatMessage as ChatMessage } from '../../core/messages/types'
-import { groupMessages } from '../../core/messages/utils'
+import { groupMessages, resolveAssistantCopyTargets } from '../../core/messages/utils'
 import styles from './partner.module.less'
 
 type SettingMenuItem = {
@@ -627,7 +627,13 @@ function PartnerPageContent() {
   )
   const messagesRef = useRef<ChatMessage[]>(messages)
   const [isResponding, setIsResponding] = useState(() => Boolean(initialConversation))
-  const groupedMessages = useMemo(() => groupMessages(adaptChatMessages(messages)), [messages])
+  const adaptedMessages = useMemo(() => adaptChatMessages(messages), [messages])
+  const groupedMessages = useMemo(() => groupMessages(adaptedMessages), [adaptedMessages])
+  // 当前这一轮回复结束前，先不显示它自己的复制按钮，避免流式过程中同一轮回答出现多个复制入口。
+  const assistantCopyTargets = useMemo(
+    () => resolveAssistantCopyTargets(adaptedMessages, { excludeLastTurn: isResponding }),
+    [adaptedMessages, isResponding],
+  )
   const currentSessionId = useMemo(() => {
     const messageSessionId = [...messages].reverse().find((message) => message.sessionId)?.sessionId
     return routeSessionId || messageSessionId || null
@@ -1391,6 +1397,7 @@ function PartnerPageContent() {
                   <MessageList
                     groups={groupedMessages}
                     copiedMessageId={copiedMessageId}
+                    assistantCopyTargets={assistantCopyTargets}
                     onCopy={handleCopy}
                     getToolDisplayTitle={getToolDisplayTitle}
                     getToolDisplaySummary={getToolDisplaySummary}

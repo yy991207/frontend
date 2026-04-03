@@ -11,8 +11,8 @@ test('chat page tracks copied message id and resets it after timeout', async () 
 
   assert.match(content, /copiedMessageId/)
   assert.match(content, /window\.setTimeout\(/)
-  assert.match(content, /handleCopy\(message\.id, message\.content\)/)
-  assert.match(content, /copiedMessageId === message\.id \? '已复制' : '复制'/)
+  assert.match(content, /resolveAssistantCopyTargets/)
+  assert.match(content, /assistantCopyTargets=/)
 })
 
 test('partner page tracks copied message id and resets it after timeout', async () => {
@@ -20,6 +20,6 @@ test('partner page tracks copied message id and resets it after timeout', async 
 
   assert.match(content, /copiedMessageId/)
   assert.match(content, /window\.setTimeout\(/)
-  assert.match(content, /handleCopy\(message\.id, message\.content\)/)
-  assert.match(content, /copiedMessageId === message\.id \? '已复制' : '复制'/)
+  assert.match(content, /resolveAssistantCopyTargets/)
+  assert.match(content, /assistantCopyTargets=/)
 })
