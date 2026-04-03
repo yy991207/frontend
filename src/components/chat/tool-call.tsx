@@ -12,7 +12,6 @@ import {
 
 import type { ToolCall } from '../../core/messages/types'
 import styles from '../../pages/Chat/chat.module.less'
-import artifactStyles from './artifacts.module.less'
 import {
   ChainOfThoughtSearchResult,
   ChainOfThoughtSearchResults,
@@ -157,30 +156,11 @@ function renderResultChips(items: SearchResultItem[]) {
   )
 }
 
-function renderInlineFileCard(filepath: string, onOpenFile?: (filepath: string, originalUrl?: string) => void, originalUrl?: string) {
-  if (!onOpenFile) {
-    return (
-      <ChainOfThoughtSearchResults>
-        <ChainOfThoughtSearchResult>{filepath}</ChainOfThoughtSearchResult>
-      </ChainOfThoughtSearchResults>
-    )
-  }
-
-  const fileName = filepath.split('/').pop() || filepath
-  const extension = filepath.split('.').pop()?.toLocaleLowerCase() || ''
-  const displayName = extension ? extension.toUpperCase() : 'FILE'
-
+function renderProcessFilePath(filepath: string) {
   return (
-    <div className={artifactStyles.inlineFileCard} onClick={() => onOpenFile(filepath, originalUrl)}>
-      <div className={artifactStyles.inlineFileCardIcon}>
-        <FileTextOutlined />
-      </div>
-      <div className={artifactStyles.inlineFileCardInfo}>
-        <div className={artifactStyles.inlineFileCardName}>{fileName}</div>
-        <div className={artifactStyles.inlineFileCardType}>{displayName} 文件</div>
-      </div>
-      <div className={artifactStyles.inlineFileCardAction}>点击预览 →</div>
-    </div>
+    <ChainOfThoughtSearchResults>
+      <ChainOfThoughtSearchResult>{filepath}</ChainOfThoughtSearchResult>
+    </ChainOfThoughtSearchResults>
   )
 }
 
@@ -422,7 +402,7 @@ function renderListFilesResult(toolCall: ToolCall, isLast = false) {
   )
 }
 
-function renderReadFileResult(toolCall: ToolCall, isLast = false, onOpenFile?: ToolCallStepProps['onOpenFile']) {
+function renderReadFileResult(toolCall: ToolCall, isLast = false) {
   const description = readStringField(toolCall.input, ['description']) || '读取文件'
   const path = readStringField(toolCall.input, ['path', 'file_path', 'filepath'])
 
@@ -433,12 +413,12 @@ function renderReadFileResult(toolCall: ToolCall, isLast = false, onOpenFile?: T
       isLast={isLast}
       status={getStepStatus(toolCall)}
     >
-      {path ? renderInlineFileCard(path, onOpenFile, path) : null}
+      {path ? renderProcessFilePath(path) : null}
     </ChainOfThoughtStep>
   )
 }
 
-function renderWriteFileResult(toolCall: ToolCall, isLast = false, onOpenFile?: ToolCallStepProps['onOpenFile']) {
+function renderWriteFileResult(toolCall: ToolCall, isLast = false) {
   const description = readStringField(toolCall.input, ['description']) || '写入文件'
   const path = readStringField(toolCall.input, ['path', 'file_path', 'filepath'])
 
@@ -449,7 +429,7 @@ function renderWriteFileResult(toolCall: ToolCall, isLast = false, onOpenFile?: 
       isLast={isLast}
       status={getStepStatus(toolCall)}
     >
-      {path ? renderInlineFileCard(path, onOpenFile, path) : null}
+      {path ? renderProcessFilePath(path) : null}
     </ChainOfThoughtStep>
   )
 }
@@ -516,7 +496,7 @@ export function ToolCallStep({
   toolCall,
   isLast = false,
   getToolDisplayTitle,
-  onOpenFile,
+  onOpenFile: _onOpenFile,
 }: ToolCallStepProps) {
   if (toolCall.name === 'rag_list_videos') {
     return renderRagListVideosResult(toolCall, isLast)
@@ -535,11 +515,11 @@ export function ToolCallStep({
   }
 
   if (toolCall.name === 'read_file') {
-    return renderReadFileResult(toolCall, isLast, onOpenFile)
+    return renderReadFileResult(toolCall, isLast)
   }
 
   if (toolCall.name === 'write_file' || toolCall.name === 'edit_file' || toolCall.name === 'str_replace') {
-    return renderWriteFileResult(toolCall, isLast, onOpenFile)
+    return renderWriteFileResult(toolCall, isLast)
   }
 
   if (toolCall.name === 'bash') {
