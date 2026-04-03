@@ -336,7 +336,7 @@ function ChatPageContent() {
     return routeSessionId || messageSessionId || null
   }, [routeSessionId, messages])
 
-  const { addFile, selectFile } = useArtifacts()
+  const { addFile, selectFile, open: artifactOpen } = useArtifacts()
 
   const handleOpenFile = useCallback((filepath: string, originalUrl?: string) => {
     if (!currentSessionId || !sessionBaseUrl) return
@@ -860,134 +860,141 @@ function ChatPageContent() {
 
   return (
     <main className={styles.page}>
-      <section className={styles.panel}>
-        <header className={styles.header}>
-          <h1 className={styles.title}>问候</h1>
-          <div className={styles.headerActions}>
-            <button type="button" className={styles.headerButton} aria-label="分享">
-              <ExportOutlined />
-            </button>
-            <button type="button" className={styles.headerButton} aria-label="文件夹">
-              <FolderOpenOutlined />
-            </button>
-            <div ref={headerMenuRef} className={styles.headerMenuContainer}>
-              <button
-                type="button"
-                className={styles.headerButton}
-                aria-label="更多"
-                onClick={() => setHeaderMenuOpen((value) => !value)}
-              >
-                <EllipsisOutlined />
+      <div className={styles.splitContainer}>
+        <section className={`${styles.panel} ${artifactOpen ? styles.panelShrink : ''}`}>
+          <header className={styles.header}>
+            <h1 className={styles.title}>问候</h1>
+            <div className={styles.headerActions}>
+              <button type="button" className={styles.headerButton} aria-label="分享">
+                <ExportOutlined />
               </button>
-              {headerMenuOpen ? (
-                <div className={styles.headerMenuDropdown}>
-                  <button
-                    type="button"
-                    className={styles.headerMenuItem}
-                    onClick={() => {
-                      setDeleteConfirmOpen(true)
-                      setHeaderMenuOpen(false)
-                    }}
-                  >
-                    <DeleteOutlined className={styles.headerMenuItemIcon} />
-                    <span>删除当前会话</span>
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </header>
-
-        <div className={styles.messages}>
-          <div className={styles.messageColumn}>
-            <MessageList
-              groups={groupedMessages}
-              copiedMessageId={copiedMessageId}
-              onCopy={handleCopy}
-              getToolDisplayTitle={getToolDisplayTitle}
-              getToolDisplaySummary={getToolDisplaySummary}
-              onOpenFile={handleOpenFile}
-            />
-          </div>
-        </div>
-
-        <div className={styles.composerArea}>
-          <div className={styles.composerWrap}>
-            <div className={styles.composer}>
-              <AttachmentMenu
-                placement="top"
-                skills={skills}
-                skillsLoading={skillsLoading}
-                loadSkills={fetchSkills}
-                onSelectSkill={handleSelectSkill}
-                onManageSkills={handleManageSkills}
-                showTools
-                webSearchEnabled={webSearchEnabled}
-                knowledgeEnabled={knowledgeEnabled}
-                onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
-                onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
-              />
-              {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
-              {selectedSkillName ? (
-                <span className={styles.skillTagWrap}>
-                  <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
-                  <button
-                    type="button"
-                    className={styles.skillRemoveButton}
-                    aria-label="移除已选技能"
-                    onClick={clearSelectedSkill}
-                  >
-                    <CloseOutlined />
-                  </button>
-                  {selectedSkillDescription ? (
-                    <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
-                  ) : null}
-                </span>
-              ) : null}
-              <input
-                      value={draft}
-                      onChange={(event) => setDraft(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
-                          return
-                        }
-
-                        if (event.key === 'Backspace' && !draft.trim() && selectedSkillName) {
-                          event.preventDefault()
-                          clearSelectedSkill()
-                          return
-                        }
-
-                        if (event.key === 'Enter') {
-                          event.preventDefault()
-                          handleSend()
-                  }
-                }}
-                className={styles.composerInput}
-                placeholder="下一步要做什么？"
-              />
-              <button type="button" className={styles.iconButton} aria-label="语音输入">
-                <AudioOutlined />
+              <button type="button" className={styles.headerButton} aria-label="文件夹">
+                <FolderOpenOutlined />
               </button>
-              {isResponding ? (
-                <button type="button" className={`${styles.circleButton} ${styles.stopButton}`} onClick={handleStop}>
-                  <span className={styles.stopInner} />
-                </button>
-              ) : (
+              <div ref={headerMenuRef} className={styles.headerMenuContainer}>
                 <button
                   type="button"
-                  className={`${styles.circleButton} ${styles.sendButton} ${!draft.trim() ? styles.sendButtonDisabled : ''}`}
-                  onClick={handleSend}
-                  disabled={!draft.trim()}
+                  className={styles.headerButton}
+                  aria-label="更多"
+                  onClick={() => setHeaderMenuOpen((value) => !value)}
                 >
-                  <ArrowUpOutlined />
+                  <EllipsisOutlined />
                 </button>
-              )}
+                {headerMenuOpen ? (
+                  <div className={styles.headerMenuDropdown}>
+                    <button
+                      type="button"
+                      className={styles.headerMenuItem}
+                      onClick={() => {
+                        setDeleteConfirmOpen(true)
+                        setHeaderMenuOpen(false)
+                      }}
+                    >
+                      <DeleteOutlined className={styles.headerMenuItemIcon} />
+                      <span>删除当前会话</span>
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </header>
+
+          <div className={styles.messages}>
+            <div className={styles.messageColumn}>
+              <MessageList
+                groups={groupedMessages}
+                copiedMessageId={copiedMessageId}
+                onCopy={handleCopy}
+                getToolDisplayTitle={getToolDisplayTitle}
+                getToolDisplaySummary={getToolDisplaySummary}
+                onOpenFile={handleOpenFile}
+              />
             </div>
           </div>
-          <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>
-        </div>
-      </section>
+
+          <div className={styles.composerArea}>
+            <div className={styles.composerWrap}>
+              <div className={styles.composer}>
+                <AttachmentMenu
+                  placement="top"
+                  skills={skills}
+                  skillsLoading={skillsLoading}
+                  loadSkills={fetchSkills}
+                  onSelectSkill={handleSelectSkill}
+                  onManageSkills={handleManageSkills}
+                  showTools
+                  webSearchEnabled={webSearchEnabled}
+                  knowledgeEnabled={knowledgeEnabled}
+                  onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
+                  onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
+                />
+                {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
+                {selectedSkillName ? (
+                  <span className={styles.skillTagWrap}>
+                    <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
+                    <button
+                      type="button"
+                      className={styles.skillRemoveButton}
+                      aria-label="移除已选技能"
+                      onClick={clearSelectedSkill}
+                    >
+                      <CloseOutlined />
+                    </button>
+                    {selectedSkillDescription ? (
+                      <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
+                    ) : null}
+                  </span>
+                ) : null}
+                <input
+                        value={draft}
+                        onChange={(event) => setDraft(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+                            return
+                          }
+
+                          if (event.key === 'Backspace' && !draft.trim() && selectedSkillName) {
+                            event.preventDefault()
+                            clearSelectedSkill()
+                            return
+                          }
+
+                          if (event.key === 'Enter') {
+                            event.preventDefault()
+                            handleSend()
+                    }
+                  }}
+                  className={styles.composerInput}
+                  placeholder="下一步要做什么？"
+                />
+                <button type="button" className={styles.iconButton} aria-label="语音输入">
+                  <AudioOutlined />
+                </button>
+                {isResponding ? (
+                  <button type="button" className={`${styles.circleButton} ${styles.stopButton}`} onClick={handleStop}>
+                    <span className={styles.stopInner} />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className={`${styles.circleButton} ${styles.sendButton} ${!draft.trim() ? styles.sendButtonDisabled : ''}`}
+                    onClick={handleSend}
+                    disabled={!draft.trim()}
+                  >
+                    <ArrowUpOutlined />
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>
+          </div>
+        </section>
+        {artifactOpen && (
+          <section className={styles.artifactPanel}>
+            <ChatArtifactPanel />
+          </section>
+        )}
+      </div>
       <DeleteConfirmModal
         open={deleteConfirmOpen}
         title="删除当前会话"
@@ -996,7 +1003,6 @@ function ChatPageContent() {
         onCancel={() => setDeleteConfirmOpen(false)}
         onConfirm={handleDeleteCurrentSession}
       />
-      <ChatArtifactPanel />
     </main>
   )
 }

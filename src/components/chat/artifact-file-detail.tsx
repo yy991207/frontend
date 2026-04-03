@@ -6,7 +6,7 @@ import {
   LinkOutlined,
   CloseOutlined,
 } from '@ant-design/icons'
-import { Button, Drawer, message, Segmented, Space } from 'antd'
+import { Button, message, Segmented, Space } from 'antd'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useArtifacts, type ArtifactFile } from './artifacts-context'
@@ -22,7 +22,7 @@ type ArtifactFileDetailProps = {
 }
 
 export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailProps) {
-  const { open, setOpen, files, selectFile } = useArtifacts()
+  const { setOpen, files, selectFile } = useArtifacts()
   const isExternalUrl = useMemo(() => {
     return file.filepath.startsWith('http://') || file.filepath.startsWith('https://')
   }, [file.filepath])
@@ -66,7 +66,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
 
   // External URL: fetch via preview API
   useEffect(() => {
-    if (!open || !isExternalUrl || !file.originalUrl || !file.baseUrl || !file.sessionId) return
+    if (!isExternalUrl || !file.originalUrl || !file.baseUrl || !file.sessionId) return
 
     abortRef.current?.abort()
     const controller = new AbortController()
@@ -98,10 +98,10 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
     return () => {
       controller.abort()
     }
-  }, [open, isExternalUrl, file.originalUrl, file.sessionId, file.baseUrl])
+  }, [isExternalUrl, file.originalUrl, file.sessionId, file.baseUrl])
 
   useEffect(() => {
-    if (!open || !isCodeFile || isExternalUrl || !file.baseUrl || !file.sessionId) return
+    if (!isCodeFile || isExternalUrl || !file.baseUrl || !file.sessionId) return
 
     abortRef.current?.abort()
     const controller = new AbortController()
@@ -133,7 +133,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
     return () => {
       controller.abort()
     }
-  }, [open, isCodeFile, isExternalUrl, file.filepath, file.sessionId, file.baseUrl])
+  }, [isCodeFile, isExternalUrl, file.filepath, file.sessionId, file.baseUrl])
 
   const handleCopy = useCallback(async () => {
     try {
@@ -145,7 +145,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
   }, [content])
 
   const handleOpenInNewTab = useCallback(() => {
-    if (isExternalUrl && content) {
+    if (isExternalUrl && content && language === 'html') {
       const newWindow = window.open('', '_blank')
       if (newWindow) {
         newWindow.document.open()
@@ -155,13 +155,13 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
       return
     }
 
-    const url = buildArtifactDownloadUrl({
+    const url = isExternalUrl ? file.filepath : buildArtifactDownloadUrl({
       baseUrl: file.baseUrl ?? '',
       sessionId: file.sessionId ?? '',
       filepath: file.filepath,
     })
     window.open(url, '_blank')
-  }, [file, isExternalUrl, content])
+  }, [file, isExternalUrl, content, language])
 
   const handleDownload = useCallback(() => {
     const url = isExternalUrl ? file.filepath : buildArtifactDownloadUrl({
@@ -188,166 +188,155 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
   const externalCodeFile = isExternalUrl && isCodeFile
 
   return (
-    <Drawer
-      title={null}
-      open={open}
-      onClose={handleClose}
-      placement="right"
-      width="min(720px, 85vw)"
-      className={styles.artifactDrawer}
-      styles={{ body: { padding: 0 } }}
-      closeIcon={null}
-    >
-      <div className={styles.artifactPanel}>
-        <div className={styles.artifactHeader}>
-          <div className={styles.artifactHeaderLeft}>
-            <div className={styles.artifactTitle}>{displayFilename}</div>
-            {files.length > 1 && (
-              <select
-                className={styles.artifactFileSelect}
-                value={file.filepath}
-                onChange={(e) => {
-                  const found = files.find((f) => f.filepath === e.target.value)
-                  if (found) selectFile(found)
-                }}
-              >
-                {files.map((f) => (
-                  <option key={f.filepath} value={f.filepath}>
-                    {f.filepath.startsWith('http') ? (() => {
-                      try { return new URL(f.filepath).pathname.split('/').pop() || f.filepath } catch { return f.filepath }
-                    })() : getFileName(f.filepath)}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-          <div className={styles.artifactHeaderCenter}>
-            {(previewable || externalPreviewable) && !isExternalUrl && (
-              <Segmented
-                value={viewMode}
-                onChange={(val) => setViewMode(val as 'code' | 'preview')}
-                options={[
-                  { label: '代码', value: 'code', icon: <CodeOutlined /> },
-                  { label: '预览', value: 'preview', icon: <EyeOutlined /> },
-                ]}
-              />
-            )}
-          </div>
-          <div className={styles.artifactHeaderRight}>
-            <Space size="small">
-              {(isCodeFile || externalCodeFile) && (
-                <Button type="text" size="small" icon={<CopyOutlined />} onClick={handleCopy}>
-                  复制
-                </Button>
-              )}
-              <Button type="text" size="small" icon={<LinkOutlined />} onClick={handleOpenInNewTab}>
-                新窗口
-              </Button>
-              <Button type="text" size="small" icon={<DownloadOutlined />} onClick={handleDownload}>
-                下载
-              </Button>
-              <Button type="text" size="small" icon={<CloseOutlined />} onClick={handleClose} />
-            </Space>
-          </div>
+    <div className={styles.artifactPanel}>
+      <div className={styles.artifactHeader}>
+        <div className={styles.artifactHeaderLeft}>
+          <div className={styles.artifactTitle}>{displayFilename}</div>
+          {files.length > 1 && (
+            <select
+              className={styles.artifactFileSelect}
+              value={file.filepath}
+              onChange={(e) => {
+                const found = files.find((f) => f.filepath === e.target.value)
+                if (found) selectFile(found)
+              }}
+            >
+              {files.map((f) => (
+                <option key={f.filepath} value={f.filepath}>
+                  {f.filepath.startsWith('http') ? (() => {
+                    try { return new URL(f.filepath).pathname.split('/').pop() || f.filepath } catch { return f.filepath }
+                  })() : getFileName(f.filepath)}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
-
-        <div className={styles.artifactBody}>
-          {/* External URL: HTML preview via srcdoc */}
-          {externalPreviewable && viewMode === 'preview' && language === 'html' && (
-            <div className={styles.artifactPreviewWrap}>
-              {loading ? (
-                <div className={styles.artifactLoading}>加载中...</div>
-              ) : (
-                <iframe
-                  className={styles.artifactIframe}
-                  srcDoc={content}
-                  sandbox="allow-scripts allow-same-origin allow-forms"
-                />
-              )}
-            </div>
+        <div className={styles.artifactHeaderCenter}>
+          {(previewable || externalPreviewable) && !isExternalUrl && (
+            <Segmented
+              value={viewMode}
+              onChange={(val) => setViewMode(val as 'code' | 'preview')}
+              options={[
+                { label: '代码', value: 'code', icon: <CodeOutlined /> },
+                { label: '预览', value: 'preview', icon: <EyeOutlined /> },
+              ]}
+            />
           )}
-
-          {/* External URL: Markdown preview */}
-          {externalPreviewable && viewMode === 'preview' && language === 'markdown' && (
-            <div className={styles.artifactMarkdownWrap}>
-              {loading ? (
-                <div className={styles.artifactLoading}>加载中...</div>
-              ) : (
-                <MarkdownContent content={content} isStreaming={false} />
-              )}
-            </div>
-          )}
-
-          {/* External URL: code view */}
-          {externalCodeFile && viewMode === 'code' && (
-            <div className={styles.artifactCodeWrap}>
-              {loading ? (
-                <div className={styles.artifactLoading}>加载中...</div>
-              ) : (
-                <pre className={styles.artifactCode}>
-                  <code>{content}</code>
-                </pre>
-              )}
-            </div>
-          )}
-
-          {/* External URL: non-code fallback - iframe direct */}
-          {isExternalUrl && !isCodeFile && (
-            <div className={styles.artifactPreviewWrap}>
-              <iframe
-                className={styles.artifactIframe}
-                src={file.filepath}
-              />
-            </div>
-          )}
-
-          {/* Internal URL: Markdown preview */}
-          {previewable && viewMode === 'preview' && language === 'markdown' && !isExternalUrl && (
-            <div className={styles.artifactMarkdownWrap}>
-              {loading ? (
-                <div className={styles.artifactLoading}>加载中...</div>
-              ) : (
-                <MarkdownContent content={content} isStreaming={false} />
-              )}
-            </div>
-          )}
-
-          {/* Internal URL: HTML preview */}
-          {previewable && viewMode === 'preview' && language === 'html' && !isExternalUrl && (
-            <div className={styles.artifactPreviewWrap}>
-              <iframe
-                className={styles.artifactIframe}
-                src={previewUrl}
-                sandbox="allow-scripts allow-same-origin allow-forms"
-              />
-            </div>
-          )}
-
-          {/* Internal URL: code view */}
-          {viewMode === 'code' && isCodeFile && !isExternalUrl && (
-            <div className={styles.artifactCodeWrap}>
-              {loading ? (
-                <div className={styles.artifactLoading}>加载中...</div>
-              ) : (
-                <pre className={styles.artifactCode}>
-                  <code>{content}</code>
-                </pre>
-              )}
-            </div>
-          )}
-
-          {/* Internal URL: non-code fallback */}
-          {!isCodeFile && !isExternalUrl && (
-            <div className={styles.artifactPreviewWrap}>
-              <iframe
-                className={styles.artifactIframe}
-                src={previewUrl}
-                sandbox="allow-scripts allow-same-origin"
-              />
-            </div>
-          )}
+        </div>
+        <div className={styles.artifactHeaderRight}>
+          <Space size="small">
+            {(isCodeFile || externalCodeFile) && (
+              <Button type="text" size="small" icon={<CopyOutlined />} onClick={handleCopy}>
+                复制
+              </Button>
+            )}
+            <Button type="text" size="small" icon={<LinkOutlined />} onClick={handleOpenInNewTab}>
+              新窗口
+            </Button>
+            <Button type="text" size="small" icon={<DownloadOutlined />} onClick={handleDownload}>
+              下载
+            </Button>
+            <Button type="text" size="small" icon={<CloseOutlined />} onClick={handleClose} />
+          </Space>
         </div>
       </div>
-    </Drawer>
+
+      <div className={styles.artifactBody}>
+        {/* External URL: HTML preview via srcdoc */}
+        {externalPreviewable && viewMode === 'preview' && language === 'html' && (
+          <div className={styles.artifactPreviewWrap}>
+            {loading ? (
+              <div className={styles.artifactLoading}>加载中...</div>
+            ) : (
+              <iframe
+                className={styles.artifactIframe}
+                srcDoc={content}
+                sandbox="allow-scripts allow-same-origin allow-forms"
+              />
+            )}
+          </div>
+        )}
+
+        {/* External URL: Markdown preview */}
+        {externalPreviewable && viewMode === 'preview' && language === 'markdown' && (
+          <div className={styles.artifactMarkdownWrap}>
+            {loading ? (
+              <div className={styles.artifactLoading}>加载中...</div>
+            ) : (
+              <MarkdownContent content={content} isStreaming={false} />
+            )}
+          </div>
+        )}
+
+        {/* External URL: code view */}
+        {externalCodeFile && viewMode === 'code' && (
+          <div className={styles.artifactCodeWrap}>
+            {loading ? (
+              <div className={styles.artifactLoading}>加载中...</div>
+            ) : (
+              <pre className={styles.artifactCode}>
+                <code>{content}</code>
+              </pre>
+            )}
+          </div>
+        )}
+
+        {/* External URL: non-code fallback - iframe direct */}
+        {isExternalUrl && !isCodeFile && (
+          <div className={styles.artifactPreviewWrap}>
+            <iframe
+              className={styles.artifactIframe}
+              src={file.filepath}
+            />
+          </div>
+        )}
+
+        {/* Internal URL: Markdown preview */}
+        {previewable && viewMode === 'preview' && language === 'markdown' && !isExternalUrl && (
+          <div className={styles.artifactMarkdownWrap}>
+            {loading ? (
+              <div className={styles.artifactLoading}>加载中...</div>
+            ) : (
+              <MarkdownContent content={content} isStreaming={false} />
+            )}
+          </div>
+        )}
+
+        {/* Internal URL: HTML preview */}
+        {previewable && viewMode === 'preview' && language === 'html' && !isExternalUrl && (
+          <div className={styles.artifactPreviewWrap}>
+            <iframe
+              className={styles.artifactIframe}
+              src={previewUrl}
+              sandbox="allow-scripts allow-same-origin allow-forms"
+            />
+          </div>
+        )}
+
+        {/* Internal URL: code view */}
+        {viewMode === 'code' && isCodeFile && !isExternalUrl && (
+          <div className={styles.artifactCodeWrap}>
+            {loading ? (
+              <div className={styles.artifactLoading}>加载中...</div>
+            ) : (
+              <pre className={styles.artifactCode}>
+                <code>{content}</code>
+              </pre>
+            )}
+          </div>
+        )}
+
+        {/* Internal URL: non-code fallback */}
+        {!isCodeFile && !isExternalUrl && (
+          <div className={styles.artifactPreviewWrap}>
+            <iframe
+              className={styles.artifactIframe}
+              src={previewUrl}
+              sandbox="allow-scripts allow-same-origin"
+            />
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
