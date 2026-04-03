@@ -1295,8 +1295,8 @@ function PartnerPageContent() {
 
   return (
     <main className={styles.page}>
-      <div className={styles.splitContainer}>
-        <section className={`${styles.panel} ${artifactOpen ? styles.panelShrink : ''}`}>
+      <div className={`${styles.splitContainer} ${artifactOpen ? styles.splitContainerOpen : ''}`}>
+        <section className={styles.panel}>
         {isSettingsOpen ? (
           <>
             <div className={styles.settingsTopBar}>
@@ -1641,11 +1641,9 @@ function PartnerPageContent() {
           </>
         )}
       </section>
-        {artifactOpen && (
-          <section className={styles.artifactPanel}>
-            <PartnerArtifactPanel />
-          </section>
-        )}
+        <section className={`${styles.artifactPanel} ${artifactOpen ? styles.artifactPanelOpen : styles.artifactPanelClosed}`}>
+          <PartnerArtifactPanel />
+        </section>
       </div>
       {isNameModalOpen ? (
         <div className={styles.nameModalMask} onClick={handleCloseNameModal}>

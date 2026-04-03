@@ -860,8 +860,8 @@ function ChatPageContent() {
 
   return (
     <main className={styles.page}>
-      <div className={styles.splitContainer}>
-        <section className={`${styles.panel} ${artifactOpen ? styles.panelShrink : ''}`}>
+      <div className={`${styles.splitContainer} ${artifactOpen ? styles.splitContainerOpen : ''}`}>
+        <section className={styles.panel}>
           <header className={styles.header}>
             <h1 className={styles.title}>问候</h1>
             <div className={styles.headerActions}>
@@ -989,11 +989,9 @@ function ChatPageContent() {
             <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>
           </div>
         </section>
-        {artifactOpen && (
-          <section className={styles.artifactPanel}>
-            <ChatArtifactPanel />
-          </section>
-        )}
+        <section className={`${styles.artifactPanel} ${artifactOpen ? styles.artifactPanelOpen : styles.artifactPanelClosed}`}>
+          <ChatArtifactPanel />
+        </section>
       </div>
       <DeleteConfirmModal
         open={deleteConfirmOpen}
