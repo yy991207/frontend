@@ -162,47 +162,13 @@ async function loadChatSessionConfig(): Promise<ChatSessionConfig> {
 }
 
 function mapSessionDetailToMessages(session: ChatSessionDetail): ChatMessage[] {
-  return session.messages.map((message) => {
-    const toolCalls = Array.isArray(message.tool_calls)
-      ? message.tool_calls.map((tc: unknown) => {
-          const raw = tc as Record<string, unknown>
-          return {
-            name: (raw.name as string) ?? '',
-            runId: (raw.run_id as string) ?? (raw.runId as string) ?? '',
-            status: (raw.status as 'running' | 'completed') ?? 'completed',
-            input: (raw.input as Record<string, unknown>) ?? (raw.args as Record<string, unknown>) ?? {},
-            output: raw.output,
-            toolDisplay: raw.tool_display as Record<string, unknown>,
-          }
-        })
-      : []
-
-    const references = Array.isArray(message.references)
-      ? message.references.map((ref: unknown) => {
-          const raw = ref as Record<string, unknown>
-          return {
-            title: raw.title as string,
-            url: raw.url as string,
-          }
-        })
-      : []
-
-    const reasoningContent =
-      typeof (message as Record<string, unknown>).reasoning_content === 'string'
-        ? (message as Record<string, unknown>).reasoning_content as string
-        : null
-
-    return {
-      id: message.message_id,
-      role: message.role,
-      content: message.content,
-      timestamp: formatTime(new Date(message.created_at)),
-      sessionId: session.session_id,
-      toolCalls,
-      references,
-      reasoningContent,
-    }
-  })
+  return session.messages.map((message) => ({
+    id: message.message_id,
+    role: message.role,
+    content: message.content,
+    timestamp: formatTime(new Date(message.created_at)),
+    sessionId: session.session_id,
+  }))
 }
 
 function parseSkillApiConfig(rawText: string) {
