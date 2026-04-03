@@ -74,6 +74,10 @@ export function hasLoadingPlaceholder(message: Message): boolean {
   return message.loading && !hasContent(message)
 }
 
+function hasAssistantOutput(message: Message): boolean {
+  return hasContent(message) || message.skillOutput.length > 0
+}
+
 function mapGroup<T>(groups: MessageGroup[], mapper?: (group: MessageGroup) => T): Array<MessageGroup | T> {
   if (!mapper) {
     return groups
@@ -84,62 +88,18 @@ function mapGroup<T>(groups: MessageGroup[], mapper?: (group: MessageGroup) => T
     .filter((group) => group !== null && group !== undefined)
 }
 
-function mergeConsecutiveAssistantMessages(messages: Message[]): Message[] {
-  const result: Message[] = []
-
-  for (const message of messages) {
-    if (message.type === 'human' || message.role === 'user') {
-      result.push(message)
-      continue
-    }
-
-    const last = result[result.length - 1]
-
-    if (last && (last.type === 'ai' || last.role === 'assistant')) {
-      last.tool_calls = [...last.tool_calls, ...message.tool_calls]
-      last.courses = [...last.courses, ...message.courses]
-      last.references = [...last.references, ...message.references]
-      last.skillOutput = [...last.skillOutput, ...message.skillOutput]
-
-      if (message.additional_kwargs.reasoning_content && !last.additional_kwargs.reasoning_content) {
-        last.additional_kwargs.reasoning_content = message.additional_kwargs.reasoning_content
-      }
-
-      if (message.additional_kwargs.subagent_label && !last.additional_kwargs.subagent_label) {
-        last.additional_kwargs.subagent_label = message.additional_kwargs.subagent_label
-      }
-
-      if (typeof message.content === 'string' && message.content.trim()) {
-        if (typeof last.content === 'string') {
-          last.content = last.content ? `${last.content}${message.content}` : message.content
-        } else {
-          last.content = message.content
-        }
-      }
-
-      if (message.loading) {
-        last.loading = true
-      }
-    } else {
-      result.push({ ...message })
-    }
-  }
-
-  return result
-}
-
 export function groupMessages(messages: Message[]): MessageGroup[]
 export function groupMessages<T>(messages: Message[], mapper: (group: MessageGroup) => T): T[]
 export function groupMessages<T>(messages: Message[], mapper?: (group: MessageGroup) => T): Array<MessageGroup | T> {
-  const merged = mergeConsecutiveAssistantMessages(messages)
+  const orderedMessages = messages.map((message) => ({ ...message }))
 
-  if (!merged.length) {
+  if (!orderedMessages.length) {
     return []
   }
 
   const groups: MessageGroup[] = []
 
-  for (const message of merged) {
+  for (const message of orderedMessages) {
     if (message.type === 'human' || message.role === 'user') {
       groups.push({
         id: message.id,
@@ -149,8 +109,19 @@ export function groupMessages<T>(messages: Message[], mapper?: (group: MessageGr
       continue
     }
 
-    // deer-flow 的处理过程是一个统一的步骤流，所以这里把 reasoning / tool / subagent / courses 合并成同一个 processing 组。
-    if (hasProcessingSteps(message)) {
+    const shouldRenderAssistantOutput = hasAssistantOutput(message)
+    const shouldRenderProcessing = hasProcessingSteps(message)
+
+    // 这里按真实交互顺序输出：同一条 assistant 里如果先有正文、后有工具步骤，前端也要先渲染正文，再渲染 processing。
+    if (shouldRenderAssistantOutput) {
+      groups.push({
+        id: `${message.id}-assistant`,
+        type: 'assistant',
+        messages: [message],
+      })
+    }
+
+    if (shouldRenderProcessing) {
       groups.push({
         id: `${message.id}-processing`,
         type: 'assistant:processing',
@@ -158,19 +129,10 @@ export function groupMessages<T>(messages: Message[], mapper?: (group: MessageGr
       })
     }
 
-    if (hasLoadingPlaceholder(message) && !hasProcessingSteps(message)) {
+    if (hasLoadingPlaceholder(message) && !shouldRenderProcessing && !shouldRenderAssistantOutput) {
       groups.push({
         id: `${message.id}-loading`,
         type: 'assistant:loading',
-        messages: [message],
-      })
-    }
-
-    // 当消息同时有 processing steps 和正文时，正文由 ProcessingMessage 内部渲染，不再单独创建 assistant 组。
-    if (hasContent(message) && !hasProcessingSteps(message)) {
-      groups.push({
-        id: `${message.id}-assistant`,
-        type: 'assistant',
         messages: [message],
       })
     }

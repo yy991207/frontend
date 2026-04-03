@@ -9,6 +9,7 @@ import {
   type ChatApiConfig,
   type ToolCall,
 } from '../services/chatService'
+import { appendTextDeltaToStreamMessages } from '../core/messages/streaming'
 import type {
   StreamBridgeMessage,
   StreamBridgeSnapshot,
@@ -50,6 +51,7 @@ type SessionState = {
   snapshot: StreamBridgeSnapshot
   config: ChatApiConfig
   loadingMessageId: string
+  activeMessageId: string
   controller: AbortController | null
   subscribers: Set<MessagePort>
   cleanupTimer: number | null
@@ -112,17 +114,37 @@ function upsertToolCall(message: StreamBridgeMessage, nextToolCall: ToolCall): S
   }
 }
 
-function withLoadingMessage(
+function withMessageById(
   state: SessionState,
+  messageId: string,
   updater: (message: StreamBridgeMessage) => StreamBridgeMessage,
 ) {
   state.snapshot = {
     ...state.snapshot,
     messages: state.snapshot.messages.map((message) =>
-      message.id === state.loadingMessageId
+      message.id === messageId
         ? updater(message)
         : message,
     ),
+  }
+}
+
+// 一轮流式响应里如果已经进入工具步骤，后续新的正文要落到新的 assistant 消息里，避免把工具前后的文字揉成一块。
+function createFollowupAssistantMessage(
+  baseMessage: StreamBridgeMessage,
+  nextMessageId: string,
+  timestamp: string,
+): StreamBridgeMessage {
+  return {
+    ...baseMessage,
+    id: nextMessageId,
+    content: '',
+    timestamp,
+    loading: true,
+    toolCalls: [],
+    references: [],
+    courses: [],
+    skillOutput: [],
   }
 }
 
@@ -206,7 +228,7 @@ function unsubscribePortFromSession(port: MessagePort, sessionId: string) {
   sessionStates.get(sessionId)?.subscribers.delete(port)
 }
 
-async function loadCourseTable(state: SessionState, toolCall: ToolCall) {
+async function loadCourseTable(state: SessionState, toolCall: ToolCall, messageId: string) {
   const filePath = extractCourseTableFilePath(toolCall)
 
   if (!filePath || !state.controller || state.controller.signal.aborted) {
@@ -226,7 +248,7 @@ async function loadCourseTable(state: SessionState, toolCall: ToolCall) {
       return
     }
 
-    withLoadingMessage(state, (message) => ({
+    withMessageById(state, messageId, (message) => ({
       ...upsertToolCall(message, toolCall),
       courses,
     }))
@@ -243,7 +265,7 @@ function finalizeStream(sessionId: string, status: StreamBridgeStatus, error?: s
     return
   }
 
-  withLoadingMessage(state, (message) => ({
+  withMessageById(state, state.activeMessageId, (message) => ({
     ...message,
     loading: false,
     ...(status === 'error' && !message.content
@@ -280,31 +302,47 @@ async function runStream(command: StartStreamCommand) {
 
     await readSseStream(stream, {
       onTextDelta(chunk) {
-        withLoadingMessage(state, (message) => ({
-          ...message,
-          content: `${message.content}${chunk}`,
-          loading: false,
-        }))
+        const replyTime = new Date().toLocaleTimeString('zh-CN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        })
+
+        const result = appendTextDeltaToStreamMessages(
+          state.snapshot.messages,
+          state.activeMessageId,
+          chunk,
+          replyTime,
+          createFollowupAssistantMessage,
+        )
+
+        state.snapshot = {
+          ...state.snapshot,
+          messages: result.messages,
+        }
+        state.activeMessageId = result.activeMessageId
         broadcastSnapshot(command.sessionId)
       },
       onToolStart(toolCall) {
-        withLoadingMessage(state, (message) => upsertToolCall(message, toolCall))
+        const toolMessageId = state.activeMessageId
+        withMessageById(state, toolMessageId, (message) => upsertToolCall(message, toolCall))
         broadcastSnapshot(command.sessionId)
       },
       onToolEnd(toolCall) {
-        withLoadingMessage(state, (message) => upsertToolCall(message, toolCall))
+        const toolMessageId = state.activeMessageId
+        withMessageById(state, toolMessageId, (message) => upsertToolCall(message, toolCall))
         broadcastSnapshot(command.sessionId)
-        void loadCourseTable(state, toolCall)
+        void loadCourseTable(state, toolCall, toolMessageId)
       },
       onReferences(references) {
-        withLoadingMessage(state, (message) => ({
+        withMessageById(state, state.activeMessageId, (message) => ({
           ...message,
           references,
         }))
         broadcastSnapshot(command.sessionId)
       },
       onSkillOutput(skillOutput) {
-        withLoadingMessage(state, (message) => ({
+        withMessageById(state, state.activeMessageId, (message) => ({
           ...message,
           skillOutput,
         }))
@@ -341,6 +379,7 @@ function handleStartStream(port: MessagePort, command: StartStreamCommand) {
     snapshot: createSnapshot(command.sessionId, command.messages, 'streaming'),
     config: command.config,
     loadingMessageId: command.loadingMessageId,
+    activeMessageId: command.loadingMessageId,
     controller: new AbortController(),
     subscribers: new Set<MessagePort>(),
     cleanupTimer: null,

@@ -219,23 +219,16 @@ function renderProcessStep(
 
 function ProcessingMessage({
   message,
-  copiedMessageId,
-  onCopy,
   getToolDisplayTitle,
   onOpenFile,
 }: {
   message: Message
-  copiedMessageId: string | null
-  onCopy: (messageId: string, content: string) => void
   getToolDisplayTitle: MessageGroupSectionProps['getToolDisplayTitle']
   onOpenFile?: MessageGroupSectionProps['onOpenFile']
 }) {
   const [showAbove, setShowAbove] = useState(true)
   const [showLastThinking, setShowLastThinking] = useState(true)
   const steps = useMemo(() => buildProcessSteps(message), [message])
-  const textContent = message.skillOutput.length
-    ? stripSkillOutputUrlsFromText(extractTextFromMessage(message), message.skillOutput)
-    : extractTextFromMessage(message)
 
   const lastActionStep = useMemo(() => {
     const actionSteps = steps.filter((step) => step.type !== 'reasoning')
@@ -321,26 +314,6 @@ function ProcessingMessage({
           </>
         ) : null}
       </ChainOfThought>
-
-      {textContent ? (
-        <div className={styles.assistantMessageWrap}>
-          <MarkdownContent
-            className={styles.assistantMarkdown}
-            content={textContent}
-            isStreaming={message.loading}
-          />
-          {message.skillOutput.length ? (
-            <div className={artifactStyles.fileList}>
-              {message.skillOutput.map((item, index) => (
-                <SkillOutputCard key={`${item.url}-${index}`} item={item} onOpenFile={onOpenFile} />
-              ))}
-            </div>
-          ) : null}
-          <div className={styles.assistantFooter}>
-            {renderCopyAction(message.id, textContent, copiedMessageId, onCopy)}
-          </div>
-        </div>
-      ) : null}
     </div>
   )
 }
@@ -377,8 +350,6 @@ export function MessageGroupSection({
             <div key={message.id} className={styles.assistantRow}>
               <ProcessingMessage
                 message={message}
-                copiedMessageId={copiedMessageId}
-                onCopy={onCopy}
                 getToolDisplayTitle={getToolDisplayTitle}
                 onOpenFile={onOpenFile}
               />
@@ -410,8 +381,6 @@ export function MessageGroupSection({
             <div key={message.id} className={styles.assistantRow}>
               <ProcessingMessage
                 message={message}
-                copiedMessageId={copiedMessageId}
-                onCopy={onCopy}
                 getToolDisplayTitle={getToolDisplayTitle}
                 onOpenFile={onOpenFile}
               />

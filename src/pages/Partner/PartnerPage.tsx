@@ -66,6 +66,7 @@ import {
   type SkillApiResponse,
 } from '../../services/skillPromptService'
 import { adaptChatMessages } from '../../core/messages/adapters'
+import { appendTextDeltaToStreamMessages } from '../../core/messages/streaming'
 import type { LegacyChatMessage as ChatMessage } from '../../core/messages/types'
 import { groupMessages } from '../../core/messages/utils'
 import styles from './partner.module.less'
@@ -232,6 +233,33 @@ function upsertToolCall(message: ChatMessage, nextToolCall: ToolCall): ChatMessa
           }
         : item,
     ),
+  }
+}
+
+function updateAssistantMessageById(
+  messages: ChatMessage[],
+  messageId: string,
+  updater: (message: ChatMessage) => ChatMessage,
+): ChatMessage[] {
+  return messages.map((message) =>
+    message.id === messageId
+      ? updater(message)
+      : message,
+  )
+}
+
+// 一轮请求里可能出现多段 assistant 回复，这里在工具步骤之后切出新的 assistant 消息，保证渲染顺序和真实时间顺序一致。
+function createFollowupAssistantMessage(baseMessage: ChatMessage, nextMessageId: string, timestamp: string): ChatMessage {
+  return {
+    ...baseMessage,
+    id: nextMessageId,
+    content: '',
+    timestamp,
+    loading: true,
+    toolCalls: [],
+    references: [],
+    courses: [],
+    skillOutput: [],
   }
 }
 
@@ -678,6 +706,7 @@ function PartnerPageContent() {
     const controller = new AbortController()
     abortControllerRef.current = controller
     let usingSharedBridge = false
+    let activeAssistantMessageId = loadingMessage.id
 
     try {
       let sessionId = currentSessionId
@@ -734,29 +763,28 @@ function PartnerPageContent() {
       await readSseStream(stream, {
         onTextDelta(chunk) {
           const replyTime = formatTime(new Date())
-          setMessages((prev) =>
-            prev.map((item) =>
-              item.id === loadingMessage.id
-                ? {
-                    ...item,
-                    content: `${item.content}${chunk}`,
-                    timestamp: replyTime,
-                    loading: false,
-                  }
-                : item,
-            ),
-          )
+          setMessages((prev) => {
+            const result = appendTextDeltaToStreamMessages(
+              prev,
+              activeAssistantMessageId,
+              chunk,
+              replyTime,
+              createFollowupAssistantMessage,
+            )
+            activeAssistantMessageId = result.activeMessageId
+            return result.messages
+          })
         },
         onToolStart(toolCall) {
+          const toolMessageId = activeAssistantMessageId
+
           setMessages((prev) =>
-            prev.map((item) =>
-              item.id === loadingMessage.id
-                ? upsertToolCall(item, toolCall)
-                : item,
-            ),
+            updateAssistantMessageById(prev, toolMessageId, (message) => upsertToolCall(message, toolCall)),
           )
         },
         onToolEnd(toolCall) {
+          const toolMessageId = activeAssistantMessageId
+
           void loadCourseTable(chatApiConfig, sessionId, toolCall, controller.signal)
             .then((courses) => {
               if (!courses.length) {
@@ -764,14 +792,10 @@ function PartnerPageContent() {
               }
 
               setMessages((prev) =>
-                prev.map((item) =>
-                  item.id === loadingMessage.id
-                    ? {
-                        ...upsertToolCall(item, toolCall),
-                        courses,
-                      }
-                    : item,
-                ),
+                updateAssistantMessageById(prev, toolMessageId, (message) => ({
+                  ...upsertToolCall(message, toolCall),
+                  courses,
+                })),
               )
             })
             .catch(() => {
@@ -779,50 +803,34 @@ function PartnerPageContent() {
             })
 
           setMessages((prev) =>
-            prev.map((item) =>
-              item.id === loadingMessage.id
-                ? upsertToolCall(item, toolCall)
-                : item,
-            ),
+            updateAssistantMessageById(prev, toolMessageId, (message) => upsertToolCall(message, toolCall)),
           )
         },
         onReferences(references) {
           setMessages((prev) =>
-            prev.map((item) =>
-              item.id === loadingMessage.id
-                ? {
-                    ...item,
-                    references,
-                  }
-                : item,
-            ),
+            updateAssistantMessageById(prev, activeAssistantMessageId, (message) => ({
+              ...message,
+              references,
+            })),
           )
         },
         onSkillOutput(skillOutput) {
           setMessages((prev) =>
-            prev.map((item) =>
-              item.id === loadingMessage.id
-                ? {
-                    ...item,
-                    skillOutput,
-                  }
-                : item,
-            ),
+            updateAssistantMessageById(prev, activeAssistantMessageId, (message) => ({
+              ...message,
+              skillOutput,
+            })),
           )
         },
       })
 
       const replyTime = formatTime(new Date())
       setMessages((prev) =>
-        prev.map((item) =>
-          item.id === loadingMessage.id
-            ? {
-                ...item,
-                timestamp: replyTime,
-                loading: false,
-              }
-            : item,
-        ),
+        updateAssistantMessageById(prev, activeAssistantMessageId, (message) => ({
+          ...message,
+          timestamp: replyTime,
+          loading: false,
+        })),
       )
     } catch (error) {
       if (controller.signal.aborted) {
@@ -831,16 +839,12 @@ function PartnerPageContent() {
 
       const replyTime = formatTime(new Date())
       setMessages((prev) =>
-        prev.map((item) =>
-          item.id === loadingMessage.id
-            ? {
-                ...item,
-                content: '请求失败，请稍后重试。',
-                timestamp: replyTime,
-                loading: false,
-              }
-            : item,
-        ),
+        updateAssistantMessageById(prev, activeAssistantMessageId, (message) => ({
+          ...message,
+          content: message.content || '请求失败，请稍后重试。',
+          timestamp: replyTime,
+          loading: false,
+        })),
       )
       setRequestError(error instanceof Error ? error.message : '请求失败，请稍后重试。')
     } finally {
