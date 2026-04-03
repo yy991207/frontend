@@ -279,6 +279,7 @@ function ChatPageContent() {
   const [selectedSkillDescription, setSelectedSkillDescription] = useState('')
   const [requestError, setRequestError] = useState('')
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
+  const [sessionLoading, setSessionLoading] = useState(false)
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
@@ -689,6 +690,7 @@ function ChatPageContent() {
 
   useEffect(() => {
     if (!routeSessionId) {
+      setSessionLoading(false)
       return
     }
 
@@ -696,6 +698,15 @@ function ChatPageContent() {
     let controller: AbortController | null = null
 
     const restoreSession = async () => {
+      const hasCurrentSessionMessages = messagesRef.current.some((message) => message.sessionId === routeSessionId)
+
+      if (hasCurrentSessionMessages) {
+        setSessionLoading(false)
+        return
+      }
+
+      setSessionLoading(true)
+
       const streamBridge = streamBridgeRef.current
 
       if (streamBridge) {
@@ -712,14 +723,9 @@ function ChatPageContent() {
           setMessages(nextMessages)
           setIsResponding(snapshot.status === 'streaming')
           setRequestError(snapshot.status === 'error' ? (snapshot.error ?? '请求失败，请稍后重试。') : '')
+          setSessionLoading(false)
           return
         }
-      }
-
-      const hasCurrentSessionMessages = messagesRef.current.some((message) => message.sessionId === routeSessionId)
-
-      if (hasCurrentSessionMessages) {
-        return
       }
 
       controller = new AbortController()
@@ -737,9 +743,11 @@ function ChatPageContent() {
         setMessages(nextMessages)
         setIsResponding(false)
         setRequestError('')
+        setSessionLoading(false)
       } catch (error) {
         if (!controller.signal.aborted && !cancelled) {
           setRequestError(error instanceof Error ? error.message : '获取会话详情失败')
+          setSessionLoading(false)
         }
       }
     }
@@ -748,6 +756,7 @@ function ChatPageContent() {
 
     return () => {
       cancelled = true
+      setSessionLoading(false)
       streamBridgeRef.current?.unsubscribe(routeSessionId)
       controller?.abort()
     }
@@ -913,6 +922,7 @@ function ChatPageContent() {
             <div className={styles.messageColumn}>
               <MessageList
                 groups={groupedMessages}
+                threadLoading={sessionLoading}
                 copiedMessageId={copiedMessageId}
                 assistantCopyTargets={assistantCopyTargets}
                 onCopy={handleCopy}
