@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import {
-  AppstoreAddOutlined,
   BookOutlined,
-  CompassOutlined,
   LoadingOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -22,8 +20,6 @@ const NAV_ITEMS = [
   { key: 'home', label: '新建', icon: <PlusOutlined /> },
   { key: 'library', label: '库', icon: <BookOutlined />, path: '/library' },
   { key: 'skills', label: '技能', icon: <ThunderboltOutlined />, path: '/skills' },
-  { key: 'discover', label: '发现', icon: <CompassOutlined /> },
-  { key: 'apps', label: '开发应用', icon: <AppstoreAddOutlined /> },
 ]
 
 export default function Sidebar() {
