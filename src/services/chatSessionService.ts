@@ -6,12 +6,27 @@ export type ChatSession = {
   updated_at: string
 }
 
+export type ChatSessionMessageToolCall = {
+  call_id: string
+  name: string
+  input: Record<string, unknown>
+  output?: unknown
+  status?: string
+  timestamp?: string
+  tool_display?: Record<string, unknown>
+}
+
+export type ChatSessionMessageReference = {
+  title?: string
+  url?: string
+}
+
 export type ChatSessionMessage = {
   message_id: string
   role: 'user' | 'assistant'
   content: string
-  tool_calls: unknown[]
-  references: unknown[]
+  tool_calls: ChatSessionMessageToolCall[]
+  references: ChatSessionMessageReference[]
   skill_output: unknown
   created_at: string
 }
