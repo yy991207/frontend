@@ -10,7 +10,13 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-doc/
+doc/*
+!doc/images/
+doc/images/*
+!doc/images/homepage.png
+!doc/images/chat01.png
+!doc/images/chat2.png
+!doc/工作记录 - 2026 年 0403.md
 node_modules
 dist
 dist-ssr
