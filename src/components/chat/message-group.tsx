@@ -308,6 +308,21 @@ function ProcessingMessage({
   )
 }
 
+function LoadingMessage() {
+  return (
+    <div className={styles.loadingShell} aria-label="正在生成回复">
+      <div className={styles.loadingOrbit}>
+        <span className={styles.loadingOrbitDot} />
+      </div>
+      <div className={styles.loadingBody}>
+        <span className={`${styles.loadingLine} ${styles.loadingLineLong}`} />
+        <span className={`${styles.loadingLine} ${styles.loadingLineMedium}`} />
+        <span className={`${styles.loadingLine} ${styles.loadingLineShort}`} />
+      </div>
+    </div>
+  )
+}
+
 export function MessageGroupSection({
   group,
   copiedMessageId,
@@ -354,11 +369,7 @@ export function MessageGroupSection({
         <>
           {group.messages.map((message) => (
             <div key={message.id} className={styles.assistantRow}>
-              <div className={styles.loadingDots}>
-                <span className={styles.dot} />
-                <span className={styles.dot} />
-                <span className={styles.dot} />
-              </div>
+              <LoadingMessage />
             </div>
           ))}
         </>
