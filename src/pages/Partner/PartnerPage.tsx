@@ -605,11 +605,11 @@ function PartnerPageContent() {
     return routeSessionId || messageSessionId || null
   }, [routeSessionId, messages])
 
-  const { addFile, selectFile } = useArtifacts()
+  const { addFile, selectFile, open: artifactOpen } = useArtifacts()
 
-  const handleOpenFile = useCallback((filepath: string) => {
+  const handleOpenFile = useCallback((filepath: string, originalUrl?: string) => {
     if (!currentSessionId || !sessionBaseUrl) return
-    const artifactFile = { filepath, sessionId: currentSessionId, baseUrl: sessionBaseUrl }
+    const artifactFile = { filepath, sessionId: currentSessionId, baseUrl: sessionBaseUrl, originalUrl }
     addFile(artifactFile)
     selectFile(artifactFile)
   }, [currentSessionId, sessionBaseUrl, addFile, selectFile])
@@ -1295,7 +1295,8 @@ function PartnerPageContent() {
 
   return (
     <main className={styles.page}>
-      <section className={styles.panel}>
+      <div className={styles.splitContainer}>
+        <section className={`${styles.panel} ${artifactOpen ? styles.panelShrink : ''}`}>
         {isSettingsOpen ? (
           <>
             <div className={styles.settingsTopBar}>
@@ -1640,6 +1641,12 @@ function PartnerPageContent() {
           </>
         )}
       </section>
+        {artifactOpen && (
+          <section className={styles.artifactPanel}>
+            <PartnerArtifactPanel />
+          </section>
+        )}
+      </div>
       {isNameModalOpen ? (
         <div className={styles.nameModalMask} onClick={handleCloseNameModal}>
           <div
@@ -1681,15 +1688,14 @@ function PartnerPageContent() {
           </div>
         </div>
       ) : null}
-      <PartnerArtifactPanel />
     </main>
   )
 }
 
 function PartnerArtifactPanel() {
-  const { selectedFile, open } = useArtifacts()
+  const { selectedFile } = useArtifacts()
 
-  if (!selectedFile || !open) return null
+  if (!selectedFile) return null
 
   return <ArtifactFileDetail file={selectedFile} />
 }
