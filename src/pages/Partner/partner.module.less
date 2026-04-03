@@ -573,7 +573,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
+  gap: 22px;
 }
 
 .messageColumn {
@@ -599,12 +599,13 @@
   width: fit-content;
   max-width: min(100%, 540px);
   padding: 14px 18px;
-  border-radius: 16px;
-  background: #eef2ff;
+  border-radius: 18px;
+  background: #f1f1ec;
   color: #374151;
   font-size: 16px;
   line-height: 1.5;
   word-break: break-word;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.04);
 }
 
 .userActions {
@@ -849,6 +850,17 @@
   padding: 0 28px 16px;
 }
 
+.composerArea::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 72px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(244, 247, 251, 0.9));
+  pointer-events: none;
+}
+
 .composerWrap {
   position: relative;
   width: 100%;
@@ -859,8 +871,10 @@
   min-height: 58px;
   border-radius: 28px;
   border: 1px solid rgba(226, 232, 240, 0.95);
-  background: #ffffff;
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   display: flex;
   align-items: center;
   gap: 8px;
