@@ -6,6 +6,7 @@ import {
   BarChartOutlined,
   BgColorsOutlined,
   BookOutlined,
+  CloseOutlined,
   DashboardOutlined,
   EyeOutlined,
   FileExcelOutlined,
@@ -190,6 +191,12 @@ export default function HomePage() {
   const [tabsLoading, setTabsLoading] = useState(true)
   const [tabsError, setTabsError] = useState('')
 
+  const clearSelectedSkill = () => {
+    setPreferredToolType(null)
+    setSelectedSkillName('')
+    setSelectedSkillDescription('')
+  }
+
   const skillApiConfig = useMemo(() => {
     try {
       return parseSkillApiConfig(chatConfigText)
@@ -329,9 +336,7 @@ export default function HomePage() {
       : value
 
     setPrompt('')
-    setPreferredToolType(null)
-    setSelectedSkillName('')
-    setSelectedSkillDescription('')
+    clearSelectedSkill()
     navigate('/chat', {
       state: {
         initialPrompt: outgoingPrompt,
@@ -448,6 +453,14 @@ export default function HomePage() {
                   {selectedSkillName ? (
                     <span className={styles.skillTagWrap}>
                       <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
+                      <button
+                        type="button"
+                        className={styles.skillRemoveButton}
+                        aria-label="移除已选技能"
+                        onClick={clearSelectedSkill}
+                      >
+                        <CloseOutlined />
+                      </button>
                       {selectedSkillDescription ? (
                         <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
                       ) : null}
@@ -456,6 +469,16 @@ export default function HomePage() {
                   <Input
                     value={prompt}
                     onChange={(event) => setPrompt(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+                        return
+                      }
+
+                      if (event.key === 'Backspace' && !prompt.trim() && selectedSkillName) {
+                        event.preventDefault()
+                        clearSelectedSkill()
+                      }
+                    }}
                     onPressEnter={handleSend}
                     style={{ flex: 1, minWidth: 0, border: 'none', boxShadow: 'none', background: 'transparent', fontSize: 14 }}
                     variant="borderless"
