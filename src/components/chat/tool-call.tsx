@@ -34,6 +34,13 @@ type SearchResultItem = {
   url: string
 }
 
+type RagVideoResultItem = {
+  resourceId: string
+  courseTitle: string
+  duration?: number | null
+  score?: number | null
+}
+
 function readRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null
 }
@@ -66,6 +73,48 @@ function readStringField(record: Record<string, unknown> | null, keys: string[])
   }
 
   return ''
+}
+
+function readNumberField(record: Record<string, unknown> | null, keys: string[]): number | null {
+  if (!record) {
+    return null
+  }
+
+  for (const key of keys) {
+    const value = record[key]
+
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value
+    }
+
+    if (typeof value === 'string') {
+      const parsed = Number(value)
+      if (Number.isFinite(parsed)) {
+        return parsed
+      }
+    }
+  }
+
+  return null
+}
+
+// 某些工具结果会把 JSON 当成字符串塞进 output，这里统一先转回结构化对象，避免历史记录和流式渲染两套分支重复处理。
+function normalizeToolOutput(output: unknown): unknown {
+  if (typeof output !== 'string') {
+    return output
+  }
+
+  const trimmedOutput = output.trim()
+
+  if (!trimmedOutput || !/^[\[{]/.test(trimmedOutput)) {
+    return output
+  }
+
+  try {
+    return JSON.parse(trimmedOutput) as unknown
+  } catch {
+    return output
+  }
 }
 
 function readToolDisplayItems(toolCall: ToolCall): ToolDisplayItem[] {
@@ -154,8 +203,9 @@ function readSearchResults(toolCall: ToolCall): SearchResultItem[] {
     return displayItems
   }
 
-  const outputRecord = readRecord(toolCall.output)
-  const outputItems = Array.isArray(toolCall.output) ? toolCall.output : readArrayField(outputRecord, ['results', 'items'])
+  const normalizedOutput = normalizeToolOutput(toolCall.output)
+  const outputRecord = readRecord(normalizedOutput)
+  const outputItems = Array.isArray(normalizedOutput) ? normalizedOutput : readArrayField(outputRecord, ['results', 'items'])
 
   return outputItems.flatMap((item) => {
     const record = readRecord(item)
@@ -191,7 +241,7 @@ function readTodoItems(toolCall: ToolCall): SearchResultItem[] {
     return displayItems
   }
 
-  const outputRecord = readRecord(toolCall.output)
+  const outputRecord = readRecord(normalizeToolOutput(toolCall.output))
   const outputItems = readArrayField(outputRecord, ['todos', 'items'])
 
   return outputItems.flatMap((item) => {
@@ -209,6 +259,76 @@ function readTodoItems(toolCall: ToolCall): SearchResultItem[] {
   })
 }
 
+function formatRagVideoMeta(duration?: number | null, score?: number | null): string {
+  const meta: string[] = []
+
+  if (typeof duration === 'number' && Number.isFinite(duration)) {
+    meta.push(`${duration.toFixed(1)} 分钟`)
+  }
+
+  if (typeof score === 'number' && Number.isFinite(score)) {
+    meta.push(`相关度 ${score.toFixed(3)}`)
+  }
+
+  return meta.join(' · ')
+}
+
+function readRagVideoItems(toolCall: ToolCall): RagVideoResultItem[] {
+  const displayItems = readToolDisplayItems(toolCall).flatMap((item) => {
+    const courseTitle = readStringField(item, ['course_title', 'title', 'name', 'label'])
+
+    if (!courseTitle) {
+      return []
+    }
+
+    return [{
+      resourceId: readStringField(item, ['resource_id', 'resourceId', 'id']),
+      courseTitle,
+      duration: readNumberField(item, ['duration']),
+      score: readNumberField(item, ['score']),
+    }]
+  })
+
+  if (displayItems.length) {
+    return displayItems
+  }
+
+  const normalizedOutput = normalizeToolOutput(toolCall.output)
+  const outputRecord = readRecord(normalizedOutput)
+  const outputItems = Array.isArray(normalizedOutput) ? normalizedOutput : readArrayField(outputRecord, ['results', 'items', 'videos'])
+
+  return outputItems.flatMap((item) => {
+    const record = readRecord(item)
+    const courseTitle = readStringField(record, ['course_title', 'title', 'name', 'label'])
+
+    if (!courseTitle) {
+      return []
+    }
+
+    return [{
+      resourceId: readStringField(record, ['resource_id', 'resourceId', 'id']),
+      courseTitle,
+      duration: readNumberField(record, ['duration']),
+      score: readNumberField(record, ['score']),
+    }]
+  })
+}
+
+function readRagVideoSummary(toolCall: ToolCall): string {
+  if (typeof toolCall.output === 'string' && toolCall.output.trim()) {
+    return toolCall.output.trim()
+  }
+
+  const outputRecord = readRecord(normalizeToolOutput(toolCall.output))
+  const count = readNumberField(outputRecord, ['count', 'total', 'found'])
+
+  if (typeof count === 'number' && Number.isFinite(count) && count > 0) {
+    return `找到 ${count} 条视频结果`
+  }
+
+  return ''
+}
+
 function renderWebSearchResult(toolCall: ToolCall, isLast = false) {
   const query = typeof toolCall.input.query === 'string' ? toolCall.input.query : ''
   const label = query ? `在网络上搜索 “${query}”` : '搜索相关信息'
@@ -222,6 +342,39 @@ function renderWebSearchResult(toolCall: ToolCall, isLast = false) {
       status={getStepStatus(toolCall)}
     >
       {renderResultChips(resultItems)}
+    </ChainOfThoughtStep>
+  )
+}
+
+function renderRagListVideosResult(toolCall: ToolCall, isLast = false) {
+  const query = typeof toolCall.input.query === 'string' ? toolCall.input.query.trim() : ''
+  const label = query ? `检索知识库视频 “${query}”` : '检索知识库视频'
+  const resultItems = readRagVideoItems(toolCall)
+  const summary = readRagVideoSummary(toolCall)
+
+  return (
+    <ChainOfThoughtStep
+      label={label}
+      icon={<SearchOutlined />}
+      isLast={isLast}
+      status={getStepStatus(toolCall)}
+    >
+      {resultItems.length ? (
+        <ChainOfThoughtSearchResults>
+          {resultItems.map((item, index) => {
+            const meta = formatRagVideoMeta(item.duration, item.score)
+            return (
+              <ChainOfThoughtSearchResult key={`${item.resourceId || item.courseTitle}-${index}`}>
+                {meta ? `${item.courseTitle} · ${meta}` : item.courseTitle}
+              </ChainOfThoughtSearchResult>
+            )
+          })}
+        </ChainOfThoughtSearchResults>
+      ) : summary ? (
+        <ChainOfThoughtSearchResults>
+          <ChainOfThoughtSearchResult>{summary}</ChainOfThoughtSearchResult>
+        </ChainOfThoughtSearchResults>
+      ) : null}
     </ChainOfThoughtStep>
   )
 }
@@ -365,6 +518,10 @@ export function ToolCallStep({
   getToolDisplayTitle,
   onOpenFile,
 }: ToolCallStepProps) {
+  if (toolCall.name === 'rag_list_videos') {
+    return renderRagListVideosResult(toolCall, isLast)
+  }
+
   if (toolCall.name === 'web_search') {
     return renderWebSearchResult(toolCall, isLast)
   }
