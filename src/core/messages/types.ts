@@ -20,6 +20,14 @@ export type CourseItem = {
   url?: string
 }
 
+export type SkillOutputItem = {
+  skill_name: string
+  type: string
+  filename: string
+  url: string
+  size: number
+}
+
 export type LegacyChatMessage = {
   id: string
   role: 'user' | 'assistant'
@@ -30,6 +38,7 @@ export type LegacyChatMessage = {
   toolCalls?: ToolCall[]
   references?: ChatReference[]
   courses?: CourseItem[]
+  skillOutput?: SkillOutputItem[]
   reasoningContent?: string | null
   subagentLabel?: string | null
 }
@@ -62,6 +71,7 @@ export type Message = {
   tool_calls: ToolCall[]
   references: ChatReference[]
   courses: CourseItem[]
+  skillOutput: SkillOutputItem[]
   additional_kwargs: MessageAdditionalKwargs
 }
 

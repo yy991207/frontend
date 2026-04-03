@@ -30,6 +30,7 @@ export function adaptChatMessage(message: LegacyChatMessage): Message {
     tool_calls: [...(message.toolCalls ?? [])],
     references: [...(message.references ?? [])],
     courses: [...(message.courses ?? [])],
+    skillOutput: [...(message.skillOutput ?? [])],
     additional_kwargs: buildAdditionalKwargs(message),
   }
 }

@@ -12,6 +12,7 @@ import {
 
 import type { ToolCall } from '../../core/messages/types'
 import styles from '../../pages/Chat/chat.module.less'
+import artifactStyles from './artifacts.module.less'
 import {
   ChainOfThoughtSearchResult,
   ChainOfThoughtSearchResults,
@@ -23,6 +24,7 @@ type ToolCallStepProps = {
   messageId?: string
   isLast?: boolean
   getToolDisplayTitle?: (toolCall: ToolCall) => string
+  onOpenFile?: (filepath: string) => void
 }
 
 type ToolDisplayItem = Record<string, unknown>
@@ -103,6 +105,33 @@ function renderResultChips(items: SearchResultItem[]) {
         </ChainOfThoughtSearchResult>
       ))}
     </ChainOfThoughtSearchResults>
+  )
+}
+
+function renderInlineFileCard(filepath: string, onOpenFile?: (filepath: string) => void) {
+  if (!onOpenFile) {
+    return (
+      <ChainOfThoughtSearchResults>
+        <ChainOfThoughtSearchResult>{filepath}</ChainOfThoughtSearchResult>
+      </ChainOfThoughtSearchResults>
+    )
+  }
+
+  const fileName = filepath.split('/').pop() || filepath
+  const extension = filepath.split('.').pop()?.toLocaleLowerCase() || ''
+  const displayName = extension ? extension.toUpperCase() : 'FILE'
+
+  return (
+    <div className={artifactStyles.inlineFileCard} onClick={() => onOpenFile(filepath)}>
+      <div className={artifactStyles.inlineFileCardIcon}>
+        <FileTextOutlined />
+      </div>
+      <div className={artifactStyles.inlineFileCardInfo}>
+        <div className={artifactStyles.inlineFileCardName}>{fileName}</div>
+        <div className={artifactStyles.inlineFileCardType}>{displayName} 文件</div>
+      </div>
+      <div className={artifactStyles.inlineFileCardAction}>点击预览 →</div>
+    </div>
   )
 }
 
@@ -240,7 +269,7 @@ function renderListFilesResult(toolCall: ToolCall, isLast = false) {
   )
 }
 
-function renderReadFileResult(toolCall: ToolCall, isLast = false) {
+function renderReadFileResult(toolCall: ToolCall, isLast = false, onOpenFile?: ToolCallStepProps['onOpenFile']) {
   const description = readStringField(toolCall.input, ['description']) || '读取文件'
   const path = readStringField(toolCall.input, ['path', 'file_path', 'filepath'])
 
@@ -251,16 +280,12 @@ function renderReadFileResult(toolCall: ToolCall, isLast = false) {
       isLast={isLast}
       status={getStepStatus(toolCall)}
     >
-      {path ? (
-        <ChainOfThoughtSearchResults>
-          <ChainOfThoughtSearchResult>{path}</ChainOfThoughtSearchResult>
-        </ChainOfThoughtSearchResults>
-      ) : null}
+      {path ? renderInlineFileCard(path, onOpenFile) : null}
     </ChainOfThoughtStep>
   )
 }
 
-function renderWriteFileResult(toolCall: ToolCall, isLast = false) {
+function renderWriteFileResult(toolCall: ToolCall, isLast = false, onOpenFile?: ToolCallStepProps['onOpenFile']) {
   const description = readStringField(toolCall.input, ['description']) || '写入文件'
   const path = readStringField(toolCall.input, ['path', 'file_path', 'filepath'])
 
@@ -271,11 +296,7 @@ function renderWriteFileResult(toolCall: ToolCall, isLast = false) {
       isLast={isLast}
       status={getStepStatus(toolCall)}
     >
-      {path ? (
-        <ChainOfThoughtSearchResults>
-          <ChainOfThoughtSearchResult>{path}</ChainOfThoughtSearchResult>
-        </ChainOfThoughtSearchResults>
-      ) : null}
+      {path ? renderInlineFileCard(path, onOpenFile) : null}
     </ChainOfThoughtStep>
   )
 }
@@ -342,6 +363,7 @@ export function ToolCallStep({
   toolCall,
   isLast = false,
   getToolDisplayTitle,
+  onOpenFile,
 }: ToolCallStepProps) {
   if (toolCall.name === 'web_search') {
     return renderWebSearchResult(toolCall, isLast)
@@ -356,11 +378,11 @@ export function ToolCallStep({
   }
 
   if (toolCall.name === 'read_file') {
-    return renderReadFileResult(toolCall, isLast)
+    return renderReadFileResult(toolCall, isLast, onOpenFile)
   }
 
   if (toolCall.name === 'write_file' || toolCall.name === 'edit_file' || toolCall.name === 'str_replace') {
-    return renderWriteFileResult(toolCall, isLast)
+    return renderWriteFileResult(toolCall, isLast, onOpenFile)
   }
 
   if (toolCall.name === 'bash') {

@@ -1,4 +1,4 @@
-import type { ChatApiConfig, ChatReference, CourseItem, ToolCall } from './chatService'
+import type { ChatApiConfig, ChatReference, CourseItem, SkillOutputItem, ToolCall } from './chatService'
 
 export type StreamBridgeMessage = {
   id: string
@@ -10,6 +10,7 @@ export type StreamBridgeMessage = {
   toolCalls?: ToolCall[]
   references?: ChatReference[]
   courses?: CourseItem[]
+  skillOutput?: SkillOutputItem[]
 }
 
 export type StreamBridgeStatus = 'streaming' | 'completed' | 'aborted' | 'error'

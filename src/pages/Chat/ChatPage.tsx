@@ -10,6 +10,8 @@ import {
 } from '@ant-design/icons'
 import chatConfigText from '../../../config.yaml?raw'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
+import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts-context'
 import { MessageList } from '../../components/chat/message-list'
 import { AttachmentMenu, type AttachmentSkillItem } from '../../components/common/AttachmentMenu'
 import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal'
@@ -26,6 +28,7 @@ import {
   streamChatMessage,
   type ChatApiConfig,
   type CourseItem,
+  type SkillOutputItem,
   type ToolCall,
 } from '../../services/chatService'
 import {
@@ -174,21 +177,33 @@ function mapToolCall(raw: ChatSessionMessageToolCall): ToolCall {
 }
 
 function mapSessionDetailToMessages(session: ChatSessionDetail): ChatMessage[] {
-  return session.messages.map((message) => ({
-    id: message.message_id,
-    role: message.role,
-    content: message.content,
-    timestamp: formatTime(new Date(message.created_at)),
-    sessionId: session.session_id,
-    toolCalls: message.tool_calls.map(mapToolCall),
-    references: message.references,
-  }))
+  return session.messages.map((message) => {
+    const rawSkillOutput = message.skill_output
+    const skillOutput: SkillOutputItem[] = Array.isArray(rawSkillOutput)
+      ? rawSkillOutput.filter(
+          (item): item is SkillOutputItem =>
+            typeof item === 'object' && item !== null && typeof (item as { url?: unknown }).url === 'string',
+        )
+      : []
+
+    return {
+      id: message.message_id,
+      role: message.role,
+      content: message.content,
+      timestamp: formatTime(new Date(message.created_at)),
+      sessionId: session.session_id,
+      toolCalls: message.tool_calls.map(mapToolCall),
+      references: message.references,
+      skillOutput,
+    }
+  })
 }
 
 function parseSkillApiConfig(rawText: string) {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
   const managePath = parsedConfig.view_user_skills_path
+  const listPath = parsedConfig.list_user_skills_path
   const userId = parsedConfig.user_id
   const userIdParam = parsedConfig.skill_user_id_param
 
@@ -200,14 +215,27 @@ function parseSkillApiConfig(rawText: string) {
     ? managePath.replace('{user_id}', encodeURIComponent(userId))
     : managePath
 
+  const listEndpoint = listPath
+    ? buildAbsoluteUrl(baseUrl, listPath)
+    : null
+
   return {
     manageEndpoint: buildAbsoluteUrl(baseUrl, managePathWithUser),
+    listEndpoint,
     userId,
     userIdParam,
   }
 }
 
 export default function ChatPage() {
+  return (
+    <ArtifactsProvider>
+      <ChatPageContent />
+    </ArtifactsProvider>
+  )
+}
+
+function ChatPageContent() {
   const location = useLocation()
   const navigate = useNavigate()
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -248,6 +276,16 @@ export default function ChatPage() {
       return null
     }
   }, [])
+
+  const sessionBaseUrl = useMemo(() => {
+    if (!chatApiConfig) return null
+    try {
+      const url = new URL(chatApiConfig.streamEndpointBase)
+      return `${url.protocol}//${url.host}`
+    } catch {
+      return null
+    }
+  }, [chatApiConfig])
 
   const routeSessionId = useMemo(() => {
     const params = new URLSearchParams(location.search)
@@ -298,6 +336,15 @@ export default function ChatPage() {
     return routeSessionId || messageSessionId || null
   }, [routeSessionId, messages])
 
+  const { addFile, selectFile } = useArtifacts()
+
+  const handleOpenFile = useCallback((filepath: string) => {
+    if (!currentSessionId || !sessionBaseUrl) return
+    const artifactFile = { filepath, sessionId: currentSessionId, baseUrl: sessionBaseUrl }
+    addFile(artifactFile)
+    selectFile(artifactFile)
+  }, [currentSessionId, sessionBaseUrl, addFile, selectFile])
+
   const syncSessionToRoute = useCallback((sessionId: string) => {
     navigate(
       {
@@ -329,7 +376,7 @@ export default function ChatPage() {
     }
   }, [])
 
-  // 获取用户技能列表
+  // 获取用户技能列表（我添加的 + 我创建的）
   const fetchSkills = useCallback(async (signal?: AbortSignal) => {
     if (!skillApiConfig) {
       setSkills([])
@@ -339,23 +386,37 @@ export default function ChatPage() {
     setSkillsLoading(true)
 
     try {
-      const requestUrl = new URL(skillApiConfig.manageEndpoint)
-      requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
-
-      const response = await fetch(requestUrl.toString(), { signal })
-
-      if (!response.ok) {
-        throw new Error('技能接口请求失败')
+      const fetchAdded = async (): Promise<SkillItem[]> => {
+        const requestUrl = new URL(skillApiConfig.manageEndpoint)
+        requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
+        const response = await fetch(requestUrl.toString(), { signal })
+        if (!response.ok) throw new Error('技能接口请求失败')
+        const data = (await response.json()) as SkillApiResponse
+        if (!data.success) throw new Error(data.msg || '技能接口返回失败')
+        return extractSkillItemsFromResponse(data)
       }
 
-      const data = (await response.json()) as SkillApiResponse
-
-      if (!data.success) {
-        throw new Error(data.msg || '技能接口返回失败')
+      const fetchCreated = async (): Promise<SkillItem[]> => {
+        if (!skillApiConfig.listEndpoint) return []
+        const requestUrl = new URL(skillApiConfig.listEndpoint)
+        requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
+        const response = await fetch(requestUrl.toString(), { signal })
+        if (!response.ok) throw new Error('我创建的技能接口请求失败')
+        const data = (await response.json()) as SkillApiResponse
+        if (!data.success) throw new Error(data.msg || '我创建的技能接口返回失败')
+        return extractSkillItemsFromResponse(data)
       }
 
-      const nextSkills = extractSkillItemsFromResponse(data)
-      setSkills(nextSkills)
+      const [addedSkills, createdSkills] = await Promise.all([fetchAdded(), fetchCreated()])
+      const seen = new Set<string>()
+      const merged: SkillItem[] = []
+      for (const skill of [...addedSkills, ...createdSkills]) {
+        if (!seen.has(skill.id)) {
+          seen.add(skill.id)
+          merged.push(skill)
+        }
+      }
+      setSkills(merged)
     } catch {
       if (!signal?.aborted) {
         setSkills([])
@@ -512,6 +573,18 @@ export default function ChatPage() {
                 ? {
                     ...item,
                     references,
+                  }
+                : item,
+            ),
+          )
+        },
+        onSkillOutput(skillOutput) {
+          setMessages((prev) =>
+            prev.map((item) =>
+              item.id === loadingMessage.id
+                ? {
+                    ...item,
+                    skillOutput,
                   }
                 : item,
             ),
@@ -833,6 +906,7 @@ export default function ChatPage() {
               onCopy={handleCopy}
               getToolDisplayTitle={getToolDisplayTitle}
               getToolDisplaySummary={getToolDisplaySummary}
+              onOpenFile={handleOpenFile}
             />
           </div>
         </div>
@@ -922,6 +996,15 @@ export default function ChatPage() {
         onCancel={() => setDeleteConfirmOpen(false)}
         onConfirm={handleDeleteCurrentSession}
       />
+      <ChatArtifactPanel />
     </main>
   )
+}
+
+function ChatArtifactPanel() {
+  const { selectedFile, open } = useArtifacts()
+
+  if (!selectedFile || !open) return null
+
+  return <ArtifactFileDetail file={selectedFile} />
 }

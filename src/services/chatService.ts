@@ -44,11 +44,20 @@ type StreamPayload = {
   tool_type?: string | null
 }
 
+export type SkillOutputItem = {
+  skill_name: string
+  type: string
+  filename: string
+  url: string
+  size: number
+}
+
 type ReadSseStreamOptions = {
   onTextDelta?: (chunk: string) => void
   onToolStart?: (toolCall: ToolCall) => void
   onToolEnd?: (toolCall: ToolCall) => void
   onReferences?: (references: ChatReference[]) => void
+  onSkillOutput?: (skillOutput: SkillOutputItem[]) => void
 }
 
 type CreateSessionResult = {
@@ -75,6 +84,7 @@ type ToolEndEvent = {
 type ChainEndEvent = {
   data?: {
     references?: unknown
+    skill_output?: unknown
   }
 }
 
@@ -241,6 +251,19 @@ export function extractReferences(eventObj: ChainEndEvent): ChatReference[] {
   return references.filter((item): item is ChatReference => typeof item === 'object' && item !== null)
 }
 
+export function extractSkillOutput(eventObj: ChainEndEvent): SkillOutputItem[] {
+  const skillOutput = eventObj.data?.skill_output
+
+  if (!Array.isArray(skillOutput)) {
+    return []
+  }
+
+  return skillOutput.filter(
+    (item): item is SkillOutputItem =>
+      typeof item === 'object' && item !== null && typeof (item as { url?: unknown }).url === 'string',
+  )
+}
+
 export function extractCourseTableFilePath(toolCall: Pick<ToolCall, 'input'>): string | null {
   const filePath = toolCall.input.file_path
 
@@ -357,7 +380,9 @@ export async function readSseStream(stream: ReadableStream<Uint8Array>, options:
     }
 
     if (currentEvent === 'on_chain_end') {
-      options.onReferences?.(extractReferences(parsedData as ChainEndEvent))
+      const chainEndEvent = parsedData as ChainEndEvent
+      options.onReferences?.(extractReferences(chainEndEvent))
+      options.onSkillOutput?.(extractSkillOutput(chainEndEvent))
       return
     }
 
