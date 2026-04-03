@@ -244,7 +244,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
         <div className={styles.artifactBody}>
           {/* External URL: HTML preview via srcdoc */}
           {externalPreviewable && viewMode === 'preview' && language === 'html' && (
-            <div className={styles.artifactMarkdownWrap}>
+            <div className={styles.artifactPreviewWrap}>
               {loading ? (
                 <div className={styles.artifactLoading}>加载中...</div>
               ) : (
@@ -283,10 +283,12 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
 
           {/* External URL: non-code fallback - iframe direct */}
           {isExternalUrl && !isCodeFile && (
-            <iframe
-              className={styles.artifactIframe}
-              src={file.filepath}
-            />
+            <div className={styles.artifactPreviewWrap}>
+              <iframe
+                className={styles.artifactIframe}
+                src={file.filepath}
+              />
+            </div>
           )}
 
           {/* Internal URL: Markdown preview */}
@@ -302,11 +304,13 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
 
           {/* Internal URL: HTML preview */}
           {previewable && viewMode === 'preview' && language === 'html' && !isExternalUrl && (
-            <iframe
-              className={styles.artifactIframe}
-              src={previewUrl}
-              sandbox="allow-scripts allow-same-origin allow-forms"
-            />
+            <div className={styles.artifactPreviewWrap}>
+              <iframe
+                className={styles.artifactIframe}
+                src={previewUrl}
+                sandbox="allow-scripts allow-same-origin allow-forms"
+              />
+            </div>
           )}
 
           {/* Internal URL: code view */}
@@ -324,11 +328,13 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
 
           {/* Internal URL: non-code fallback */}
           {!isCodeFile && !isExternalUrl && (
-            <iframe
-              className={styles.artifactIframe}
-              src={previewUrl}
-              sandbox="allow-scripts allow-same-origin"
-            />
+            <div className={styles.artifactPreviewWrap}>
+              <iframe
+                className={styles.artifactIframe}
+                src={previewUrl}
+                sandbox="allow-scripts allow-same-origin"
+              />
+            </div>
           )}
         </div>
       </div>
