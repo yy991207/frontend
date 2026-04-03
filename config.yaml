@@ -1,5 +1,5 @@
 user_id: 123456
-url: http://192.168.30.238:8000/
+url: http://localhost:8000/
 //我添加的
 skill_path: /api/v1/skills
 add_user_skills_path: /api/v1/users/{user_id}/skills
