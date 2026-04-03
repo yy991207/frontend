@@ -311,10 +311,10 @@ function ProcessingMessage({
 function LoadingMessage() {
   return (
     <div className={styles.loadingShell} aria-label="正在生成回复">
-      <div className={styles.loadingOrbit}>
-        <span className={styles.loadingOrbitDot} />
+      <div className={styles.loadingBadge}>
+        <span className={styles.loadingBadgeDot} />
       </div>
-      <div className={styles.loadingBody}>
+      <div className={styles.loadingLines}>
         <span className={`${styles.loadingLine} ${styles.loadingLineLong}`} />
         <span className={`${styles.loadingLine} ${styles.loadingLineMedium}`} />
         <span className={`${styles.loadingLine} ${styles.loadingLineShort}`} />
@@ -415,7 +415,9 @@ export function MessageGroupSection({
                   ) : null}
                   {copyContent ? (
                     <div className={styles.assistantFooter}>
-                      {renderCopyAction(message.id, copyContent, copiedMessageId, onCopy)}
+                      <div className={styles.assistantHoverBar}>
+                        {renderCopyAction(message.id, copyContent, copiedMessageId, onCopy)}
+                      </div>
                     </div>
                   ) : null}
                 </div>
