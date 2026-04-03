@@ -24,7 +24,7 @@ type ToolCallStepProps = {
   messageId?: string
   isLast?: boolean
   getToolDisplayTitle?: (toolCall: ToolCall) => string
-  onOpenFile?: (filepath: string) => void
+  onOpenFile?: (filepath: string, originalUrl?: string) => void
 }
 
 type ToolDisplayItem = Record<string, unknown>
@@ -108,7 +108,7 @@ function renderResultChips(items: SearchResultItem[]) {
   )
 }
 
-function renderInlineFileCard(filepath: string, onOpenFile?: (filepath: string) => void) {
+function renderInlineFileCard(filepath: string, onOpenFile?: (filepath: string, originalUrl?: string) => void, originalUrl?: string) {
   if (!onOpenFile) {
     return (
       <ChainOfThoughtSearchResults>
@@ -122,7 +122,7 @@ function renderInlineFileCard(filepath: string, onOpenFile?: (filepath: string) 
   const displayName = extension ? extension.toUpperCase() : 'FILE'
 
   return (
-    <div className={artifactStyles.inlineFileCard} onClick={() => onOpenFile(filepath)}>
+    <div className={artifactStyles.inlineFileCard} onClick={() => onOpenFile(filepath, originalUrl)}>
       <div className={artifactStyles.inlineFileCardIcon}>
         <FileTextOutlined />
       </div>
@@ -280,7 +280,7 @@ function renderReadFileResult(toolCall: ToolCall, isLast = false, onOpenFile?: T
       isLast={isLast}
       status={getStepStatus(toolCall)}
     >
-      {path ? renderInlineFileCard(path, onOpenFile) : null}
+      {path ? renderInlineFileCard(path, onOpenFile, path) : null}
     </ChainOfThoughtStep>
   )
 }
@@ -296,7 +296,7 @@ function renderWriteFileResult(toolCall: ToolCall, isLast = false, onOpenFile?: 
       isLast={isLast}
       status={getStepStatus(toolCall)}
     >
-      {path ? renderInlineFileCard(path, onOpenFile) : null}
+      {path ? renderInlineFileCard(path, onOpenFile, path) : null}
     </ChainOfThoughtStep>
   )
 }

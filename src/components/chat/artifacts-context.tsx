@@ -4,6 +4,7 @@ export type ArtifactFile = {
   filepath: string
   sessionId?: string
   baseUrl?: string
+  originalUrl?: string
 }
 
 interface ArtifactsContextType {

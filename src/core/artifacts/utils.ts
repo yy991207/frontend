@@ -25,3 +25,16 @@ export function buildArtifactPreviewUrl({
 }): string {
   return buildArtifactDownloadUrl({ baseUrl, sessionId, filepath, download: false })
 }
+
+export function buildPreviewApiUrl({
+  baseUrl,
+  sessionId,
+  url,
+}: {
+  baseUrl: string
+  sessionId: string
+  url: string
+}): string {
+  const cleanBaseUrl = baseUrl.replace(/\/+$/, '')
+  return `${cleanBaseUrl}/api/v1/chat/sessions/${sessionId}/files/preview?session_id=${encodeURIComponent(sessionId)}&url=${encodeURIComponent(url)}`
+}

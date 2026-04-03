@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useArtifacts, type ArtifactFile } from './artifacts-context'
 import styles from './artifacts.module.less'
-import { loadArtifactContent } from '../../core/artifacts/loader'
+import { loadArtifactContent, loadPreviewContent } from '../../core/artifacts/loader'
 import { buildArtifactDownloadUrl } from '../../core/artifacts/utils'
 import { checkCodeFile, getFileName } from '../../core/utils/files'
 import { MarkdownContent } from './markdown-content'
@@ -64,6 +64,41 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
     }
   }, [previewable])
 
+  // External URL: fetch via preview API
+  useEffect(() => {
+    if (!open || !isExternalUrl || !file.originalUrl || !file.baseUrl || !file.sessionId) return
+
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    setLoading(true)
+    loadPreviewContent({
+      baseUrl: file.baseUrl,
+      sessionId: file.sessionId,
+      url: file.originalUrl,
+      signal: controller.signal,
+    })
+      .then((text) => {
+        if (!controller.signal.aborted) {
+          setContent(text)
+        }
+      })
+      .catch((err) => {
+        if (!controller.signal.aborted && err.name !== 'AbortError') {
+          message.error('文件内容加载失败')
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      controller.abort()
+    }
+  }, [open, isExternalUrl, file.originalUrl, file.sessionId, file.baseUrl])
 
   useEffect(() => {
     if (!open || !isCodeFile || isExternalUrl || !file.baseUrl || !file.sessionId) return
@@ -133,11 +168,14 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
     onOpenChange?.(false)
   }, [setOpen, onOpenChange])
 
-  const previewUrl = isExternalUrl ? file.filepath : buildArtifactDownloadUrl({
+  const previewUrl = isExternalUrl ? '' : buildArtifactDownloadUrl({
     baseUrl: file.baseUrl ?? '',
     sessionId: file.sessionId ?? '',
     filepath: file.filepath,
   })
+
+  const externalPreviewable = isExternalUrl && previewable
+  const externalCodeFile = isExternalUrl && isCodeFile
 
   return (
     <Drawer
@@ -174,7 +212,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
             )}
           </div>
           <div className={styles.artifactHeaderCenter}>
-            {previewable && !isExternalUrl && (
+            {(previewable || externalPreviewable) && !isExternalUrl && (
               <Segmented
                 value={viewMode}
                 onChange={(val) => setViewMode(val as 'code' | 'preview')}
@@ -187,7 +225,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
           </div>
           <div className={styles.artifactHeaderRight}>
             <Space size="small">
-              {isCodeFile && (
+              {(isCodeFile || externalCodeFile) && (
                 <Button type="text" size="small" icon={<CopyOutlined />} onClick={handleCopy}>
                   复制
                 </Button>
@@ -204,22 +242,54 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
         </div>
 
         <div className={styles.artifactBody}>
-          {isExternalUrl && language === 'html' && (
+          {/* External URL: HTML preview via srcdoc */}
+          {externalPreviewable && viewMode === 'preview' && language === 'html' && (
             <div className={styles.artifactMarkdownWrap}>
-              <iframe
-                className={styles.artifactIframe}
-                src={previewUrl}
-              />
+              {loading ? (
+                <div className={styles.artifactLoading}>加载中...</div>
+              ) : (
+                <iframe
+                  className={styles.artifactIframe}
+                  srcDoc={content}
+                  sandbox="allow-scripts allow-same-origin allow-forms"
+                />
+              )}
             </div>
           )}
 
-          {isExternalUrl && language !== 'html' && (
+          {/* External URL: Markdown preview */}
+          {externalPreviewable && viewMode === 'preview' && language === 'markdown' && (
+            <div className={styles.artifactMarkdownWrap}>
+              {loading ? (
+                <div className={styles.artifactLoading}>加载中...</div>
+              ) : (
+                <MarkdownContent content={content} isStreaming={false} />
+              )}
+            </div>
+          )}
+
+          {/* External URL: code view */}
+          {externalCodeFile && viewMode === 'code' && (
+            <div className={styles.artifactCodeWrap}>
+              {loading ? (
+                <div className={styles.artifactLoading}>加载中...</div>
+              ) : (
+                <pre className={styles.artifactCode}>
+                  <code>{content}</code>
+                </pre>
+              )}
+            </div>
+          )}
+
+          {/* External URL: non-code fallback - iframe direct */}
+          {isExternalUrl && !isCodeFile && (
             <iframe
               className={styles.artifactIframe}
-              src={previewUrl}
+              src={file.filepath}
             />
           )}
 
+          {/* Internal URL: Markdown preview */}
           {previewable && viewMode === 'preview' && language === 'markdown' && !isExternalUrl && (
             <div className={styles.artifactMarkdownWrap}>
               {loading ? (
@@ -230,6 +300,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
             </div>
           )}
 
+          {/* Internal URL: HTML preview */}
           {previewable && viewMode === 'preview' && language === 'html' && !isExternalUrl && (
             <iframe
               className={styles.artifactIframe}
@@ -238,6 +309,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
             />
           )}
 
+          {/* Internal URL: code view */}
           {viewMode === 'code' && isCodeFile && !isExternalUrl && (
             <div className={styles.artifactCodeWrap}>
               {loading ? (
@@ -250,6 +322,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
             </div>
           )}
 
+          {/* Internal URL: non-code fallback */}
           {!isCodeFile && !isExternalUrl && (
             <iframe
               className={styles.artifactIframe}

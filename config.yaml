@@ -24,3 +24,6 @@ get_chat_session_path: /api/v1/chat/sessions/{session_id}
 
 //skill相关
 upload_skill_path: /api/v1/skills/custom/upload
+
+//查看生成的文件源码
+view_generated_code_path: /api/v1/chat/sessions/{session_id}/files/preview

@@ -1,4 +1,4 @@
-import { buildArtifactDownloadUrl } from './utils'
+import { buildArtifactDownloadUrl, buildPreviewApiUrl } from './utils'
 
 export async function loadArtifactContent({
   baseUrl,
@@ -16,6 +16,27 @@ export async function loadArtifactContent({
 
   if (!response.ok) {
     throw new Error(`Failed to load artifact content: ${filepath}`)
+  }
+
+  return response.text()
+}
+
+export async function loadPreviewContent({
+  baseUrl,
+  sessionId,
+  url,
+  signal,
+}: {
+  baseUrl: string
+  sessionId: string
+  url: string
+  signal?: AbortSignal
+}): Promise<string> {
+  const apiUrl = buildPreviewApiUrl({ baseUrl, sessionId, url })
+  const response = await fetch(apiUrl, { signal })
+
+  if (!response.ok) {
+    throw new Error(`Failed to load preview content: ${url}`)
   }
 
   return response.text()
