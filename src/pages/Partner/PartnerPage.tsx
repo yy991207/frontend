@@ -28,6 +28,7 @@ import homeAvatar from '../../assets/home-avatar.png'
 import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
 import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts-context'
 import { MessageList } from '../../components/chat/message-list'
+import { useStickToBottom } from '../../components/chat/use-stick-to-bottom'
 import {
   createChatSession,
   downloadSessionFileContent,
@@ -365,7 +366,6 @@ function PartnerPageContent() {
   const abortControllerRef = useRef<AbortController | null>(null)
   const streamBridgeRef = useRef<ChatStreamBridge | null>(null)
   const composerRef = useRef<HTMLDivElement | null>(null)
-  const messagesViewportRef = useRef<HTMLDivElement | null>(null)
   const [attachMenuOpen, setAttachMenuOpen] = useState(false)
   const [toolMenuOpen, setToolMenuOpen] = useState(false)
   const [toolInfoOpen, setToolInfoOpen] = useState(false)
@@ -382,6 +382,8 @@ function PartnerPageContent() {
   const [requestError, setRequestError] = useState('')
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [sessionLoading, setSessionLoading] = useState(false)
+  const stickToBottom = useStickToBottom()
+  const { containerRef: messagesViewportRef, scrollToBottom } = stickToBottom
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [activeSettingKey, setActiveSettingKey] = useState('personalization')
   const [expandedKeys, setExpandedKeys] = useState<string[]>(['tasks', 'security'])
@@ -666,28 +668,19 @@ function PartnerPageContent() {
     messagesRef.current = messages
   }, [messages])
 
-  const scrollMessagesToBottom = useCallback(() => {
-    if (!messagesViewportRef.current) {
-      return
-    }
-
-    messagesViewportRef.current.scrollTo({
-      top: messagesViewportRef.current.scrollHeight,
-      behavior: 'smooth',
-    })
-  }, [])
-
   useEffect(() => {
     requestAnimationFrame(() => {
-      scrollMessagesToBottom()
+      if (isResponding || sessionLoading || stickToBottom.isAtBottom) {
+        scrollToBottom({ smooth: true, forceScroll: sessionLoading })
+      }
 
       if (sessionLoading) {
         requestAnimationFrame(() => {
-          scrollMessagesToBottom()
+          scrollToBottom({ smooth: true, forceScroll: sessionLoading })
         })
       }
     })
-  }, [groupedMessages.length, isResponding, scrollMessagesToBottom, sessionLoading])
+  }, [groupedMessages.length, isResponding, scrollToBottom, sessionLoading, stickToBottom.isAtBottom])
 
   useEffect(() => {
     const streamBridge = createChatStreamBridge((snapshot) => {
