@@ -269,6 +269,7 @@ function ChatPageContent() {
   const abortControllerRef = useRef<AbortController | null>(null)
   const streamBridgeRef = useRef<ChatStreamBridge | null>(null)
   const headerMenuRef = useRef<HTMLDivElement | null>(null)
+  const messagesViewportRef = useRef<HTMLDivElement | null>(null)
   const [skills, setSkills] = useState<SkillItem[]>([])
   const [skillsLoading, setSkillsLoading] = useState(false)
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
@@ -393,6 +394,29 @@ function ChatPageContent() {
   useEffect(() => {
     messagesRef.current = messages
   }, [messages])
+
+  const scrollMessagesToBottom = useCallback(() => {
+    if (!messagesViewportRef.current) {
+      return
+    }
+
+    messagesViewportRef.current.scrollTo({
+      top: messagesViewportRef.current.scrollHeight,
+      behavior: 'smooth',
+    })
+  }, [])
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      scrollMessagesToBottom()
+
+      if (sessionLoading) {
+        requestAnimationFrame(() => {
+          scrollMessagesToBottom()
+        })
+      }
+    })
+  }, [groupedMessages.length, isResponding, scrollMessagesToBottom, sessionLoading])
 
   useEffect(() => {
     const streamBridge = createChatStreamBridge((snapshot) => {
@@ -918,7 +942,7 @@ function ChatPageContent() {
             </div>
           </header>
 
-          <div className={styles.messages}>
+          <div ref={messagesViewportRef} className={styles.messages}>
             <div className={styles.messageColumn}>
               <MessageList
                 groups={groupedMessages}
