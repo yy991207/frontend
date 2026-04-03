@@ -5,7 +5,6 @@ import {
   BarsOutlined,
   CameraFilled,
   CloseOutlined,
-  CopyOutlined,
   DownOutlined,
   EditOutlined,
   ExportOutlined,
@@ -26,7 +25,7 @@ import {
 import chatConfigText from '../../../config.yaml?raw'
 import { useLocation, useNavigate } from 'react-router-dom'
 import homeAvatar from '../../assets/home-avatar.png'
-import { renderMessageMarkdown } from '../../components/common/renderMessageMarkdown'
+import { MessageList } from '../../components/chat/message-list'
 import {
   createChatSession,
   downloadSessionFileContent,
@@ -36,7 +35,6 @@ import {
   readSseStream,
   streamChatMessage,
   type ChatApiConfig,
-  type ChatReference,
   type CourseItem,
   type ToolCall,
 } from '../../services/chatService'
@@ -56,6 +54,7 @@ import {
   parseChatSessionConfig,
   type ChatSessionConfig,
   type ChatSessionDetail,
+  type ChatSessionMessageToolCall,
 } from '../../services/chatSessionService'
 import {
   buildSkillDisplayName,
@@ -63,19 +62,10 @@ import {
   extractSkillItemsFromResponse,
   type SkillApiResponse,
 } from '../../services/skillPromptService'
+import { adaptChatMessages } from '../../core/messages/adapters'
+import type { LegacyChatMessage as ChatMessage } from '../../core/messages/types'
+import { groupMessages } from '../../core/messages/utils'
 import styles from './partner.module.less'
-
-type ChatMessage = {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: string
-  loading?: boolean
-  sessionId?: string
-  toolCalls?: ToolCall[]
-  references?: ChatReference[]
-  courses?: CourseItem[]
-}
 
 type SettingMenuItem = {
   key: string
@@ -158,6 +148,17 @@ async function loadChatSessionConfig(): Promise<ChatSessionConfig> {
   return getDefaultConfig()
 }
 
+function mapToolCall(raw: ChatSessionMessageToolCall): ToolCall {
+  return {
+    name: raw.name,
+    runId: raw.call_id,
+    status: raw.status === 'completed' ? 'completed' : 'running',
+    input: raw.input ?? {},
+    output: raw.output,
+    toolDisplay: raw.tool_display,
+  }
+}
+
 function mapSessionDetailToMessages(session: ChatSessionDetail): ChatMessage[] {
   return session.messages.map((message) => ({
     id: message.message_id,
@@ -165,6 +166,8 @@ function mapSessionDetailToMessages(session: ChatSessionDetail): ChatMessage[] {
     content: message.content,
     timestamp: formatTime(new Date(message.created_at)),
     sessionId: session.session_id,
+    toolCalls: message.tool_calls.map(mapToolCall),
+    references: message.references,
   }))
 }
 
@@ -544,6 +547,7 @@ export default function PartnerPage() {
   )
   const messagesRef = useRef<ChatMessage[]>(messages)
   const [isResponding, setIsResponding] = useState(() => Boolean(initialConversation))
+  const groupedMessages = useMemo(() => groupMessages(adaptChatMessages(messages)), [messages])
   const currentSessionId = useMemo(() => {
     const messageSessionId = [...messages].reverse().find((message) => message.sessionId)?.sessionId
     return routeSessionId || messageSessionId || null
@@ -1306,89 +1310,13 @@ export default function PartnerPage() {
             <div className={styles.chatMainPanel}>
               <div className={styles.messages}>
                 <div className={styles.messageColumn}>
-                  {messages.map((message) =>
-                    message.role === 'user' ? (
-                      <div key={message.id} className={styles.userRow}>
-                        <div className={styles.userMessageWrap}>
-                          <div className={styles.userBubble}>{message.content}</div>
-                          <div className={styles.userActions}>
-                            <span>{message.timestamp}</span>
-                            <button type="button" className={styles.inlineAction} onClick={() => handleCopy(message.id, message.content)}>
-                              <CopyOutlined />
-                              <span>{copiedMessageId === message.id ? '已复制' : '复制'}</span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div key={message.id} className={styles.assistantRow}>
-                        {message.loading ? (
-                          <div className={styles.loadingDots}>
-                            <span className={styles.dot} />
-                            <span className={styles.dot} />
-                            <span className={styles.dot} />
-                          </div>
-                        ) : (
-                          <div className={styles.assistantMessageWrap}>
-                            {message.toolCalls?.length ? (
-                              <div className={styles.toolCallList}>
-                                {message.toolCalls.map((toolCall) => (
-                                  <div key={toolCall.runId} className={styles.toolCard}>
-                                    <div className={styles.toolCardHeader}>
-                                      <span className={styles.toolCardTitle}>{getToolDisplayTitle(toolCall)}</span>
-                                      <span className={styles.toolCardStatus}>{toolCall.status === 'running' ? '执行中' : '已完成'}</span>
-                                    </div>
-                                    <div className={styles.toolCardSummary}>{getToolDisplaySummary(toolCall)}</div>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : null}
-                            {message.courses?.length ? (
-                              <div className={styles.courseCard}>
-                                <div className={styles.courseCardHeader}>
-                                  <span className={styles.courseCardTitle}>课程推荐</span>
-                                  <span className={styles.courseCardMeta}>{message.courses.length} 门课程</span>
-                                </div>
-                                <div className={styles.courseList}>
-                                  {message.courses.map((course) => (
-                                    <div key={`${course.resourceId || course.title}-${course.duration || ''}`} className={styles.courseItem}>
-                                      <div className={styles.courseItemTitleRow}>
-                                        <span className={styles.courseItemTitle}>{course.title}</span>
-                                        {course.duration ? <span className={styles.courseItemDuration}>{course.duration}</span> : null}
-                                      </div>
-                                      {course.description ? <div className={styles.courseItemDesc}>{course.description}</div> : null}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            ) : null}
-                            <div className={styles.assistantText}>{renderMessageMarkdown(message.content)}</div>
-                            {message.references?.length ? (
-                              <div className={styles.referenceList}>
-                                {message.references.map((reference, index) => (
-                                  <a
-                                    key={`${reference.title || 'ref'}-${index}`}
-                                    className={styles.referenceItem}
-                                    href={reference.url || '#'}
-                                    target={reference.url ? '_blank' : undefined}
-                                    rel={reference.url ? 'noreferrer' : undefined}
-                                  >
-                                    {reference.title || reference.url || `参考资料 ${index + 1}`}
-                                  </a>
-                                ))}
-                              </div>
-                            ) : null}
-                            <div className={styles.assistantFooter}>
-                              <button type="button" className={styles.inlineAction} onClick={() => handleCopy(message.id, message.content)}>
-                                <CopyOutlined />
-                                <span>{copiedMessageId === message.id ? '已复制' : '复制'}</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ),
-                  )}
+                  <MessageList
+                    groups={groupedMessages}
+                    copiedMessageId={copiedMessageId}
+                    onCopy={handleCopy}
+                    getToolDisplayTitle={getToolDisplayTitle}
+                    getToolDisplaySummary={getToolDisplaySummary}
+                  />
                 </div>
               </div>
 
