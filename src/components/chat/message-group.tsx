@@ -167,14 +167,19 @@ function renderProcessStep(
 
 function ProcessingMessage({
   message,
+  copiedMessageId,
+  onCopy,
   getToolDisplayTitle,
 }: {
   message: Message
+  copiedMessageId: string | null
+  onCopy: (messageId: string, content: string) => void
   getToolDisplayTitle: MessageGroupSectionProps['getToolDisplayTitle']
 }) {
   const [showAbove, setShowAbove] = useState(true)
   const [showLastThinking, setShowLastThinking] = useState(true)
   const steps = useMemo(() => buildProcessSteps(message), [message])
+  const textContent = extractTextFromMessage(message)
 
   const lastActionStep = useMemo(() => {
     const actionSteps = steps.filter((step) => step.type !== 'reasoning')
@@ -259,6 +264,34 @@ function ProcessingMessage({
           </>
         ) : null}
       </ChainOfThought>
+
+      {textContent ? (
+        <div className={styles.assistantMessageWrap}>
+          <MarkdownContent
+            className={styles.assistantMarkdown}
+            content={textContent}
+            isStreaming={message.loading}
+          />
+          {message.references.length ? (
+            <div className={styles.referenceList}>
+              {message.references.map((reference, index) => (
+                <a
+                  key={`${reference.title || 'ref'}-${index}`}
+                  className={styles.referenceItem}
+                  href={reference.url || '#'}
+                  target={reference.url ? '_blank' : undefined}
+                  rel={reference.url ? 'noreferrer' : undefined}
+                >
+                  {reference.title || reference.url || `参考资料 ${index + 1}`}
+                </a>
+              ))}
+            </div>
+          ) : null}
+          <div className={styles.assistantFooter}>
+            {renderCopyAction(message.id, textContent, copiedMessageId, onCopy)}
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -292,7 +325,12 @@ export function MessageGroupSection({
         <>
           {group.messages.map((message) => (
             <div key={message.id} className={styles.assistantRow}>
-              <ProcessingMessage message={message} getToolDisplayTitle={getToolDisplayTitle} />
+              <ProcessingMessage
+                message={message}
+                copiedMessageId={copiedMessageId}
+                onCopy={onCopy}
+                getToolDisplayTitle={getToolDisplayTitle}
+              />
             </div>
           ))}
         </>
@@ -319,7 +357,12 @@ export function MessageGroupSection({
         <>
           {group.messages.map((message) => (
             <div key={message.id} className={styles.assistantRow}>
-              <ProcessingMessage message={message} getToolDisplayTitle={getToolDisplayTitle} />
+              <ProcessingMessage
+                message={message}
+                copiedMessageId={copiedMessageId}
+                onCopy={onCopy}
+                getToolDisplayTitle={getToolDisplayTitle}
+              />
             </div>
           ))}
         </>

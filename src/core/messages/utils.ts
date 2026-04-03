@@ -84,16 +84,61 @@ function mapGroup<T>(groups: MessageGroup[], mapper?: (group: MessageGroup) => T
     .filter((group) => group !== null && group !== undefined)
 }
 
+function mergeConsecutiveAssistantMessages(messages: Message[]): Message[] {
+  const result: Message[] = []
+
+  for (const message of messages) {
+    if (message.type === 'human' || message.role === 'user') {
+      result.push(message)
+      continue
+    }
+
+    const last = result[result.length - 1]
+
+    if (last && (last.type === 'ai' || last.role === 'assistant')) {
+      last.tool_calls = [...last.tool_calls, ...message.tool_calls]
+      last.courses = [...last.courses, ...message.courses]
+      last.references = [...last.references, ...message.references]
+
+      if (message.additional_kwargs.reasoning_content && !last.additional_kwargs.reasoning_content) {
+        last.additional_kwargs.reasoning_content = message.additional_kwargs.reasoning_content
+      }
+
+      if (message.additional_kwargs.subagent_label && !last.additional_kwargs.subagent_label) {
+        last.additional_kwargs.subagent_label = message.additional_kwargs.subagent_label
+      }
+
+      if (typeof message.content === 'string' && message.content.trim()) {
+        if (typeof last.content === 'string') {
+          last.content = last.content ? `${last.content}${message.content}` : message.content
+        } else {
+          last.content = message.content
+        }
+      }
+
+      if (message.loading) {
+        last.loading = true
+      }
+    } else {
+      result.push({ ...message })
+    }
+  }
+
+  return result
+}
+
 export function groupMessages(messages: Message[]): MessageGroup[]
 export function groupMessages<T>(messages: Message[], mapper: (group: MessageGroup) => T): T[]
 export function groupMessages<T>(messages: Message[], mapper?: (group: MessageGroup) => T): Array<MessageGroup | T> {
-  if (!messages.length) {
+  const merged = mergeConsecutiveAssistantMessages(messages)
+
+  if (!merged.length) {
     return []
   }
 
   const groups: MessageGroup[] = []
 
-  for (const message of messages) {
+  for (const message of merged) {
     if (message.type === 'human' || message.role === 'user') {
       groups.push({
         id: message.id,
@@ -120,7 +165,8 @@ export function groupMessages<T>(messages: Message[], mapper?: (group: MessageGr
       })
     }
 
-    if (hasContent(message)) {
+    // 当消息同时有 processing steps 和正文时，正文由 ProcessingMessage 内部渲染，不再单独创建 assistant 组。
+    if (hasContent(message) && !hasProcessingSteps(message)) {
       groups.push({
         id: `${message.id}-assistant`,
         type: 'assistant',

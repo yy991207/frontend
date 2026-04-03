@@ -39,6 +39,7 @@ import {
   parseChatSessionConfig,
   type ChatSessionDetail,
   type ChatSessionConfig,
+  type ChatSessionMessageToolCall,
 } from '../../services/chatSessionService'
 import {
   buildSkillDisplayName,
@@ -161,6 +162,17 @@ async function loadChatSessionConfig(): Promise<ChatSessionConfig> {
   return getDefaultConfig()
 }
 
+function mapToolCall(raw: ChatSessionMessageToolCall): ToolCall {
+  return {
+    name: raw.name,
+    runId: raw.call_id,
+    status: raw.status === 'completed' ? 'completed' : 'running',
+    input: raw.input ?? {},
+    output: raw.output,
+    toolDisplay: raw.tool_display,
+  }
+}
+
 function mapSessionDetailToMessages(session: ChatSessionDetail): ChatMessage[] {
   return session.messages.map((message) => ({
     id: message.message_id,
@@ -168,6 +180,8 @@ function mapSessionDetailToMessages(session: ChatSessionDetail): ChatMessage[] {
     content: message.content,
     timestamp: formatTime(new Date(message.created_at)),
     sessionId: session.session_id,
+    toolCalls: message.tool_calls.map(mapToolCall),
+    references: message.references,
   }))
 }
 
