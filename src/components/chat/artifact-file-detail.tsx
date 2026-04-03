@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useArtifacts, type ArtifactFile } from './artifacts-context'
 import styles from './artifacts.module.less'
 import { loadArtifactContent, loadPreviewContent } from '../../core/artifacts/loader'
+import { buildCourseTablePreviewHtml, parseCourseTableArtifact } from '../../core/artifacts/course-table'
 import { buildArtifactDownloadUrl } from '../../core/artifacts/utils'
 import { checkCodeFile, getFileName } from '../../core/utils/files'
 import { MarkdownContent } from './markdown-content'
@@ -19,6 +20,50 @@ import { MarkdownContent } from './markdown-content'
 type ArtifactFileDetailProps = {
   file: ArtifactFile
   onOpenChange?: (open: boolean) => void
+}
+
+function formatDuration(duration: number): string {
+  return `${duration.toFixed(1)} 分钟`
+}
+
+function CourseTablePreview({ courseTable }: { courseTable: NonNullable<ReturnType<typeof parseCourseTableArtifact>> }) {
+  return (
+    <div className={styles.courseTableWrap}>
+      <div className={styles.courseTableHero}>
+        <div className={styles.courseTableEyebrow}>课程表</div>
+        <h2 className={styles.courseTableTitle}>{courseTable.query}主题课程安排</h2>
+        <p className={styles.courseTableSummary}>
+          共 {courseTable.courses.length} 门课程，总时长 {formatDuration(courseTable.total_duration)}
+        </p>
+      </div>
+
+      <div className={styles.courseTableStats}>
+        <div className={styles.courseTableStatCard}>
+          <span className={styles.courseTableStatLabel}>课程数量</span>
+          <strong className={styles.courseTableStatValue}>{courseTable.courses.length}</strong>
+        </div>
+        <div className={styles.courseTableStatCard}>
+          <span className={styles.courseTableStatLabel}>总时长</span>
+          <strong className={styles.courseTableStatValue}>{formatDuration(courseTable.total_duration)}</strong>
+        </div>
+      </div>
+
+      <div className={styles.courseTableList}>
+        {courseTable.courses.map((course, index) => (
+          <article key={course.resource_id} className={styles.courseTableItem}>
+            <div className={styles.courseTableItemIndex}>{index + 1}</div>
+            <div className={styles.courseTableItemBody}>
+              <h3 className={styles.courseTableItemTitle}>{course.title}</h3>
+              <div className={styles.courseTableItemMeta}>
+                <span>时长：{formatDuration(course.duration)}</span>
+                <span>资源 ID：{course.resource_id}</span>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailProps) {
@@ -48,6 +93,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
   const previewable = useMemo(() => {
     return language === 'html' || language === 'markdown'
   }, [language])
+  const isJsonFile = language === 'json'
 
   const [viewMode, setViewMode] = useState<'code' | 'preview'>(
     previewable ? 'preview' : 'code',
@@ -56,29 +102,45 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
   const [loading, setLoading] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
 
+  const courseTableArtifact = useMemo(() => {
+    if (!isJsonFile || !content) {
+      return null
+    }
+
+    return parseCourseTableArtifact(content)
+  }, [content, isJsonFile])
+
+  const hasStructuredPreview = courseTableArtifact !== null
+
   useEffect(() => {
-    if (previewable) {
+    if (previewable || hasStructuredPreview) {
       setViewMode('preview')
     } else {
       setViewMode('code')
     }
-  }, [previewable])
+  }, [hasStructuredPreview, previewable])
 
-  // External URL: fetch via preview API
+  // 外部文件统一走 preview API 代理取源码，既能绕开 OSS 跨域限制，也能把 json 原文交给前端做结构化渲染。
   useEffect(() => {
-    if (!isExternalUrl || !file.originalUrl || !file.baseUrl || !file.sessionId) return
+    if (!isExternalUrl) return
 
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
 
     setLoading(true)
-    loadPreviewContent({
-      baseUrl: file.baseUrl,
-      sessionId: file.sessionId,
-      url: file.originalUrl,
-      signal: controller.signal,
-    })
+
+    const previewUrl = file.originalUrl ?? file.filepath
+    const request = file.baseUrl && file.sessionId
+      ? loadPreviewContent({
+          baseUrl: file.baseUrl,
+          sessionId: file.sessionId,
+          url: previewUrl,
+          signal: controller.signal,
+        })
+      : Promise.resolve('')
+
+    request
       .then((text) => {
         if (!controller.signal.aborted) {
           setContent(text)
@@ -98,7 +160,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
     return () => {
       controller.abort()
     }
-  }, [isExternalUrl, file.originalUrl, file.sessionId, file.baseUrl])
+  }, [isExternalUrl, isJsonFile, file.filepath, file.originalUrl, file.sessionId, file.baseUrl])
 
   useEffect(() => {
     if (!isCodeFile || isExternalUrl || !file.baseUrl || !file.sessionId) return
@@ -145,6 +207,16 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
   }, [content])
 
   const handleOpenInNewTab = useCallback(() => {
+    if (courseTableArtifact) {
+      const newWindow = window.open('', '_blank')
+      if (newWindow) {
+        newWindow.document.open()
+        newWindow.document.write(buildCourseTablePreviewHtml(courseTableArtifact))
+        newWindow.document.close()
+      }
+      return
+    }
+
     if (isExternalUrl && content && language === 'html') {
       const newWindow = window.open('', '_blank')
       if (newWindow) {
@@ -161,7 +233,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
       filepath: file.filepath,
     })
     window.open(url, '_blank')
-  }, [file, isExternalUrl, content, language])
+  }, [file, isExternalUrl, content, language, courseTableArtifact])
 
   const handleDownload = useCallback(() => {
     const url = isExternalUrl ? file.filepath : buildArtifactDownloadUrl({
@@ -186,6 +258,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
 
   const externalPreviewable = isExternalUrl && previewable
   const externalCodeFile = isExternalUrl && isCodeFile
+  const showViewSwitcher = previewable || hasStructuredPreview
 
   return (
     <div className={styles.artifactPanel}>
@@ -212,7 +285,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
           )}
         </div>
         <div className={styles.artifactHeaderCenter}>
-          {(previewable || externalPreviewable) && !isExternalUrl && (
+          {showViewSwitcher && (
             <Segmented
               value={viewMode}
               onChange={(val) => setViewMode(val as 'code' | 'preview')}
@@ -242,8 +315,18 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
       </div>
 
       <div className={styles.artifactBody}>
+        {hasStructuredPreview && viewMode === 'preview' && (
+          <div className={styles.artifactStructuredWrap}>
+            {loading ? (
+              <div className={styles.artifactLoading}>加载中...</div>
+            ) : (
+              <CourseTablePreview courseTable={courseTableArtifact} />
+            )}
+          </div>
+        )}
+
         {/* External URL: HTML preview via srcdoc */}
-        {externalPreviewable && viewMode === 'preview' && language === 'html' && (
+        {externalPreviewable && viewMode === 'preview' && language === 'html' && !hasStructuredPreview && (
           <div className={styles.artifactPreviewWrap}>
             {loading ? (
               <div className={styles.artifactLoading}>加载中...</div>
@@ -258,7 +341,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
         )}
 
         {/* External URL: Markdown preview */}
-        {externalPreviewable && viewMode === 'preview' && language === 'markdown' && (
+        {externalPreviewable && viewMode === 'preview' && language === 'markdown' && !hasStructuredPreview && (
           <div className={styles.artifactMarkdownWrap}>
             {loading ? (
               <div className={styles.artifactLoading}>加载中...</div>
@@ -292,7 +375,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
         )}
 
         {/* Internal URL: Markdown preview */}
-        {previewable && viewMode === 'preview' && language === 'markdown' && !isExternalUrl && (
+        {previewable && viewMode === 'preview' && language === 'markdown' && !isExternalUrl && !hasStructuredPreview && (
           <div className={styles.artifactMarkdownWrap}>
             {loading ? (
               <div className={styles.artifactLoading}>加载中...</div>
@@ -303,7 +386,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
         )}
 
         {/* Internal URL: HTML preview */}
-        {previewable && viewMode === 'preview' && language === 'html' && !isExternalUrl && (
+        {previewable && viewMode === 'preview' && language === 'html' && !isExternalUrl && !hasStructuredPreview && (
           <div className={styles.artifactPreviewWrap}>
             <iframe
               className={styles.artifactIframe}
