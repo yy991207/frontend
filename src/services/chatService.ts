@@ -88,6 +88,21 @@ type ChainEndEvent = {
   }
 }
 
+type ChatModelToolCall = {
+  name?: string
+  args?: Record<string, unknown>
+  id?: string
+}
+
+type ChatModelEndEvent = {
+  data?: {
+    output?: {
+      content?: string
+      tool_calls?: ChatModelToolCall[]
+    }
+  }
+}
+
 function parseSimpleYaml(rawText: string) {
   return rawText.split(/\r?\n/).reduce<Record<string, string>>((result, line) => {
     const trimmedLine = line.trim()
@@ -322,6 +337,7 @@ export async function readSseStream(stream: ReadableStream<Uint8Array>, options:
   const decoder = new TextDecoder()
   let buffer = ''
   let currentEvent = ''
+  let chunkCount = 0
 
   const flushLine = (line: string) => {
     if (line.startsWith('event:')) {
@@ -386,6 +402,33 @@ export async function readSseStream(stream: ReadableStream<Uint8Array>, options:
       return
     }
 
+    if (currentEvent === 'on_chat_model_end') {
+      const chatModelEndEvent = parsedData as ChatModelEndEvent
+      const output = chatModelEndEvent.data?.output
+      const toolCalls = Array.isArray(output?.tool_calls) ? output.tool_calls : []
+
+      if (typeof output?.content === 'string' && output.content && chunkCount === 0) {
+        chunkCount += 1
+        options.onTextDelta?.(output.content)
+      }
+
+      // 有些后端只会在 on_chat_model_end 里声明 tool_calls，不会单独补 on_tool_start，这里兜底转成运行中步骤。
+      for (const toolCall of toolCalls) {
+        if (!toolCall.name || !toolCall.id) {
+          continue
+        }
+
+        options.onToolStart?.({
+          name: toolCall.name,
+          runId: toolCall.id,
+          status: 'running',
+          input: toolCall.args ?? {},
+        })
+      }
+
+      return
+    }
+
     if (currentEvent !== 'on_chat_model_stream') {
       return
     }
@@ -396,6 +439,7 @@ export async function readSseStream(stream: ReadableStream<Uint8Array>, options:
         : undefined
 
     if (chunk) {
+      chunkCount += 1
       options.onTextDelta?.(chunk)
     }
   }

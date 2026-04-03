@@ -132,6 +132,43 @@ test('readSseStream reports tool start and end events', async () => {
   ])
 })
 
+test('readSseStream reports tool calls declared in on_chat_model_end events', async () => {
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(
+        encoder.encode(
+          [
+            'event: on_chat_model_end\n',
+            'data: {"data":{"output":{"content":"我来帮你检索课程","response_metadata":{"finish_reason":"tool_calls"},"tool_calls":[{"name":"rag_list_videos","args":{"query":"教育","top_k":6},"id":"tool-rag-1","type":"tool_call"}]}}}\n\n',
+          ].join(''),
+        ),
+      )
+      controller.close()
+    },
+  })
+
+  const events: unknown[] = []
+
+  await readSseStream(stream, {
+    onToolStart(toolCall) {
+      events.push(toolCall)
+    },
+  })
+
+  assert.deepEqual(events, [
+    {
+      name: 'rag_list_videos',
+      runId: 'tool-rag-1',
+      status: 'running',
+      input: {
+        query: '教育',
+        top_k: 6,
+      },
+    },
+  ])
+})
+
 test('resolveQuickActionToolType maps course planning prompt to explore', () => {
   assert.equal(resolveQuickActionToolType('帮我规划一个关于机器学习的课表，要求5门课程，总时长60分钟'), 'explore')
   assert.equal(resolveQuickActionToolType('写一份周报'), null)
