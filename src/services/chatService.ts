@@ -53,6 +53,7 @@ export type SkillOutputItem = {
 }
 
 type ReadSseStreamOptions = {
+  onEventId?: (eventId: string) => void
   onChatModelStart?: () => void
   onTextDelta?: (chunk: string) => void
   onReasoningDelta?: (chunk: string) => void
@@ -223,6 +224,44 @@ export async function streamChatMessage(
   return response.body
 }
 
+export async function resumeChatMessageStream(
+  config: ChatApiConfig,
+  sessionId: string,
+  afterSequence: number,
+  signal?: AbortSignal,
+) {
+  const requestUrl = new URL(`${config.streamEndpointBase}/${sessionId}/stream`)
+  requestUrl.searchParams.set('cursor', String(afterSequence))
+
+  const response = await fetch(requestUrl.toString(), {
+    method: 'GET',
+    headers: {
+      Accept: 'text/event-stream',
+    },
+    signal,
+  })
+
+  if (!response.ok || !response.body) {
+    throw new Error('恢复流式响应失败')
+  }
+
+  return response.body
+}
+
+export async function stopChatMessageStream(config: ChatApiConfig, sessionId: string, signal?: AbortSignal) {
+  const response = await fetch(`${config.streamEndpointBase}/${sessionId}/stream/stop`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+    },
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error('停止流式响应失败')
+  }
+}
+
 export async function downloadSessionFileContent(
   config: ChatApiConfig,
   sessionId: string,
@@ -343,12 +382,18 @@ export async function readSseStream(stream: ReadableStream<Uint8Array>, options:
   const decoder = new TextDecoder()
   let buffer = ''
   let currentEvent = ''
+  let currentEventId = ''
   let chunkCount = 0
   let reasoningChunkCount = 0
 
   const flushLine = (line: string) => {
     if (line.startsWith('event:')) {
       currentEvent = line.slice(6).trim()
+      return
+    }
+
+    if (line.startsWith('id:')) {
+      currentEventId = line.slice(3).trim()
       return
     }
 
@@ -368,6 +413,10 @@ export async function readSseStream(stream: ReadableStream<Uint8Array>, options:
       parsedData = JSON.parse(rawData)
     } catch {
       return
+    }
+
+    if (currentEventId) {
+      options.onEventId?.(currentEventId)
     }
 
     if (currentEvent === 'on_tool_start') {
@@ -490,6 +539,7 @@ export async function readSseStream(stream: ReadableStream<Uint8Array>, options:
     for (const line of lines) {
       if (!line.trim()) {
         currentEvent = ''
+        currentEventId = ''
         continue
       }
 
