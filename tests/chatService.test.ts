@@ -76,6 +76,40 @@ test('readSseStream appends incremental assistant text chunks', async () => {
   assert.deepEqual(chunks, ['你好', '，世界'])
 })
 
+test('readSseStream reports chat model start events in stream order', async () => {
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(
+        encoder.encode(
+          [
+            'event: on_chat_model_start\n',
+            'data: {"event":"on_chat_model_start","run_id":"model-1"}\n\n',
+            'event: on_tool_start\n',
+            'data: {"name":"web_search","run_id":"tool-1","data":{"input":{"query":"deerflow"}}}\n\n',
+            'event: on_chat_model_start\n',
+            'data: {"event":"on_chat_model_start","run_id":"model-2"}\n\n',
+          ].join(''),
+        ),
+      )
+      controller.close()
+    },
+  })
+
+  const events: string[] = []
+
+  await readSseStream(stream, {
+    onChatModelStart() {
+      events.push('model-start')
+    },
+    onToolStart() {
+      events.push('tool-start')
+    },
+  })
+
+  assert.deepEqual(events, ['model-start', 'tool-start', 'model-start'])
+})
+
 test('readSseStream reports tool start and end events', async () => {
   const encoder = new TextEncoder()
   const stream = new ReadableStream<Uint8Array>({

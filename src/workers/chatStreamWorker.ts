@@ -9,7 +9,10 @@ import {
   type ChatApiConfig,
   type ToolCall,
 } from '../services/chatService'
-import { appendTextDeltaToStreamMessages } from '../core/messages/streaming'
+import {
+  advanceAssistantMessageForNextModelPhase,
+  appendTextDeltaToStreamMessages,
+} from '../core/messages/streaming'
 import type {
   StreamBridgeMessage,
   StreamBridgeSnapshot,
@@ -68,6 +71,7 @@ const portSubscriptions = new Map<MessagePort, Set<string>>()
 function cloneMessages(messages: StreamBridgeMessage[]) {
   return messages.map((message) => ({
     ...message,
+    reasoningContent: message.reasoningContent ?? null,
     toolCalls: message.toolCalls ? [...message.toolCalls] : undefined,
     references: message.references ? [...message.references] : undefined,
     courses: message.courses ? [...message.courses] : undefined,
@@ -141,6 +145,7 @@ function createFollowupAssistantMessage(
     content: '',
     timestamp,
     loading: true,
+    reasoningContent: null,
     toolCalls: [],
     references: [],
     courses: [],
@@ -301,6 +306,27 @@ async function runStream(command: StartStreamCommand) {
     )
 
     await readSseStream(stream, {
+      onChatModelStart() {
+        const replyTime = new Date().toLocaleTimeString('zh-CN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        })
+
+        const result = advanceAssistantMessageForNextModelPhase(
+          state.snapshot.messages,
+          state.activeMessageId,
+          replyTime,
+          createFollowupAssistantMessage,
+        )
+
+        state.snapshot = {
+          ...state.snapshot,
+          messages: result.messages,
+        }
+        state.activeMessageId = result.activeMessageId
+        broadcastSnapshot(command.sessionId)
+      },
       onTextDelta(chunk) {
         const replyTime = new Date().toLocaleTimeString('zh-CN', {
           hour: '2-digit',
@@ -321,6 +347,13 @@ async function runStream(command: StartStreamCommand) {
           messages: result.messages,
         }
         state.activeMessageId = result.activeMessageId
+        broadcastSnapshot(command.sessionId)
+      },
+      onReasoningDelta(chunk) {
+        withMessageById(state, state.activeMessageId, (message) => ({
+          ...message,
+          reasoningContent: `${message.reasoningContent ?? ''}${chunk}`,
+        }))
         broadcastSnapshot(command.sessionId)
       },
       onToolStart(toolCall) {

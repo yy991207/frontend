@@ -7,6 +7,7 @@ export type StreamBridgeMessage = {
   timestamp: string
   loading?: boolean
   sessionId?: string
+  reasoningContent?: string | null
   toolCalls?: ToolCall[]
   references?: ChatReference[]
   courses?: CourseItem[]

@@ -53,7 +53,9 @@ export type SkillOutputItem = {
 }
 
 type ReadSseStreamOptions = {
+  onChatModelStart?: () => void
   onTextDelta?: (chunk: string) => void
+  onReasoningDelta?: (chunk: string) => void
   onToolStart?: (toolCall: ToolCall) => void
   onToolEnd?: (toolCall: ToolCall) => void
   onReferences?: (references: ChatReference[]) => void
@@ -83,6 +85,9 @@ type ToolEndEvent = {
 
 type ChainEndEvent = {
   data?: {
+    output?: {
+      reasoning_content?: string
+    }
     references?: unknown
     skill_output?: unknown
   }
@@ -98,6 +103,7 @@ type ChatModelEndEvent = {
   data?: {
     output?: {
       content?: string
+      reasoning_content?: string
       tool_calls?: ChatModelToolCall[]
     }
   }
@@ -338,6 +344,7 @@ export async function readSseStream(stream: ReadableStream<Uint8Array>, options:
   let buffer = ''
   let currentEvent = ''
   let chunkCount = 0
+  let reasoningChunkCount = 0
 
   const flushLine = (line: string) => {
     if (line.startsWith('event:')) {
@@ -378,6 +385,11 @@ export async function readSseStream(stream: ReadableStream<Uint8Array>, options:
       return
     }
 
+    if (currentEvent === 'on_chat_model_start') {
+      options.onChatModelStart?.()
+      return
+    }
+
     if (currentEvent === 'on_tool_end') {
       const eventObj = parsedData as ToolEndEvent
 
@@ -397,6 +409,11 @@ export async function readSseStream(stream: ReadableStream<Uint8Array>, options:
 
     if (currentEvent === 'on_chain_end') {
       const chainEndEvent = parsedData as ChainEndEvent
+      const reasoningContent = chainEndEvent.data?.output?.reasoning_content
+      if (typeof reasoningContent === 'string' && reasoningContent && reasoningChunkCount === 0) {
+        reasoningChunkCount += 1
+        options.onReasoningDelta?.(reasoningContent)
+      }
       options.onReferences?.(extractReferences(chainEndEvent))
       options.onSkillOutput?.(extractSkillOutput(chainEndEvent))
       return
@@ -410,6 +427,11 @@ export async function readSseStream(stream: ReadableStream<Uint8Array>, options:
       if (typeof output?.content === 'string' && output.content && chunkCount === 0) {
         chunkCount += 1
         options.onTextDelta?.(output.content)
+      }
+
+      if (typeof output?.reasoning_content === 'string' && output.reasoning_content && reasoningChunkCount === 0) {
+        reasoningChunkCount += 1
+        options.onReasoningDelta?.(output.reasoning_content)
       }
 
       // 有些后端只会在 on_chat_model_end 里声明 tool_calls，不会单独补 on_tool_start，这里兜底转成运行中步骤。
@@ -438,9 +460,19 @@ export async function readSseStream(stream: ReadableStream<Uint8Array>, options:
         ? (parsedData as { data?: { chunk?: { content?: string } } }).data?.chunk?.content
         : undefined
 
+    const reasoningChunk =
+      typeof parsedData === 'object' && parsedData !== null
+        ? (parsedData as { data?: { chunk?: { reasoning_content?: string } } }).data?.chunk?.reasoning_content
+        : undefined
+
     if (chunk) {
       chunkCount += 1
       options.onTextDelta?.(chunk)
+    }
+
+    if (reasoningChunk) {
+      reasoningChunkCount += 1
+      options.onReasoningDelta?.(reasoningChunk)
     }
   }
 
