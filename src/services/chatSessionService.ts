@@ -25,6 +25,7 @@ export type ChatSessionMessage = {
   message_id: string
   role: 'user' | 'assistant'
   content: string
+  reasoning_content?: string | null
   tool_calls: ChatSessionMessageToolCall[]
   references: ChatSessionMessageReference[]
   skill_output: unknown

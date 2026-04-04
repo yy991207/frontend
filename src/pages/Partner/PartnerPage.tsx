@@ -67,7 +67,10 @@ import {
   type SkillApiResponse,
 } from '../../services/skillPromptService'
 import { adaptChatMessages } from '../../core/messages/adapters'
-import { appendTextDeltaToStreamMessages } from '../../core/messages/streaming'
+import {
+  advanceAssistantMessageForNextModelPhase,
+  appendTextDeltaToStreamMessages,
+} from '../../core/messages/streaming'
 import type { LegacyChatMessage as ChatMessage } from '../../core/messages/types'
 import { groupMessages, resolveAssistantCopyTargets } from '../../core/messages/utils'
 import styles from './partner.module.less'
@@ -184,6 +187,7 @@ function mapSessionDetailToMessages(session: ChatSessionDetail): ChatMessage[] {
       id: message.message_id,
       role: message.role,
       content: message.content,
+      reasoningContent: message.reasoning_content ?? null,
       timestamp: formatTime(new Date(message.created_at)),
       sessionId: session.session_id,
       toolCalls: message.tool_calls.map(mapToolCall),
@@ -785,6 +789,19 @@ function PartnerPageContent() {
       )
 
       await readSseStream(stream, {
+        onChatModelStart() {
+          const replyTime = formatTime(new Date())
+          setMessages((prev) => {
+            const result = advanceAssistantMessageForNextModelPhase(
+              prev,
+              activeAssistantMessageId,
+              replyTime,
+              createFollowupAssistantMessage,
+            )
+            activeAssistantMessageId = result.activeMessageId
+            return result.messages
+          })
+        },
         onTextDelta(chunk) {
           const replyTime = formatTime(new Date())
           setMessages((prev) => {
@@ -798,6 +815,14 @@ function PartnerPageContent() {
             activeAssistantMessageId = result.activeMessageId
             return result.messages
           })
+        },
+        onReasoningDelta(chunk) {
+          setMessages((prev) =>
+            updateAssistantMessageById(prev, activeAssistantMessageId, (message) => ({
+              ...message,
+              reasoningContent: `${message.reasoningContent ?? ''}${chunk}`,
+            })),
+          )
         },
         onToolStart(toolCall) {
           const toolMessageId = activeAssistantMessageId

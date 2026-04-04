@@ -137,19 +137,19 @@ export function groupMessages<T>(messages: Message[], mapper?: (group: MessageGr
     const shouldRenderAssistantOutput = hasAssistantOutput(message)
     const shouldRenderProcessing = hasProcessingSteps(message)
 
-    // 这里按真实交互顺序输出：同一条 assistant 里如果先有正文、后有工具步骤，前端也要先渲染正文，再渲染 processing。
-    if (shouldRenderAssistantOutput) {
-      groups.push({
-        id: `${message.id}-assistant`,
-        type: 'assistant',
-        messages: [message],
-      })
-    }
-
     if (shouldRenderProcessing) {
       groups.push({
         id: `${message.id}-processing`,
         type: 'assistant:processing',
+        messages: [message],
+      })
+    }
+
+    // think / 工具步骤在流式里先于最终正文出现，这里统一让 processing 先渲染，再渲染 assistant 正文。
+    if (shouldRenderAssistantOutput) {
+      groups.push({
+        id: `${message.id}-assistant`,
+        type: 'assistant',
         messages: [message],
       })
     }

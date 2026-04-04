@@ -26,6 +26,55 @@ function buildFollowupMessageId(messages: StreamMessageLike[], activeMessageId: 
   return `${prefix}${existingCount + 1}`
 }
 
+export function advanceAssistantMessageForNextModelPhase<TMessage extends StreamMessageLike>(
+  messages: TMessage[],
+  activeMessageId: string,
+  timestamp: string,
+  createFollowupMessage?: (baseMessage: TMessage, nextMessageId: string, nextTimestamp: string) => TMessage,
+): AppendTextDeltaResult<TMessage> {
+  const activeIndex = messages.findIndex((message) => message.id === activeMessageId)
+
+  if (activeIndex === -1) {
+    return {
+      messages,
+      activeMessageId,
+    }
+  }
+
+  const activeMessage = messages[activeIndex]
+
+  if (activeMessage.role !== 'assistant' || !hasProcessingSteps(activeMessage)) {
+    return {
+      messages,
+      activeMessageId,
+    }
+  }
+
+  const followupMessageId = buildFollowupMessageId(messages, activeMessageId)
+  const followupMessage = createFollowupMessage
+    ? createFollowupMessage(activeMessage, followupMessageId, timestamp)
+    : {
+        ...activeMessage,
+        id: followupMessageId,
+        content: '',
+        timestamp,
+        loading: true,
+        toolCalls: [],
+        references: [],
+        courses: [],
+        skillOutput: [],
+      }
+
+  return {
+    messages: [
+      ...messages.slice(0, activeIndex + 1),
+      followupMessage,
+      ...messages.slice(activeIndex + 1),
+    ],
+    activeMessageId: followupMessageId,
+  }
+}
+
 export function appendTextDeltaToStreamMessages<TMessage extends StreamMessageLike>(
   messages: TMessage[],
   activeMessageId: string,
@@ -67,32 +116,32 @@ export function appendTextDeltaToStreamMessages<TMessage extends StreamMessageLi
     }
   }
 
-  const followupMessageId = buildFollowupMessageId(messages, activeMessageId)
-  const followupMessage = createFollowupMessage
-    ? createFollowupMessage(activeMessage, followupMessageId, timestamp)
-    : {
-        ...activeMessage,
-        id: followupMessageId,
-        content: '',
-        timestamp,
-        loading: true,
-        toolCalls: [],
-        references: [],
-        courses: [],
-        skillOutput: [],
-      }
+  const result = advanceAssistantMessageForNextModelPhase(
+    messages,
+    activeMessageId,
+    timestamp,
+    createFollowupMessage,
+  )
+  const followupMessage = result.messages.find((message) => message.id === result.activeMessageId)
+
+  if (!followupMessage) {
+    return {
+      messages,
+      activeMessageId,
+    }
+  }
 
   return {
-    messages: [
-      ...messages.slice(0, activeIndex + 1),
-      {
-        ...followupMessage,
-        content: `${followupMessage.content}${chunk}`,
-        timestamp,
-        loading: false,
-      },
-      ...messages.slice(activeIndex + 1),
-    ],
-    activeMessageId: followupMessageId,
+    messages: result.messages.map((message) =>
+      message.id === result.activeMessageId
+        ? {
+            ...message,
+            content: `${message.content}${chunk}`,
+            timestamp,
+            loading: false,
+          }
+        : message,
+    ),
+    activeMessageId: result.activeMessageId,
   }
 }
