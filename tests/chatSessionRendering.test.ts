@@ -44,6 +44,12 @@ test('chat session history listens for refresh events and silently reloads sessi
   assert.match(content, /removeEventListener/)
 })
 
+test('chat session list requests include tool_type=all so skill sessions survive page refresh', async () => {
+  const content = await readFile(new URL('../src/services/chatSessionService.ts', import.meta.url), 'utf8')
+
+  assert.match(content, /url\.searchParams\.set\('tool_type', 'all'\)/)
+})
+
 test('chat and partner pages notify history refresh after reply lifecycle updates the session name', async () => {
   const chatContent = await readFile(new URL('../src/pages/Chat/ChatPage.tsx', import.meta.url), 'utf8')
   const partnerContent = await readFile(new URL('../src/pages/Partner/PartnerPage.tsx', import.meta.url), 'utf8')

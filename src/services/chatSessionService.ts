@@ -127,6 +127,8 @@ export async function fetchChatSessions(
 ): Promise<ChatSession[]> {
   const url = new URL(config.viewChatSessionsPath, config.baseUrl)
   url.searchParams.set('user_id', config.userId)
+  // 左侧会话历史需要同时展示普通对话和技能对话，这里显式要求后端返回全部 tool_type。
+  url.searchParams.set('tool_type', 'all')
 
   const response = await fetch(url.toString(), {
     method: 'GET',
