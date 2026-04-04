@@ -675,6 +675,8 @@ function PartnerPageContent() {
     messagesRef.current = messages
   }, [messages])
 
+  // 消息内容变化时自动滚动到底部（流式输出时内容在变化但消息数量不变）
+  // 用户主动上滑查看历史消息时（isAtBottom 为 false），不抢滚动条
   useEffect(() => {
     requestAnimationFrame(() => {
       if (isResponding || sessionLoading || stickToBottom.isAtBottom) {
@@ -687,7 +689,7 @@ function PartnerPageContent() {
         })
       }
     })
-  }, [groupedMessages.length, isResponding, scrollToBottom, sessionLoading, stickToBottom.isAtBottom])
+  }, [messages, isResponding, scrollToBottom, sessionLoading, stickToBottom.isAtBottom])
 
   useEffect(() => {
     const streamBridge = createChatStreamBridge((snapshot) => {
