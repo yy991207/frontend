@@ -36,6 +36,8 @@ import {
   parseChatApiConfig,
   parseCourseTableContent,
   readSseStream,
+  resumeChatMessageStream,
+  stopChatMessageStream,
   streamChatMessage,
   type ChatApiConfig,
   type CourseItem,
@@ -269,6 +271,7 @@ function createFollowupAssistantMessage(baseMessage: ChatMessage, nextMessageId:
     content: '',
     timestamp,
     loading: true,
+    reasoningContent: null,
     toolCalls: [],
     references: [],
     courses: [],
@@ -347,6 +350,22 @@ function applyStreamSnapshot(
   actions.setMessages(nextMessages)
   actions.setIsResponding(snapshot.status === 'streaming')
   actions.setRequestError(snapshot.status === 'error' ? (snapshot.error ?? '请求失败，请稍后重试。') : '')
+}
+
+function resolveActiveStreamingMessageId(messages: ChatMessage[], fallbackMessageId: string) {
+  const loadingAssistant = [...messages].reverse().find((message) => message.role === 'assistant' && message.loading)
+
+  if (loadingAssistant) {
+    return loadingAssistant.id
+  }
+
+  const lastAssistant = [...messages].reverse().find((message) => message.role === 'assistant')
+  return lastAssistant?.id ?? fallbackMessageId
+}
+
+function parseLastEventSequence(eventId: string) {
+  const parsedSequence = Number.parseInt(eventId, 10)
+  return Number.isFinite(parsedSequence) ? parsedSequence : null
 }
 
 function renderMarkdownContent(content: string) {
@@ -790,6 +809,17 @@ function PartnerPageContent() {
       }
 
       const resolvedSessionId = sessionId
+      let lastEventSequence = 0
+
+      const persistDirectStreamSnapshot = (nextMessages: ChatMessage[]) => {
+        persistChatStreamSnapshot({
+          sessionId: resolvedSessionId,
+          messages: nextMessages,
+          status: 'streaming',
+          activeMessageId: activeAssistantMessageId,
+          lastEventSequence,
+        })
+      }
 
       const nextMessages = baseMessages.map((item) =>
         item.id === userMessage.id || item.id === loadingMessage.id
@@ -802,13 +832,7 @@ function PartnerPageContent() {
 
       messagesRef.current = nextMessages
       setMessages(nextMessages)
-      persistChatStreamSnapshot({
-        sessionId: resolvedSessionId,
-        messages: nextMessages,
-        status: 'streaming',
-        activeMessageId: loadingMessage.id,
-        lastEventSequence: 0,
-      })
+      persistDirectStreamSnapshot(nextMessages)
       syncSessionToRoute(resolvedSessionId)
 
       const streamBridge = streamBridgeRef.current
@@ -842,6 +866,16 @@ function PartnerPageContent() {
       )
 
       await readSseStream(stream, {
+        onEventId(eventId) {
+          const nextSequence = parseLastEventSequence(eventId)
+
+          if (nextSequence === null) {
+            return
+          }
+
+          lastEventSequence = nextSequence
+          persistDirectStreamSnapshot(messagesRef.current)
+        },
         onChatModelStart() {
           const replyTime = formatTime(new Date())
           setMessages((prev) => {
@@ -852,6 +886,8 @@ function PartnerPageContent() {
               createFollowupAssistantMessage,
             )
             activeAssistantMessageId = result.activeMessageId
+            messagesRef.current = result.messages
+            persistDirectStreamSnapshot(result.messages)
             return result.messages
           })
         },
@@ -866,22 +902,38 @@ function PartnerPageContent() {
               createFollowupAssistantMessage,
             )
             activeAssistantMessageId = result.activeMessageId
+            messagesRef.current = result.messages
+            persistDirectStreamSnapshot(result.messages)
             return result.messages
           })
         },
         onReasoningDelta(chunk) {
           setMessages((prev) =>
-            updateAssistantMessageById(prev, activeAssistantMessageId, (message) => ({
-              ...message,
-              reasoningContent: `${message.reasoningContent ?? ''}${chunk}`,
-            })),
+            {
+              const nextMessages = updateAssistantMessageById(prev, activeAssistantMessageId, (message) => ({
+                ...message,
+                reasoningContent: `${message.reasoningContent ?? ''}${chunk}`,
+              }))
+              messagesRef.current = nextMessages
+              persistDirectStreamSnapshot(nextMessages)
+              return nextMessages
+            },
           )
         },
         onToolStart(toolCall) {
           const toolMessageId = activeAssistantMessageId
 
           setMessages((prev) =>
-            updateAssistantMessageById(prev, toolMessageId, (message) => upsertToolCall(message, toolCall)),
+            {
+              const nextMessages = updateAssistantMessageById(
+                prev,
+                toolMessageId,
+                (message) => upsertToolCall(message, toolCall),
+              )
+              messagesRef.current = nextMessages
+              persistDirectStreamSnapshot(nextMessages)
+              return nextMessages
+            },
           )
         },
         onToolEnd(toolCall) {
@@ -894,10 +946,15 @@ function PartnerPageContent() {
               }
 
               setMessages((prev) =>
-                updateAssistantMessageById(prev, toolMessageId, (message) => ({
-                  ...upsertToolCall(message, toolCall),
-                  courses,
-                })),
+                {
+                  const nextMessages = updateAssistantMessageById(prev, toolMessageId, (message) => ({
+                    ...upsertToolCall(message, toolCall),
+                    courses,
+                  }))
+                  messagesRef.current = nextMessages
+                  persistDirectStreamSnapshot(nextMessages)
+                  return nextMessages
+                },
               )
             })
             .catch(() => {
@@ -905,34 +962,57 @@ function PartnerPageContent() {
             })
 
           setMessages((prev) =>
-            updateAssistantMessageById(prev, toolMessageId, (message) => upsertToolCall(message, toolCall)),
+            {
+              const nextMessages = updateAssistantMessageById(
+                prev,
+                toolMessageId,
+                (message) => upsertToolCall(message, toolCall),
+              )
+              messagesRef.current = nextMessages
+              persistDirectStreamSnapshot(nextMessages)
+              return nextMessages
+            },
           )
         },
         onReferences(references) {
           setMessages((prev) =>
-            updateAssistantMessageById(prev, activeAssistantMessageId, (message) => ({
-              ...message,
-              references,
-            })),
+            {
+              const nextMessages = updateAssistantMessageById(prev, activeAssistantMessageId, (message) => ({
+                ...message,
+                references,
+              }))
+              messagesRef.current = nextMessages
+              persistDirectStreamSnapshot(nextMessages)
+              return nextMessages
+            },
           )
         },
         onSkillOutput(skillOutput) {
           setMessages((prev) =>
-            updateAssistantMessageById(prev, activeAssistantMessageId, (message) => ({
-              ...message,
-              skillOutput,
-            })),
+            {
+              const nextMessages = updateAssistantMessageById(prev, activeAssistantMessageId, (message) => ({
+                ...message,
+                skillOutput,
+              }))
+              messagesRef.current = nextMessages
+              persistDirectStreamSnapshot(nextMessages)
+              return nextMessages
+            },
           )
         },
       })
 
       const replyTime = formatTime(new Date())
       setMessages((prev) =>
-        updateAssistantMessageById(prev, activeAssistantMessageId, (message) => ({
-          ...message,
-          timestamp: replyTime,
-          loading: false,
-        })),
+        {
+          const nextMessages = updateAssistantMessageById(prev, activeAssistantMessageId, (message) => ({
+            ...message,
+            timestamp: replyTime,
+            loading: false,
+          }))
+          messagesRef.current = nextMessages
+          return nextMessages
+        },
       )
       clearChatStreamSnapshot(resolvedSessionId)
       notifyChatSessionHistoryRefresh(resolvedSessionId)
@@ -1078,6 +1158,188 @@ function PartnerPageContent() {
       }
 
       controller = new AbortController()
+      const restoreController = controller
+
+      if (cachedSnapshot?.status === 'streaming' && chatApiConfig) {
+        let activeAssistantMessageId =
+          cachedSnapshot.activeMessageId ||
+          resolveActiveStreamingMessageId(cachedSnapshot.messages as ChatMessage[], routeSessionId)
+        let lastEventSequence = cachedSnapshot.lastEventSequence
+
+        const persistDirectStreamSnapshot = (nextMessages: ChatMessage[]) => {
+          persistChatStreamSnapshot({
+            sessionId: routeSessionId,
+            messages: nextMessages,
+            status: 'streaming',
+            activeMessageId: activeAssistantMessageId,
+            lastEventSequence,
+          })
+        }
+
+        try {
+          const stream = await resumeChatMessageStream(
+            chatApiConfig,
+            routeSessionId,
+            cachedSnapshot.lastEventSequence,
+            restoreController.signal,
+          )
+
+          if (cancelled) {
+            return
+          }
+
+          setSessionLoading(false)
+          setRequestError('')
+
+          await readSseStream(stream, {
+            onEventId(eventId) {
+              const nextSequence = parseLastEventSequence(eventId)
+
+              if (nextSequence === null) {
+                return
+              }
+
+              lastEventSequence = nextSequence
+              persistDirectStreamSnapshot(messagesRef.current)
+            },
+            onChatModelStart() {
+              const replyTime = formatTime(new Date())
+              setMessages((prev) => {
+                const result = advanceAssistantMessageForNextModelPhase(
+                  prev,
+                  activeAssistantMessageId,
+                  replyTime,
+                  createFollowupAssistantMessage,
+                )
+                activeAssistantMessageId = result.activeMessageId
+                messagesRef.current = result.messages
+                persistDirectStreamSnapshot(result.messages)
+                return result.messages
+              })
+            },
+            onTextDelta(chunk) {
+              const replyTime = formatTime(new Date())
+              setMessages((prev) => {
+                const result = appendTextDeltaToStreamMessages(
+                  prev,
+                  activeAssistantMessageId,
+                  chunk,
+                  replyTime,
+                  createFollowupAssistantMessage,
+                )
+                activeAssistantMessageId = result.activeMessageId
+                messagesRef.current = result.messages
+                persistDirectStreamSnapshot(result.messages)
+                return result.messages
+              })
+            },
+            onReasoningDelta(chunk) {
+              setMessages((prev) => {
+                const nextMessages = updateAssistantMessageById(prev, activeAssistantMessageId, (message) => ({
+                  ...message,
+                  reasoningContent: `${message.reasoningContent ?? ''}${chunk}`,
+                }))
+                messagesRef.current = nextMessages
+                persistDirectStreamSnapshot(nextMessages)
+                return nextMessages
+              })
+            },
+            onToolStart(toolCall) {
+              const toolMessageId = activeAssistantMessageId
+
+              setMessages((prev) => {
+                const nextMessages = updateAssistantMessageById(
+                  prev,
+                  toolMessageId,
+                  (message) => upsertToolCall(message, toolCall),
+                )
+                messagesRef.current = nextMessages
+                persistDirectStreamSnapshot(nextMessages)
+                return nextMessages
+              })
+            },
+            onToolEnd(toolCall) {
+              const toolMessageId = activeAssistantMessageId
+
+              void loadCourseTable(chatApiConfig, routeSessionId, toolCall, restoreController.signal)
+                .then((courses) => {
+                  if (!courses.length) {
+                    return
+                  }
+
+                  setMessages((prev) => {
+                    const nextMessages = updateAssistantMessageById(prev, toolMessageId, (message) => ({
+                      ...upsertToolCall(message, toolCall),
+                      courses,
+                    }))
+                    messagesRef.current = nextMessages
+                    persistDirectStreamSnapshot(nextMessages)
+                    return nextMessages
+                  })
+                })
+                .catch(() => {
+                  // 课程文件下载失败时保持普通工具卡展示，不阻断主回答。
+                })
+
+              setMessages((prev) => {
+                const nextMessages = updateAssistantMessageById(
+                  prev,
+                  toolMessageId,
+                  (message) => upsertToolCall(message, toolCall),
+                )
+                messagesRef.current = nextMessages
+                persistDirectStreamSnapshot(nextMessages)
+                return nextMessages
+              })
+            },
+            onReferences(references) {
+              setMessages((prev) => {
+                const nextMessages = updateAssistantMessageById(prev, activeAssistantMessageId, (message) => ({
+                  ...message,
+                  references,
+                }))
+                messagesRef.current = nextMessages
+                persistDirectStreamSnapshot(nextMessages)
+                return nextMessages
+              })
+            },
+            onSkillOutput(skillOutput) {
+              setMessages((prev) => {
+                const nextMessages = updateAssistantMessageById(prev, activeAssistantMessageId, (message) => ({
+                  ...message,
+                  skillOutput,
+                }))
+                messagesRef.current = nextMessages
+                persistDirectStreamSnapshot(nextMessages)
+                return nextMessages
+              })
+            },
+          })
+
+          if (cancelled || restoreController.signal.aborted) {
+            return
+          }
+
+          const replyTime = formatTime(new Date())
+          setMessages((prev) => {
+            const nextMessages = updateAssistantMessageById(prev, activeAssistantMessageId, (message) => ({
+              ...message,
+              timestamp: replyTime,
+              loading: false,
+            }))
+            messagesRef.current = nextMessages
+            return nextMessages
+          })
+          clearChatStreamSnapshot(routeSessionId)
+          notifyChatSessionHistoryRefresh(routeSessionId)
+          setIsResponding(false)
+          return
+        } catch {
+          if (restoreController.signal.aborted || cancelled) {
+            return
+          }
+        }
+      }
 
       try {
         const config = await loadChatSessionConfig()
@@ -1185,6 +1447,13 @@ function PartnerPageContent() {
       )
       setIsResponding(false)
       return
+    }
+
+    if (currentSessionId && chatApiConfig) {
+      void stopChatMessageStream(chatApiConfig, currentSessionId).catch(() => {
+        // 直连流的停止请求失败时，至少先中断当前页面读取，避免界面继续卡在 loading。
+      })
+      clearChatStreamSnapshot(currentSessionId)
     }
 
     abortControllerRef.current?.abort()

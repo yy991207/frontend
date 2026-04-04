@@ -30,7 +30,7 @@ export function MarkdownContent({
         remarkPlugins={plugins.remarkPlugins}
         rehypePlugins={plugins.rehypePlugins}
         lineNumbers={false}
-        controls={{ table: false }}
+        controls={false}
       >
         {content}
       </Streamdown>
