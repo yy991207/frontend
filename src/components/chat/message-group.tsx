@@ -5,6 +5,7 @@ import {
   CaretUpOutlined,
   CopyOutlined,
   FileTextOutlined,
+  LoadingOutlined,
 } from '@ant-design/icons'
 import { useMemo, useState } from 'react'
 
@@ -311,8 +312,8 @@ function ProcessingMessage({
 function LoadingMessage() {
   return (
     <div className={styles.loadingShell} aria-label="正在生成回复">
-      <div className={styles.loadingBadge}>
-        <span className={styles.loadingBadgeDot} />
+      <div className={styles.loadingSpinnerWrap} aria-hidden="true">
+        <LoadingOutlined className={styles.loadingSpinner} />
       </div>
       <div className={styles.loadingLines}>
         <span className={`${styles.loadingLine} ${styles.loadingLineLong}`} />
