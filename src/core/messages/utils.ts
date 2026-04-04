@@ -136,13 +136,18 @@ export function groupMessages<T>(messages: Message[], mapper?: (group: MessageGr
 
     const shouldRenderAssistantOutput = hasAssistantOutput(message)
     const shouldRenderProcessing = hasProcessingSteps(message)
+    const lastGroup = groups[groups.length - 1]
 
     if (shouldRenderProcessing) {
-      groups.push({
-        id: `${message.id}-processing`,
-        type: 'assistant:processing',
-        messages: [message],
-      })
+      if (lastGroup?.type === 'assistant:processing') {
+        lastGroup.messages.push(message)
+      } else {
+        groups.push({
+          id: `${message.id}-processing`,
+          type: 'assistant:processing',
+          messages: [message],
+        })
+      }
     }
 
     // think / 工具步骤在流式里先于最终正文出现，这里统一让 processing 先渲染，再渲染 assistant 正文。
