@@ -45,7 +45,9 @@ import {
 import {
   createChatStreamBridge,
   type ChatStreamBridge,
+  type StreamBridgeStatus,
 } from '../../services/chatStreamBridgeService'
+import { notifyChatSessionHistoryRefresh } from '../../services/chatSessionEvents'
 import {
   fetchPartnerConfig,
   parsePartnerApiConfig,
@@ -369,6 +371,7 @@ function PartnerPageContent() {
   const navigate = useNavigate()
   const abortControllerRef = useRef<AbortController | null>(null)
   const streamBridgeRef = useRef<ChatStreamBridge | null>(null)
+  const streamBridgeStatusRef = useRef<StreamBridgeStatus | null>(null)
   const composerRef = useRef<HTMLDivElement | null>(null)
   const [attachMenuOpen, setAttachMenuOpen] = useState(false)
   const [toolMenuOpen, setToolMenuOpen] = useState(false)
@@ -688,11 +691,17 @@ function PartnerPageContent() {
 
   useEffect(() => {
     const streamBridge = createChatStreamBridge((snapshot) => {
+      const previousStatus = streamBridgeStatusRef.current
+      streamBridgeStatusRef.current = snapshot.status
       const nextMessages = snapshot.messages as ChatMessage[]
       messagesRef.current = nextMessages
       setMessages(nextMessages)
       setIsResponding(snapshot.status === 'streaming')
       setRequestError(snapshot.status === 'error' ? (snapshot.error ?? '请求失败，请稍后重试。') : '')
+
+      if (snapshot.status === 'completed' && previousStatus !== 'completed') {
+        notifyChatSessionHistoryRefresh(snapshot.sessionId)
+      }
     })
 
     streamBridgeRef.current = streamBridge
@@ -881,6 +890,7 @@ function PartnerPageContent() {
           loading: false,
         })),
       )
+      notifyChatSessionHistoryRefresh(sessionId)
     } catch (error) {
       if (controller.signal.aborted) {
         return
