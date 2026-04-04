@@ -17,6 +17,7 @@ doc/images/*
 !doc/images/chat01.png
 !doc/images/chat2.png
 !doc/工作记录 - 2026 年 0403.md
+!doc/工作记录 - 2026 年 0404.md
 node_modules
 dist
 dist-ssr

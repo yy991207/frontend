@@ -839,49 +839,37 @@
   width: 100%;
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 6px 0 2px;
+  gap: 10px;
+  padding: 4px 0 2px;
   border: none;
   background: transparent;
   box-shadow: none;
 }
 
-.loadingBadge {
-  position: relative;
-  width: 10px;
-  height: 10px;
+.loadingSpinnerWrap {
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   border-radius: 999px;
-  margin-top: 3px;
-  background: rgba(96, 165, 250, 0.16);
-  border: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  margin-top: -1px;
+  color: #9ca3af;
 }
 
-.loadingBadge::before {
-  content: '';
-  position: absolute;
-  inset: -5px;
-  border-radius: inherit;
-  background: rgba(96, 165, 250, 0.1);
-  animation: loadingBadgePulse 1.8s ease-in-out infinite;
-}
-
-.loadingBadgeDot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: #3b82f6;
+.loadingSpinner {
+  font-size: 14px;
+  color: inherit;
+  animation: loadingSpin 0.9s linear infinite;
 }
 
 .loadingLines {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-top: 0;
+  gap: 10px;
+  padding-top: 4px;
   max-width: 360px;
 }
 
@@ -889,7 +877,7 @@
   display: block;
   height: 12px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(226, 232, 240, 0.9) 0%, rgba(248, 250, 252, 1) 50%, rgba(226, 232, 240, 0.9) 100%);
+  background: linear-gradient(90deg, rgba(235, 239, 244, 0.9) 0%, rgba(248, 250, 252, 1) 50%, rgba(235, 239, 244, 0.9) 100%);
   background-size: 220% 100%;
   animation: loadingShimmer 1.6s ease-in-out infinite;
 }
@@ -1605,16 +1593,13 @@
   }
 }
 
-@keyframes loadingBadgePulse {
-  0%,
-  100% {
-    opacity: 0.45;
-    transform: scale(0.9);
+@keyframes loadingSpin {
+  from {
+    transform: rotate(0deg);
   }
 
-  50% {
-    opacity: 1;
-    transform: scale(1);
+  to {
+    transform: rotate(360deg);
   }
 }
 
