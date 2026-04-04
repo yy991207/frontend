@@ -99,45 +99,47 @@ function renderCopyAction(messageId: string, content: string, copiedMessageId: s
   )
 }
 
-function buildProcessSteps(message: Message): ProcessStep[] {
-  const steps: ProcessStep[] = []
-  const reasoning = extractReasoningContentFromMessage(message)
-  const subagentLabel = extractSubagentLabelFromMessage(message)
+function buildProcessSteps(messages: Message[]): ProcessStep[] {
+  return messages.flatMap((message, messageIndex) => {
+    const steps: ProcessStep[] = []
+    const reasoning = extractReasoningContentFromMessage(message)
+    const subagentLabel = extractSubagentLabelFromMessage(message)
 
-  if (reasoning) {
-    steps.push({
-      id: `${message.id}-reasoning`,
-      type: 'reasoning',
-      reasoning,
-    })
-  }
+    if (reasoning) {
+      steps.push({
+        id: `${message.id}-reasoning-${messageIndex}`,
+        type: 'reasoning',
+        reasoning,
+      })
+    }
 
-  if (subagentLabel) {
-    steps.push({
-      id: `${message.id}-subagent`,
-      type: 'subagent',
-      label: subagentLabel,
-    })
-  }
+    if (subagentLabel) {
+      steps.push({
+        id: `${message.id}-subagent-${messageIndex}`,
+        type: 'subagent',
+        label: subagentLabel,
+      })
+    }
 
-  for (const toolCall of message.tool_calls) {
-    steps.push({
-      id: toolCall.runId,
-      type: 'tool',
-      toolCall,
-      messageId: message.id,
-    })
-  }
+    for (const toolCall of message.tool_calls) {
+      steps.push({
+        id: `${toolCall.runId}-${messageIndex}`,
+        type: 'tool',
+        toolCall,
+        messageId: message.id,
+      })
+    }
 
-  if (message.courses.length) {
-    steps.push({
-      id: `${message.id}-courses`,
-      type: 'courses',
-      courses: message.courses,
-    })
-  }
+    if (message.courses.length) {
+      steps.push({
+        id: `${message.id}-courses-${messageIndex}`,
+        type: 'courses',
+        courses: message.courses,
+      })
+    }
 
-  return steps
+    return steps
+  })
 }
 
 function renderCourseStep(step: Extract<ProcessStep, { type: 'courses' }>, isLast = false) {
@@ -209,17 +211,17 @@ function renderProcessStep(
 }
 
 function ProcessingMessage({
-  message,
+  messages,
   getToolDisplayTitle,
   onOpenFile,
 }: {
-  message: Message
+  messages: Message[]
   getToolDisplayTitle: MessageGroupSectionProps['getToolDisplayTitle']
   onOpenFile?: MessageGroupSectionProps['onOpenFile']
 }) {
   const [showAbove, setShowAbove] = useState(true)
   const [showLastThinking, setShowLastThinking] = useState(true)
-  const steps = useMemo(() => buildProcessSteps(message), [message])
+  const steps = useMemo(() => buildProcessSteps(messages), [messages])
 
   const lastActionStep = useMemo(() => {
     const actionSteps = steps.filter((step) => step.type !== 'reasoning')
@@ -352,17 +354,13 @@ export function MessageGroupSection({
 
     case 'assistant:processing':
       return (
-        <>
-          {group.messages.map((message) => (
-            <div key={message.id} className={styles.assistantRow}>
-              <ProcessingMessage
-                message={message}
-                getToolDisplayTitle={getToolDisplayTitle}
-                onOpenFile={onOpenFile}
-              />
-            </div>
-          ))}
-        </>
+        <div className={styles.assistantRow}>
+          <ProcessingMessage
+            messages={group.messages}
+            getToolDisplayTitle={getToolDisplayTitle}
+            onOpenFile={onOpenFile}
+          />
+        </div>
       )
 
     case 'assistant:loading':
@@ -379,17 +377,13 @@ export function MessageGroupSection({
     case 'assistant:reasoning':
     case 'assistant:subagent':
       return (
-        <>
-          {group.messages.map((message) => (
-            <div key={message.id} className={styles.assistantRow}>
-              <ProcessingMessage
-                message={message}
-                getToolDisplayTitle={getToolDisplayTitle}
-                onOpenFile={onOpenFile}
-              />
-            </div>
-          ))}
-        </>
+        <div className={styles.assistantRow}>
+          <ProcessingMessage
+            messages={group.messages}
+            getToolDisplayTitle={getToolDisplayTitle}
+            onOpenFile={onOpenFile}
+          />
+        </div>
       )
 
     case 'assistant':
