@@ -9,6 +9,7 @@ import {
   getDefaultConfig,
   deleteChatSession,
 } from '../../services/chatSessionService'
+import { CHAT_SESSION_HISTORY_REFRESH_EVENT } from '../../services/chatSessionEvents'
 import { DeleteConfirmModal } from '../common/DeleteConfirmModal'
 import styles from './chatSessionHistory.module.less'
 
@@ -107,18 +108,26 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
     return params.get('sessionId')
   }, [location.search])
 
-  const loadSessions = useCallback(async () => {
+  const loadSessions = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false
+
     try {
-      setLoading(true)
-      setError(null)
+      if (!silent) {
+        setLoading(true)
+        setError(null)
+      }
       const config = await loadConfig()
       const allSessions = await fetchChatSessions(config)
       const grouped = groupSessionsByTime(allSessions)
       setSessions(grouped)
     } catch (err) {
-      setError(err instanceof Error ? err.message : '加载会话列表失败')
+      if (!silent) {
+        setError(err instanceof Error ? err.message : '加载会话列表失败')
+      }
     } finally {
-      setLoading(false)
+      if (!silent) {
+        setLoading(false)
+      }
     }
   }, [])
 
@@ -127,6 +136,22 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
       loadSessions()
     }
   }, [expanded, loadSessions, location.pathname, location.search])
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      if (!expanded) {
+        return
+      }
+
+      void loadSessions({ silent: true })
+    }
+
+    window.addEventListener(CHAT_SESSION_HISTORY_REFRESH_EVENT, handleRefresh)
+
+    return () => {
+      window.removeEventListener(CHAT_SESSION_HISTORY_REFRESH_EVENT, handleRefresh)
+    }
+  }, [expanded, loadSessions])
 
   const handleSessionClick = (sessionId: string) => {
     navigate(`/chat?sessionId=${sessionId}`)
@@ -222,7 +247,7 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
           {!loading && error && (
             <div className={styles.error}>
               <div>{error}</div>
-              <button onClick={loadSessions} className={styles.retryButton}>
+              <button onClick={() => void loadSessions()} className={styles.retryButton}>
                 重试
               </button>
             </div>

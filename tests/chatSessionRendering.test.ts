@@ -35,6 +35,25 @@ test('chat and partner pages drive a dedicated session loading skeleton while re
   assert.match(partnerContent, /setSessionLoading\(false\)/)
 })
 
+test('chat session history listens for refresh events and silently reloads sessions', async () => {
+  const content = await readFile(new URL('../src/components/ChatSessionHistory/ChatSessionHistory.tsx', import.meta.url), 'utf8')
+
+  assert.match(content, /loadSessions\(\{\s*silent:\s*true\s*\}\)/)
+  assert.match(content, /CHAT_SESSION_HISTORY_REFRESH_EVENT/)
+  assert.match(content, /addEventListener/)
+  assert.match(content, /removeEventListener/)
+})
+
+test('chat and partner pages notify history refresh after reply lifecycle updates the session name', async () => {
+  const chatContent = await readFile(new URL('../src/pages/Chat/ChatPage.tsx', import.meta.url), 'utf8')
+  const partnerContent = await readFile(new URL('../src/pages/Partner/PartnerPage.tsx', import.meta.url), 'utf8')
+
+  assert.match(chatContent, /notifyChatSessionHistoryRefresh/)
+  assert.match(chatContent, /sessionId/)
+  assert.match(partnerContent, /notifyChatSessionHistoryRefresh/)
+  assert.match(partnerContent, /sessionId/)
+})
+
 test('chat and partner pages keep the message viewport scrolled to the latest content during session loading', async () => {
   const chatContent = await readFile(new URL('../src/pages/Chat/ChatPage.tsx', import.meta.url), 'utf8')
   const partnerContent = await readFile(new URL('../src/pages/Partner/PartnerPage.tsx', import.meta.url), 'utf8')
