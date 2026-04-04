@@ -39,8 +39,14 @@ import {
 import {
   createChatStreamBridge,
   type ChatStreamBridge,
+  type StreamBridgeSnapshot,
   type StreamBridgeStatus,
 } from '../../services/chatStreamBridgeService'
+import {
+  clearChatStreamSnapshot,
+  loadChatStreamSnapshot,
+  persistChatStreamSnapshot,
+} from '../../services/chatStreamSnapshotStore'
 import { notifyChatSessionHistoryRefresh } from '../../services/chatSessionEvents'
 import {
   deleteChatSession,
@@ -154,6 +160,22 @@ function formatTime(date: Date) {
     minute: '2-digit',
     hour12: false,
   })
+}
+
+function applyStreamSnapshot(
+  snapshot: StreamBridgeSnapshot,
+  actions: {
+    messagesRef: { current: ChatMessage[] }
+    setMessages: (messages: ChatMessage[]) => void
+    setIsResponding: (value: boolean) => void
+    setRequestError: (value: string) => void
+  },
+) {
+  const nextMessages = snapshot.messages as ChatMessage[]
+  actions.messagesRef.current = nextMessages
+  actions.setMessages(nextMessages)
+  actions.setIsResponding(snapshot.status === 'streaming')
+  actions.setRequestError(snapshot.status === 'error' ? (snapshot.error ?? '请求失败，请稍后重试。') : '')
 }
 
 function parseSimpleYaml(rawText: string) {
@@ -424,11 +446,19 @@ function ChatPageContent() {
     const streamBridge = createChatStreamBridge((snapshot) => {
       const previousStatus = streamBridgeStatusRef.current
       streamBridgeStatusRef.current = snapshot.status
-      const nextMessages = snapshot.messages as ChatMessage[]
-      messagesRef.current = nextMessages
-      setMessages(nextMessages)
-      setIsResponding(snapshot.status === 'streaming')
-      setRequestError(snapshot.status === 'error' ? (snapshot.error ?? '请求失败，请稍后重试。') : '')
+
+      if (snapshot.status === 'streaming') {
+        persistChatStreamSnapshot(snapshot)
+      } else {
+        clearChatStreamSnapshot(snapshot.sessionId)
+      }
+
+      applyStreamSnapshot(snapshot, {
+        messagesRef,
+        setMessages,
+        setIsResponding,
+        setRequestError,
+      })
 
       if (snapshot.status === 'completed' && previousStatus !== 'completed') {
         notifyChatSessionHistoryRefresh(snapshot.sessionId)
@@ -526,34 +556,46 @@ function ChatPageContent() {
     abortControllerRef.current = controller
     let usingSharedBridge = false
     let activeAssistantMessageId = loadingMessage.id
+    let sessionId = currentSessionId
 
     try {
-      let sessionId = currentSessionId
-
       // 会话一旦创建成功，就必须复用同一个 sessionId，避免刷新或继续追问时被拆成新会话。
       if (!sessionId) {
         const createdSession = await createChatSession(chatApiConfig, controller.signal)
         sessionId = createdSession.sessionId
       }
 
+      if (!sessionId) {
+        throw new Error('会话创建失败')
+      }
+
+      const resolvedSessionId = sessionId
+
       const nextMessages = baseMessages.map((item) =>
         item.id === userMessage.id || item.id === loadingMessage.id
           ? {
               ...item,
-              sessionId,
+              sessionId: resolvedSessionId,
             }
           : item,
       )
 
       messagesRef.current = nextMessages
       setMessages(nextMessages)
-      syncSessionToRoute(sessionId)
+      persistChatStreamSnapshot({
+        sessionId: resolvedSessionId,
+        messages: nextMessages,
+        status: 'streaming',
+        activeMessageId: loadingMessage.id,
+        lastEventSequence: 0,
+      })
+      syncSessionToRoute(resolvedSessionId)
 
       const streamBridge = streamBridgeRef.current
 
       if (streamBridge) {
         await streamBridge.startStream({
-          sessionId,
+          sessionId: resolvedSessionId,
           config: chatApiConfig,
           payload: {
             message: prompt,
@@ -571,7 +613,7 @@ function ChatPageContent() {
 
       const stream = await streamChatMessage(
         chatApiConfig,
-        sessionId,
+        resolvedSessionId,
         {
           message: prompt,
           tool_type: toolType,
@@ -625,7 +667,7 @@ function ChatPageContent() {
         onToolEnd(toolCall) {
           const toolMessageId = activeAssistantMessageId
 
-          void loadCourseTable(chatApiConfig, sessionId, toolCall, controller.signal)
+          void loadCourseTable(chatApiConfig, resolvedSessionId, toolCall, controller.signal)
             .then((courses) => {
               if (!courses.length) {
                 return
@@ -672,9 +714,13 @@ function ChatPageContent() {
           loading: false,
         })),
       )
-      notifyChatSessionHistoryRefresh(sessionId)
+      clearChatStreamSnapshot(resolvedSessionId)
+      notifyChatSessionHistoryRefresh(resolvedSessionId)
     } catch (error) {
       if (controller.signal.aborted) {
+        if (sessionId) {
+          clearChatStreamSnapshot(sessionId)
+        }
         return
       }
 
@@ -687,6 +733,9 @@ function ChatPageContent() {
           loading: false,
         })),
       )
+      if (sessionId) {
+        clearChatStreamSnapshot(sessionId)
+      }
       setRequestError(error instanceof Error ? error.message : '请求失败，请稍后重试。')
     } finally {
       if (abortControllerRef.current === controller) {
@@ -759,6 +808,17 @@ function ChatPageContent() {
         return
       }
 
+      const cachedSnapshot = loadChatStreamSnapshot(routeSessionId)
+
+      if (cachedSnapshot) {
+        applyStreamSnapshot(cachedSnapshot, {
+          messagesRef,
+          setMessages,
+          setIsResponding,
+          setRequestError,
+        })
+      }
+
       setSessionLoading(true)
 
       const streamBridge = streamBridgeRef.current
@@ -772,12 +832,27 @@ function ChatPageContent() {
         }
 
         if (snapshot) {
-          const nextMessages = snapshot.messages as ChatMessage[]
-          messagesRef.current = nextMessages
-          setMessages(nextMessages)
-          setIsResponding(snapshot.status === 'streaming')
-          setRequestError(snapshot.status === 'error' ? (snapshot.error ?? '请求失败，请稍后重试。') : '')
+          applyStreamSnapshot(snapshot, {
+            messagesRef,
+            setMessages,
+            setIsResponding,
+            setRequestError,
+          })
           setSessionLoading(false)
+          return
+        }
+
+        if (cachedSnapshot?.status === 'streaming' && chatApiConfig) {
+          await streamBridge.resumeStream({
+            sessionId: routeSessionId,
+            config: chatApiConfig,
+            snapshot: cachedSnapshot,
+            afterSequence: cachedSnapshot.lastEventSequence,
+          })
+
+          if (!cancelled) {
+            setSessionLoading(false)
+          }
           return
         }
       }
@@ -797,6 +872,7 @@ function ChatPageContent() {
         setMessages(nextMessages)
         setIsResponding(false)
         setRequestError('')
+        clearChatStreamSnapshot(routeSessionId)
         setSessionLoading(false)
       } catch (error) {
         if (!controller.signal.aborted && !cancelled) {
@@ -814,7 +890,7 @@ function ChatPageContent() {
       streamBridgeRef.current?.unsubscribe(routeSessionId)
       controller?.abort()
     }
-  }, [routeSessionId])
+  }, [chatApiConfig, routeSessionId])
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {

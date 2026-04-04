@@ -203,6 +203,42 @@ test('readSseStream reports tool calls declared in on_chat_model_end events', as
   ])
 })
 
+test('readSseStream exposes SSE event ids in stream order for resume cursor', async () => {
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(
+        encoder.encode(
+          [
+            'id: 41\n',
+            'event: on_chat_model_stream\n',
+            'data: {"data":{"chunk":{"content":"你好"}}}\n\n',
+            'id: 42\n',
+            'event: on_chat_model_stream\n',
+            'data: {"data":{"chunk":{"content":"，北京"}}}\n\n',
+          ].join(''),
+        ),
+      )
+      controller.close()
+    },
+  })
+
+  const ids: string[] = []
+  const chunks: string[] = []
+
+  await readSseStream(stream, {
+    onEventId(eventId) {
+      ids.push(eventId)
+    },
+    onTextDelta(chunk) {
+      chunks.push(chunk)
+    },
+  })
+
+  assert.deepEqual(ids, ['41', '42'])
+  assert.deepEqual(chunks, ['你好', '，北京'])
+})
+
 test('resolveQuickActionToolType maps course planning prompt to explore', () => {
   assert.equal(resolveQuickActionToolType('帮我规划一个关于机器学习的课表，要求5门课程，总时长60分钟'), 'explore')
   assert.equal(resolveQuickActionToolType('写一份周报'), null)

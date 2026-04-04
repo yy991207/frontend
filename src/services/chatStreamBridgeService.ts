@@ -20,6 +20,8 @@ export type StreamBridgeSnapshot = {
   sessionId: string
   messages: StreamBridgeMessage[]
   status: StreamBridgeStatus
+  activeMessageId?: string
+  lastEventSequence: number
   error?: string
 }
 
@@ -52,7 +54,20 @@ type StartStreamCommand = {
   loadingMessageId: string
 }
 
-type WorkerCommand = SubscribeCommand | UnsubscribeCommand | StopStreamCommand | StartStreamCommand
+type ResumeStreamCommand = {
+  type: 'resume-stream'
+  sessionId: string
+  config: ChatApiConfig
+  snapshot: StreamBridgeSnapshot
+  afterSequence: number
+}
+
+type WorkerCommand =
+  | SubscribeCommand
+  | UnsubscribeCommand
+  | StopStreamCommand
+  | StartStreamCommand
+  | ResumeStreamCommand
 
 type SnapshotEvent = {
   type: 'snapshot'
@@ -66,6 +81,7 @@ export type ChatStreamBridge = {
   subscribe: (sessionId: string) => Promise<StreamBridgeSnapshot | null>
   unsubscribe: (sessionId: string) => void
   startStream: (command: Omit<StartStreamCommand, 'type'>) => Promise<void>
+  resumeStream: (command: Omit<ResumeStreamCommand, 'type'>) => Promise<void>
   stopStream: (sessionId: string) => boolean
   destroy: () => void
 }
@@ -147,6 +163,12 @@ export function createChatStreamBridge(
     async startStream(command) {
       postCommand({
         type: 'start-stream',
+        ...command,
+      })
+    },
+    async resumeStream(command) {
+      postCommand({
+        type: 'resume-stream',
         ...command,
       })
     },

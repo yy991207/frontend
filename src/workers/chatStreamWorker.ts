@@ -5,6 +5,8 @@ import {
   extractCourseTableFilePath,
   parseCourseTableContent,
   readSseStream,
+  resumeChatMessageStream,
+  stopChatMessageStream,
   streamChatMessage,
   type ChatApiConfig,
   type ToolCall,
@@ -48,7 +50,20 @@ type StartStreamCommand = {
   loadingMessageId: string
 }
 
-type WorkerCommand = SubscribeCommand | UnsubscribeCommand | StopStreamCommand | StartStreamCommand
+type ResumeStreamCommand = {
+  type: 'resume-stream'
+  sessionId: string
+  config: ChatApiConfig
+  snapshot: StreamBridgeSnapshot
+  afterSequence: number
+}
+
+type WorkerCommand =
+  | SubscribeCommand
+  | UnsubscribeCommand
+  | StopStreamCommand
+  | StartStreamCommand
+  | ResumeStreamCommand
 
 type SessionState = {
   snapshot: StreamBridgeSnapshot
@@ -83,12 +98,16 @@ function createSnapshot(
   sessionId: string,
   messages: StreamBridgeMessage[],
   status: StreamBridgeStatus,
+  activeMessageId: string,
+  lastEventSequence: number,
   error?: string,
 ): StreamBridgeSnapshot {
   return {
     sessionId,
     messages: cloneMessages(messages),
     status,
+    activeMessageId,
+    lastEventSequence,
     error,
   }
 }
@@ -160,6 +179,17 @@ function clearCleanupTimer(state: SessionState) {
   }
 }
 
+function resolveActiveAssistantMessageId(messages: StreamBridgeMessage[], fallbackMessageId?: string) {
+  const loadingAssistant = [...messages].reverse().find((message) => message.role === 'assistant' && message.loading)
+
+  if (loadingAssistant) {
+    return loadingAssistant.id
+  }
+
+  const lastAssistant = [...messages].reverse().find((message) => message.role === 'assistant')
+  return lastAssistant?.id ?? fallbackMessageId ?? ''
+}
+
 function scheduleCleanup(sessionId: string) {
   const state = sessionStates.get(sessionId)
 
@@ -193,6 +223,8 @@ function broadcastSnapshot(sessionId: string) {
       state.snapshot.sessionId,
       state.snapshot.messages,
       state.snapshot.status,
+      state.activeMessageId,
+      state.snapshot.lastEventSequence,
       state.snapshot.error,
     ),
   }
@@ -263,6 +295,19 @@ async function loadCourseTable(state: SessionState, toolCall: ToolCall, messageI
   }
 }
 
+function setLastEventSequence(state: SessionState, eventId: string) {
+  const parsedSequence = Number.parseInt(eventId, 10)
+
+  if (!Number.isFinite(parsedSequence)) {
+    return
+  }
+
+  state.snapshot = {
+    ...state.snapshot,
+    lastEventSequence: parsedSequence,
+  }
+}
+
 function finalizeStream(sessionId: string, status: StreamBridgeStatus, error?: string) {
   const state = sessionStates.get(sessionId)
 
@@ -290,22 +335,23 @@ function finalizeStream(sessionId: string, status: StreamBridgeStatus, error?: s
   scheduleCleanup(sessionId)
 }
 
-async function runStream(command: StartStreamCommand) {
-  const state = sessionStates.get(command.sessionId)
+async function runStream(
+  sessionId: string,
+  readStream: (signal: AbortSignal) => Promise<ReadableStream<Uint8Array>>,
+) {
+  const state = sessionStates.get(sessionId)
 
   if (!state || !state.controller) {
     return
   }
 
   try {
-    const stream = await streamChatMessage(
-      command.config,
-      command.sessionId,
-      command.payload,
-      state.controller.signal,
-    )
+    const stream = await readStream(state.controller.signal)
 
     await readSseStream(stream, {
+      onEventId(eventId) {
+        setLastEventSequence(state, eventId)
+      },
       onChatModelStart() {
         const replyTime = new Date().toLocaleTimeString('zh-CN', {
           hour: '2-digit',
@@ -323,9 +369,10 @@ async function runStream(command: StartStreamCommand) {
         state.snapshot = {
           ...state.snapshot,
           messages: result.messages,
+          activeMessageId: result.activeMessageId,
         }
         state.activeMessageId = result.activeMessageId
-        broadcastSnapshot(command.sessionId)
+        broadcastSnapshot(sessionId)
       },
       onTextDelta(chunk) {
         const replyTime = new Date().toLocaleTimeString('zh-CN', {
@@ -345,26 +392,27 @@ async function runStream(command: StartStreamCommand) {
         state.snapshot = {
           ...state.snapshot,
           messages: result.messages,
+          activeMessageId: result.activeMessageId,
         }
         state.activeMessageId = result.activeMessageId
-        broadcastSnapshot(command.sessionId)
+        broadcastSnapshot(sessionId)
       },
       onReasoningDelta(chunk) {
         withMessageById(state, state.activeMessageId, (message) => ({
           ...message,
           reasoningContent: `${message.reasoningContent ?? ''}${chunk}`,
         }))
-        broadcastSnapshot(command.sessionId)
+        broadcastSnapshot(sessionId)
       },
       onToolStart(toolCall) {
         const toolMessageId = state.activeMessageId
         withMessageById(state, toolMessageId, (message) => upsertToolCall(message, toolCall))
-        broadcastSnapshot(command.sessionId)
+        broadcastSnapshot(sessionId)
       },
       onToolEnd(toolCall) {
         const toolMessageId = state.activeMessageId
         withMessageById(state, toolMessageId, (message) => upsertToolCall(message, toolCall))
-        broadcastSnapshot(command.sessionId)
+        broadcastSnapshot(sessionId)
         void loadCourseTable(state, toolCall, toolMessageId)
       },
       onReferences(references) {
@@ -372,35 +420,57 @@ async function runStream(command: StartStreamCommand) {
           ...message,
           references,
         }))
-        broadcastSnapshot(command.sessionId)
+        broadcastSnapshot(sessionId)
       },
       onSkillOutput(skillOutput) {
         withMessageById(state, state.activeMessageId, (message) => ({
           ...message,
           skillOutput,
         }))
-        broadcastSnapshot(command.sessionId)
+        broadcastSnapshot(sessionId)
       },
     })
 
     if (state.controller.signal.aborted) {
-      finalizeStream(command.sessionId, 'aborted')
+      finalizeStream(sessionId, 'aborted')
       return
     }
 
-    finalizeStream(command.sessionId, 'completed')
+    finalizeStream(sessionId, 'completed')
   } catch (error) {
     if (state.controller?.signal.aborted) {
-      finalizeStream(command.sessionId, 'aborted')
+      finalizeStream(sessionId, 'aborted')
       return
     }
 
     finalizeStream(
-      command.sessionId,
+      sessionId,
       'error',
       error instanceof Error ? error.message : '请求失败，请稍后重试。',
     )
   }
+}
+
+async function runStartStream(command: StartStreamCommand) {
+  await runStream(command.sessionId, (signal) =>
+    streamChatMessage(
+      command.config,
+      command.sessionId,
+      command.payload,
+      signal,
+    )
+  )
+}
+
+async function runResumeStream(command: ResumeStreamCommand) {
+  await runStream(command.sessionId, (signal) =>
+    resumeChatMessageStream(
+      command.config,
+      command.sessionId,
+      command.afterSequence,
+      signal,
+    )
+  )
 }
 
 function handleStartStream(port: MessagePort, command: StartStreamCommand) {
@@ -409,7 +479,7 @@ function handleStartStream(port: MessagePort, command: StartStreamCommand) {
 
   // 同一个 session 只保留一条在途流，避免重复并发写入同一条 assistant 消息。
   const nextState: SessionState = {
-    snapshot: createSnapshot(command.sessionId, command.messages, 'streaming'),
+    snapshot: createSnapshot(command.sessionId, command.messages, 'streaming', command.loadingMessageId, 0),
     config: command.config,
     loadingMessageId: command.loadingMessageId,
     activeMessageId: command.loadingMessageId,
@@ -422,7 +492,37 @@ function handleStartStream(port: MessagePort, command: StartStreamCommand) {
   subscribePortToSession(port, command.sessionId)
   clearCleanupTimer(nextState)
   broadcastSnapshot(command.sessionId)
-  void runStream(command)
+  void runStartStream(command)
+}
+
+function handleResumeStream(port: MessagePort, command: ResumeStreamCommand) {
+  const previousState = sessionStates.get(command.sessionId)
+  previousState?.controller?.abort()
+
+  const restoredActiveMessageId =
+    command.snapshot.activeMessageId ||
+    resolveActiveAssistantMessageId(command.snapshot.messages, command.sessionId)
+
+  const nextState: SessionState = {
+    snapshot: {
+      ...command.snapshot,
+      status: 'streaming',
+      activeMessageId: restoredActiveMessageId,
+      lastEventSequence: command.afterSequence,
+    },
+    config: command.config,
+    loadingMessageId: restoredActiveMessageId,
+    activeMessageId: restoredActiveMessageId,
+    controller: new AbortController(),
+    subscribers: new Set<MessagePort>(),
+    cleanupTimer: null,
+  }
+
+  sessionStates.set(command.sessionId, nextState)
+  subscribePortToSession(port, command.sessionId)
+  clearCleanupTimer(nextState)
+  broadcastSnapshot(command.sessionId)
+  void runResumeStream(command)
 }
 
 function handleSubscribe(port: MessagePort, sessionId: string) {
@@ -437,6 +537,8 @@ function handleSubscribe(port: MessagePort, sessionId: string) {
           state.snapshot.sessionId,
           state.snapshot.messages,
           state.snapshot.status,
+          state.activeMessageId,
+          state.snapshot.lastEventSequence,
           state.snapshot.error,
         )
       : null,
@@ -458,10 +560,21 @@ function handlePortMessage(port: MessagePort, event: MessageEvent<WorkerCommand>
       unsubscribePortFromSession(port, command.sessionId)
       return
     case 'stop-stream':
-      sessionStates.get(command.sessionId)?.controller?.abort()
+      {
+        const state = sessionStates.get(command.sessionId)
+        state?.controller?.abort()
+        if (state) {
+          void stopChatMessageStream(state.config, command.sessionId).catch(() => {
+            // 停止接口失败时保留本地中断结果，避免页面继续卡在 streaming 状态。
+          })
+        }
+      }
       return
     case 'start-stream':
       handleStartStream(port, command)
+      return
+    case 'resume-stream':
+      handleResumeStream(port, command)
       return
   }
 }
