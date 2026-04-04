@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { HistoryOutlined, MoreOutlined, DeleteOutlined, MessageOutlined } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import type { ChatSession, ChatSessionConfig } from '../../services/chatSessionService'
@@ -41,11 +42,19 @@ interface SessionMenuProps {
 
 function SessionMenu({ session, onDelete }: SessionMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false)
       }
     }
@@ -59,32 +68,55 @@ function SessionMenu({ session, onDelete }: SessionMenuProps) {
     }
   }, [isOpen])
 
+  const handleToggle = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const willOpen = !isOpen
+
+    if (willOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right,
+      })
+    }
+
+    setIsOpen(willOpen)
+  }
+
   const handleDelete = () => {
     onDelete(session)
     setIsOpen(false)
   }
+
+  const dropdownContent = isOpen && dropdownPosition ? (
+    <div
+      ref={dropdownRef}
+      className={styles.menuDropdown}
+      style={{
+        position: 'fixed',
+        top: `${dropdownPosition.top}px`,
+        right: `${dropdownPosition.right}px`,
+      }}
+    >
+      <button type="button" className={styles.menuItem} onClick={handleDelete}>
+        <DeleteOutlined className={styles.menuItemIcon} />
+        <span className={styles.menuItemText}>删除</span>
+      </button>
+    </div>
+  ) : null
 
   return (
     <div className={styles.menuContainer} ref={menuRef}>
       <button
         type="button"
         className={styles.moreButton}
-        onClick={(e) => {
-          e.stopPropagation()
-          setIsOpen(!isOpen)
-        }}
+        ref={buttonRef}
+        onClick={handleToggle}
       >
         <MoreOutlined />
       </button>
 
-      {isOpen && (
-        <div className={styles.menuDropdown}>
-          <button type="button" className={styles.menuItem} onClick={handleDelete}>
-            <DeleteOutlined className={styles.menuItemIcon} />
-            <span className={styles.menuItemText}>删除</span>
-          </button>
-        </div>
-      )}
+      {dropdownContent && createPortal(dropdownContent, document.body)}
     </div>
   )
 }
