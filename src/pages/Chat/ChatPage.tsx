@@ -857,17 +857,21 @@ function ChatPageContent() {
       return
     }
 
-    setRequestError('')
-    void runAssistantReply(
-      initialPrompt,
-      initialConversation.userMessage,
-      initialConversation.loadingMessage,
-      [initialConversation.userMessage, initialConversation.loadingMessage],
-      initialToolType,
-    )
+    // 首页首轮自动发送放到下一个 tick，再由 cleanup 只取消定时器。
+    // 这样 StrictMode 的首轮重挂载只会清掉第一次调度，不会把真正的流式请求 abort 掉。
+    const initialPromptTimer = window.setTimeout(() => {
+      setRequestError('')
+      void runAssistantReply(
+        initialPrompt,
+        initialConversation.userMessage,
+        initialConversation.loadingMessage,
+        [initialConversation.userMessage, initialConversation.loadingMessage],
+        initialToolType,
+      )
+    }, 0)
 
     return () => {
-      abortControllerRef.current?.abort()
+      window.clearTimeout(initialPromptTimer)
     }
   }, [initialConversation, initialPrompt, initialToolType, routeSessionId])
 
