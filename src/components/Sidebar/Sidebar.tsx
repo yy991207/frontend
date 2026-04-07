@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   BookOutlined,
+  CompassOutlined,
   LoadingOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -18,6 +19,7 @@ import styles from './sidebar.module.less'
 
 const NAV_ITEMS = [
   { key: 'home', label: '新建', icon: <PlusOutlined /> },
+  { key: 'discover', label: '发现', icon: <CompassOutlined />, path: '/discover' },
   { key: 'library', label: '库', icon: <BookOutlined />, path: '/library' },
   { key: 'skills', label: '技能', icon: <ThunderboltOutlined />, path: '/skills' },
 ]
