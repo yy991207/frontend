@@ -566,86 +566,96 @@ export default function HomePage() {
 
                 <div className={styles.composerWrap}>
                   <div className={styles.inputWrap}>
-                    <AttachmentMenu
-                      placement="bottom"
-                      skills={skills}
-                      skillsLoading={skillsLoading}
-                      loadSkills={fetchSkills}
-                      onSelectSkill={handleSelectSkill}
-                      onManageSkills={handleManageSkills}
-                      showTools
-                      webSearchEnabled={webSearchEnabled}
-                      knowledgeEnabled={knowledgeEnabled}
-                      onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
-                      onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
-                    />
-                    {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
-                    {selectedSkillName ? (
-                      <span className={styles.skillTagWrap}>
-                        <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
-                        <button
-                          type="button"
-                          className={styles.skillRemoveButton}
-                          aria-label="移除已选技能"
-                          onClick={clearSelectedSkill}
-                        >
-                          <CloseOutlined />
-                        </button>
-                        {selectedSkillDescription ? (
-                          <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
-                        ) : null}
-                      </span>
-                    ) : null}
-                    <Input.TextArea
-                      value={prompt}
-                      onChange={(event) => setPrompt(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
-                          return
-                        }
+                    {/* 上方输入区域 */}
+                    <div className={styles.inputTopArea}>
+                      {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
+                      {selectedSkillName ? (
+                        <span className={styles.skillTagWrap}>
+                          <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
+                          <button
+                            type="button"
+                            className={styles.skillRemoveButton}
+                            aria-label="移除已选技能"
+                            onClick={clearSelectedSkill}
+                          >
+                            <CloseOutlined />
+                          </button>
+                          {selectedSkillDescription ? (
+                            <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
+                          ) : null}
+                        </span>
+                      ) : null}
+                      <Input.TextArea
+                        value={prompt}
+                        onChange={(event) => setPrompt(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+                            return
+                          }
 
-                        if (event.key === 'Backspace' && !prompt.trim() && selectedSkillName) {
-                          event.preventDefault()
-                          clearSelectedSkill()
-                        }
+                          if (event.key === 'Backspace' && !prompt.trim() && selectedSkillName) {
+                            event.preventDefault()
+                            clearSelectedSkill()
+                          }
 
-                        // 支持 Enter 发送，Shift+Enter 换行
-                        if (event.key === 'Enter' && !event.shiftKey) {
-                          event.preventDefault()
-                          handleSend()
-                        }
-                      }}
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        border: 'none',
-                        boxShadow: 'none',
-                        background: 'transparent',
-                        fontSize: 14,
-                        resize: 'none',
-                        minHeight: 24,
-                        maxHeight: 200,
-                        overflowY: 'auto',
-                        lineHeight: 1.5,
-                        padding: 0,
-                      }}
-                      variant="borderless"
-                      placeholder="@特定群组，总结群聊信息"
-                      autoSize={{ minRows: 1, maxRows: 8 }}
-                    />
-                    <span className={styles.tabHint}>Tab</span>
-                    <div className={styles.inputActions}>
-                      <button type="button" className={styles.iconBtn}>
-                        <AudioOutlined />
-                      </button>
-                      <button
-                        type="button"
-                        className={`${styles.iconBtn} ${styles.sendBtn} ${!prompt.trim() ? styles.sendBtnDisabled : ''}`}
-                        onClick={handleSend}
-                        disabled={!prompt.trim()}
-                      >
-                        <ArrowUpOutlined />
-                      </button>
+                          // 支持 Enter 发送，Shift+Enter 换行
+                          if (event.key === 'Enter' && !event.shiftKey) {
+                            event.preventDefault()
+                            handleSend()
+                          }
+                        }}
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          border: 'none',
+                          boxShadow: 'none',
+                          background: 'transparent',
+                          fontSize: 14,
+                          resize: 'none',
+                          minHeight: 24,
+                          maxHeight: 200,
+                          overflowY: 'auto',
+                          lineHeight: 1.5,
+                          padding: 0,
+                        }}
+                        variant="borderless"
+                        placeholder="@特定群组，总结群聊信息"
+                        autoSize={{ minRows: 1, maxRows: 8 }}
+                      />
+                    </div>
+                    {/* 下方按钮区域 */}
+                    <div className={styles.inputBottomArea}>
+                      <div className={styles.inputBottomLeft}>
+                        <AttachmentMenu
+                          placement="top"
+                          skills={skills}
+                          skillsLoading={skillsLoading}
+                          loadSkills={fetchSkills}
+                          onSelectSkill={handleSelectSkill}
+                          onManageSkills={handleManageSkills}
+                          showTools
+                          webSearchEnabled={webSearchEnabled}
+                          knowledgeEnabled={knowledgeEnabled}
+                          onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
+                          onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
+                        />
+                      </div>
+                      <div className={styles.inputBottomRight}>
+                        <span className={styles.tabHint}>Tab</span>
+                        <div className={styles.inputActions}>
+                          <button type="button" className={styles.iconBtn}>
+                            <AudioOutlined />
+                          </button>
+                          <button
+                            type="button"
+                            className={`${styles.iconBtn} ${styles.sendBtn} ${!prompt.trim() ? styles.sendBtnDisabled : ''}`}
+                            onClick={handleSend}
+                            disabled={!prompt.trim()}
+                          >
+                            <ArrowUpOutlined />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
