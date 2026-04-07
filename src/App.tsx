@@ -6,6 +6,7 @@ import HomePage from './pages/Home/HomePage'
 import LibraryPage from './pages/Library/LibraryPage'
 import PartnerPage from './pages/Partner/PartnerPage'
 import SkillsPage from './pages/Skills/SkillsPage'
+import AgentDetailPage from './pages/AgentDetail/AgentDetailPage'
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/discover" element={<DiscoverPage />} />
+            <Route path="/agent/:id" element={<AgentDetailPage />} />
             <Route path="/library" element={<LibraryPage />} />
             <Route path="/skills" element={<SkillsPage />} />
             <Route path="/partner" element={<PartnerPage />} />

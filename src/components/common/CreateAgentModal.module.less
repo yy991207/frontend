@@ -1,0 +1,254 @@
+// 弹窗包装器
+.modalWrapper {
+  :global(.ant-modal-mask) {
+    background-color: rgba(0, 0, 0, 0.45) !important;
+    backdrop-filter: blur(4px);
+  }
+}
+
+// 弹窗主体
+.modal {
+  :global(.ant-modal-content) {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.2);
+  }
+
+  :global(.ant-modal-body) {
+    padding: 0;
+  }
+}
+
+// 容器
+.container {
+  padding: 24px;
+}
+
+// 头部
+.header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+// 表单
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.formItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.required {
+  color: #f5222d;
+  margin-left: 2px;
+}
+
+.input {
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  padding: 10px 14px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+
+  &:hover,
+  &:focus {
+    border-color: #1677ff;
+    box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.08);
+  }
+
+  :global(.ant-input) {
+    background: transparent;
+  }
+
+  :global(.ant-input-suffix) {
+    color: #9ca3af;
+    font-size: 12px;
+  }
+}
+
+.textarea {
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  padding: 10px 14px;
+  font-size: 14px;
+  resize: none;
+  transition: all 0.2s ease;
+
+  &:hover,
+  &:focus {
+    border-color: #1677ff;
+    box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.08);
+  }
+
+  :global(.ant-input) {
+    background: transparent;
+  }
+
+  :global(.ant-input-textarea-suffix) {
+    color: #9ca3af;
+    font-size: 12px;
+  }
+}
+
+// 图标选择器
+.iconGroup {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+
+  :global(.ant-radio-button-wrapper) {
+    display: none;
+  }
+}
+
+.iconButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: auto;
+  margin: 0 !important;
+
+  &:hover {
+    border-color: #e5e7eb;
+    background: #f9fafb;
+  }
+}
+
+.iconButtonActive {
+  border-color: #1677ff !important;
+  background: #f0f7ff !important;
+}
+
+.iconWrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.icon {
+  font-size: 24px;
+}
+
+.iconLabel {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.iconButtonActive .iconLabel {
+  color: #1677ff;
+  font-weight: 600;
+}
+
+// 底部按钮
+.footer {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.cancelButton {
+  flex: 1;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #d1d5db;
+    background: #f9fafb;
+    color: #111827;
+  }
+}
+
+.confirmButton {
+  flex: 1;
+  height: 44px;
+  border-radius: 10px;
+  background: #111827;
+  border: none;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: #1f2937;
+  }
+
+  &:disabled {
+    background: #d1d5db;
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  :global(.anticon) {
+    font-size: 16px;
+  }
+}
+
+// 响应式
+@media (max-width: 480px) {
+  .container {
+    padding: 20px;
+  }
+
+  .iconGroup {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .iconWrapper {
+    width: 40px;
+    height: 40px;
+  }
+
+  .icon {
+    font-size: 20px;
+  }
+
+  .iconLabel {
+    font-size: 11px;
+  }
+}

@@ -51,7 +51,8 @@
   z-index: 1;
   width: 100%;
   // 把欢迎区放进独立首屏舞台，避免再靠固定 padding 顶出来，桌面和移动端都按主内容区中心对齐。
-  min-height: calc(100dvh - var(--home-shell-offset));
+  // 减小高度让页面上移，从占满视口改为固定高度
+  min-height: 420px;
   display: flex;
   align-items: center;
   justify-content: center;
