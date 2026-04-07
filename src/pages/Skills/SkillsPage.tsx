@@ -460,9 +460,23 @@ export default function SkillsPage() {
         return
       }
 
+      if (optionKey === 'chat') {
+        // 使用对话创建：跳转到首页并预填充技能创建提示
+        navigate('/', {
+          state: {
+            initialPrompt: '/skill-creator 帮我创建一个技能：/技能描述',
+            toolType: 'skill-creator',
+            skillName: 'skill-creator',
+            skillDescription: '通过对话构建个人使用的技能',
+            template: '帮我创建一个技能：/技能描述',
+          },
+        })
+        return
+      }
+
       setCreateOpen(false)
     },
-    [handleOpenUploadModal],
+    [handleOpenUploadModal, navigate],
   )
 
   const handleOpenUploadPicker = useCallback(() => {
