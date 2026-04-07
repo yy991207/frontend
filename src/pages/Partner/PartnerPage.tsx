@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Input } from 'antd'
 import {
   AudioOutlined,
   ArrowUpOutlined,
@@ -23,6 +24,7 @@ import {
   ToolOutlined,
 } from '@ant-design/icons'
 import PartnerSkillManagement from '../../components/Partner/PartnerSkillManagement'
+import { AttachmentMenu } from '../../components/common/AttachmentMenu'
 import chatConfigText from '../../../config.yaml?raw'
 import { useLocation, useNavigate } from 'react-router-dom'
 import homeAvatar from '../../assets/home-avatar.png'
@@ -296,12 +298,6 @@ async function loadCourseTable(
   return parseCourseTableContent(rawContent)
 }
 
-const ATTACHMENT_ACTIONS = [
-  { key: 'upload', label: '上传文件或图片', icon: <PaperClipOutlined /> },
-  { key: 'doc', label: '添加飞书云文档', icon: <FileAddOutlined /> },
-  { key: 'skill', label: '技能', icon: <ThunderboltOutlined />, hasArrow: true },
-  { key: 'tool', label: '工具', icon: <ToolOutlined />, hasArrow: true },
-]
 
 const SETTING_MENU_ITEMS: SettingMenuItem[] = [
   { key: 'personalization', label: '个性化', icon: <SmileOutlined /> },
@@ -415,11 +411,6 @@ function PartnerPageContent() {
   const streamBridgeRef = useRef<ChatStreamBridge | null>(null)
   const streamBridgeStatusRef = useRef<StreamBridgeStatus | null>(null)
   const composerRef = useRef<HTMLDivElement | null>(null)
-  const [attachMenuOpen, setAttachMenuOpen] = useState(false)
-  const [toolMenuOpen, setToolMenuOpen] = useState(false)
-  const [toolInfoOpen, setToolInfoOpen] = useState(false)
-  const [skillMenuOpen, setSkillMenuOpen] = useState(false)
-  const [skillSearchQuery, setSkillSearchQuery] = useState('')
   const [skills, setSkills] = useState<SkillItem[]>([])
   const [skillsLoading, setSkillsLoading] = useState(false)
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
@@ -495,20 +486,6 @@ function PartnerPageContent() {
     }
   }, [])
 
-  // 根据搜索关键词过滤技能列表
-  const filteredSkills = useMemo(() => {
-    if (!skillSearchQuery.trim()) {
-      return skills
-    }
-    const query = skillSearchQuery.toLowerCase()
-    return skills.filter(
-      (skill) =>
-        skill.title.toLowerCase().includes(query) ||
-        skill.description.toLowerCase().includes(query) ||
-        skill.skillName.toLowerCase().includes(query),
-    )
-  }, [skills, skillSearchQuery])
-
   // 获取用户技能列表（我添加的 + 我创建的）
   const fetchSkills = async (signal?: AbortSignal) => {
     if (!skillApiConfig) {
@@ -561,20 +538,6 @@ function PartnerPageContent() {
     }
   }
 
-  // 打开技能菜单时加载技能列表
-  useEffect(() => {
-    if (!skillMenuOpen) {
-      return
-    }
-
-    const controller = new AbortController()
-    void fetchSkills(controller.signal)
-
-    return () => {
-      controller.abort()
-    }
-  }, [skillMenuOpen])
-
   useEffect(() => {
     if (!isSettingsOpen || !partnerApiConfig) {
       return
@@ -624,11 +587,8 @@ function PartnerPageContent() {
     })
   }
 
-  // 选择技能后先进入输入态，和技能管理页“使用”保持一致。
+  // 选择技能后先进入输入态，和技能管理页"使用"保持一致。
   const handleSelectSkill = (skill: SkillItem) => {
-    setSkillMenuOpen(false)
-    setAttachMenuOpen(false)
-    setSkillSearchQuery('')
     // 加号选择技能后先进入输入态，用户还能继续补充模板参数，再统一发送。
     setSelectedSkillName(skill.skillName || skill.id)
     setSelectedSkillDescription(skill.description)
@@ -1379,23 +1339,7 @@ function PartnerPageContent() {
     }
   }, [chatApiConfig, routeSessionId])
 
-  useEffect(() => {
-    const handlePointerDown = (event: MouseEvent) => {
-      if (!composerRef.current?.contains(event.target as Node)) {
-        setAttachMenuOpen(false)
-        setToolMenuOpen(false)
-        setToolInfoOpen(false)
-        setSkillMenuOpen(false)
-        setSkillSearchQuery('')
-      }
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-    }
-  }, [])
+  // AttachmentMenu组件内部已处理点击外部关闭菜单的逻辑
 
   useEffect(() => {
     if (!isNameModalOpen) {
@@ -1430,11 +1374,6 @@ function PartnerPageContent() {
 
     setDraft('')
     clearSelectedSkill()
-    setAttachMenuOpen(false)
-    setToolMenuOpen(false)
-    setToolInfoOpen(false)
-    setSkillMenuOpen(false)
-    setSkillSearchQuery('')
     void startAssistantReply(outgoingPrompt, outgoingToolType)
   }
 
@@ -1842,241 +1781,104 @@ function PartnerPageContent() {
 
               <div className={styles.composerArea}>
                 <div ref={composerRef} className={styles.composerWrap}>
-                  <div className={styles.composer}>
-                    <div className={styles.attachTriggerWrap}>
-                      <button
-                        type="button"
-                        className={`${styles.circleButton} ${styles.attachButton} ${attachMenuOpen ? styles.attachButtonActive : ''}`}
-                        aria-label={attachMenuOpen ? '关闭上传菜单' : '打开上传菜单'}
-                        aria-expanded={attachMenuOpen}
-                        onClick={() => setAttachMenuOpen((value) => !value)}
-                      >
-                        {attachMenuOpen ? <CloseOutlined /> : <PlusOutlined />}
-                      </button>
-                      {!attachMenuOpen ? <div className={styles.attachTooltip}>上传附件/技能等</div> : null}
+                  <div className={styles.inputWrap}>
+                    {/* 上方输入区域 */}
+                    <div className={styles.inputTopArea}>
+                      {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
+                      {selectedSkillName ? (
+                        <span className={styles.skillTagWrap}>
+                          <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
+                          <button
+                            type="button"
+                            className={styles.skillRemoveButton}
+                            aria-label="移除已选技能"
+                            onClick={clearSelectedSkill}
+                          >
+                            <CloseOutlined />
+                          </button>
+                          {selectedSkillDescription ? (
+                            <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
+                          ) : null}
+                        </span>
+                      ) : null}
+                      <Input.TextArea
+                        value={draft}
+                        onChange={(event) => setDraft(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+                            return
+                          }
+
+                          if (event.key === 'Backspace' && !draft.trim() && selectedSkillName) {
+                            event.preventDefault()
+                            clearSelectedSkill()
+                            return
+                          }
+
+                          // 支持 Enter 发送，Shift+Enter 换行
+                          if (event.key === 'Enter' && !event.shiftKey) {
+                            event.preventDefault()
+                            handleSend()
+                          }
+                        }}
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          border: 'none',
+                          boxShadow: 'none',
+                          background: 'transparent',
+                          fontSize: 16,
+                          resize: 'none',
+                          minHeight: 24,
+                          maxHeight: 200,
+                          overflowY: 'auto',
+                          lineHeight: 1.5,
+                          padding: 0,
+                        }}
+                        variant="borderless"
+                        placeholder="下一步要做什么？"
+                        autoSize={{ minRows: 1, maxRows: 8 }}
+                      />
                     </div>
-                    {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
-                    {selectedSkillName ? (
-                      <span className={styles.skillTagWrap}>
-                        <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
-                        <button
-                          type="button"
-                          className={styles.skillRemoveButton}
-                          aria-label="移除已选技能"
-                          onClick={clearSelectedSkill}
-                        >
-                          <CloseOutlined />
-                        </button>
-                        {selectedSkillDescription ? (
-                          <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
-                        ) : null}
-                      </span>
-                    ) : null}
-                    <input
-                      value={draft}
-                      onChange={(event) => setDraft(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
-                          return
-                        }
-
-                        if (event.key === 'Backspace' && !draft.trim() && selectedSkillName) {
-                          event.preventDefault()
-                          clearSelectedSkill()
-                          return
-                        }
-
-                        if (event.key === 'Enter') {
-                          event.preventDefault()
-                          handleSend()
-                        }
-                      }}
-                      className={styles.composerInput}
-                      placeholder="下一步要做什么？"
-                    />
-                    <button type="button" className={styles.iconButton} aria-label="语音输入">
-                      <AudioOutlined />
-                    </button>
-                    {isResponding ? (
-                      <button type="button" className={`${styles.circleButton} ${styles.stopButton}`} onClick={handleStop}>
-                        <span className={styles.stopInner} />
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className={`${styles.circleButton} ${styles.sendButton} ${!draft.trim() ? styles.sendButtonDisabled : ''}`}
-                        onClick={handleSend}
-                        disabled={!draft.trim()}
-                      >
-                        <ArrowUpOutlined />
-                      </button>
-                    )}
-                  </div>
-                  <div
-                    className={`${styles.attachMenuLayer} ${attachMenuOpen ? styles.attachMenuLayerOpen : ''}`}
-                    onMouseLeave={() => {
-                      setToolMenuOpen(false)
-                      setToolInfoOpen(false)
-                    }}
-                  >
-                    <div className={styles.attachMenu} role="menu">
-                      {ATTACHMENT_ACTIONS.map((action) =>
-                        action.key === 'tool' ? (
-                          <button
-                            key={action.key}
-                            type="button"
-                            className={`${styles.attachMenuItem} ${toolMenuOpen ? styles.attachMenuItemActive : ''}`}
-                            onMouseEnter={() => {
-                              setToolMenuOpen(true)
-                              setSkillMenuOpen(false)
-                            }}
-                          >
-                            <span className={styles.attachMenuMain}>
-                              <span className={styles.attachMenuIcon}>{action.icon}</span>
-                              <span>{action.label}</span>
-                            </span>
-                            <RightOutlined className={styles.attachMenuArrow} />
-                          </button>
-                        ) : action.key === 'skill' ? (
-                          <button
-                            key={action.key}
-                            type="button"
-                            className={`${styles.attachMenuItem} ${skillMenuOpen ? styles.attachMenuItemActive : ''}`}
-                            onMouseEnter={() => {
-                              setSkillMenuOpen(true)
-                              setToolMenuOpen(false)
-                            }}
-                          >
-                            <span className={styles.attachMenuMain}>
-                              <span className={styles.attachMenuIcon}>{action.icon}</span>
-                              <span>{action.label}</span>
-                            </span>
-                            <RightOutlined className={styles.attachMenuArrow} />
-                          </button>
-                        ) : (
-                          <button
-                            key={action.key}
-                            type="button"
-                            className={styles.attachMenuItem}
-                            onMouseEnter={() => {
-                              setToolMenuOpen(false)
-                              setSkillMenuOpen(false)
-                            }}
-                          >
-                            <span className={styles.attachMenuMain}>
-                              <span className={styles.attachMenuIcon}>{action.icon}</span>
-                              <span>{action.label}</span>
-                            </span>
-                            {action.hasArrow ? <RightOutlined className={styles.attachMenuArrow} /> : null}
-                          </button>
-                        ),
-                      )}
-                    </div>
-
-                    <div className={`${styles.skillSubmenu} ${skillMenuOpen ? styles.skillSubmenuOpen : ''}`}>
-                      <div className={styles.skillSubmenuHeader}>
-                        <span>技能</span>
-                      </div>
-                      <div className={styles.skillSearchBox}>
-                        <SearchOutlined className={styles.skillSearchIcon} />
-                        <input
-                          type="text"
-                          className={styles.skillSearchInput}
-                          placeholder="搜索技能"
-                          value={skillSearchQuery}
-                          onChange={(e) => setSkillSearchQuery(e.target.value)}
+                    {/* 下方按钮区域 */}
+                    <div className={styles.inputBottomArea}>
+                      <div className={styles.inputBottomLeft}>
+                        <AttachmentMenu
+                          placement="top"
+                          skills={skills}
+                          skillsLoading={skillsLoading}
+                          loadSkills={fetchSkills}
+                          onSelectSkill={handleSelectSkill}
+                          onManageSkills={handleManageSkills}
+                          showTools
+                          webSearchEnabled={webSearchEnabled}
+                          knowledgeEnabled={knowledgeEnabled}
+                          onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
+                          onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
                         />
                       </div>
-                      <div className={styles.skillList}>
-                        {skillsLoading ? (
-                          <div className={styles.skillLoading}>加载中...</div>
-                        ) : filteredSkills.length === 0 ? (
-                          <div className={styles.skillEmpty}>
-                            {skillSearchQuery ? '未找到匹配的技能' : '暂无技能'}
-                          </div>
-                        ) : (
-                          filteredSkills.map((skill) => (
-                            <button
-                              key={skill.id}
-                              type="button"
-                              className={styles.skillItem}
-                              onClick={() => handleSelectSkill(skill)}
-                            >
-                              <div className={styles.skillItemIcon}>
-                                <ThunderboltOutlined />
-                              </div>
-                              <div className={styles.skillItemInfo}>
-                                <div className={styles.skillItemTitle}>{skill.title}</div>
-                                <div className={styles.skillItemDesc}>{skill.description}</div>
-                              </div>
+                      <div className={styles.inputBottomRight}>
+                        <span className={styles.tabHint}>Tab</span>
+                        <div className={styles.inputActions}>
+                          <button type="button" className={styles.iconBtn} aria-label="语音输入">
+                            <AudioOutlined />
+                          </button>
+                          {isResponding ? (
+                            <button type="button" className={`${styles.iconBtn} ${styles.stopBtn}`} onClick={handleStop}>
+                              <span className={styles.stopInner} />
                             </button>
-                          ))
-                        )}
+                          ) : (
+                            <button
+                              type="button"
+                              className={`${styles.iconBtn} ${styles.sendBtn} ${!draft.trim() ? styles.sendBtnDisabled : ''}`}
+                              onClick={handleSend}
+                              disabled={!draft.trim()}
+                            >
+                              <ArrowUpOutlined />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <button type="button" className={styles.skillManageButton} onClick={handleManageSkills}>
-                        <span className={styles.attachMenuMain}>
-                          <span className={styles.toolItemMain}>
-                            <SettingOutlined />
-                            <span>管理技能</span>
-                          </span>
-                        </span>
-                      </button>
-                    </div>
-
-                    <div className={`${styles.toolSubmenu} ${toolMenuOpen ? styles.toolSubmenuOpen : ''}`}>
-                      <div className={styles.toolSubmenuHeader}>
-                        <span>工具</span>
-                        <button
-                          type="button"
-                          className={styles.toolInfoButton}
-                          aria-label="工具说明"
-                          onClick={() => setToolInfoOpen((value) => !value)}
-                        >
-                          <InfoCircleOutlined />
-                        </button>
-                        {toolInfoOpen ? (
-                          <div className={styles.toolInfoPopover}>
-                            默认内置飞书相关工具：知识问答、消息、妙记、云文档、多维表格、日程、任务
-                          </div>
-                        ) : null}
-                      </div>
-
-                      <div className={styles.toolItem}>
-                        <span className={styles.toolItemMain}>
-                          <GlobalOutlined />
-                          <span>互联网检索</span>
-                        </span>
-                        <button
-                          type="button"
-                          className={`${styles.switchButton} ${webSearchEnabled ? styles.switchButtonOn : ''}`}
-                          onClick={() => setWebSearchEnabled((value) => !value)}
-                        >
-                          <span className={styles.switchThumb} />
-                        </button>
-                      </div>
-
-                      <div className={styles.toolItem}>
-                        <span className={styles.toolItemMain}>
-                          <LinkOutlined />
-                          <span>自定义知识</span>
-                        </span>
-                        <button
-                          type="button"
-                          className={`${styles.switchButton} ${knowledgeEnabled ? styles.switchButtonOn : ''}`}
-                          onClick={() => setKnowledgeEnabled((value) => !value)}
-                        >
-                          <span className={styles.switchThumb} />
-                        </button>
-                      </div>
-
-                      <button type="button" className={`${styles.toolItem} ${styles.toolManageButton}`}>
-                        <span className={styles.attachMenuMain}>
-                          <span className={styles.toolItemMain}>
-                            <SettingOutlined />
-                            <span>工具管理</span>
-                          </span>
-                        </span>
-                      </button>
                     </div>
                   </div>
                 </div>
