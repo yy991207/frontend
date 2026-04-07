@@ -946,6 +946,72 @@
   max-width: var(--conversation-width);
 }
 
+// 新的垂直分层布局
+.inputWrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-radius: 28px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  padding: 12px 8px 12px 14px;
+  min-height: 58px;
+
+  &:focus-within {
+    border-color: rgba(22, 119, 255, 0.5);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08), 0 0 0 2px rgba(22, 119, 255, 0.1);
+  }
+
+  // TextArea 样式调整
+  :global(.ant-input) {
+    padding: 0 !important;
+    line-height: 1.5 !important;
+  }
+
+  :global(.ant-input-textarea) {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+// 上方输入区域
+.inputTopArea {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+// 下方按钮区域
+.inputBottomArea {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+// 底部左侧区域（+按钮）
+.inputBottomLeft {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+// 底部右侧区域（Tab提示 + 语音/发送按钮）
+.inputBottomRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+// 保留旧样式以兼容
 .composer {
   min-height: 58px;
   border-radius: 28px;
@@ -1453,6 +1519,70 @@
   }
 }
 
+// Tab 提示文字
+.tabHint {
+  font-size: 12px;
+  color: #9ca3af;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+// 输入操作按钮组
+.inputActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+// 新的图标按钮样式（与 HomePage 一致）
+.iconBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #6b7280;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: #f3f4f6;
+  }
+}
+
+.sendBtn {
+  background-color: #111827;
+  color: #ffffff;
+
+  &:hover {
+    background-color: #1f2937;
+  }
+}
+
+.sendBtnDisabled {
+  background-color: #d1d5db;
+  color: #ffffff;
+  cursor: not-allowed;
+
+  &:hover {
+    background-color: #d1d5db;
+  }
+}
+
+.stopBtn {
+  background-color: #111827;
+  color: #ffffff;
+
+  &:hover {
+    background-color: #1f2937;
+  }
+}
+
+// 保留旧样式以兼容
 .circleButton {
   width: 42px;
   height: 42px;
