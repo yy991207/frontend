@@ -16,6 +16,7 @@ import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts
 import { MessageList } from '../../components/chat/message-list'
 import { useStickToBottom } from '../../components/chat/use-stick-to-bottom'
 import { AttachmentMenu, type AttachmentSkillItem } from '../../components/common/AttachmentMenu'
+import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
 import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal'
 import { adaptChatMessages } from '../../core/messages/adapters'
 import {
@@ -321,6 +322,7 @@ function ChatPageContent() {
   const headerMenuRef = useRef<HTMLDivElement | null>(null)
   const [skills, setSkills] = useState<SkillItem[]>([])
   const [skillsLoading, setSkillsLoading] = useState(false)
+  const skillsFetchingRef = useRef(false)
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
   const [knowledgeEnabled, setKnowledgeEnabled] = useState(false)
   const [draft, setDraft] = useState('')
@@ -333,6 +335,12 @@ function ChatPageContent() {
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  
+  // 斜杠指令相关状态
+  const [slashCommandOpen, setSlashCommandOpen] = useState(false)
+  const [slashQuery, setSlashQuery] = useState('')
+  const [selectedSkillIndex, setSelectedSkillIndex] = useState(0)
+  
   const stickToBottom = useStickToBottom()
   const { containerRef: messagesViewportRef, scrollToBottom } = stickToBottom
 
@@ -1163,6 +1171,16 @@ function ChatPageContent() {
     }
   }, [chatApiConfig, routeSessionId])
 
+  // 当斜杠指令浮层打开时，自动加载技能列表
+  useEffect(() => {
+    if (slashCommandOpen && skills.length === 0 && !skillsLoading && !skillsFetchingRef.current) {
+      skillsFetchingRef.current = true
+      void fetchSkills().finally(() => {
+        skillsFetchingRef.current = false
+      })
+    }
+  }, [slashCommandOpen, skills.length, skillsLoading, fetchSkills])
+
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
       if (!headerMenuRef.current?.contains(event.target as Node)) {
@@ -1344,6 +1362,35 @@ function ChatPageContent() {
           <div className={styles.composerArea}>
             <div className={styles.composerWrap}>
               <div className={styles.inputWrap}>
+                {/* 斜杠指令浮层 */}
+                <SkillSlashCommand
+                  visible={slashCommandOpen}
+                  query={slashQuery}
+                  setQuery={(query) => {
+                    setSlashQuery(query)
+                    setDraft('/' + query)
+                  }}
+                  skills={skills.filter((skill) => {
+                    if (!slashQuery) return true
+                    const q = slashQuery.toLowerCase()
+                    return (
+                      skill.title.toLowerCase().includes(q) ||
+                      skill.description.toLowerCase().includes(q) ||
+                      skill.skillName.toLowerCase().includes(q)
+                    )
+                  })}
+                  loading={skillsLoading}
+                  selectedIndex={selectedSkillIndex}
+                  activeCategory="all"
+                  setActiveCategory={() => {}}
+                  onSelectSkill={(skill) => {
+                    handleSelectSkill(skill)
+                    setSlashCommandOpen(false)
+                    setDraft('')
+                  }}
+                  onClose={() => setSlashCommandOpen(false)}
+                  onManageSkills={handleManageSkills}
+                />
                 {/* 上方输入区域 */}
                 <div className={styles.inputTopArea}>
                   {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
@@ -1365,10 +1412,61 @@ function ChatPageContent() {
                   ) : null}
                   <Input.TextArea
                     value={draft}
-                    onChange={(event) => setDraft(event.target.value)}
+                    onChange={(event) => {
+                      const value = event.target.value
+                      setDraft(value)
+                      
+                      // 检测斜杠指令触发
+                      if (value === '/' && !slashCommandOpen) {
+                        setSlashCommandOpen(true)
+                        setSlashQuery('')
+                        setSelectedSkillIndex(0)
+                      } else if (!value.startsWith('/')) {
+                        setSlashCommandOpen(false)
+                      } else if (value.startsWith('/')) {
+                        setSlashQuery(value.slice(1))
+                      }
+                    }}
                     onKeyDown={(event) => {
                       if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
                         return
+                      }
+
+                      // 斜杠指令浮层打开时的键盘处理
+                      if (slashCommandOpen) {
+                        switch (event.key) {
+                          case 'ArrowDown':
+                            event.preventDefault()
+                            setSelectedSkillIndex((prev) =>
+                              prev < skills.length - 1 ? prev + 1 : prev
+                            )
+                            return
+                          case 'ArrowUp':
+                            event.preventDefault()
+                            setSelectedSkillIndex((prev) => (prev > 0 ? prev - 1 : 0))
+                            return
+                          case 'Enter':
+                            event.preventDefault()
+                            const filteredSkills = skills.filter((skill) => {
+                              if (!slashQuery) return true
+                              const q = slashQuery.toLowerCase()
+                              return (
+                                skill.title.toLowerCase().includes(q) ||
+                                skill.description.toLowerCase().includes(q) ||
+                                skill.skillName.toLowerCase().includes(q)
+                              )
+                            })
+                            if (filteredSkills[selectedSkillIndex]) {
+                              handleSelectSkill(filteredSkills[selectedSkillIndex])
+                              setSlashCommandOpen(false)
+                              setDraft('')
+                            }
+                            return
+                          case 'Escape':
+                            event.preventDefault()
+                            setSlashCommandOpen(false)
+                            return
+                        }
                       }
 
                       if (event.key === 'Backspace' && !draft.trim() && selectedSkillName) {

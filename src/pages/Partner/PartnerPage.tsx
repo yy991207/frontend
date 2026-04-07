@@ -14,7 +14,9 @@ import {
   ThunderboltOutlined,
 } from '@ant-design/icons'
 import PartnerSkillManagement from '../../components/Partner/PartnerSkillManagement'
+import Workspace, { type FileNode } from '../../components/Partner/Workspace'
 import { AttachmentMenu } from '../../components/common/AttachmentMenu'
+import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
 import chatConfigText from '../../../config.yaml?raw'
 import { useLocation, useNavigate } from 'react-router-dom'
 import homeAvatar from '../../assets/home-avatar.png'
@@ -403,6 +405,7 @@ function PartnerPageContent() {
   const composerRef = useRef<HTMLDivElement | null>(null)
   const [skills, setSkills] = useState<SkillItem[]>([])
   const [skillsLoading, setSkillsLoading] = useState(false)
+  const skillsFetchingRef = useRef(false)
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
   const [knowledgeEnabled, setKnowledgeEnabled] = useState(false)
   const [draft, setDraft] = useState('')
@@ -412,6 +415,12 @@ function PartnerPageContent() {
   const [requestError, setRequestError] = useState('')
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [sessionLoading, setSessionLoading] = useState(false)
+  
+  // 斜杠指令相关状态
+  const [slashCommandOpen, setSlashCommandOpen] = useState(false)
+  const [slashQuery, setSlashQuery] = useState('')
+  const [selectedSkillIndex, setSelectedSkillIndex] = useState(0)
+  
   const stickToBottom = useStickToBottom()
   const { containerRef: messagesViewportRef, scrollToBottom } = stickToBottom
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -1329,6 +1338,16 @@ function PartnerPageContent() {
     }
   }, [chatApiConfig, routeSessionId])
 
+  // 当斜杠指令浮层打开时，自动加载技能列表
+  useEffect(() => {
+    if (slashCommandOpen && skills.length === 0 && !skillsLoading && !skillsFetchingRef.current) {
+      skillsFetchingRef.current = true
+      void fetchSkills().finally(() => {
+        skillsFetchingRef.current = false
+      })
+    }
+  }, [slashCommandOpen, skills.length, skillsLoading, fetchSkills])
+
   // AttachmentMenu组件内部已处理点击外部关闭菜单的逻辑
 
   useEffect(() => {
@@ -1652,6 +1671,59 @@ function PartnerPageContent() {
             />
           </div>
         )
+      case 'workspace':
+        // 构建工作空间文件树数据（只保留能从接口返回数据的三个文件）
+        const workspaceFiles: FileNode[] = [
+          {
+            id: 'SOUL.md',
+            name: 'SOUL.md',
+            type: 'file',
+            content: soulContent || '# SOUL.md\n\n智能伙伴必须遵守的底线规则、安全框架和核心价值观',
+          },
+          {
+            id: 'USER.md',
+            name: 'USER.md',
+            type: 'file',
+            content: userContent || '# USER.md\n\n关于当前用户的画像、协作习惯和偏好记录',
+          },
+          {
+            id: 'IDENTITY.md',
+            name: 'IDENTITY.md',
+            type: 'file',
+            content: identityContent || '# IDENTITY.md\n\n智能伙伴的身份、风格、签名与角色设定',
+          },
+        ]
+
+        const workspaceConfig = {
+          agentName,
+          avatarUrl: homeAvatar,
+          files: workspaceFiles,
+        }
+
+        // 处理文件更新
+        const handleUpdateFile = async (fileId: string, content: string) => {
+          if (!partnerApiConfig) return
+
+          // 根据文件 ID 更新对应的配置
+          if (fileId === 'SOUL.md') {
+            await updatePartnerConfig(partnerApiConfig, 'SOUL.md', content)
+            setSoulContent(content)
+          } else if (fileId === 'USER.md') {
+            await updatePartnerConfig(partnerApiConfig, 'USER.md', content)
+            setUserContent(content)
+          } else if (fileId === 'IDENTITY.md') {
+            await updatePartnerConfig(partnerApiConfig, 'IDENTITY.md', content)
+            setIdentityContent(content)
+          }
+        }
+
+        return (
+          <Workspace
+            config={workspaceConfig}
+            loading={partnerConfigLoading}
+            onUpdateFile={handleUpdateFile}
+          />
+        )
       default:
         return (
           <div className={styles.settingContent}>
@@ -1772,6 +1844,35 @@ function PartnerPageContent() {
               <div className={styles.composerArea}>
                 <div ref={composerRef} className={styles.composerWrap}>
                   <div className={styles.inputWrap}>
+                    {/* 斜杠指令浮层 */}
+                    <SkillSlashCommand
+                      visible={slashCommandOpen}
+                      query={slashQuery}
+                      setQuery={(query) => {
+                        setSlashQuery(query)
+                        setDraft('/' + query)
+                      }}
+                      skills={skills.filter((skill) => {
+                        if (!slashQuery) return true
+                        const q = slashQuery.toLowerCase()
+                        return (
+                          skill.title.toLowerCase().includes(q) ||
+                          skill.description.toLowerCase().includes(q) ||
+                          skill.skillName.toLowerCase().includes(q)
+                        )
+                      })}
+                      loading={skillsLoading}
+                      selectedIndex={selectedSkillIndex}
+                      activeCategory="all"
+                      setActiveCategory={() => {}}
+                      onSelectSkill={(skill) => {
+                        handleSelectSkill(skill)
+                        setSlashCommandOpen(false)
+                        setDraft('')
+                      }}
+                      onClose={() => setSlashCommandOpen(false)}
+                      onManageSkills={handleManageSkills}
+                    />
                     {/* 上方输入区域 */}
                     <div className={styles.inputTopArea}>
                       {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
@@ -1793,10 +1894,61 @@ function PartnerPageContent() {
                       ) : null}
                       <Input.TextArea
                         value={draft}
-                        onChange={(event) => setDraft(event.target.value)}
+                        onChange={(event) => {
+                          const value = event.target.value
+                          setDraft(value)
+                          
+                          // 检测斜杠指令触发
+                          if (value === '/' && !slashCommandOpen) {
+                            setSlashCommandOpen(true)
+                            setSlashQuery('')
+                            setSelectedSkillIndex(0)
+                          } else if (!value.startsWith('/')) {
+                            setSlashCommandOpen(false)
+                          } else if (value.startsWith('/')) {
+                            setSlashQuery(value.slice(1))
+                          }
+                        }}
                         onKeyDown={(event) => {
                           if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
                             return
+                          }
+
+                          // 斜杠指令浮层打开时的键盘处理
+                          if (slashCommandOpen) {
+                            switch (event.key) {
+                              case 'ArrowDown':
+                                event.preventDefault()
+                                setSelectedSkillIndex((prev) =>
+                                  prev < skills.length - 1 ? prev + 1 : prev
+                                )
+                                return
+                              case 'ArrowUp':
+                                event.preventDefault()
+                                setSelectedSkillIndex((prev) => (prev > 0 ? prev - 1 : 0))
+                                return
+                              case 'Enter':
+                                event.preventDefault()
+                                const filteredSkills = skills.filter((skill) => {
+                                  if (!slashQuery) return true
+                                  const q = slashQuery.toLowerCase()
+                                  return (
+                                    skill.title.toLowerCase().includes(q) ||
+                                    skill.description.toLowerCase().includes(q) ||
+                                    skill.skillName.toLowerCase().includes(q)
+                                  )
+                                })
+                                if (filteredSkills[selectedSkillIndex]) {
+                                  handleSelectSkill(filteredSkills[selectedSkillIndex])
+                                  setSlashCommandOpen(false)
+                                  setDraft('')
+                                }
+                                return
+                              case 'Escape':
+                                event.preventDefault()
+                                setSlashCommandOpen(false)
+                                return
+                            }
                           }
 
                           if (event.key === 'Backspace' && !draft.trim() && selectedSkillName) {
