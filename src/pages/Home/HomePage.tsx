@@ -151,6 +151,11 @@ type HomeTabsMockData = {
   tabs: HomeTab[]
 }
 
+type HeroStageLayout = {
+  minHeight: number
+  translateY: number
+}
+
 const DEFAULT_HOME_TABS: HomeTab[] = [
   {
     key: 'best-practice',
@@ -182,10 +187,33 @@ function getContentTypeIcon(type: string) {
   return <BookOutlined />
 }
 
+function getHomeStageMetrics(viewportWidth: number) {
+  if (viewportWidth <= 640) {
+    return {
+      shellOffset: 58,
+      centerShift: 40,
+      preferredGap: 24,
+    }
+  }
+
+  if (viewportWidth <= 900) {
+    return {
+      shellOffset: 74,
+      centerShift: 60,
+      preferredGap: 28,
+    }
+  }
+
+  return {
+    shellOffset: 76,
+    centerShift: 80,
+    preferredGap: 32,
+  }
+}
+
 export default function HomePage() {
   const location = useLocation()
   const navigate = useNavigate()
-  const heroStageRef = useRef<HTMLDivElement | null>(null)
   const topSectionRef = useRef<HTMLDivElement | null>(null)
   const [skills, setSkills] = useState<SkillItem[]>([])
   const [skillsLoading, setSkillsLoading] = useState(false)
@@ -198,7 +226,21 @@ export default function HomePage() {
   const [homeTabs, setHomeTabs] = useState<HomeTab[]>(DEFAULT_HOME_TABS)
   const [tabsLoading, setTabsLoading] = useState(true)
   const [tabsError, setTabsError] = useState('')
-  const [bottomGap, setBottomGap] = useState(0)
+  const [heroStageLayout, setHeroStageLayout] = useState<HeroStageLayout>(() => {
+    if (typeof window === 'undefined') {
+      return {
+        minHeight: 0,
+        translateY: 0,
+      }
+    }
+
+    const { shellOffset, centerShift } = getHomeStageMetrics(window.innerWidth)
+
+    return {
+      minHeight: Math.max(window.innerHeight - shellOffset, 0),
+      translateY: centerShift,
+    }
+  })
 
   const clearSelectedSkill = () => {
     setPreferredToolType(null)
@@ -348,39 +390,47 @@ export default function HomePage() {
 
   useLayoutEffect(() => {
     let frameId = 0
-    const heroStageElement = heroStageRef.current
     const topSectionElement = topSectionRef.current
 
-    if (!heroStageElement || !topSectionElement) {
+    if (!topSectionElement) {
       return
     }
 
-    // 欢迎区继续停在页面视觉中心，下面卡片区按真实空白量上提，避免中间出现大段留白。
-    const measureBottomGap = () => {
-      const currentHeroStage = heroStageRef.current
+    // 这里直接收短首屏舞台本身，避免再用 bottom 的负 margin 往上顶，导致 tabs 区和快捷操作真实重叠。
+    const measureHeroStageLayout = () => {
       const currentTopSection = topSectionRef.current
 
-      if (!currentHeroStage || !currentTopSection) {
+      if (!currentTopSection) {
         return
       }
 
-      const heroStageRect = currentHeroStage.getBoundingClientRect()
       const topSectionRect = currentTopSection.getBoundingClientRect()
-      const preferredGap = window.innerWidth <= 640 ? 24 : window.innerWidth <= 900 ? 28 : 32
-      const nextBottomGap = Math.round(preferredGap - (heroStageRect.bottom - topSectionRect.bottom))
+      const { shellOffset, centerShift, preferredGap } = getHomeStageMetrics(window.innerWidth)
+      const baseMinHeight = Math.max(window.innerHeight - shellOffset, Math.ceil(topSectionRect.height))
+      const nextMinHeight = Math.max(
+        Math.ceil(topSectionRect.height),
+        Math.min(baseMinHeight, Math.round(preferredGap + (baseMinHeight + topSectionRect.height) / 2 + centerShift)),
+      )
+      const nextTranslateY = Math.round(centerShift + (baseMinHeight - nextMinHeight) / 2)
 
-      setBottomGap((currentValue) => (currentValue === nextBottomGap ? currentValue : nextBottomGap))
+      setHeroStageLayout((currentValue) =>
+        currentValue.minHeight === nextMinHeight && currentValue.translateY === nextTranslateY
+          ? currentValue
+          : {
+              minHeight: nextMinHeight,
+              translateY: nextTranslateY,
+            },
+      )
     }
 
     const scheduleMeasure = () => {
       window.cancelAnimationFrame(frameId)
-      frameId = window.requestAnimationFrame(measureBottomGap)
+      frameId = window.requestAnimationFrame(measureHeroStageLayout)
     }
 
     scheduleMeasure()
 
     const resizeObserver = new ResizeObserver(scheduleMeasure)
-    resizeObserver.observe(heroStageElement)
     resizeObserver.observe(topSectionElement)
     window.addEventListener('resize', scheduleMeasure)
 
@@ -496,8 +546,19 @@ export default function HomePage() {
       <section className={styles.panel}>
         <div className={styles.panelContent}>
           <div className={styles.centerStage}>
-            <div ref={heroStageRef} className={styles.heroStage}>
-              <div ref={topSectionRef} className={styles.topSection}>
+            <div
+              className={styles.heroStage}
+              style={{
+                minHeight: `${heroStageLayout.minHeight}px`,
+              }}
+            >
+              <div
+                ref={topSectionRef}
+                className={styles.topSection}
+                style={{
+                  transform: `translateY(${heroStageLayout.translateY}px)`,
+                }}
+              >
                 <div className={styles.hero}>
                   <Avatar size={92} src={<img src={homeAvatar} alt="张容悟头像" />} className={styles.heroAvatar} />
                   <h1 className={styles.greeting}>Hi～ 有什么可以帮你的？</h1>
@@ -535,7 +596,7 @@ export default function HomePage() {
                         ) : null}
                       </span>
                     ) : null}
-                    <Input
+                    <Input.TextArea
                       value={prompt}
                       onChange={(event) => setPrompt(event.target.value)}
                       onKeyDown={(event) => {
@@ -547,11 +608,30 @@ export default function HomePage() {
                           event.preventDefault()
                           clearSelectedSkill()
                         }
+
+                        // 支持 Enter 发送，Shift+Enter 换行
+                        if (event.key === 'Enter' && !event.shiftKey) {
+                          event.preventDefault()
+                          handleSend()
+                        }
                       }}
-                      onPressEnter={handleSend}
-                      style={{ flex: 1, minWidth: 0, border: 'none', boxShadow: 'none', background: 'transparent', fontSize: 14 }}
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        border: 'none',
+                        boxShadow: 'none',
+                        background: 'transparent',
+                        fontSize: 14,
+                        resize: 'none',
+                        minHeight: 24,
+                        maxHeight: 200,
+                        overflowY: 'auto',
+                        lineHeight: 1.5,
+                        padding: 0,
+                      }}
                       variant="borderless"
                       placeholder="@特定群组，总结群聊信息"
+                      autoSize={{ minRows: 1, maxRows: 8 }}
                     />
                     <span className={styles.tabHint}>Tab</span>
                     <div className={styles.inputActions}>
@@ -581,7 +661,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className={styles.bottom} style={{ marginTop: `${bottomGap}px` }}>
+            <div className={styles.bottom}>
               <Tabs items={tabItems} />
             </div>
           </div>
