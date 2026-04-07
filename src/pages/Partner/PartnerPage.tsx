@@ -22,6 +22,7 @@ import {
   ThunderboltOutlined,
   ToolOutlined,
 } from '@ant-design/icons'
+import PartnerSkillManagement from '../../components/Partner/PartnerSkillManagement'
 import chatConfigText from '../../../config.yaml?raw'
 import { useLocation, useNavigate } from 'react-router-dom'
 import homeAvatar from '../../assets/home-avatar.png'
@@ -1700,6 +1701,26 @@ function PartnerPageContent() {
                 <div className={styles.markdownContent}>{renderMarkdownContent(currentContent)}</div>
               )}
             </div>
+          </div>
+        )
+      case 'skill-management':
+        return (
+          <div className={styles.settingContent}>
+            <PartnerSkillManagement
+              onUseSkill={(skill) => {
+                // 关闭设置面板
+                setIsSettingsOpen(false)
+                // 设置选中的技能状态（与加号选择技能一致）
+                setSelectedSkillName(skill.skillName || skill.id)
+                setSelectedSkillDescription(skill.description)
+                setPreferredToolType(skill.skillName || skill.id)
+                setDraft(skill.template)
+              }}
+              onAddSkill={() => {
+                // 跳转到技能页面
+                navigate('/skills')
+              }}
+            />
           </div>
         )
       default:
