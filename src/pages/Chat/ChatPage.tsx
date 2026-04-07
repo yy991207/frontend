@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Input } from 'antd'
 import {
   AudioOutlined,
   ArrowUpOutlined,
@@ -1342,76 +1343,105 @@ function ChatPageContent() {
 
           <div className={styles.composerArea}>
             <div className={styles.composerWrap}>
-              <div className={styles.composer}>
-                <AttachmentMenu
-                  placement="top"
-                  skills={skills}
-                  skillsLoading={skillsLoading}
-                  loadSkills={fetchSkills}
-                  onSelectSkill={handleSelectSkill}
-                  onManageSkills={handleManageSkills}
-                  showTools
-                  webSearchEnabled={webSearchEnabled}
-                  knowledgeEnabled={knowledgeEnabled}
-                  onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
-                  onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
-                />
-                {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
-                {selectedSkillName ? (
-                  <span className={styles.skillTagWrap}>
-                    <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
-                    <button
-                      type="button"
-                      className={styles.skillRemoveButton}
-                      aria-label="移除已选技能"
-                      onClick={clearSelectedSkill}
-                    >
-                      <CloseOutlined />
-                    </button>
-                    {selectedSkillDescription ? (
-                      <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
-                    ) : null}
-                  </span>
-                ) : null}
-                <input
-                        value={draft}
-                        onChange={(event) => setDraft(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
-                            return
-                          }
+              <div className={styles.inputWrap}>
+                {/* 上方输入区域 */}
+                <div className={styles.inputTopArea}>
+                  {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
+                  {selectedSkillName ? (
+                    <span className={styles.skillTagWrap}>
+                      <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
+                      <button
+                        type="button"
+                        className={styles.skillRemoveButton}
+                        aria-label="移除已选技能"
+                        onClick={clearSelectedSkill}
+                      >
+                        <CloseOutlined />
+                      </button>
+                      {selectedSkillDescription ? (
+                        <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
+                      ) : null}
+                    </span>
+                  ) : null}
+                  <Input.TextArea
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+                        return
+                      }
 
-                          if (event.key === 'Backspace' && !draft.trim() && selectedSkillName) {
-                            event.preventDefault()
-                            clearSelectedSkill()
-                            return
-                          }
+                      if (event.key === 'Backspace' && !draft.trim() && selectedSkillName) {
+                        event.preventDefault()
+                        clearSelectedSkill()
+                        return
+                      }
 
-                          if (event.key === 'Enter') {
-                            event.preventDefault()
-                            handleSend()
-                    }
-                  }}
-                  className={styles.composerInput}
-                  placeholder="下一步要做什么？"
-                />
-                <button type="button" className={styles.iconButton} aria-label="语音输入">
-                  <AudioOutlined />
-                </button>
-                {isResponding ? (
-                  <button type="button" className={`${styles.circleButton} ${styles.stopButton}`} onClick={handleStop}>
-                    <span className={styles.stopInner} />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className={`${styles.circleButton} ${styles.sendButton} ${!draft.trim() ? styles.sendButtonDisabled : ''}`}
-                    onClick={handleSend}
-                    disabled={!draft.trim()}
-                  >
-                    <ArrowUpOutlined />
-                  </button>
-                )}
+                      // 支持 Enter 发送，Shift+Enter 换行
+                      if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault()
+                        handleSend()
+                      }
+                    }}
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      border: 'none',
+                      boxShadow: 'none',
+                      background: 'transparent',
+                      fontSize: 14,
+                      resize: 'none',
+                      minHeight: 24,
+                      maxHeight: 200,
+                      overflowY: 'auto',
+                      lineHeight: 1.5,
+                      padding: 0,
+                    }}
+                    variant="borderless"
+                    placeholder="下一步要做什么？"
+                    autoSize={{ minRows: 1, maxRows: 8 }}
+                  />
+                </div>
+                {/* 下方按钮区域 */}
+                <div className={styles.inputBottomArea}>
+                  <div className={styles.inputBottomLeft}>
+                    <AttachmentMenu
+                      placement="top"
+                      skills={skills}
+                      skillsLoading={skillsLoading}
+                      loadSkills={fetchSkills}
+                      onSelectSkill={handleSelectSkill}
+                      onManageSkills={handleManageSkills}
+                      showTools
+                      webSearchEnabled={webSearchEnabled}
+                      knowledgeEnabled={knowledgeEnabled}
+                      onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
+                      onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
+                    />
+                  </div>
+                  <div className={styles.inputBottomRight}>
+                    <span className={styles.tabHint}>Tab</span>
+                    <div className={styles.inputActions}>
+                      <button type="button" className={styles.iconBtn} aria-label="语音输入">
+                        <AudioOutlined />
+                      </button>
+                      {isResponding ? (
+                        <button type="button" className={`${styles.iconBtn} ${styles.stopBtn}`} onClick={handleStop}>
+                          <span className={styles.stopInner} />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className={`${styles.iconBtn} ${styles.sendBtn} ${!draft.trim() ? styles.sendBtnDisabled : ''}`}
+                          onClick={handleSend}
+                          disabled={!draft.trim()}
+                        >
+                          <ArrowUpOutlined />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>
