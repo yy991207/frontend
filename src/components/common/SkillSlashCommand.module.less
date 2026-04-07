@@ -33,9 +33,6 @@
 .header {
   padding: 14px 16px 10px;
   border-bottom: 1px solid rgba(226, 232, 240, 0.6);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
 
 .title {
@@ -43,41 +40,6 @@
   font-weight: 600;
   color: #6b7280;
   margin: 0;
-}
-
-// 分类标签
-.tabs {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.tab {
-  height: 30px;
-  padding: 0 12px;
-  border: none;
-  border-radius: 10px;
-  background: #f3f4f6;
-  color: #6b7280;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.16s ease, color 0.16s ease;
-
-  &:hover {
-    background: #e5e7eb;
-    color: #374151;
-  }
-}
-
-.tabActive {
-  background: #111827;
-  color: #ffffff;
-
-  &:hover {
-    background: #1f2937;
-    color: #ffffff;
-  }
 }
 
 // 搜索框
@@ -118,12 +80,12 @@
 // 技能项
 .skillItem {
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: none;
   border-radius: 12px;
   background: transparent;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
   cursor: pointer;
   transition: background-color 0.16s ease;
@@ -155,29 +117,13 @@
   flex-shrink: 0;
 }
 
-.skillItemInfo {
+.skillItemTitle {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.skillItemTitle {
   color: #111827;
   font-size: 14px;
   font-weight: 500;
   line-height: 1.4;
-}
-
-.skillItemDesc {
-  color: #6b7280;
-  font-size: 12px;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 // 加载状态
