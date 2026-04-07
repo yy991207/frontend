@@ -1,0 +1,460 @@
+// 容器
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 32px;
+  overflow-y: auto;
+  background-color: #f8fafc;
+  min-height: 100%;
+}
+
+// 返回按钮
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 14px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  width: fit-content;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #1677ff;
+  }
+
+  :global(.anticon) {
+    font-size: 14px;
+  }
+}
+
+// 头部
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+}
+
+.headerLeft {
+  display: flex;
+  gap: 20px;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+
+  img {
+    width: 60%;
+    height: 60%;
+    object-fit: contain;
+  }
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  margin: 0;
+  border-radius: 6px;
+  font-size: 12px;
+  padding: 2px 10px;
+  background: #f3f4f6;
+  border: none;
+  color: #6b7280;
+}
+
+.headerRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.authorInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.authorAvatar {
+  flex-shrink: 0;
+}
+
+.authorName {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.usageInfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.usageIcon {
+  color: #f59e0b;
+  font-size: 14px;
+}
+
+// 操作按钮
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.primaryButton {
+  height: 48px;
+  padding: 0 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  background: #111827;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #1f2937;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(17, 24, 39, 0.15);
+  }
+
+  :global(.anticon) {
+    font-size: 18px;
+  }
+}
+
+.secondaryButton {
+  height: 48px;
+  padding: 0 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #d1d5db;
+    background: #f9fafb;
+    color: #111827;
+  }
+
+  :global(.anticon) {
+    font-size: 18px;
+  }
+}
+
+// 内容区域
+.content {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  flex: 1;
+}
+
+.tabs {
+  :global(.ant-tabs-nav) {
+    margin: 0;
+    padding: 0 24px;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  :global(.ant-tabs-tab) {
+    padding: 16px 0;
+    font-size: 14px;
+    color: #6b7280;
+
+    &:hover {
+      color: #374151;
+    }
+  }
+
+  :global(.ant-tabs-tab-active) {
+    color: #111827;
+    font-weight: 600;
+  }
+
+  :global(.ant-tabs-ink-bar) {
+    background: #111827;
+    height: 2px;
+  }
+
+  :global(.ant-tabs-content) {
+    padding: 24px;
+  }
+}
+
+.tabContent {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+// 区块
+.section {
+  &:not(:last-child) {
+    padding-bottom: 32px;
+    border-bottom: 1px solid #f3f4f6;
+  }
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 16px 0;
+}
+
+.sectionText {
+  font-size: 14px;
+  color: #4b5563;
+  line-height: 1.8;
+  margin: 0;
+}
+
+// 功能列表
+.featureList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.featureDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+// 使用场景
+.useCaseGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.useCaseCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #f3f4f6;
+}
+
+.useCaseNumber {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #111827;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.useCaseText {
+  font-size: 14px;
+  color: #4b5563;
+}
+
+// 空状态
+.emptyComments,
+.emptyRelated {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+// 错误空状态
+.emptyState {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+  }
+
+  p {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+  }
+}
+
+.emptyIcon {
+  font-size: 64px;
+  color: #d1d5db;
+}
+
+// 响应式
+@media (max-width: 992px) {
+  .container {
+    padding: 20px 24px;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .headerRight {
+    align-items: flex-start;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .useCaseGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px 20px;
+  }
+
+  .headerLeft {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+  }
+
+  .headerInfo {
+    align-items: center;
+  }
+
+  .tags {
+    justify-content: center;
+  }
+
+  .headerRight {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tabs {
+    :global(.ant-tabs-nav) {
+      padding: 0 16px;
+    }
+
+    :global(.ant-tabs-content) {
+      padding: 16px;
+    }
+  }
+
+  .tabContent {
+    gap: 24px;
+  }
+
+  .section {
+    &:not(:last-child) {
+      padding-bottom: 24px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px 16px;
+  }
+
+  .avatar {
+    width: 64px;
+    height: 64px;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .useCaseCard {
+    padding: 12px;
+  }
+}

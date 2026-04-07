@@ -244,8 +244,9 @@ export default function HomePage() {
 
     const { shellOffset, centerShift } = getHomeStageMetrics(window.innerWidth)
 
+    // 减小上方区域高度，让页面整体上移
     return {
-      minHeight: Math.max(window.innerHeight - shellOffset, 0),
+      minHeight: Math.max(window.innerHeight - shellOffset - 200, 420),
       translateY: centerShift,
     }
   })
@@ -424,7 +425,8 @@ export default function HomePage() {
 
       const topSectionRect = currentTopSection.getBoundingClientRect()
       const { shellOffset, centerShift, preferredGap } = getHomeStageMetrics(window.innerWidth)
-      const baseMinHeight = Math.max(window.innerHeight - shellOffset, Math.ceil(topSectionRect.height))
+      // 减小上方区域高度，让页面整体上移
+      const baseMinHeight = Math.max(window.innerHeight - shellOffset - 200, Math.ceil(topSectionRect.height))
       const nextMinHeight = Math.max(
         Math.ceil(topSectionRect.height),
         Math.min(baseMinHeight, Math.round(preferredGap + (baseMinHeight + topSectionRect.height) / 2 + centerShift)),

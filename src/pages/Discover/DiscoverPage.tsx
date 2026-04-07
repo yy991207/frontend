@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
-import { Input, Button, Avatar, Dropdown } from 'antd'
+import { useNavigate } from 'react-router-dom'
+import { Input, Button, Avatar, Dropdown, message } from 'antd'
 import {
   SearchOutlined,
   PlusOutlined,
@@ -9,6 +10,7 @@ import {
   UserOutlined,
   FireOutlined,
 } from '@ant-design/icons'
+import CreateAgentModal from '../../components/common/CreateAgentModal'
 import styles from './discover.module.less'
 
 // Mock 数据 - 企业精选
@@ -155,9 +157,11 @@ const sortOptions = [
 ]
 
 export default function DiscoverPage() {
+  const navigate = useNavigate()
   const [searchValue, setSearchValue] = useState('')
   const [currentFeaturedPage, setCurrentFeaturedPage] = useState(0)
   const [sortBy, setSortBy] = useState('latest')
+  const [isModalVisible, setIsModalVisible] = useState(false)
   const featuredContainerRef = useRef<HTMLDivElement>(null)
 
   // 每页显示5个企业精选卡片
@@ -192,142 +196,194 @@ export default function DiscoverPage() {
     return num.toLocaleString()
   }
 
+  // 打开创建智能体弹窗
+  const handleOpenModal = () => {
+    setIsModalVisible(true)
+  }
+
+  // 关闭创建智能体弹窗
+  const handleCloseModal = () => {
+    setIsModalVisible(false)
+  }
+
+  // 确认创建智能体
+  const handleConfirmCreate = async (data: { name: string; description: string; icon: string }) => {
+    // 模拟创建过程
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    message.success(`智能体 "${data.name}" 创建成功！`)
+    setIsModalVisible(false)
+    // 可以在这里添加跳转到新创建的智能体详情页的逻辑
+  }
+
+  // 跳转到智能体详情页
+  const handleNavigateToAgent = (agentId: number) => {
+    navigate(`/agent/${agentId}`)
+  }
+
   return (
-    <div className={styles.container}>
-      {/* 页面头部 */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.title}>发现</h1>
-        </div>
-        <div className={styles.headerRight}>
-          <div className={styles.searchBox}>
-            <SearchOutlined className={styles.searchIcon} />
-            <Input
-              placeholder="搜索智能体"
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              className={styles.searchInput}
-              bordered={false}
-            />
+    <div className={styles.page}>
+      <div className={styles.panel}>
+        <div className={styles.discoverPage}>
+          {/* 页面头部 */}
+          <div className={styles.header}>
+            <div className={styles.headerLeft}>
+              <h1 className={styles.title}>发现</h1>
+            </div>
+            <div className={styles.headerRight}>
+              <div className={styles.searchBox}>
+                <SearchOutlined className={styles.searchIcon} />
+                <Input
+                  placeholder="搜索智能体"
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  className={styles.searchInput}
+                  bordered={false}
+                />
+              </div>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                className={styles.createButton}
+                onClick={handleOpenModal}
+              >
+                创建智能体
+              </Button>
+            </div>
           </div>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            className={styles.createButton}
-          >
-            创建智能体
-          </Button>
+
+          {/* 企业精选区域 */}
+          <section className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>企业精选</h2>
+              <div className={styles.sectionNav}>
+                <button
+                  className={styles.navButton}
+                  onClick={handlePrevPage}
+                  aria-label="上一页"
+                >
+                  <LeftOutlined />
+                </button>
+                <button
+                  className={styles.navButton}
+                  onClick={handleNextPage}
+                  aria-label="下一页"
+                >
+                  <RightOutlined />
+                </button>
+              </div>
+            </div>
+            <div className={styles.featuredGrid} ref={featuredContainerRef}>
+              {getCurrentFeaturedAgents().map((agent) => (
+                <div key={agent.id} className={styles.featuredCard}>
+                  <div className={styles.featuredCardHeader}>
+                    <div
+                      className={styles.featuredAvatar}
+                      style={{ backgroundColor: `${agent.color}15` }}
+                    >
+                      <img src={agent.avatar} alt={agent.name} />
+                    </div>
+                  </div>
+                  <div className={styles.featuredCardBody}>
+                    <h3 className={styles.featuredCardTitle}>{agent.name}</h3>
+                    <p className={styles.featuredCardDesc}>{agent.description}</p>
+                  </div>
+                  <div className={styles.featuredCardFooter}>
+                    <div className={styles.authorInfo}>
+                      <Avatar
+                        size={20}
+                        src={agent.author.avatar}
+                        icon={<UserOutlined />}
+                        className={styles.authorAvatar}
+                      />
+                      <span className={styles.authorName}>{agent.author.name}</span>
+                    </div>
+                    <div className={styles.usageInfo}>
+                      <FireOutlined className={styles.usageIcon} />
+                      <span>{formatUsage(agent.author.usage)}</span>
+                    </div>
+                  </div>
+                  {/* 使用按钮 */}
+                  <button
+                    className={styles.useButton}
+                    data-testid="agent-use-button"
+                    onClick={() => handleNavigateToAgent(agent.id)}
+                  >
+                    使用
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* 企业智能体区域 */}
+          <section className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>企业智能体</h2>
+              <Dropdown
+                menu={{
+                  items: sortOptions.map((opt) => ({
+                    key: opt.key,
+                    label: opt.label,
+                    onClick: () => handleSortChange(opt.key),
+                  })),
+                  selectedKeys: [sortBy],
+                }}
+                placement="bottomRight"
+              >
+                <button className={styles.sortButton}>
+                  {sortOptions.find((opt) => opt.key === sortBy)?.label}
+                  <DownOutlined className={styles.sortIcon} />
+                </button>
+              </Dropdown>
+            </div>
+            <div className={styles.enterpriseGrid}>
+              {enterpriseAgents.map((agent) => (
+                <div key={agent.id} className={styles.enterpriseCard}>
+                  <div className={styles.enterpriseCardLeft}>
+                    <div className={styles.enterpriseAvatar}>
+                      <img src={agent.avatar} alt={agent.name} />
+                    </div>
+                  </div>
+                  <div className={styles.enterpriseCardRight}>
+                    <h3 className={styles.enterpriseCardTitle}>{agent.name}</h3>
+                    <p className={styles.enterpriseCardDesc}>{agent.description}</p>
+                    <div className={styles.enterpriseCardFooter}>
+                      <div className={styles.authorInfo}>
+                        <Avatar
+                          size={18}
+                          src={agent.author.avatar}
+                          icon={<UserOutlined />}
+                          className={styles.authorAvatar}
+                        />
+                        <span className={styles.authorName}>{agent.author.name}</span>
+                      </div>
+                      <div className={styles.usageInfo}>
+                        <FireOutlined className={styles.usageIcon} />
+                        <span>{formatUsage(agent.author.usage)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {/* 使用按钮 */}
+                  <button
+                    className={styles.useButton}
+                    data-testid="agent-use-button"
+                    onClick={() => handleNavigateToAgent(agent.id)}
+                  >
+                    使用
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       </div>
 
-      {/* 企业精选区域 */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>企业精选</h2>
-          <div className={styles.sectionNav}>
-            <button
-              className={styles.navButton}
-              onClick={handlePrevPage}
-              aria-label="上一页"
-            >
-              <LeftOutlined />
-            </button>
-            <button
-              className={styles.navButton}
-              onClick={handleNextPage}
-              aria-label="下一页"
-            >
-              <RightOutlined />
-            </button>
-          </div>
-        </div>
-        <div className={styles.featuredGrid} ref={featuredContainerRef}>
-          {getCurrentFeaturedAgents().map((agent) => (
-            <div key={agent.id} className={styles.featuredCard}>
-              <div className={styles.featuredCardHeader}>
-                <div
-                  className={styles.featuredAvatar}
-                  style={{ backgroundColor: `${agent.color}15` }}
-                >
-                  <img src={agent.avatar} alt={agent.name} />
-                </div>
-              </div>
-              <div className={styles.featuredCardBody}>
-                <h3 className={styles.featuredCardTitle}>{agent.name}</h3>
-                <p className={styles.featuredCardDesc}>{agent.description}</p>
-              </div>
-              <div className={styles.featuredCardFooter}>
-                <div className={styles.authorInfo}>
-                  <Avatar
-                    size={20}
-                    src={agent.author.avatar}
-                    icon={<UserOutlined />}
-                    className={styles.authorAvatar}
-                  />
-                  <span className={styles.authorName}>{agent.author.name}</span>
-                </div>
-                <div className={styles.usageInfo}>
-                  <FireOutlined className={styles.usageIcon} />
-                  <span>{formatUsage(agent.author.usage)}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 企业智能体区域 */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>企业智能体</h2>
-          <Dropdown
-            menu={{
-              items: sortOptions.map((opt) => ({
-                key: opt.key,
-                label: opt.label,
-                onClick: () => handleSortChange(opt.key),
-              })),
-              selectedKeys: [sortBy],
-            }}
-            placement="bottomRight"
-          >
-            <button className={styles.sortButton}>
-              {sortOptions.find((opt) => opt.key === sortBy)?.label}
-              <DownOutlined className={styles.sortIcon} />
-            </button>
-          </Dropdown>
-        </div>
-        <div className={styles.enterpriseGrid}>
-          {enterpriseAgents.map((agent) => (
-            <div key={agent.id} className={styles.enterpriseCard}>
-              <div className={styles.enterpriseCardLeft}>
-                <div className={styles.enterpriseAvatar}>
-                  <img src={agent.avatar} alt={agent.name} />
-                </div>
-              </div>
-              <div className={styles.enterpriseCardRight}>
-                <h3 className={styles.enterpriseCardTitle}>{agent.name}</h3>
-                <p className={styles.enterpriseCardDesc}>{agent.description}</p>
-                <div className={styles.enterpriseCardFooter}>
-                  <div className={styles.authorInfo}>
-                    <Avatar
-                      size={18}
-                      src={agent.author.avatar}
-                      icon={<UserOutlined />}
-                      className={styles.authorAvatar}
-                    />
-                    <span className={styles.authorName}>{agent.author.name}</span>
-                  </div>
-                  <div className={styles.usageInfo}>
-                    <FireOutlined className={styles.usageIcon} />
-                    <span>{formatUsage(agent.author.usage)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* 创建智能体弹窗 */}
+      <CreateAgentModal
+        visible={isModalVisible}
+        onCancel={handleCloseModal}
+        onConfirm={handleConfirmCreate}
+      />
     </div>
   )
 }
