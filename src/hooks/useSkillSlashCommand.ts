@@ -28,13 +28,6 @@ export type UseSkillSlashCommandReturn = {
   isEmpty: boolean
 }
 
-/** 检测是否应该触发斜杠指令 */
-function shouldTriggerSlashCommand(value: string): boolean {
-  // 只有单独输入 "/" 时才触发
-  // 避免与已有斜杠命令冲突（如 "/help"）
-  return value === '/'
-}
-
 /** 从输入值中提取搜索关键词 */
 function extractQuery(value: string): string {
   if (!value.startsWith('/')) return ''
