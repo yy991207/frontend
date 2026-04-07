@@ -533,4 +533,83 @@
 .artifactMarkdownContent {
   width: 100%;
   box-sizing: border-box;
+  --background: #ffffff;
+  --foreground: #3f3f46;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --muted: #f7f7f5;
+  --muted-foreground: #71717a;
+  --border: rgba(15, 23, 42, 0.08);
+  --input: rgba(15, 23, 42, 0.08);
+  --primary: #0f172a;
+  --primary-foreground: #ffffff;
+  --radius: 18px;
+  color: #3f3f46;
+  font-size: 16px;
+  line-height: 1.85;
+
+  :global(p) {
+    margin: 0 0 12px;
+  }
+
+  :global(ul),
+  :global(ol),
+  :global(pre),
+  :global(blockquote),
+  :global(table) {
+    margin: 0 0 14px;
+  }
+
+  :global(pre) {
+    overflow-x: auto;
+    border-radius: 16px;
+  }
+
+  :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    background: #ffffff;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  :global(thead tr) {
+    background: #f7f7f5;
+  }
+
+  :global(th),
+  :global(td) {
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    text-align: left;
+    vertical-align: top;
+    word-break: break-word;
+  }
+
+  :global(th) {
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  :global(td) {
+    color: #3f3f46;
+  }
+
+  :global(tbody tr:nth-child(even)) {
+    background: #fcfcfb;
+  }
+
+  :global(tbody tr:last-child td) {
+    border-bottom: none;
+  }
+
+  :global(code:not(pre code)) {
+    padding: 0.12em 0.4em;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.06);
+    font-size: 0.92em;
+  }
 }
