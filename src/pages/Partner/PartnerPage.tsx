@@ -9,19 +9,9 @@ import {
   DownOutlined,
   EditOutlined,
   ExportOutlined,
-  FileAddOutlined,
   FolderOpenOutlined,
-  GlobalOutlined,
-  InfoCircleOutlined,
-  LinkOutlined,
-  PaperClipOutlined,
-  PlusOutlined,
-  RightOutlined,
-  SearchOutlined,
-  SettingOutlined,
   SmileOutlined,
   ThunderboltOutlined,
-  ToolOutlined,
 } from '@ant-design/icons'
 import PartnerSkillManagement from '../../components/Partner/PartnerSkillManagement'
 import { AttachmentMenu } from '../../components/common/AttachmentMenu'
@@ -1836,7 +1826,7 @@ function PartnerPageContent() {
                           padding: 0,
                         }}
                         variant="borderless"
-                        placeholder="下一步要做什么？"
+                        placeholder='输入你的想法或输入"/"选择想要使用技能'
                         autoSize={{ minRows: 1, maxRows: 8 }}
                       />
                     </div>

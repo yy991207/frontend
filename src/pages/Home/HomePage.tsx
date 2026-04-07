@@ -619,7 +619,7 @@ export default function HomePage() {
                           padding: 0,
                         }}
                         variant="borderless"
-                        placeholder="@特定群组，总结群聊信息"
+                        placeholder='输入你的想法或输入"/"选择想要使用技能'
                         autoSize={{ minRows: 1, maxRows: 8 }}
                       />
                     </div>
