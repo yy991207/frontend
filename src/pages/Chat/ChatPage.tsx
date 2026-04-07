@@ -1398,7 +1398,7 @@ function ChatPageContent() {
                       padding: 0,
                     }}
                     variant="borderless"
-                    placeholder="下一步要做什么？"
+                    placeholder='输入你的想法或输入"/"选择想要使用技能'
                     autoSize={{ minRows: 1, maxRows: 8 }}
                   />
                 </div>
