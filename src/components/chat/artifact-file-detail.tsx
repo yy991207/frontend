@@ -17,6 +17,30 @@ import { buildArtifactDownloadUrl } from '../../core/artifacts/utils'
 import { checkCodeFile, getFileName } from '../../core/utils/files'
 import { MarkdownContent } from './markdown-content'
 
+/**
+ * 文件预览组件
+ * 参考 deer-flow 的 ArtifactFilePreview 实现
+ * 提供固定宽度的 Markdown 渲染，避免内容随容器宽度变化
+ */
+function ArtifactFilePreview({
+  content,
+  language,
+}: {
+  content: string
+  language: string
+}) {
+  if (language === 'markdown') {
+    return (
+      <div className={styles.artifactMarkdownContainer}>
+        <div className={styles.artifactMarkdownContent}>
+          <MarkdownContent content={content} isStreaming={false} />
+        </div>
+      </div>
+    )
+  }
+  return null
+}
+
 type ArtifactFileDetailProps = {
   file: ArtifactFile
   onOpenChange?: (open: boolean) => void
@@ -379,7 +403,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
             {loading ? (
               <div className={styles.artifactLoading}>加载中...</div>
             ) : (
-              <MarkdownContent content={content} isStreaming={false} />
+              <ArtifactFilePreview content={content} language="markdown" />
             )}
           </div>
         )}
@@ -413,7 +437,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
             {loading ? (
               <div className={styles.artifactLoading}>加载中...</div>
             ) : (
-              <MarkdownContent content={content} isStreaming={false} />
+              <ArtifactFilePreview content={content} language="markdown" />
             )}
           </div>
         )}

@@ -1,4 +1,6 @@
 .page {
+  --home-shell-offset: 76px;
+  --home-center-shift: 7px;
   flex: 1;
   min-width: 0;
   padding: 12px;
@@ -41,8 +43,17 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding-top: clamp(112px, 16vh, 168px);
+  gap: 0;
+}
+
+.heroStage {
+  width: 100%;
+  // 把欢迎区放进独立首屏舞台，避免再靠固定 padding 顶出来，桌面和移动端都按主内容区中心对齐。
+  min-height: calc(100dvh - var(--home-shell-offset));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(var(--home-center-shift));
 }
 
 .topSection {
@@ -573,7 +584,7 @@
 .bottom {
   width: 100%;
   max-width: 1060px;
-  margin-top: 2px;
+  margin-top: 0;
   flex: none;
   min-width: 0;
 }
@@ -805,13 +816,13 @@
 }
 
 @media (max-width: 900px) {
-  .panelContent {
-    padding-top: 16px;
+  .page {
+    --home-shell-offset: 74px;
+    --home-center-shift: 8px;
   }
 
-  .centerStage {
-    gap: 8px;
-    padding-top: 96px;
+  .panelContent {
+    padding-top: 16px;
   }
 
   .topSection {
@@ -835,6 +846,8 @@
 
 @media (max-width: 640px) {
   .page {
+    --home-shell-offset: 58px;
+    --home-center-shift: 4px;
     padding: 8px;
   }
 
@@ -844,11 +857,6 @@
 
   .panelContent {
     padding: 16px 16px 24px;
-  }
-
-  .centerStage {
-    gap: 8px;
-    padding-top: 56px;
   }
 
   .topSection {
