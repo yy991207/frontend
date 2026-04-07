@@ -110,7 +110,7 @@
   position: relative;
   width: 100%;
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
   gap: 8px;
   border: 1px solid #e5e7eb;
   border-radius: 22px;
@@ -136,13 +136,43 @@
   }
 }
 
+// 上方输入区域
+.inputTopArea {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+// 下方按钮区域
+.inputBottomArea {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+// 底部左侧区域（+按钮）
+.inputBottomLeft {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+// 底部右侧区域（Tab提示 + 语音/发送按钮）
+.inputBottomRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .skillPrefix {
   flex-shrink: 0;
   color: #475569;
   font-size: 14px;
   line-height: 1;
-  align-self: flex-end;
-  padding-bottom: 10px;
 }
 
 .skillTagWrap {
@@ -150,8 +180,6 @@
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  align-self: flex-end;
-  padding-bottom: 10px;
 }
 
 .skillNameTag {
@@ -223,9 +251,8 @@
 
 .inputActions {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 4px;
-  padding-bottom: 2px;
 }
 
 .attachTriggerWrap {
@@ -517,8 +544,6 @@
   color: #9ca3af;
   padding: 0 8px;
   flex-shrink: 0;
-  align-self: flex-end;
-  padding-bottom: 10px;
 }
 
 .iconBtn {
