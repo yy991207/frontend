@@ -1,0 +1,580 @@
+// 发现页面样式
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 32px;
+  overflow-y: auto;
+  background-color: #f8fafc;
+  min-height: 100%;
+}
+
+// 页面头部
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  padding-bottom: 8px;
+}
+
+.headerLeft {
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+// 搜索框
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  width: 280px;
+  transition: all 0.2s ease;
+
+  &:hover,
+  &:focus-within {
+    border-color: #1677ff;
+    box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.08);
+  }
+}
+
+.searchIcon {
+  color: #9ca3af;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  background: transparent !important;
+
+  :global(.ant-input) {
+    background: transparent !important;
+    padding: 0 !important;
+    font-size: 14px;
+    color: #374151;
+
+    &::placeholder {
+      color: #9ca3af;
+    }
+  }
+}
+
+// 创建按钮
+.createButton {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  background: #111827;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #1f2937;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(17, 24, 39, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  :global(.anticon) {
+    font-size: 14px;
+  }
+}
+
+// 区域通用样式
+.section {
+  margin-bottom: 40px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.sectionNav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navButton {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #d1d5db;
+    color: #374151;
+    background: #f9fafb;
+  }
+
+  &:active {
+    background: #f3f4f6;
+  }
+
+  :global(.anticon) {
+    font-size: 12px;
+  }
+}
+
+// 排序按钮
+.sortButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #d1d5db;
+    background: #f9fafb;
+  }
+}
+
+.sortIcon {
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+// 企业精选网格 - 每行5个
+.featuredGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+}
+
+// 企业精选卡片
+.featuredCard {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+
+    .featuredCardTitle {
+      color: #1677ff;
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.featuredCardHeader {
+  margin-bottom: 12px;
+}
+
+.featuredAvatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+
+  img {
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
+  }
+}
+
+.featuredCard:hover .featuredAvatar {
+  transform: scale(1.05);
+}
+
+.featuredCardBody {
+  flex: 1;
+  margin-bottom: 16px;
+}
+
+.featuredCardTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 6px 0;
+  line-height: 1.4;
+  transition: color 0.2s ease;
+}
+
+.featuredCardDesc {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.featuredCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+}
+
+// 企业智能体网格 - 每行3个
+.enterpriseGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+// 企业智能体卡片
+.enterpriseCard {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  padding: 20px;
+  display: flex;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+
+    .enterpriseCardTitle {
+      color: #1677ff;
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.enterpriseCardLeft {
+  flex-shrink: 0;
+}
+
+.enterpriseAvatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+
+  img {
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
+  }
+}
+
+.enterpriseCard:hover .enterpriseAvatar {
+  transform: scale(1.05);
+}
+
+.enterpriseCardRight {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.enterpriseCardTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 6px 0;
+  line-height: 1.4;
+  transition: color 0.2s ease;
+}
+
+.enterpriseCardDesc {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+.enterpriseCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// 作者信息通用样式
+.authorInfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.authorAvatar {
+  flex-shrink: 0;
+}
+
+.authorName {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+// 使用数信息
+.usageInfo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.usageIcon {
+  font-size: 12px;
+  color: #f59e0b;
+}
+
+// 响应式布局
+@media (max-width: 1400px) {
+  .featuredGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .enterpriseGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1200px) {
+  .container {
+    padding: 20px 24px;
+  }
+
+  .featuredGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 992px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .headerRight {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .searchBox {
+    flex: 1;
+    max-width: 400px;
+  }
+
+  .featuredGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .enterpriseGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px 20px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .headerRight {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchBox {
+    width: 100%;
+    max-width: none;
+  }
+
+  .createButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .featuredGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .enterpriseGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .sectionTitle {
+    font-size: 18px;
+  }
+
+  .featuredCard,
+  .enterpriseCard {
+    padding: 16px;
+  }
+
+  .featuredAvatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .enterpriseAvatar {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px 16px;
+  }
+
+  .featuredGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .enterpriseCard {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .enterpriseCardLeft {
+    display: flex;
+    justify-content: center;
+  }
+
+  .enterpriseAvatar {
+    width: 72px;
+    height: 72px;
+  }
+
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .sectionNav {
+    align-self: flex-end;
+  }
+}
+
+// 动画效果
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.featuredCard,
+.enterpriseCard {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+// 为卡片添加交错动画
+.featuredGrid {
+  .featuredCard {
+    &:nth-child(1) { animation-delay: 0.05s; }
+    &:nth-child(2) { animation-delay: 0.1s; }
+    &:nth-child(3) { animation-delay: 0.15s; }
+    &:nth-child(4) { animation-delay: 0.2s; }
+    &:nth-child(5) { animation-delay: 0.25s; }
+  }
+}
+
+.enterpriseGrid {
+  .enterpriseCard {
+    &:nth-child(1) { animation-delay: 0.05s; }
+    &:nth-child(2) { animation-delay: 0.1s; }
+    &:nth-child(3) { animation-delay: 0.15s; }
+    &:nth-child(4) { animation-delay: 0.2s; }
+    &:nth-child(5) { animation-delay: 0.25s; }
+    &:nth-child(6) { animation-delay: 0.3s; }
+  }
+}
