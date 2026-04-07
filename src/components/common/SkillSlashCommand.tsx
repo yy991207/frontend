@@ -109,30 +109,6 @@ export function SkillSlashCommand(props: SkillSlashCommandProps) {
           <div className={styles.error}>
             <div className={styles.errorIcon}>!</div>
             <p className={styles.errorText}>{error}</p>
-      {/* 搜索框 */}
-      <div className={styles.searchBox}>
-        <SearchOutlined className={styles.searchIcon} />
-        <input
-          type="text"
-          className={styles.searchInput}
-          placeholder="搜索技能..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          autoFocus
-        />
-      </div>
-
-      {/* 技能列表 */}
-      <div className={styles.skillList} ref={listRef}>
-        {loading ? (
-          <div className={styles.loading}>
-            <div className={styles.loadingSpinner} />
-            <span>加载技能列表...</span>
-          </div>
-        ) : error ? (
-          <div className={styles.error}>
-            <div className={styles.errorIcon}>!</div>
-            <p className={styles.errorText}>{error}</p>
             <p className={styles.errorHint}>请检查网络连接后重试</p>
             {onRetry && (
               <button type="button" className={styles.retryButton} onClick={onRetry}>
@@ -166,12 +142,7 @@ export function SkillSlashCommand(props: SkillSlashCommandProps) {
               <div className={styles.skillItemIcon}>
                 <ThunderboltOutlined />
               </div>
-              <div className={styles.skillItemInfo}>
-                <div className={styles.skillItemTitle}>{skill.title}</div>
-                {skill.description && (
-                  <div className={styles.skillItemDesc}>{skill.description}</div>
-                )}
-              </div>
+              <div className={styles.skillItemTitle}>{skill.title}</div>
             </button>
           ))
         )}

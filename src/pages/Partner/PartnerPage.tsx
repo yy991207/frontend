@@ -15,6 +15,7 @@ import {
 } from '@ant-design/icons'
 import PartnerSkillManagement from '../../components/Partner/PartnerSkillManagement'
 import Workspace, { type FileNode } from '../../components/Partner/Workspace'
+import ModelManagement from '../../components/Partner/ModelManagement'
 import { AttachmentMenu } from '../../components/common/AttachmentMenu'
 import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
 import chatConfigText from '../../../config.yaml?raw'
@@ -1724,6 +1725,15 @@ function PartnerPageContent() {
             onUpdateFile={handleUpdateFile}
           />
         )
+      case 'model-management':
+        return (
+          <ModelManagement
+            onSelectModel={(modelId) => {
+              // TODO: 保存选中的模型到后端
+              console.log('Selected model:', modelId)
+            }}
+          />
+        )
       default:
         return (
           <div className={styles.settingContent}>
@@ -1863,8 +1873,6 @@ function PartnerPageContent() {
                       })}
                       loading={skillsLoading}
                       selectedIndex={selectedSkillIndex}
-                      activeCategory="all"
-                      setActiveCategory={() => {}}
                       onSelectSkill={(skill) => {
                         handleSelectSkill(skill)
                         setSlashCommandOpen(false)

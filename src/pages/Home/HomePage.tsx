@@ -603,8 +603,6 @@ export default function HomePage() {
                       })}
                       loading={skillsLoading}
                       selectedIndex={selectedSkillIndex}
-                      activeCategory="all"
-                      setActiveCategory={() => {}}
                       onSelectSkill={(skill) => {
                         handleSelectSkill(skill)
                         setSlashCommandOpen(false)

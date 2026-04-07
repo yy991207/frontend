@@ -20,10 +20,6 @@ export type UseSkillSlashCommandReturn = {
   selectedIndex: number
   /** 过滤后的技能列表 */
   filteredSkills: SkillItem[]
-  /** 当前激活的分类 */
-  activeCategory: 'all' | 'created' | 'added'
-  /** 设置分类 */
-  setActiveCategory: (category: 'all' | 'created' | 'added') => void
   /** 处理键盘事件 */
   handleKeyDown: (event: React.KeyboardEvent) => void
   /** 处理选择 */
@@ -53,7 +49,6 @@ export function useSkillSlashCommand(
   const [visible, setVisible] = useState(false)
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [activeCategory, setActiveCategory] = useState<'all' | 'created' | 'added'>('all')
   const prevInputRef = useRef(inputValue)
 
   // 监听输入值变化，控制浮层显示
@@ -85,18 +80,6 @@ export function useSkillSlashCommand(
   const filteredSkills = useMemo(() => {
     let result = skills
 
-    // 按分类过滤
-    if (activeCategory !== 'all') {
-      // 注意：这里假设技能数据中有 source 字段标识来源
-      // 实际实现时需要根据数据结构调整
-      result = result.filter((skill) => {
-        if (activeCategory === 'created') {
-          return skill.isSelected === false // 示例逻辑，需根据实际数据调整
-        }
-        return skill.isSelected === true
-      })
-    }
-
     // 按关键词过滤
     if (query) {
       const lowerQuery = query.toLowerCase()
@@ -109,12 +92,12 @@ export function useSkillSlashCommand(
     }
 
     return result
-  }, [skills, query, activeCategory])
+  }, [skills, query])
 
   // 当过滤结果变化时，重置选中索引
   useEffect(() => {
     setSelectedIndex(0)
-  }, [filteredSkills.length, query, activeCategory])
+  }, [filteredSkills.length, query])
 
   // 处理键盘事件
   const handleKeyDown = useCallback(
@@ -167,8 +150,6 @@ export function useSkillSlashCommand(
     setQuery,
     selectedIndex,
     filteredSkills,
-    activeCategory,
-    setActiveCategory,
     handleKeyDown,
     handleSelect,
     isEmpty,
