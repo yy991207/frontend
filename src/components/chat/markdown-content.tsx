@@ -13,6 +13,10 @@ type MarkdownContentProps = HTMLAttributes<HTMLDivElement> & {
   isStreaming?: boolean
 }
 
+/**
+ * Markdown 内容渲染组件
+ * 参考 deer-flow 实现，使用 Streamdown 直接渲染
+ */
 export function MarkdownContent({
   content,
   isStreaming = false,

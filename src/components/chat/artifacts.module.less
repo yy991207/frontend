@@ -136,7 +136,7 @@
 .artifactBody {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow: auto;
   display: flex;
   flex-direction: column;
 }
@@ -145,7 +145,16 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: auto;
   padding: 24px 28px;
+  display: flex;
+  justify-content: center;
+}
+
+.artifactMarkdownWrap > div {
+  width: 720px;
+  min-width: 720px;
+  max-width: 720px;
 }
 
 .artifactPreviewWrap {
@@ -509,4 +518,19 @@
   color: #a1a1aa;
   font-size: 12px;
   flex-shrink: 0;
+}
+
+/* Markdown 预览容器 - 参考 deer-flow 实现 */
+.artifactMarkdownContainer {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+/* Markdown 内容区域 */
+.artifactMarkdownContent {
+  width: 100%;
+  box-sizing: border-box;
 }

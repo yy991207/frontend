@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Avatar, Input, Tabs } from 'antd'
 import {
   AudioOutlined,
@@ -185,6 +185,8 @@ function getContentTypeIcon(type: string) {
 export default function HomePage() {
   const location = useLocation()
   const navigate = useNavigate()
+  const heroStageRef = useRef<HTMLDivElement | null>(null)
+  const topSectionRef = useRef<HTMLDivElement | null>(null)
   const [skills, setSkills] = useState<SkillItem[]>([])
   const [skillsLoading, setSkillsLoading] = useState(false)
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
@@ -196,6 +198,7 @@ export default function HomePage() {
   const [homeTabs, setHomeTabs] = useState<HomeTab[]>(DEFAULT_HOME_TABS)
   const [tabsLoading, setTabsLoading] = useState(true)
   const [tabsError, setTabsError] = useState('')
+  const [bottomGap, setBottomGap] = useState(0)
 
   const clearSelectedSkill = () => {
     setPreferredToolType(null)
@@ -343,6 +346,51 @@ export default function HomePage() {
     }
   }, [])
 
+  useLayoutEffect(() => {
+    let frameId = 0
+    const heroStageElement = heroStageRef.current
+    const topSectionElement = topSectionRef.current
+
+    if (!heroStageElement || !topSectionElement) {
+      return
+    }
+
+    // 欢迎区继续停在页面视觉中心，下面卡片区按真实空白量上提，避免中间出现大段留白。
+    const measureBottomGap = () => {
+      const currentHeroStage = heroStageRef.current
+      const currentTopSection = topSectionRef.current
+
+      if (!currentHeroStage || !currentTopSection) {
+        return
+      }
+
+      const heroStageRect = currentHeroStage.getBoundingClientRect()
+      const topSectionRect = currentTopSection.getBoundingClientRect()
+      const preferredGap = window.innerWidth <= 640 ? 24 : window.innerWidth <= 900 ? 28 : 32
+      const nextBottomGap = Math.round(preferredGap - (heroStageRect.bottom - topSectionRect.bottom))
+
+      setBottomGap((currentValue) => (currentValue === nextBottomGap ? currentValue : nextBottomGap))
+    }
+
+    const scheduleMeasure = () => {
+      window.cancelAnimationFrame(frameId)
+      frameId = window.requestAnimationFrame(measureBottomGap)
+    }
+
+    scheduleMeasure()
+
+    const resizeObserver = new ResizeObserver(scheduleMeasure)
+    resizeObserver.observe(heroStageElement)
+    resizeObserver.observe(topSectionElement)
+    window.addEventListener('resize', scheduleMeasure)
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      resizeObserver.disconnect()
+      window.removeEventListener('resize', scheduleMeasure)
+    }
+  }, [])
+
   const handleSend = () => {
     const value = prompt.trim()
     if (!value) return
@@ -448,90 +496,92 @@ export default function HomePage() {
       <section className={styles.panel}>
         <div className={styles.panelContent}>
           <div className={styles.centerStage}>
-            <div className={styles.topSection}>
-              <div className={styles.hero}>
-                <Avatar size={92} src={<img src={homeAvatar} alt="张容悟头像" />} className={styles.heroAvatar} />
-                <h1 className={styles.greeting}>Hi ～，有什么可以帮你的？</h1>
-              </div>
+            <div ref={heroStageRef} className={styles.heroStage}>
+              <div ref={topSectionRef} className={styles.topSection}>
+                <div className={styles.hero}>
+                  <Avatar size={92} src={<img src={homeAvatar} alt="张容悟头像" />} className={styles.heroAvatar} />
+                  <h1 className={styles.greeting}>Hi～ 有什么可以帮你的？</h1>
+                </div>
 
-              <div className={styles.composerWrap}>
-                <div className={styles.inputWrap}>
-                  <AttachmentMenu
-                    placement="bottom"
-                    skills={skills}
-                    skillsLoading={skillsLoading}
-                    loadSkills={fetchSkills}
-                    onSelectSkill={handleSelectSkill}
-                    onManageSkills={handleManageSkills}
-                    showTools
-                    webSearchEnabled={webSearchEnabled}
-                    knowledgeEnabled={knowledgeEnabled}
-                    onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
-                    onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
-                  />
-                  {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
-                  {selectedSkillName ? (
-                    <span className={styles.skillTagWrap}>
-                      <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
+                <div className={styles.composerWrap}>
+                  <div className={styles.inputWrap}>
+                    <AttachmentMenu
+                      placement="bottom"
+                      skills={skills}
+                      skillsLoading={skillsLoading}
+                      loadSkills={fetchSkills}
+                      onSelectSkill={handleSelectSkill}
+                      onManageSkills={handleManageSkills}
+                      showTools
+                      webSearchEnabled={webSearchEnabled}
+                      knowledgeEnabled={knowledgeEnabled}
+                      onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
+                      onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
+                    />
+                    {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
+                    {selectedSkillName ? (
+                      <span className={styles.skillTagWrap}>
+                        <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
+                        <button
+                          type="button"
+                          className={styles.skillRemoveButton}
+                          aria-label="移除已选技能"
+                          onClick={clearSelectedSkill}
+                        >
+                          <CloseOutlined />
+                        </button>
+                        {selectedSkillDescription ? (
+                          <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
+                        ) : null}
+                      </span>
+                    ) : null}
+                    <Input
+                      value={prompt}
+                      onChange={(event) => setPrompt(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+                          return
+                        }
+
+                        if (event.key === 'Backspace' && !prompt.trim() && selectedSkillName) {
+                          event.preventDefault()
+                          clearSelectedSkill()
+                        }
+                      }}
+                      onPressEnter={handleSend}
+                      style={{ flex: 1, minWidth: 0, border: 'none', boxShadow: 'none', background: 'transparent', fontSize: 14 }}
+                      variant="borderless"
+                      placeholder="@特定群组，总结群聊信息"
+                    />
+                    <span className={styles.tabHint}>Tab</span>
+                    <div className={styles.inputActions}>
+                      <button type="button" className={styles.iconBtn}>
+                        <AudioOutlined />
+                      </button>
                       <button
                         type="button"
-                        className={styles.skillRemoveButton}
-                        aria-label="移除已选技能"
-                        onClick={clearSelectedSkill}
+                        className={`${styles.iconBtn} ${styles.sendBtn} ${!prompt.trim() ? styles.sendBtnDisabled : ''}`}
+                        onClick={handleSend}
+                        disabled={!prompt.trim()}
                       >
-                        <CloseOutlined />
+                        <ArrowUpOutlined />
                       </button>
-                      {selectedSkillDescription ? (
-                        <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
-                      ) : null}
-                    </span>
-                  ) : null}
-                  <Input
-                    value={prompt}
-                    onChange={(event) => setPrompt(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
-                        return
-                      }
-
-                      if (event.key === 'Backspace' && !prompt.trim() && selectedSkillName) {
-                        event.preventDefault()
-                        clearSelectedSkill()
-                      }
-                    }}
-                    onPressEnter={handleSend}
-                    style={{ flex: 1, minWidth: 0, border: 'none', boxShadow: 'none', background: 'transparent', fontSize: 14 }}
-                    variant="borderless"
-                    placeholder="@特定群组，总结群聊信息"
-                  />
-                  <span className={styles.tabHint}>Tab</span>
-                  <div className={styles.inputActions}>
-                    <button type="button" className={styles.iconBtn}>
-                      <AudioOutlined />
-                    </button>
-                    <button
-                      type="button"
-                      className={`${styles.iconBtn} ${styles.sendBtn} ${!prompt.trim() ? styles.sendBtnDisabled : ''}`}
-                      onClick={handleSend}
-                      disabled={!prompt.trim()}
-                    >
-                      <ArrowUpOutlined />
-                    </button>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className={styles.quickActions}>
-                {QUICK_ACTIONS.map((action) => (
-                  <div key={action.label} className={styles.quickTag}>
-                    <span className={styles.quickTagIcon}>{action.icon}</span>
-                    <span>{action.label}</span>
-                  </div>
-                ))}
+                <div className={styles.quickActions}>
+                  {QUICK_ACTIONS.map((action) => (
+                    <div key={action.label} className={styles.quickTag}>
+                      <span className={styles.quickTagIcon}>{action.icon}</span>
+                      <span>{action.label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className={styles.bottom}>
+            <div className={styles.bottom} style={{ marginTop: `${bottomGap}px` }}>
               <Tabs items={tabItems} />
             </div>
           </div>
