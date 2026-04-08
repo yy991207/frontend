@@ -91,7 +91,7 @@ export default function Sidebar() {
           <span className={styles.brandAvatarWrap}>
             <img src={homeAvatar} alt="果仁助手头像" className={styles.brandAvatar} />
           </span>
-          <span className={styles.brandName}>果仁助手</span>
+          <span className={styles.brandName}>果仁智能体</span>
         </button>
       </div>
 

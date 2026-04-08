@@ -34,7 +34,7 @@ const featuredAgents = [
     name: '智能客服助手',
     description: '7x24小时在线，自动回复客户咨询',
     avatar: localImages[0],
-    author: { name: '阿里云', avatar: localImages[1], usage: 12580 },
+    author: { name: '@果仁官方', avatar: localImages[1], usage: 12580 },
     color: '#1677ff',
   },
   {
@@ -42,7 +42,7 @@ const featuredAgents = [
     name: '数据分析专家',
     description: '快速分析业务数据，生成可视化报表',
     avatar: localImages[2],
-    author: { name: '腾讯云', avatar: localImages[3], usage: 8932 },
+    author: { name: '@果仁官方', avatar: localImages[3], usage: 8932 },
     color: '#52c41a',
   },
   {
@@ -50,7 +50,7 @@ const featuredAgents = [
     name: '代码审查助手',
     description: '自动检测代码问题，提升代码质量',
     avatar: localImages[4],
-    author: { name: 'GitHub', avatar: localImages[5], usage: 15670 },
+    author: { name: '@果仁官方', avatar: localImages[5], usage: 15670 },
     color: '#722ed1',
   },
   {
@@ -58,7 +58,7 @@ const featuredAgents = [
     name: '文档生成器',
     description: '根据代码自动生成技术文档',
     avatar: localImages[6],
-    author: { name: 'Notion', avatar: localImages[7], usage: 6789 },
+    author: { name: '@果仁官方', avatar: localImages[7], usage: 6789 },
     color: '#fa8c16',
   },
   {
@@ -66,7 +66,7 @@ const featuredAgents = [
     name: '会议纪要助手',
     description: '实时转录会议内容，自动生成摘要',
     avatar: localImages[8],
-    author: { name: '飞书', avatar: localImages[9], usage: 9876 },
+    author: { name: '@果仁官方', avatar: localImages[9], usage: 9876 },
     color: '#eb2f96',
   },
   {
@@ -74,7 +74,7 @@ const featuredAgents = [
     name: '营销文案生成',
     description: '一键生成高质量营销文案',
     avatar: localImages[10],
-    author: { name: '字节跳动', avatar: localImages[11], usage: 23456 },
+    author: { name: '@果仁官方', avatar: localImages[11], usage: 23456 },
     color: '#f5222d',
   },
   {
@@ -82,7 +82,7 @@ const featuredAgents = [
     name: '智能翻译官',
     description: '支持多语言实时翻译',
     avatar: localImages[0],
-    author: { name: 'DeepL', avatar: localImages[1], usage: 11234 },
+    author: { name: '@果仁官方', avatar: localImages[1], usage: 11234 },
     color: '#13c2c2',
   },
   {
@@ -90,7 +90,7 @@ const featuredAgents = [
     name: 'PPT设计师',
     description: '自动生成精美PPT演示文稿',
     avatar: localImages[2],
-    author: { name: 'Canva', avatar: localImages[3], usage: 14567 },
+    author: { name: '@果仁官方', avatar: localImages[3], usage: 14567 },
     color: '#faad14',
   },
   {
@@ -98,7 +98,7 @@ const featuredAgents = [
     name: '邮件助手',
     description: '智能撰写和回复邮件',
     avatar: localImages[4],
-    author: { name: 'Gmail', avatar: localImages[5], usage: 18901 },
+    author: { name: '@果仁官方', avatar: localImages[5], usage: 18901 },
     color: '#1890ff',
   },
   {
@@ -106,7 +106,7 @@ const featuredAgents = [
     name: '日程管理师',
     description: '智能安排日程，提醒重要事项',
     avatar: localImages[6],
-    author: { name: 'Google', avatar: localImages[7], usage: 7654 },
+    author: { name: '@果仁官方', avatar: localImages[7], usage: 7654 },
     color: '#2f54eb',
   },
 ]
@@ -118,7 +118,7 @@ const enterpriseAgents = [
     name: '企业知识库助手',
     description: '基于企业知识库，快速回答员工问题，提升工作效率',
     avatar: localImages[8],
-    author: { name: '钉钉', avatar: localImages[9], usage: 56789 },
+    author: { name: '@张洪磊', avatar: localImages[9], usage: 56789 },
     tags: ['企业', '知识管理'],
   },
   {
@@ -126,7 +126,7 @@ const enterpriseAgents = [
     name: '财务报表分析',
     description: '自动分析财务报表，识别异常数据，生成分析报告',
     avatar: localImages[10],
-    author: { name: '金蝶', avatar: localImages[11], usage: 34567 },
+    author: { name: '@张洪磊', avatar: localImages[11], usage: 34567 },
     tags: ['财务', '数据分析'],
   },
   {
@@ -134,7 +134,7 @@ const enterpriseAgents = [
     name: 'HR招聘助手',
     description: '智能筛选简历，自动安排面试，跟踪招聘进度',
     avatar: localImages[0],
-    author: { name: 'BOSS直聘', avatar: localImages[1], usage: 42345 },
+    author: { name: '@张洪磊', avatar: localImages[1], usage: 42345 },
     tags: ['HR', '招聘'],
   },
   {
@@ -142,7 +142,7 @@ const enterpriseAgents = [
     name: '合同审查专家',
     description: '自动审查合同条款，识别风险点，提供修改建议',
     avatar: localImages[2],
-    author: { name: '法大大', avatar: localImages[3], usage: 28901 },
+    author: { name: '@张洪磊', avatar: localImages[3], usage: 28901 },
     tags: ['法务', '合同'],
   },
   {
@@ -150,7 +150,7 @@ const enterpriseAgents = [
     name: 'IT运维监控',
     description: '实时监控系统状态，自动告警，快速定位故障',
     avatar: localImages[4],
-    author: { name: 'Zabbix', avatar: localImages[5], usage: 15678 },
+    author: { name: '@张洪磊', avatar: localImages[5], usage: 15678 },
     tags: ['IT', '运维'],
   },
   {
@@ -158,7 +158,7 @@ const enterpriseAgents = [
     name: '客户画像分析',
     description: '整合客户数据，构建精准画像，助力精准营销',
     avatar: localImages[6],
-    author: { name: 'Salesforce', avatar: localImages[7], usage: 51234 },
+    author: { name: '@张洪磊', avatar: localImages[7], usage: 51234 },
     tags: ['CRM', '营销'],
   },
 ]
