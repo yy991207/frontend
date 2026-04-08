@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Input } from 'antd'
 import type { TextAreaRef } from 'antd/es/input/TextArea'
 import { ArrowUpOutlined, CloseOutlined } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
 import styles from './CreateAgentModal.module.less'
 
 interface CreateAgentModalProps {
@@ -19,6 +20,7 @@ const templateTags = [
 ]
 
 export default function CreateAgentModal({ visible, onCancel, onConfirm }: CreateAgentModalProps) {
+  const navigate = useNavigate()
   const [inputValue, setInputValue] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const inputRef = useRef<TextAreaRef>(null)
@@ -71,10 +73,9 @@ export default function CreateAgentModal({ visible, onCancel, onConfirm }: Creat
   }
 
   const handleTagClick = () => {
-    // 先关闭弹窗
+    // 先关闭弹窗，再走前端路由跳转，保留浏览器历史栈，返回时才能回到发现页。
     onCancel()
-    // 然后跳转到模板页面
-    window.location.href = 'http://localhost:5173/agent/1'
+    navigate('/agent/1')
   }
 
   const handleClose = () => {
