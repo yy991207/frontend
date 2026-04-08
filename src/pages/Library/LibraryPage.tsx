@@ -59,6 +59,7 @@ export default function LibraryPage() {
   return (
     <main className={styles.page}>
       <section className={styles.panel}>
+        <div className={styles.libraryPage}>
         <header className={styles.header}>
           <div className={styles.headerMain}>
             <h1 className={styles.title}>库</h1>
@@ -157,6 +158,7 @@ export default function LibraryPage() {
               <p className={styles.emptyText}>暂无内容</p>
             </div>
           )}
+        </div>
         </div>
       </section>
     </main>

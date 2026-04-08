@@ -102,21 +102,20 @@
   border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
-  background: #111827;
-  border: none;
+  background: #111827 !important;
+  border: 1px solid #111827 !important;
+  color: #ffffff !important;
   display: flex;
   align-items: center;
   gap: 6px;
   transition: all 0.2s ease;
 
-  &:hover {
-    background: #1f2937;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(17, 24, 39, 0.15);
-  }
-
+  &:hover,
+  &:focus,
   &:active {
-    transform: translateY(0);
+    background: #111827 !important;
+    border-color: #111827 !important;
+    color: #ffffff !important;
   }
 
   :global(.anticon) {
