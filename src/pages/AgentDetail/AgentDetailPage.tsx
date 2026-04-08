@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   AppstoreAddOutlined,
@@ -11,6 +12,7 @@ import {
   SafetyCertificateOutlined,
   SoundOutlined,
 } from '@ant-design/icons'
+import EditAgentModal from '../../components/common/EditAgentModal'
 import styles from './agentDetail.module.less'
 
 type AgentConfig = {
@@ -106,9 +108,13 @@ function ConfigCard({
 
 export default function AgentDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const agent = id ? mockAgentData[id] : null
+  const initialAgent = id ? mockAgentData[id] : null
 
-  if (!agent) {
+  const [agentName, setAgentName] = useState(initialAgent?.name || '')
+  const [agentSubtitle, setAgentSubtitle] = useState(initialAgent?.subtitle || '')
+  const [modalVisible, setModalVisible] = useState(false)
+
+  if (!initialAgent) {
     return (
       <div className={styles.page}>
         <div className={styles.emptyState}>
@@ -119,14 +125,28 @@ export default function AgentDetailPage() {
     )
   }
 
+  const handleEditClick = () => {
+    setModalVisible(true)
+  }
+
+  const handleModalCancel = () => {
+    setModalVisible(false)
+  }
+
+  const handleModalSave = (data: { name: string; description: string }) => {
+    setAgentName(data.name)
+    setAgentSubtitle(data.description)
+    setModalVisible(false)
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.topBar}>
         <div className={styles.topBarLeft}>
           <span className={styles.backIcon}>⌂</span>
-          <img className={styles.topAvatar} src={agent.avatar} alt={agent.name} />
-          <span className={styles.topTitle}>{agent.name}</span>
-          <EditOutlined className={styles.topEditIcon} />
+          <img className={styles.topAvatar} src={initialAgent.avatar} alt={agentName} />
+          <span className={styles.topTitle}>{agentName}</span>
+          <EditOutlined className={styles.topEditIcon} onClick={handleEditClick} />
         </div>
 
         <div className={styles.topTabs}>
@@ -159,17 +179,17 @@ export default function AgentDetailPage() {
 
             <div className={styles.heroSection}>
               <div className={styles.heroCard}>
-                <img className={styles.heroAvatar} src={agent.avatar} alt={agent.name} />
+                <img className={styles.heroAvatar} src={initialAgent.avatar} alt={agentName} />
                 <div className={styles.heroContent}>
-                  <h1 className={styles.heroTitle}>{agent.name}</h1>
-                  <p className={styles.heroSubtitle}>{agent.subtitle}</p>
+                  <h1 className={styles.heroTitle}>{agentName}</h1>
+                  <p className={styles.heroSubtitle}>{agentSubtitle}</p>
                 </div>
               </div>
 
               <div className={styles.suggestionSection}>
                 <h3 className={styles.suggestionTitle}>推荐问题</h3>
                 <div className={styles.suggestionList}>
-                  {agent.suggestions.map((suggestion) => (
+                  {initialAgent.suggestions.map((suggestion: string) => (
                     <button key={suggestion} type="button" className={styles.suggestionChip}>
                       {suggestion}
                     </button>
@@ -182,7 +202,7 @@ export default function AgentDetailPage() {
               <div className={styles.chatComposer}>
                 <input
                   className={styles.chatInput}
-                  value={agent.instruction}
+                  value={initialAgent.instruction}
                   readOnly
                   aria-label="对话输入框"
                 />
@@ -229,7 +249,7 @@ export default function AgentDetailPage() {
             <h2 className={styles.configHeading}>搭建</h2>
 
             <ConfigCard icon={null} title="指令">
-              <div className={styles.instructionBox}>{agent.config.instruction}</div>
+              <div className={styles.instructionBox}>{initialAgent.config.instruction}</div>
             </ConfigCard>
 
             <ConfigCard
@@ -243,7 +263,7 @@ export default function AgentDetailPage() {
             >
               <p className={styles.cardHint}>添加 Skills 服务后，可见范围内的用户均可在对话中使用该 Skills 服务</p>
               <div className={styles.serviceList}>
-                {agent.config.mcpServices.map((service) => (
+                {initialAgent.config.mcpServices.map((service: { name: string; description: string; badge?: string }) => (
                   <div key={service.name} className={styles.serviceCard}>
                     <div className={styles.serviceIconWrap}>
                       <SafetyCertificateOutlined />
@@ -299,7 +319,7 @@ export default function AgentDetailPage() {
             >
               <div className={styles.dialogConfigBlock}>
                 <div className={styles.dialogLabel}>推荐问题</div>
-                {agent.config.suggestedQuestions.map((question, index) => (
+                {initialAgent.config.suggestedQuestions.map((question: string, index: number) => (
                   <div key={question} className={styles.questionRow}>
                     <span className={styles.questionText}>{question}</span>
                     <div className={styles.questionActions}>
@@ -317,6 +337,15 @@ export default function AgentDetailPage() {
           </div>
         </aside>
       </div>
+
+      <EditAgentModal
+        visible={modalVisible}
+        name={agentName}
+        description={agentSubtitle}
+        avatar={initialAgent.avatar}
+        onCancel={handleModalCancel}
+        onSave={handleModalSave}
+      />
     </div>
   )
 }
