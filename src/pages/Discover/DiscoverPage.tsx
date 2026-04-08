@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Input, Button, Dropdown, message } from 'antd'
 import {
   SearchOutlined,
@@ -172,7 +171,6 @@ const sortOptions = [
 ]
 
 export default function DiscoverPage() {
-  const navigate = useNavigate()
   const [searchValue, setSearchValue] = useState('')
   const [currentFeaturedPage, setCurrentFeaturedPage] = useState(0)
   const [sortBy, setSortBy] = useState('latest')
@@ -228,11 +226,6 @@ export default function DiscoverPage() {
     message.success(`智能体 "${data.name}" 创建成功！`)
     setIsModalVisible(false)
     // 可以在这里添加跳转到新创建的智能体详情页的逻辑
-  }
-
-  // 跳转到智能体详情页
-  const handleNavigateToAgent = (agentId: number) => {
-    navigate(`/agent/${agentId}`)
   }
 
   return (
@@ -311,14 +304,6 @@ export default function DiscoverPage() {
                       <span>{formatUsage(agent.author.usage)}</span>
                     </div>
                   </div>
-                  {/* 使用按钮 */}
-                  <button
-                    className={styles.useButton}
-                    data-testid="agent-use-button"
-                    onClick={() => handleNavigateToAgent(agent.id)}
-                  >
-                    使用
-                  </button>
                 </div>
               ))}
             </div>
@@ -366,14 +351,6 @@ export default function DiscoverPage() {
                       </div>
                     </div>
                   </div>
-                  {/* 使用按钮 */}
-                  <button
-                    className={styles.useButton}
-                    data-testid="agent-use-button"
-                    onClick={() => handleNavigateToAgent(agent.id)}
-                  >
-                    使用
-                  </button>
                 </div>
               ))}
             </div>
