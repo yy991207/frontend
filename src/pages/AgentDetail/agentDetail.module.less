@@ -99,6 +99,21 @@
 .savedStatus {
   color: #8f959e;
   font-size: 13px;
+  transition: color 0.3s ease;
+}
+
+.unsavedStatus {
+  color: #ff9800;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .publishButton {
@@ -111,6 +126,69 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+
+  &:hover:not(:disabled) {
+    background: #1a4bc4;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(36, 91, 219, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.publishSuccess {
+  background: #52c41a !important;
+  animation: successFlash 0.5s ease;
+
+  &:hover {
+    background: #52c41a !important;
+  }
+}
+
+.publishError {
+  background: #ff4d4f !important;
+  animation: errorShake 0.5s ease;
+
+  &:hover {
+    background: #ff4d4f !important;
+  }
+}
+
+@keyframes successFlash {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes errorShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
 }
 
 .userBadge {
@@ -554,6 +632,67 @@
   color: #4c6fff;
   font-size: 14px;
   cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #4c6fff;
+    background: #f0f4ff;
+  }
+}
+
+.resourceList {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resourceItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border: 1px solid #e5e6eb;
+  border-radius: 6px;
+  background: #f7f8fa;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.resourceId {
+  font-size: 13px;
+  color: #1f2329;
+  font-family: monospace;
+}
+
+.removeResourceBtn {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: #8f959e;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #ff4d4f;
+    color: #fff;
+  }
 }
 
 .dialogConfigBlock {

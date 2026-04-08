@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   AppstoreAddOutlined,
@@ -11,8 +11,13 @@ import {
   PlusOutlined,
   SafetyCertificateOutlined,
   SoundOutlined,
+  LoadingOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
 } from '@ant-design/icons'
+import { message } from 'antd'
 import EditAgentModal from '../../components/common/EditAgentModal'
+import { loadCustomAgentApiConfig, createCustomAgent } from '../../services/customAgentService'
 import styles from './agentDetail.module.less'
 
 type AgentConfig = {
@@ -112,7 +117,25 @@ export default function AgentDetailPage() {
 
   const [agentName, setAgentName] = useState(initialAgent?.name || '')
   const [agentSubtitle, setAgentSubtitle] = useState(initialAgent?.subtitle || '')
+  const [agentInstruction, setAgentInstruction] = useState(initialAgent?.config.instruction || '')
+  const [agentSkills, setAgentSkills] = useState(initialAgent?.config.mcpServices || [])
+  const [agentQuestions, setAgentQuestions] = useState(initialAgent?.config.suggestedQuestions || [])
+  const [isPublic, setIsPublic] = useState(false)
+  const [resourceIds, setResourceIds] = useState<string[]>([])
   const [modalVisible, setModalVisible] = useState(false)
+  const [publishing, setPublishing] = useState(false)
+  const [publishStatus, setPublishStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [hasChanges, setHasChanges] = useState(false)
+
+  useEffect(() => {
+    if (initialAgent) {
+      setAgentName(initialAgent.name)
+      setAgentSubtitle(initialAgent.subtitle)
+      setAgentInstruction(initialAgent.config.instruction)
+      setAgentSkills(initialAgent.config.mcpServices)
+      setAgentQuestions(initialAgent.config.suggestedQuestions)
+    }
+  }, [initialAgent])
 
   if (!initialAgent) {
     return (
@@ -137,6 +160,52 @@ export default function AgentDetailPage() {
     setAgentName(data.name)
     setAgentSubtitle(data.description)
     setModalVisible(false)
+    setHasChanges(true)
+    setPublishStatus('idle')
+  }
+
+  const handlePublish = async () => {
+    setPublishing(true)
+    setPublishStatus('idle')
+
+    try {
+      const config = await loadCustomAgentApiConfig()
+
+      const payload = {
+        agent_name: agentName,
+        agent_prompt: agentInstruction,
+        avatar_url: initialAgent.avatar.startsWith('http')
+          ? initialAgent.avatar
+          : `${config.baseUrl.replace(/\/+$/, '')}${initialAgent.avatar}`,
+        description: agentSubtitle,
+        enabled_skills: agentSkills.map((s) => s.name),
+        is_public: isPublic,
+        preset_questions: agentQuestions.map((q) => ({
+          category: '默认',
+          question: q,
+        })),
+        resource_ids: resourceIds,
+      }
+
+      await createCustomAgent(config, payload)
+
+      setPublishStatus('success')
+      setHasChanges(false)
+      message.success('发布成功')
+
+      setTimeout(() => {
+        setPublishStatus('idle')
+      }, 3000)
+    } catch (error) {
+      setPublishStatus('error')
+      message.error(error instanceof Error ? error.message : '发布失败，请重试')
+
+      setTimeout(() => {
+        setPublishStatus('idle')
+      }, 3000)
+    } finally {
+      setPublishing(false)
+    }
   }
 
   return (
@@ -159,9 +228,30 @@ export default function AgentDetailPage() {
         </div>
 
         <div className={styles.topBarRight}>
-          <span className={styles.savedStatus}>﹀ 已保存</span>
-          <button type="button" className={styles.publishButton}>
-            ✈ 发布
+          <span className={`${styles.savedStatus} ${hasChanges ? styles.unsavedStatus : ''}`}>
+            {hasChanges ? '未保存' : '已保存'}
+          </span>
+          <button
+            type="button"
+            className={`${styles.publishButton} ${publishStatus === 'success' ? styles.publishSuccess : ''} ${publishStatus === 'error' ? styles.publishError : ''}`}
+            onClick={handlePublish}
+            disabled={publishing}
+          >
+            {publishing ? (
+              <>
+                <LoadingOutlined spin /> 发布中
+              </>
+            ) : publishStatus === 'success' ? (
+              <>
+                <CheckCircleOutlined /> 发布成功
+              </>
+            ) : publishStatus === 'error' ? (
+              <>
+                <CloseCircleOutlined /> 发布失败
+              </>
+            ) : (
+              '发布'
+            )}
           </button>
           <div className={styles.userBadge}>🪽</div>
         </div>
@@ -249,7 +339,7 @@ export default function AgentDetailPage() {
             <h2 className={styles.configHeading}>搭建</h2>
 
             <ConfigCard icon={null} title="指令">
-              <div className={styles.instructionBox}>{initialAgent.config.instruction}</div>
+              <div className={styles.instructionBox}>{agentInstruction}</div>
             </ConfigCard>
 
             <ConfigCard
@@ -263,7 +353,7 @@ export default function AgentDetailPage() {
             >
               <p className={styles.cardHint}>添加 Skills 服务后，可见范围内的用户均可在对话中使用该 Skills 服务</p>
               <div className={styles.serviceList}>
-                {initialAgent.config.mcpServices.map((service: { name: string; description: string; badge?: string }) => (
+                {agentSkills.map((service: { name: string; description: string; badge?: string }) => (
                   <div key={service.name} className={styles.serviceCard}>
                     <div className={styles.serviceIconWrap}>
                       <SafetyCertificateOutlined />
@@ -302,9 +392,40 @@ export default function AgentDetailPage() {
                     <span className={styles.switchHandle} />
                   </span>
                 </div>
-                <button type="button" className={styles.knowledgeButton}>
+                <button
+                  type="button"
+                  className={styles.knowledgeButton}
+                  onClick={() => {
+                    const resourceId = prompt('请输入资源ID：')
+                    if (resourceId && resourceId.trim()) {
+                      setResourceIds([...resourceIds, resourceId.trim()])
+                      setHasChanges(true)
+                      setPublishStatus('idle')
+                    }
+                  }}
+                >
                   <PlusOutlined /> 关联知识空间
                 </button>
+                {resourceIds.length > 0 && (
+                  <div className={styles.resourceList}>
+                    {resourceIds.map((id) => (
+                      <div key={id} className={styles.resourceItem}>
+                        <span className={styles.resourceId}>{id}</span>
+                        <button
+                          type="button"
+                          className={styles.removeResourceBtn}
+                          onClick={() => {
+                            setResourceIds(resourceIds.filter((r) => r !== id))
+                            setHasChanges(true)
+                            setPublishStatus('idle')
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </ConfigCard>
 
@@ -319,7 +440,7 @@ export default function AgentDetailPage() {
             >
               <div className={styles.dialogConfigBlock}>
                 <div className={styles.dialogLabel}>推荐问题</div>
-                {initialAgent.config.suggestedQuestions.map((question: string, index: number) => (
+                {agentQuestions.map((question: string, index: number) => (
                   <div key={question} className={styles.questionRow}>
                     <span className={styles.questionText}>{question}</span>
                     <div className={styles.questionActions}>
@@ -333,6 +454,25 @@ export default function AgentDetailPage() {
                   </div>
                 ))}
               </div>
+            </ConfigCard>
+
+            <ConfigCard icon={null} title="发布设置">
+              <div className={styles.toggleItem}>
+                <div className={styles.toggleLabelWrap}>
+                  <span>公开智能体</span>
+                </div>
+                <span
+                  className={`${styles.switch} ${isPublic ? styles.switchOn : ''}`}
+                  onClick={() => {
+                    setIsPublic(!isPublic)
+                    setHasChanges(true)
+                    setPublishStatus('idle')
+                  }}
+                >
+                  <span className={styles.switchHandle} />
+                </span>
+              </div>
+              <p className={styles.cardHint}>开启后，其他用户可以在发现页看到并使用该智能体</p>
             </ConfigCard>
           </div>
         </aside>
