@@ -21,6 +21,7 @@
 .topRow,
 .navRow,
 .partnerRow,
+.agentRow,
 .footerRow {
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr);
@@ -37,6 +38,7 @@
 .iconButton,
 .navRow,
 .partnerRow,
+.agentRow,
 .toolButton {
   border: none;
   background: transparent;
@@ -168,7 +170,8 @@
 }
 
 .navRow,
-.partnerRow {
+.partnerRow,
+.agentRow {
   min-height: 44px;
   padding: 0;
   border-radius: 16px;
@@ -225,6 +228,20 @@
 
 .partnerRow {
   margin-bottom: 8px;
+}
+
+// 智能体列表样式
+.agentList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.agentRow {
+  .labelCell {
+    font-size: 13px;
+  }
 }
 
 // 会话历史容器样式
