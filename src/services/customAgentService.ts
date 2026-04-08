@@ -2,6 +2,7 @@ export type CustomAgentApiConfig = {
   userId: string
   baseUrl: string
   createAgentEndpoint: string
+  listAgentEndpoint: string
 }
 
 export type PresetQuestion = {
@@ -26,6 +27,28 @@ type CreateCustomAgentResponse = {
   message?: string
   data?: {
     agent_id?: string
+  }
+}
+
+export type CustomAgentItem = {
+  agent_id: string
+  creator_user_id: string
+  agent_name: string
+  description: string
+  avatar_url: string
+  is_active: boolean
+  is_public: boolean
+  created_at: string
+  updated_at: string
+}
+
+type ListCustomAgentResponse = {
+  success?: boolean
+  code?: number
+  msg?: string
+  data?: {
+    agents: CustomAgentItem[]
+    total: number
   }
 }
 
@@ -70,16 +93,18 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
 
   const baseUrl = parsedConfig.url
   const createAgentPath = parsedConfig.create_custom_agent_path
+  const listAgentPath = parsedConfig.list_custom_agent_path
   const userId = parsedConfig.user_id
 
-  if (!baseUrl || !createAgentPath || !userId) {
-    throw new Error('config.yaml 缺少 url、create_custom_agent_path 或 user_id 配置')
+  if (!baseUrl || !createAgentPath || !listAgentPath || !userId) {
+    throw new Error('config.yaml 缺少 url、create_custom_agent_path、list_custom_agent_path 或 user_id 配置')
   }
 
   return {
     userId,
     baseUrl,
     createAgentEndpoint: buildAbsoluteUrl(baseUrl, createAgentPath),
+    listAgentEndpoint: buildAbsoluteUrl(baseUrl, listAgentPath),
   }
 }
 
@@ -108,4 +133,32 @@ export async function createCustomAgent(
   const data = (await response.json()) as CreateCustomAgentResponse
 
   return data
+}
+
+export async function listCustomAgents(
+  config: CustomAgentApiConfig,
+  signal?: AbortSignal,
+): Promise<CustomAgentItem[]> {
+  const requestUrl = new URL(config.listAgentEndpoint)
+  requestUrl.searchParams.set('user_id', config.userId)
+
+  const response = await fetch(requestUrl.toString(), {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(`获取智能体列表失败: HTTP ${response.status}`)
+  }
+
+  const data = (await response.json()) as ListCustomAgentResponse
+
+  if (!data.success) {
+    throw new Error(data.msg || '获取智能体列表失败')
+  }
+
+  return data.data?.agents || []
 }

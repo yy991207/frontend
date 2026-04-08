@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   BookOutlined,
   CompassOutlined,
@@ -18,6 +18,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import chatConfigText from '../../../config.yaml?raw'
 import homeAvatar from '../../assets/home-avatar.png'
 import { createNewChatPagePath } from '../../services/chatService'
+import { loadCustomAgentApiConfig, listCustomAgents, type CustomAgentItem } from '../../services/customAgentService'
 import ChatSessionHistory from '../ChatSessionHistory/ChatSessionHistory'
 import styles from './sidebar.module.less'
 
@@ -36,11 +37,61 @@ const NAV_ITEMS = [
   { key: 'skills', label: '技能', icon: <ThunderboltOutlined />, path: '/skills' },
 ]
 
+function getAgentIcon(index: number) {
+  const icons = [<MessageOutlined />, <EditOutlined />, <FileTextOutlined />, <CameraOutlined />]
+  return icons[index % icons.length]
+}
+
 export default function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const [expanded, setExpanded] = useState(false)
   const [creatingSession, setCreatingSession] = useState(false)
+  const [agentList, setAgentList] = useState<CustomAgentItem[]>([])
+  const [agentLoading, setAgentLoading] = useState(false)
+  const [hoveredAgentId, setHoveredAgentId] = useState<string | null>(null)
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 })
+  const agentRowRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchAgents() {
+      setAgentLoading(true)
+      try {
+        const config = await loadCustomAgentApiConfig()
+        const agents = await listCustomAgents(config)
+        if (!cancelled) {
+          setAgentList(agents)
+        }
+      } catch (error) {
+        console.error('获取智能体列表失败:', error)
+      } finally {
+        if (!cancelled) {
+          setAgentLoading(false)
+        }
+      }
+    }
+
+    fetchAgents()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const handleAgentHover = (agentId: string, event: React.MouseEvent) => {
+    setHoveredAgentId(agentId)
+    const rect = event.currentTarget.getBoundingClientRect()
+    setTooltipPosition({
+      top: rect.top + rect.height / 2,
+      left: rect.right + 8,
+    })
+  }
+
+  const handleAgentLeave = () => {
+    setHoveredAgentId(null)
+  }
 
   const isActive = (path?: string) => (path ? location.pathname === path : false)
 
@@ -139,19 +190,55 @@ export default function Sidebar() {
       {/* 智能体列表 */}
       <div className={styles.sectionTitle}>智能体</div>
       <div className={styles.agentList}>
-        {AGENT_ITEMS.map((agent) => (
-          <button
-            key={agent.id}
-            type="button"
-            className={`${styles.agentRow} ${styles.tooltipTarget}`}
-            data-tooltip={agent.name}
-            onClick={() => navigate('/agent/1')}
-          >
-            <span className={styles.iconCell}>{agent.icon}</span>
-            <span className={styles.labelCell}>{agent.name}</span>
-          </button>
-        ))}
+        {agentLoading ? (
+          <div className={styles.agentLoading}>
+            <LoadingOutlined />
+          </div>
+        ) : agentList.length > 0 ? (
+          agentList.map((agent, index) => (
+            <button
+              key={agent.agent_id}
+              type="button"
+              className={`${styles.agentRow} ${styles.tooltipTarget}`}
+              ref={(el) => {
+                if (el) agentRowRefs.current.set(agent.agent_id, el)
+              }}
+              onMouseEnter={(e) => handleAgentHover(agent.agent_id, e)}
+              onMouseLeave={handleAgentLeave}
+              onClick={() => navigate(`/agent/${agent.agent_id}`)}
+            >
+              <span className={styles.iconCell}>{getAgentIcon(index)}</span>
+              <span className={styles.labelCell}>{agent.agent_name}</span>
+            </button>
+          ))
+        ) : (
+          AGENT_ITEMS.map((agent) => (
+            <button
+              key={agent.id}
+              type="button"
+              className={`${styles.agentRow} ${styles.tooltipTarget}`}
+              data-tooltip={agent.name}
+              onClick={() => navigate('/agent/1')}
+            >
+              <span className={styles.iconCell}>{agent.icon}</span>
+              <span className={styles.labelCell}>{agent.name}</span>
+            </button>
+          ))
+        )}
       </div>
+
+      {/* 悬浮提示窗 */}
+      {hoveredAgentId && (
+        <div
+          className={styles.agentTooltip}
+          style={{
+            top: tooltipPosition.top,
+            left: tooltipPosition.left,
+          }}
+        >
+          {agentList.find((a) => a.agent_id === hoveredAgentId)?.description || ''}
+        </div>
+      )}
 
       {/* 会话历史组件 */}
       <div className={styles.sessionHistoryWrapper}>
