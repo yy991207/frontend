@@ -108,14 +108,16 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.2s ease;
+  transition: none;
 
   &:hover,
   &:focus,
-  &:active {
+  &:active,
+  &:focus-visible {
     background: #111827 !important;
     border-color: #111827 !important;
     color: #ffffff !important;
+    box-shadow: none !important;
   }
 
   :global(.anticon) {
