@@ -1,472 +1,616 @@
-// 页面外层 - 参考 Skills 页面
 .page {
   flex: 1;
   min-width: 0;
-  padding: 12px;
-  background: linear-gradient(180deg, #f4f7fb 0%, #eef3f8 100%);
-}
-
-// 面板容器 - 圆角矩形边框
-.panel {
   height: 100%;
-  border-radius: 28px;
-  background: #ffffff;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
-  padding: 18px 18px 26px;
-  overflow: hidden auto;
-}
-
-// 内容区域 - 居中显示
-.agentDetailPage {
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
+  padding: 0;
+  background: #f7f8fa;
   display: flex;
   flex-direction: column;
-  gap: 18px;
 }
 
-// 返回按钮
-.backButton {
-  display: inline-flex;
+.topBar {
+  height: 52px;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  color: #6b7280;
-  font-size: 14px;
-  cursor: pointer;
-  margin-bottom: 8px;
-  width: fit-content;
-  transition: color 0.2s ease;
-
-  &:hover {
-    color: #1677ff;
-  }
-
-  :global(.anticon) {
-    font-size: 14px;
-  }
-}
-
-// 头部
-.header {
-  display: flex;
-  align-items: flex-start;
   justify-content: space-between;
-  padding: 24px;
+  padding: 0 24px 0 18px;
   background: #ffffff;
-  border-radius: 20px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+  border-bottom: 1px solid #eef1f5;
+  flex-shrink: 0;
 }
 
-.headerLeft {
+.topBarLeft {
   display: flex;
-  gap: 20px;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
 
-.avatar {
-  width: 88px;
-  height: 88px;
-  border-radius: 20px;
+.backIcon {
+  font-size: 16px;
+  color: #8c8c8c;
+}
+
+.topAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.topTitle {
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  color: #1f2329;
+  white-space: nowrap;
+}
+
+.topEditIcon {
+  font-size: 14px;
+  color: #8f959e;
+}
+
+.topTabs {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.topTab {
+  border: none;
+  background: transparent;
+  color: #1f2329;
+  font-size: 16px;
+  line-height: 22px;
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+}
+
+.topTabActive {
+  color: #245bdb;
+  font-weight: 600;
+}
+
+.topTabActive::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -15px;
+  height: 2px;
+  border-radius: 999px;
+  background: #245bdb;
+}
+
+.topBarRight {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.savedStatus {
+  color: #8f959e;
+  font-size: 13px;
+}
+
+.publishButton {
+  height: 32px;
+  padding: 0 15px;
+  border: none;
+  border-radius: 8px;
+  background: #245bdb;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.userBadge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  flex-shrink: 0;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+  background: #fff7e8;
+  font-size: 16px;
 }
 
-.headerInfo {
+.layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 456px;
+  gap: 4px;
+  padding: 0 6px 6px;
+}
+
+.chatPanel,
+.configPanel {
+  min-height: 0;
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.chatPanelInner,
+.configPanelInner {
+  height: 100%;
+}
+
+.chatPanelInner {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px 0;
+}
+
+.chatHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.chatHeading,
+.configHeading {
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+  color: #1f2329;
+  font-weight: 600;
+}
+
+.previewButton {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: #8f959e;
+  cursor: pointer;
+}
+
+.heroSection {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 48px;
+  padding: 0 24px;
+}
+
+.heroCard {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  max-width: 620px;
+}
+
+.heroAvatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.heroContent {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.title {
-  font-size: 24px;
+.heroTitle {
+  margin: 0;
+  font-size: 19px;
+  line-height: 28px;
+  color: #1f2329;
   font-weight: 700;
-  color: #111827;
-  margin: 0;
 }
 
-.subtitle {
+.heroSubtitle {
+  margin: 0;
   font-size: 14px;
-  color: #6b7280;
-  margin: 0;
+  line-height: 22px;
+  color: #8f959e;
 }
 
-.tags {
+.suggestionSection {
+  width: 100%;
+  max-width: 620px;
+}
+
+.suggestionTitle {
+  margin: 0 0 12px;
+  font-size: 16px;
+  line-height: 24px;
+  color: #1f2329;
+  font-weight: 600;
+}
+
+.suggestionList {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
-.tag {
-  margin: 0;
-  border-radius: 8px;
-  font-size: 12px;
-  padding: 4px 12px;
-  background: #f3f4f6;
+.suggestionChip {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid #e5e6eb;
+  background: #ffffff;
+  color: #646a73;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.chatComposerWrap {
+  padding-bottom: 16px;
+}
+
+.chatComposer {
+  width: 100%;
+  max-width: 664px;
+  margin: 0 auto;
+  border: 1px solid #d9dde6;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 8px 30px rgba(31, 35, 41, 0.06);
+  padding: 16px 12px 10px;
+}
+
+.chatInput {
+  width: 100%;
   border: none;
-  color: #6b7280;
+  outline: none;
+  font-size: 14px;
+  color: #1f2329;
+  line-height: 22px;
+  padding: 0 0 14px;
+  background: transparent;
 }
 
-.headerRight {
+.chatToolsRow {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.authorInfo {
+.leftTools,
+.rightTools {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.authorName {
-  font-size: 14px;
-  color: #374151;
-  font-weight: 500;
-}
-
-.usageInfo {
-  display: flex;
+.toolPill {
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid #e5e6eb;
+  border-radius: 999px;
+  background: #fff;
+  color: #1f2329;
+  font-size: 13px;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
-  color: #9ca3af;
+  cursor: pointer;
 }
 
-.usageIcon {
-  color: #f59e0b;
-  font-size: 14px;
+.toolPillActive {
+  color: #245bdb;
+  border-color: #baceff;
+  background: #f2f6ff;
 }
 
-// 操作按钮
-.actions {
-  display: flex;
-  gap: 12px;
+.toolCaret {
+  color: #8f959e;
+  font-size: 12px;
 }
 
-.primaryButton {
-  height: 48px;
-  padding: 0 28px;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 500;
-  background: #111827;
+.iconButton {
+  width: 28px;
+  height: 28px;
   border: none;
-  display: flex;
+  background: transparent;
+  color: #1f2329;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #1f2937;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(17, 24, 39, 0.15);
-  }
-
-  :global(.anticon) {
-    font-size: 18px;
-  }
+  justify-content: center;
+  cursor: pointer;
 }
 
-.secondaryButton {
-  height: 48px;
-  padding: 0 28px;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 500;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  color: #374151;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: #d1d5db;
-    background: #f9fafb;
-    color: #111827;
-  }
-
-  :global(.anticon) {
-    font-size: 18px;
-  }
+.divider {
+  width: 1px;
+  height: 18px;
+  background: #d9dde6;
 }
 
-// 内容区域
-.content {
-  background: #ffffff;
-  border-radius: 20px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
-  flex: 1;
-}
-
-.tabs {
-  :global(.ant-tabs-nav) {
-    margin: 0;
-    padding: 0 24px;
-    border-bottom: 1px solid #f3f4f6;
-  }
-
-  :global(.ant-tabs-tab) {
-    padding: 16px 0;
-    font-size: 14px;
-    color: #6b7280;
-
-    &:hover {
-      color: #374151;
-    }
-  }
-
-  :global(.ant-tabs-tab-active) {
-    color: #111827;
-    font-weight: 600;
-  }
-
-  :global(.ant-tabs-ink-bar) {
-    background: #111827;
-    height: 2px;
-  }
-
-  :global(.ant-tabs-content) {
-    padding: 24px;
-  }
-}
-
-.tabContent {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-}
-
-// 区块
-.section {
-  &:not(:last-child) {
-    padding-bottom: 32px;
-    border-bottom: 1px solid #f3f4f6;
-  }
-}
-
-.sectionTitle {
-  font-size: 16px;
-  font-weight: 600;
-  color: #111827;
-  margin: 0 0 16px 0;
-}
-
-.sectionText {
-  font-size: 14px;
-  color: #4b5563;
-  line-height: 1.8;
-  margin: 0;
-}
-
-// 功能列表
-.featureList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.featureItem {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 14px;
-  color: #4b5563;
-}
-
-.featureDot {
-  width: 8px;
-  height: 8px;
+.sendButton {
+  width: 28px;
+  height: 28px;
+  border: none;
   border-radius: 50%;
-  flex-shrink: 0;
+  background: #d0d3d9;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
-// 使用场景
-.useCaseGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+.disclaimer {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 12px;
+  line-height: 20px;
+  color: #8f959e;
 }
 
-.useCaseCard {
+.configPanelInner {
+  overflow: auto;
+  padding: 14px 18px 24px;
+}
+
+.configCard {
+  padding: 14px 0 18px;
+  border-bottom: 1px solid #ebeef2;
+}
+
+.configCardHeader {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: #f9fafb;
-  border-radius: 12px;
-  border: 1px solid #f3f4f6;
+  justify-content: space-between;
+  margin-bottom: 12px;
 }
 
-.useCaseNumber {
+.configCardTitleWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.configCardArrow,
+.configCardIcon {
+  color: #8f959e;
+  font-size: 12px;
+}
+
+.configCardTitle {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  color: #1f2329;
+  font-weight: 600;
+}
+
+.configCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.linkAction {
+  border: none;
+  background: transparent;
+  color: #245bdb;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.instructionBox {
+  min-height: 396px;
+  padding: 12px 14px;
+  border: 1px solid #d9dde6;
+  border-radius: 8px;
+  background: #fff;
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 22px;
+  color: #1f2329;
+}
+
+.cardHint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 20px;
+  color: #8f959e;
+}
+
+.serviceList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.serviceCard {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #e5e6eb;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.serviceIconWrap {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: #111827;
-  color: #ffffff;
+  background: #edf3ff;
+  color: #245bdb;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  font-weight: 600;
   flex-shrink: 0;
 }
 
-.useCaseText {
-  font-size: 14px;
-  color: #4b5563;
+.serviceContent {
+  flex: 1;
+  min-width: 0;
 }
 
-// 空状态
-.emptyComments,
-.emptyRelated {
+.serviceTopLine {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  color: #9ca3af;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.serviceName {
+  font-size: 14px;
+  line-height: 22px;
+  color: #1f2329;
+  font-weight: 500;
+}
+
+.serviceBadge {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4c6fff;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.serviceArrow {
+  margin-left: auto;
+  color: #8f959e;
+}
+
+.serviceDesc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 20px;
+  color: #8f959e;
+}
+
+.toggleItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 36px;
+}
+
+.toggleLabelWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #1f2329;
   font-size: 14px;
 }
 
-// 错误空状态
-.emptyState {
-  flex: 1;
+.switch {
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: #d5d8de;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.switchOn {
+  background: #245bdb;
+  justify-content: flex-end;
+}
+
+.switchHandle {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  display: block;
+}
+
+.knowledgeCard {
+  padding: 12px 12px 14px;
+  border: 1px solid #e5e6eb;
+  border-radius: 8px;
+}
+
+.knowledgeButton {
+  width: 100%;
+  height: 40px;
+  margin-top: 12px;
+  border: 1px dashed #d9dde6;
+  border-radius: 8px;
+  background: #fff;
+  color: #4c6fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.dialogConfigBlock {
   display: flex;
   flex-direction: column;
+  gap: 10px;
+}
+
+.dialogLabel {
+  font-size: 14px;
+  line-height: 22px;
+  color: #1f2329;
+  font-weight: 500;
+}
+
+.questionRow {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #d9dde6;
+  border-radius: 8px;
+}
+
+.questionText {
+  font-size: 14px;
+  color: #646a73;
+}
+
+.questionActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.smallIconButton {
+  border: none;
+  background: transparent;
+  color: #8f959e;
+  cursor: pointer;
+  padding: 0;
+}
+
+.emptyState {
+  margin: auto;
   text-align: center;
-  min-height: 400px;
+  color: #646a73;
+}
 
-  h2 {
-    font-size: 20px;
-    font-weight: 600;
-    color: #111827;
-    margin: 0;
-  }
-
-  p {
-    font-size: 14px;
-    color: #6b7280;
-    margin: 0;
+@media (max-width: 1440px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 400px;
   }
 }
 
-.emptyIcon {
-  font-size: 64px;
-  color: #d1d5db;
-}
-
-// 响应式
-@media (max-width: 992px) {
-  .header {
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .headerRight {
-    align-items: flex-start;
-    flex-direction: row;
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .useCaseGrid {
+@media (max-width: 1200px) {
+  .layout {
     grid-template-columns: 1fr;
   }
-}
 
-@media (max-width: 768px) {
-  .page {
-    padding: 8px;
-  }
-
-  .panel {
-    border-radius: 20px;
-    padding: 16px;
-  }
-
-  .headerLeft {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    width: 100%;
-  }
-
-  .headerInfo {
-    align-items: center;
-  }
-
-  .tags {
-    justify-content: center;
-  }
-
-  .headerRight {
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .actions {
-    flex-direction: column;
-  }
-
-  .primaryButton,
-  .secondaryButton {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .tabs {
-    :global(.ant-tabs-nav) {
-      padding: 0 16px;
-    }
-
-    :global(.ant-tabs-content) {
-      padding: 16px;
-    }
-  }
-
-  .tabContent {
-    gap: 24px;
-  }
-
-  .section {
-    &:not(:last-child) {
-      padding-bottom: 24px;
-    }
-  }
-}
-
-@media (max-width: 480px) {
-  .avatar {
-    width: 72px;
-    height: 72px;
-  }
-
-  .title {
-    font-size: 20px;
-  }
-
-  .useCaseCard {
-    padding: 12px;
+  .configPanel {
+    border-radius: 16px;
   }
 }
