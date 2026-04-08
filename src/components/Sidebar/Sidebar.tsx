@@ -145,7 +145,7 @@ export default function Sidebar() {
             type="button"
             className={`${styles.agentRow} ${styles.tooltipTarget}`}
             data-tooltip={agent.name}
-            onClick={() => navigate(`/agent/${agent.id}`)}
+            onClick={() => navigate('/agent/1')}
           >
             <span className={styles.iconCell}>{agent.icon}</span>
             <span className={styles.labelCell}>{agent.name}</span>
