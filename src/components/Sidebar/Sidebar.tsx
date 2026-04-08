@@ -9,6 +9,10 @@ import {
   RobotOutlined,
   ThunderboltOutlined,
   UserOutlined,
+  MessageOutlined,
+  EditOutlined,
+  FileTextOutlined,
+  CameraOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import chatConfigText from '../../../config.yaml?raw'
@@ -16,6 +20,14 @@ import homeAvatar from '../../assets/home-avatar.png'
 import { createNewChatPagePath } from '../../services/chatService'
 import ChatSessionHistory from '../ChatSessionHistory/ChatSessionHistory'
 import styles from './sidebar.module.less'
+
+// 智能体列表数据
+const AGENT_ITEMS = [
+  { id: '1', name: '学习公社6.0答疑助手', icon: <MessageOutlined /> },
+  { id: '2', name: '运营达人', icon: <EditOutlined /> },
+  { id: '3', name: '财报解读专家', icon: <FileTextOutlined /> },
+  { id: '4', name: '修图小助手，相册中不再有废片！', icon: <CameraOutlined /> },
+]
 
 const NAV_ITEMS = [
   { key: 'home', label: '新建', icon: <PlusOutlined /> },
@@ -123,6 +135,23 @@ export default function Sidebar() {
         </span>
         <span className={styles.labelCell}>智能伙伴</span>
       </button>
+
+      {/* 智能体列表 */}
+      <div className={styles.sectionTitle}>智能体</div>
+      <div className={styles.agentList}>
+        {AGENT_ITEMS.map((agent) => (
+          <button
+            key={agent.id}
+            type="button"
+            className={`${styles.agentRow} ${styles.tooltipTarget}`}
+            data-tooltip={agent.name}
+            onClick={() => navigate(`/agent/${agent.id}`)}
+          >
+            <span className={styles.iconCell}>{agent.icon}</span>
+            <span className={styles.labelCell}>{agent.name}</span>
+          </button>
+        ))}
+      </div>
 
       {/* 会话历史组件 */}
       <div className={styles.sessionHistoryWrapper}>
