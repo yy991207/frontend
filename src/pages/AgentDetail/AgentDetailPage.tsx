@@ -36,22 +36,22 @@ type AgentData = {
 const mockAgentData: Record<string, AgentData> = {
   '1': {
     id: '1',
-    name: '产品和市场调研专家',
-    subtitle: '专业的产品和市场调研助手，能依据相关信息对产品和市场进行全面分析，提供有价值的见解和建议。',
+    name: '学习公社6.0答疑助手',
+    subtitle: '专业的学习调研助手，能依据相关信息对课程问题进行全面分析，提供有价值的见解和建议。',
     avatar: '/img/ScreenShot_2026-04-07_175908_563.png',
     instruction: '问我任何问题',
-    suggestions: ['☕ 中国咖啡市场竞争格局分析', '💻 AI Coding领域的主要产品分析', '📱 手机市场调研'],
+    suggestions: ['☕ 学习公社6.0课程推荐', '💻 AI Coding领域的主要产品分析', '📱 手机市场调研'],
     config: {
       instruction: `## 角色定义
-你是一位资深的产品和市场调研专家，拥有15年以上的跨行业调研经验。你擅长运用科学的调研方法论，深入洞察市场趋势、消费者行为和竞争格局，为企业提供准确、实用的决策支持。
+你是一位资深的学习调研助手，拥有15年以上的跨行业调研经验。你擅长运用科学的调研方法论，深入洞察市场趋势、消费者行为和竞争格局，为企业提供准确、实用的决策支持。  
 
-## 核心能力
-- **市场分析**：深度分析市场规模、增长趋势、细分市场机会
-- **竞争研究**：全面评估竞争对手的产品策略、定价模式、市场表现
-- **消费者洞察**：挖掘目标用户的真实需求、痛点和购买行为
-- **产品评估**：从市场角度评估产品的可行性、差异化优势和改进方向
-- **数据分析**：运用统计方法和工具，将复杂数据转化为清晰的商业见解
-- **趋势预测**：基于多维度信息，预判市场发展趋势和潜在机会
+  ## 核心能力
+  - **市场分析**：深度分析市场规模、增长趋势、细分市场机会
+  - **竞争研究**：全面评估竞争对手的产品策略、定价模式、市场表现
+  - **消费者洞察**：挖掘目标用户的真实需求、痛点和购买行为
+  - **产品评估**：从市场角度评估产品的可行性、差异化优势和改进方向
+  - **数据分析**：运用统计方法和工具，将复杂数据转化为清晰的商业见解
+  - **趋势预测**：基于多维度信息，预判市场发展趋势和潜在机会
 
 ## 工作方法
 1. **结构化思维**：采用MECE原则，确保分析全面且不重复
@@ -63,12 +63,12 @@ const mockAgentData: Record<string, AgentData> = {
 ## 输出标准`,
       mcpServices: [
         {
-          name: '飞书云文档',
-          description: '支持创建飞书云文档和获取云文档内容',
+          name: '课程推荐',
+          description: '支持推荐学习公社6.0相关课程',
           badge: '官方',
         },
         {
-          name: '飞书多维表格',
+          name: '多维表格',
           description: '支持创建和修改表格、新增和修改字段、新增和查询数据等操作',
           badge: '官方',
         },
@@ -234,14 +234,14 @@ export default function AgentDetailPage() {
 
             <ConfigCard
               icon={null}
-              title="MCP 服务"
+              title="Skills 服务"
               extra={
                 <button type="button" className={styles.linkAction}>
                   <PlusOutlined /> 添加
                 </button>
               }
             >
-              <p className={styles.cardHint}>添加 MCP 服务后，可见范围内的用户均可在对话中使用该 MCP 服务</p>
+              <p className={styles.cardHint}>添加 Skills 服务后，可见范围内的用户均可在对话中使用该 Skills 服务</p>
               <div className={styles.serviceList}>
                 {agent.config.mcpServices.map((service) => (
                   <div key={service.name} className={styles.serviceCard}>
