@@ -249,7 +249,6 @@ export default function DiscoverPage() {
                 />
               </div>
               <Button
-                type="primary"
                 icon={<PlusOutlined />}
                 className={styles.createButton}
                 onClick={handleOpenModal}
