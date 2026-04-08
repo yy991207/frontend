@@ -70,12 +70,11 @@ export default function CreateAgentModal({ visible, onCancel, onConfirm }: Creat
     }
   }
 
-  const handleTagClick = (tag: string) => {
-    setInputValue(tag)
-    // 聚焦输入框
-    setTimeout(() => {
-      inputRef.current?.focus()
-    }, 0)
+  const handleTagClick = () => {
+    // 先关闭弹窗
+    onCancel()
+    // 然后跳转到模板页面
+    window.location.href = 'http://localhost:5173/agent/1'
   }
 
   const handleClose = () => {
@@ -130,7 +129,7 @@ export default function CreateAgentModal({ visible, onCancel, onConfirm }: Creat
                 <button
                   key={tag}
                   className={styles.tagButton}
-                  onClick={() => handleTagClick(tag)}
+                  onClick={() => handleTagClick()}
                 >
                   {tag}
                 </button>
