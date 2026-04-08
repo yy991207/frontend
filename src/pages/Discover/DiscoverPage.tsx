@@ -177,8 +177,8 @@ export default function DiscoverPage() {
   const [isModalVisible, setIsModalVisible] = useState(false)
   const featuredContainerRef = useRef<HTMLDivElement>(null)
 
-  // 每页显示5个企业精选卡片
-  const featuredPageSize = 5
+  // 每页显示10个企业精选卡片（两行，每行5个）
+  const featuredPageSize = 10
   const totalFeaturedPages = Math.ceil(featuredAgents.length / featuredPageSize)
 
   // 获取当前页的企业精选数据
