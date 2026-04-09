@@ -22,6 +22,7 @@ import { message, Spin } from 'antd'
 import EditAgentModal from '../../components/common/EditAgentModal'
 import SkillConfigModal from '../../components/common/SkillConfigModal'
 import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
+import SkillDetailModal from '../../components/common/SkillDetailModal'
 import { MessageList } from '../../components/chat/message-list'
 import {
   loadCustomAgentApiConfig,
@@ -33,6 +34,12 @@ import {
   type ChatMessageItem,
 } from '../../services/customAgentService'
 import type { ToolCall } from '../../core/messages/types'
+import {
+  saveAgentConfig,
+  saveChatHistory,
+  type AgentLocalConfig,
+  type ChatHistoryItem,
+} from '../../utils/agentStorage'
 import {
   createUserMessage,
   createLoadingAssistantMessage,
@@ -95,6 +102,8 @@ export default function AgentDetailPage() {
   const [modalVisible, setModalVisible] = useState(false)
   const [skillModalVisible, setSkillModalVisible] = useState(false)
   const [knowledgeModalVisible, setKnowledgeModalVisible] = useState(false)
+  const [skillDetailVisible, setSkillDetailVisible] = useState(false)
+  const [selectedSkillName, setSelectedSkillName] = useState('')
   const [publishing, setPublishing] = useState(false)
   const [publishStatus, setPublishStatus] = useState<'idle' | 'success' | 'error'>('idle')
   // 知识配置开关状态
@@ -177,6 +186,29 @@ export default function AgentDetailPage() {
   useEffect(() => {
     scrollToBottom()
   }, [chatMessages, scrollToBottom])
+
+  // 聊天消息变化时自动保存到本地存储
+  useEffect(() => {
+    if (!id || chatMessages.length === 0) return
+    
+    const history: ChatHistoryItem[] = chatMessages
+      .filter((msg) => {
+        if (msg.role === 'user') return Boolean(msg.content.trim())
+        if (msg.role === 'assistant') {
+          const contentText = msg.content.trim()
+          if (!contentText) return false
+          if (contentText.startsWith('请求失败:')) return false
+          return true
+        }
+        return false
+      })
+      .map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      }))
+    
+    saveChatHistory(id, history)
+  }, [id, chatMessages])
 
   // 处理发送消息 - 调用真实API
   const handleSendMessage = useCallback(async () => {
@@ -395,6 +427,7 @@ export default function AgentDetailPage() {
         is_public: isPublic,
         preset_questions: agentQuestions,
         resource_ids: resourceIds,
+        enable_web_search: webSearchEnabled,
       }
 
       const updatedAgent = await updateCustomAgent(config, agentData.agent_id, payload)
@@ -409,6 +442,34 @@ export default function AgentDetailPage() {
         setIsPublic(updatedAgent.is_public)
         setResourceIds(updatedAgent.resource_ids || [])
       }
+
+      const localConfig: AgentLocalConfig = {
+        agent_id: agentData.agent_id,
+        agent_name: agentName,
+        agent_prompt: agentInstruction,
+        description: agentSubtitle,
+        enable_web_search: webSearchEnabled,
+        enabled_skills: agentSkills,
+        resource_ids: resourceIds,
+        chat_history: chatMessages
+          .filter((msg) => {
+            if (msg.role === 'user') return Boolean(msg.content.trim())
+            if (msg.role === 'assistant') {
+              const contentText = msg.content.trim()
+              if (!contentText) return false
+              if (contentText.startsWith('请求失败:')) return false
+              return true
+            }
+            return false
+          })
+          .map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+        updated_at: Date.now(),
+      }
+      saveAgentConfig(localConfig)
+      saveChatHistory(agentData.agent_id, localConfig.chat_history)
 
       setPublishStatus('success')
       message.success('更新成功')
@@ -631,20 +692,28 @@ export default function AgentDetailPage() {
                     onMouseEnter={() => setHoveredSkillName(skill.skill_name)}
                     onMouseLeave={() => setHoveredSkillName(null)}
                   >
-                    <div className={styles.serviceIconWrap}>
-                      <SafetyCertificateOutlined />
-                    </div>
-                    <div className={styles.serviceContent}>
-                      <div className={styles.serviceTopLine}>
-                        <span className={styles.serviceName}>{skill.chinese_name}</span>
-                        <span className={styles.serviceBadge}>官方</span>
-                        <span className={styles.serviceArrow}>›</span>
+                    <div
+                      className={styles.serviceClickableArea}
+                      onClick={() => {
+                        setSelectedSkillName(skill.skill_name)
+                        setSkillDetailVisible(true)
+                      }}
+                    >
+                      <div className={styles.serviceIconWrap}>
+                        <SafetyCertificateOutlined />
                       </div>
-                      {hoveredSkillName === skill.skill_name && (
-                        <div className={styles.serviceTooltip}>
-                          {skill.description || `支持${skill.chinese_name}相关功能`}
+                      <div className={styles.serviceContent}>
+                        <div className={styles.serviceTopLine}>
+                          <span className={styles.serviceName}>{skill.chinese_name}</span>
+                          <span className={styles.serviceBadge}>官方</span>
+                          <span className={styles.serviceArrow}>›</span>
                         </div>
-                      )}
+                        {hoveredSkillName === skill.skill_name && (
+                          <div className={styles.serviceTooltip}>
+                            {skill.description || `支持${skill.chinese_name}相关功能`}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <button
                       type="button"
@@ -877,6 +946,12 @@ export default function AgentDetailPage() {
           setPublishStatus('idle')
         }}
         currentResourceIds={resourceIds}
+      />
+
+      <SkillDetailModal
+        visible={skillDetailVisible}
+        skillName={selectedSkillName}
+        onCancel={() => setSkillDetailVisible(false)}
       />
     </div>
   )

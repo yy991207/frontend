@@ -1,4 +1,8 @@
 import type { LegacyChatMessage, Message, ToolCall } from '../../core/messages/types'
+import {
+  advanceAssistantMessageForNextModelPhase as advanceAssistantMessageForNextModelPhaseBase,
+  appendTextDeltaToStreamMessages as appendTextDeltaToStreamMessagesBase,
+} from '../../core/messages/streaming'
 import { groupMessages, resolveAssistantCopyTargets } from '../../core/messages/utils'
 
 export type AgentChatMessage = LegacyChatMessage
@@ -125,29 +129,7 @@ export function advanceAssistantMessageForNextModelPhase(
   timestamp: string,
   createFollowup: typeof createFollowupAssistantMessage,
 ): { messages: AgentChatMessage[]; activeMessageId: string } {
-  const activeMessage = messages.find((message) => message.id === activeMessageId)
-
-  if (!activeMessage || activeMessage.role !== 'assistant') {
-    return { messages, activeMessageId }
-  }
-
-  // 只要当前消息有任何输出（content、reasoning_content 或 toolCalls），就切分新消息
-  // 这样每条 model phase 独立展示，groupMessages 能正确分组渲染
-  const hasToolCalls = Boolean(activeMessage.toolCalls?.length)
-  const hasText = Boolean(activeMessage.content.trim())
-  const hasReasoning = Boolean(activeMessage.reasoningContent?.trim())
-
-  if (!hasToolCalls && !hasText && !hasReasoning) {
-    return { messages, activeMessageId }
-  }
-
-  const nextMessageId = `assistant-${Date.now()}-${messages.length}`
-  const followupMessage = createFollowup(activeMessage, nextMessageId, timestamp)
-
-  return {
-    messages: [...messages, followupMessage],
-    activeMessageId: nextMessageId,
-  }
+  return advanceAssistantMessageForNextModelPhaseBase(messages, activeMessageId, timestamp, createFollowup)
 }
 
 export function appendTextDeltaToStreamMessages(
@@ -157,29 +139,7 @@ export function appendTextDeltaToStreamMessages(
   timestamp: string,
   createFollowup: typeof createFollowupAssistantMessage,
 ): { messages: AgentChatMessage[]; activeMessageId: string } {
-  const activeMessage = messages.find((message) => message.id === activeMessageId)
-
-  if (!activeMessage || activeMessage.role !== 'assistant') {
-    return { messages, activeMessageId }
-  }
-
-  let nextActiveMessageId = activeMessageId
-  let nextMessages = messages
-
-  if (activeMessage.toolCalls?.length && activeMessage.content.trim()) {
-    const advanced = advanceAssistantMessageForNextModelPhase(messages, activeMessageId, timestamp, createFollowup)
-    nextMessages = advanced.messages
-    nextActiveMessageId = advanced.activeMessageId
-  }
-
-  return {
-    activeMessageId: nextActiveMessageId,
-    messages: updateAssistantMessageById(nextMessages, nextActiveMessageId, (message) => ({
-      ...message,
-      content: `${message.content}${chunk}`,
-      timestamp,
-    })),
-  }
+  return appendTextDeltaToStreamMessagesBase(messages, activeMessageId, chunk, timestamp, createFollowup)
 }
 
 export function buildMessageGroups(messages: AgentChatMessage[]) {

@@ -1,0 +1,200 @@
+import { useState, useEffect, useCallback } from 'react'
+import { CloseOutlined, LoadingOutlined } from '@ant-design/icons'
+import { MarkdownContent } from '../chat/markdown-content'
+import styles from './SkillDetailModal.module.less'
+
+export type SkillConfigField = {
+  key: string
+  label: string
+  type: string
+  required: boolean
+  default?: string | number
+  options?: { label: string; value: string }[]
+  min?: number | null
+  max?: number | null
+  placeholder?: string | null
+}
+
+export type SkillDetail = {
+  skill_name: string
+  chinese_name: string
+  description: string
+  source: string
+  skill_type: string
+  skill_md: string
+  template: string
+  placeholders: string[]
+  config_fields: SkillConfigField[]
+  scripts: unknown | null
+  references: unknown | null
+  assets: unknown | null
+}
+
+type SkillDetailModalProps = {
+  visible: boolean
+  skillName: string
+  onCancel: () => void
+}
+
+async function loadApiConfig(): Promise<{ baseUrl: string; userId: string }> {
+  const response = await fetch('/config.yaml')
+  if (!response.ok) {
+    throw new Error('加载配置文件失败')
+  }
+  const rawText = await response.text()
+  const parsed: Record<string, string> = {}
+  rawText.split(/\r?\n/).forEach((line) => {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('//') || trimmed.startsWith('#')) return
+    const idx = trimmed.indexOf(':')
+    if (idx === -1) return
+    const key = trimmed.slice(0, idx).trim()
+    const value = trimmed.slice(idx + 1).trim().replace(/^['"]|['"]$/g, '')
+    if (key) parsed[key] = value
+  })
+  return {
+    baseUrl: parsed.url || '',
+    userId: parsed.user_id || '',
+  }
+}
+
+async function fetchSkillDetail(baseUrl: string, userId: string, skillName: string): Promise<SkillDetail> {
+  const url = `${baseUrl.replace(/\/+$/, '')}/api/v1/skills/${skillName}?user_id=${userId}`
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`获取技能详情失败: HTTP ${response.status}`)
+  }
+
+  const data = await response.json()
+
+  if (!data.success) {
+    throw new Error(data.msg || '获取技能详情失败')
+  }
+
+  return data.data as SkillDetail
+}
+
+export default function SkillDetailModal({ visible, skillName, onCancel }: SkillDetailModalProps) {
+  const [loading, setLoading] = useState(false)
+  const [skillDetail, setSkillDetail] = useState<SkillDetail | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadSkillDetail = useCallback(async () => {
+    if (!skillName) return
+    setLoading(true)
+    setError(null)
+    setSkillDetail(null)
+
+    try {
+      const { baseUrl, userId } = await loadApiConfig()
+      const detail = await fetchSkillDetail(baseUrl, userId, skillName)
+      setSkillDetail(detail)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '加载失败')
+    } finally {
+      setLoading(false)
+    }
+  }, [skillName])
+
+  useEffect(() => {
+    if (visible && skillName) {
+      loadSkillDetail()
+    }
+  }, [visible, skillName, loadSkillDetail])
+
+  if (!visible) return null
+
+  return (
+    <div className={styles.modalOverlay} onClick={onCancel}>
+      <div className={styles.modalContainer} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <div className={styles.modalTitleWrap}>
+            <div className={styles.modalIcon}>
+              <span className={styles.modalIconText}>{skillDetail?.chinese_name?.charAt(0) || skillName.charAt(0).toUpperCase()}</span>
+            </div>
+            <div className={styles.modalTitleInfo}>
+              <h3 className={styles.modalTitle}>{skillDetail?.chinese_name || skillName}</h3>
+              <span className={styles.modalSubtitle}>{skillDetail?.description}</span>
+            </div>
+          </div>
+          <button type="button" className={styles.modalCloseBtn} onClick={onCancel} aria-label="关闭">
+            <CloseOutlined />
+          </button>
+        </div>
+
+        <div className={styles.modalBody}>
+          {loading && (
+            <div className={styles.loadingState}>
+              <LoadingOutlined spin style={{ fontSize: 24, color: '#245bdb' }} />
+              <span>加载中...</span>
+            </div>
+          )}
+
+          {error && (
+            <div className={styles.errorState}>
+              <span>{error}</span>
+            </div>
+          )}
+
+          {skillDetail && !loading && (
+            <div className={styles.detailContent}>
+              <div className={styles.detailSection}>
+                <h4 className={styles.sectionTitle}>技能说明</h4>
+                <div className={styles.markdownWrap}>
+                  <MarkdownContent content={skillDetail.skill_md} isStreaming={false} />
+                </div>
+              </div>
+
+              {skillDetail.template && (
+                <div className={styles.detailSection}>
+                  <h4 className={styles.sectionTitle}>使用模板</h4>
+                  <div className={styles.templateBox}>
+                    <code>{skillDetail.template}</code>
+                  </div>
+                </div>
+              )}
+
+              {skillDetail.config_fields && skillDetail.config_fields.length > 0 && (
+                <div className={styles.detailSection}>
+                  <h4 className={styles.sectionTitle}>配置参数</h4>
+                  <div className={styles.configFieldsList}>
+                    {skillDetail.config_fields.map((field) => (
+                      <div key={field.key} className={styles.configFieldItem}>
+                        <div className={styles.configFieldHeader}>
+                          <span className={styles.configFieldKey}>{field.key}</span>
+                          <span className={styles.configFieldLabel}>{field.label}</span>
+                          {field.required && <span className={styles.configFieldRequired}>必填</span>}
+                        </div>
+                        <div className={styles.configFieldMeta}>
+                          <span className={styles.configFieldType}>类型: {field.type}</span>
+                          {field.default !== undefined && field.default !== null && (
+                            <span className={styles.configFieldDefault}>默认: {String(field.default)}</span>
+                          )}
+                        </div>
+                        {field.options && field.options.length > 0 && (
+                          <div className={styles.configFieldOptions}>
+                            {field.options.map((opt) => (
+                              <span key={opt.value} className={styles.configFieldOption}>
+                                {opt.label}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
