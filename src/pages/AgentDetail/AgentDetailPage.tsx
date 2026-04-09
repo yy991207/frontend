@@ -25,6 +25,7 @@ import { message, Spin } from 'antd'
 import EditAgentModal from '../../components/common/EditAgentModal'
 import SkillConfigModal from '../../components/common/SkillConfigModal'
 import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
+import { MarkdownContent } from '../../components/chat/markdown-content'
 import {
   loadCustomAgentApiConfig,
   updateCustomAgent,
@@ -118,6 +119,7 @@ export default function AgentDetailPage() {
   // 聊天预览相关状态
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [isChatResponding, setIsChatResponding] = useState(false)
+  // 思考过程默认展开
   const [showThinking, setShowThinking] = useState<Record<string, boolean>>({})
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -417,8 +419,12 @@ export default function AgentDetailPage() {
     }))
   }, [])
 
-  // 处理键盘事件
+  // 处理键盘事件 - 支持中文输入法，composition期间不发送
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // 中文输入法composition期间不触发发送
+    if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) {
+      return
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSendMessage()
@@ -605,7 +611,8 @@ export default function AgentDetailPage() {
 
               {/* 消息列表 */}
               {chatMessages.length > 0 && (
-                <div className={styles.messageList}>
+                <div className={styles.messageColumn}>
+                  <div className={styles.messageList}>
                   {chatMessages.map((msg) => (
                     <div key={msg.id} className={`${styles.messageRow} ${msg.role === 'user' ? styles.messageRowUser : styles.messageRowAssistant}`}>
                       {msg.role === 'user' ? (
@@ -623,10 +630,10 @@ export default function AgentDetailPage() {
                                 onClick={() => toggleThinking(msg.id)}
                               >
                                 <BulbOutlined />
-                                <span>{showThinking[msg.id] ? '隐藏思考' : '展开思考'}</span>
-                                <CaretUpOutlined className={showThinking[msg.id] ? '' : styles.thinkingToggle} />
+                                <span>{showThinking[msg.id] !== false ? '隐藏思考' : '展开思考'}</span>
+                                <CaretUpOutlined className={showThinking[msg.id] !== false ? styles.thinkingArrowUp : styles.thinkingArrowDown} />
                               </button>
-                              {showThinking[msg.id] && (
+                              {showThinking[msg.id] !== false && (
                                 <div className={styles.thinkingContent}>
                                   {msg.thinking.map((step) => (
                                     <div key={step.id} className={styles.thinkingStep}>
@@ -666,10 +673,13 @@ export default function AgentDetailPage() {
                             </div>
                           )}
                           
-                          {/* 回复内容 */}
+                          {/* 回复内容 - 使用Markdown渲染 */}
                           {msg.content && (
                             <div className={styles.assistantMessageBubble}>
-                              {msg.content}
+                              <MarkdownContent
+                                content={msg.content}
+                                isStreaming={msg.loading}
+                              />
                             </div>
                           )}
                         </div>
@@ -677,6 +687,7 @@ export default function AgentDetailPage() {
                     </div>
                   ))}
                   <div ref={messagesEndRef} />
+                  </div>
                 </div>
               )}
             </div>

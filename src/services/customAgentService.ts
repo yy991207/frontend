@@ -449,15 +449,8 @@ export async function chatCustomAgentStream(
               })
             }
             
-            // 处理 on_chain_end 事件（最终结果）
-            if (currentEvent === 'on_chain_end' && data.data?.output) {
-              const output = data.data.output
-              
-              // 如果有最终content，输出
-              if (output.content) {
-                callbacks.onTextDelta?.(output.content)
-              }
-            }
+            // 处理 on_chain_end 事件（仅用于标记完成，不输出content避免重复）
+            // content 已经在 on_chat_model_stream 中完整输出
           } catch (e) {
             // 忽略解析错误
             console.warn('SSE data parse error:', e)
