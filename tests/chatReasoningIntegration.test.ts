@@ -59,3 +59,23 @@ test('streaming flow advances to a new assistant message when a new chat model r
   assert.match(partnerPage, /onChatModelStart\(\)/)
   assert.match(partnerPage, /advanceAssistantMessageForNextModelPhase/)
 })
+
+test('agent detail page reuses shared message rendering and adapter helpers for assistant segmentation', async () => {
+  const agentDetailPage = await readFromSrc('pages/AgentDetail/AgentDetailPage.tsx')
+  const agentAdapter = await readFromSrc('pages/AgentDetail/chatMessageAdapter.ts')
+  const customAgentService = await readFromSrc('services/customAgentService.ts')
+
+  assert.match(agentDetailPage, /import \{ MessageList \} from '\.\.\/\.\.\/components\/chat\/message-list'/)
+  assert.match(agentDetailPage, /buildMessageGroups/)
+  assert.match(agentDetailPage, /getToolDisplayTitle/)
+  assert.match(agentDetailPage, /onChatModelStart:/)
+  assert.match(agentDetailPage, /advanceAssistantMessageForNextModelPhase/)
+
+  assert.match(agentAdapter, /export function upsertToolCall/)
+  assert.match(agentAdapter, /export function advanceAssistantMessageForNextModelPhase/)
+  assert.match(agentAdapter, /export function buildAssistantCopyTargets/)
+  assert.match(agentAdapter, /export function createUserMessage/)
+
+  assert.match(customAgentService, /onChatModelStart\?: \(\) => void/)
+  assert.match(customAgentService, /currentEvent === 'on_chat_model_start'/)
+})
