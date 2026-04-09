@@ -5,6 +5,7 @@ export type CustomAgentApiConfig = {
   listAgentEndpoint: string
   viewAgentEndpoint: string
   updateAgentEndpoint: string
+  chatAgentEndpoint: string
 }
 
 export type PresetQuestion = {
@@ -98,9 +99,10 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
   const listAgentPath = parsedConfig.list_custom_agent_path
   const viewAgentPath = parsedConfig.view_custom_agent_path
   const updateAgentPath = parsedConfig.update_custom_agent_path
+  const chatAgentPath = parsedConfig.chat_custom_agent_path
   const userId = parsedConfig.user_id
 
-  if (!baseUrl || !createAgentPath || !listAgentPath || !viewAgentPath || !updateAgentPath || !userId) {
+  if (!baseUrl || !createAgentPath || !listAgentPath || !viewAgentPath || !updateAgentPath || !chatAgentPath || !userId) {
     throw new Error('config.yaml 缺少必要的接口配置')
   }
 
@@ -111,6 +113,7 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
     listAgentEndpoint: buildAbsoluteUrl(baseUrl, listAgentPath),
     viewAgentEndpoint: buildAbsoluteUrl(baseUrl, viewAgentPath),
     updateAgentEndpoint: buildAbsoluteUrl(baseUrl, updateAgentPath),
+    chatAgentEndpoint: buildAbsoluteUrl(baseUrl, chatAgentPath),
   }
 }
 
@@ -283,4 +286,189 @@ export async function updateCustomAgent(
   }
 
   return data.data?.agent ?? null
+}
+
+// 聊天流式请求相关类型
+export type ChatMessageItem = {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export type ChatAgentRequest = {
+  agent_name: string
+  agent_prompt: string
+  description: string
+  message: string
+  history: ChatMessageItem[]
+  enabled_skills: { skill_name: string; chinese_name?: string; description?: string }[]
+  resource_ids: string[]
+  user_id: string
+  enable_web_search?: boolean
+}
+
+// SSE事件类型
+export type SseEvent = {
+  event?: string
+  data?: string
+  id?: string
+}
+
+// 解析SSE事件
+function parseSseEvent(line: string): SseEvent | null {
+  if (line.startsWith('event:')) {
+    return { event: line.slice(6).trim() }
+  }
+  if (line.startsWith('data:')) {
+    return { data: line.slice(5).trim() }
+  }
+  if (line.startsWith('id:')) {
+    return { id: line.slice(3).trim() }
+  }
+  return null
+}
+
+// 流式聊天请求
+export async function chatCustomAgentStream(
+  config: CustomAgentApiConfig,
+  payload: Omit<ChatAgentRequest, 'user_id'>,
+  signal: AbortSignal,
+  callbacks: {
+    onTextDelta?: (text: string) => void
+    onReasoningDelta?: (text: string) => void
+    onThinking?: (thinking: { label: string; status: 'running' | 'complete'; results?: string[] }) => void
+    onToolCall?: (toolCall: { name: string; status: 'running' | 'completed'; input?: unknown; output?: unknown }) => void
+    onComplete?: () => void
+    onError?: (error: Error) => void
+  },
+): Promise<void> {
+  const requestUrl = new URL(config.chatAgentEndpoint)
+  requestUrl.searchParams.set('user_id', config.userId)
+
+  const response = await fetch(requestUrl.toString(), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+    },
+    body: JSON.stringify({
+      ...payload,
+      user_id: config.userId,
+    }),
+    signal,
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '')
+    throw new Error(`聊天请求失败: HTTP ${response.status} ${errorText}`)
+  }
+
+  if (!response.body) {
+    throw new Error('响应体为空')
+  }
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let currentEvent = ''
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+
+      if (done) {
+        callbacks.onComplete?.()
+        break
+      }
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+
+      for (const line of lines) {
+        const trimmedLine = line.trim()
+        
+        // 解析SSE事件
+        if (trimmedLine.startsWith('event:')) {
+          currentEvent = trimmedLine.slice(6).trim()
+          continue
+        }
+        
+        if (trimmedLine.startsWith('data:')) {
+          const dataStr = trimmedLine.slice(5).trim()
+          
+          // 处理空数据行（事件分隔符）
+          if (!dataStr) {
+            currentEvent = ''
+            continue
+          }
+          
+          try {
+            const data = JSON.parse(dataStr)
+            
+            // 处理 done 事件
+            if (currentEvent === 'done') {
+              callbacks.onComplete?.()
+              return
+            }
+            
+            // 处理 on_chat_model_stream 事件
+            if (currentEvent === 'on_chat_model_stream' && data.data?.chunk) {
+              const chunk = data.data.chunk
+              
+              // 处理 reasoning_content（思考过程）
+              if (chunk.reasoning_content) {
+                callbacks.onReasoningDelta?.(chunk.reasoning_content)
+              }
+              
+              // 处理 content（正式回复）
+              if (chunk.content) {
+                callbacks.onTextDelta?.(chunk.content)
+              }
+            }
+            
+            // 处理 on_tool_start 事件
+            if (currentEvent === 'on_tool_start' && data.data?.input) {
+              callbacks.onToolCall?.({
+                name: data.name,
+                status: 'running',
+                input: data.data.input,
+              })
+            }
+            
+            // 处理 on_tool_end 事件
+            if (currentEvent === 'on_tool_end' && data.data?.output) {
+              const toolDisplay = data.data.tool_display
+              callbacks.onToolCall?.({
+                name: data.name,
+                status: 'completed',
+                input: data.data.input,
+                output: {
+                  text: data.data.output,
+                  tool_display: toolDisplay,
+                },
+              })
+            }
+            
+            // 处理 on_chain_end 事件（最终结果）
+            if (currentEvent === 'on_chain_end' && data.data?.output) {
+              const output = data.data.output
+              
+              // 如果有最终content，输出
+              if (output.content) {
+                callbacks.onTextDelta?.(output.content)
+              }
+            }
+          } catch (e) {
+            // 忽略解析错误
+            console.warn('SSE data parse error:', e)
+          }
+        }
+      }
+    }
+  } catch (error) {
+    if (signal.aborted) {
+      return
+    }
+    callbacks.onError?.(error instanceof Error ? error : new Error(String(error)))
+  }
 }

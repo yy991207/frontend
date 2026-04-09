@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   AppstoreAddOutlined,
@@ -16,6 +16,10 @@ import {
   CloseCircleOutlined,
   CloseOutlined,
   DeleteOutlined,
+  ArrowUpOutlined,
+  BulbOutlined,
+  SearchOutlined,
+  CaretUpOutlined,
 } from '@ant-design/icons'
 import { message, Spin } from 'antd'
 import EditAgentModal from '../../components/common/EditAgentModal'
@@ -25,10 +29,39 @@ import {
   loadCustomAgentApiConfig,
   updateCustomAgent,
   viewCustomAgent,
+  chatCustomAgentStream,
   type AgentDetail,
   type EnabledSkill,
+  type ChatMessageItem,
 } from '../../services/customAgentService'
 import styles from './agentDetail.module.less'
+
+// 消息类型定义
+type ChatMessage = {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  timestamp: string
+  thinking?: ThinkingStep[]
+  toolCalls?: ToolCall[]
+  loading?: boolean
+}
+
+type ThinkingStep = {
+  id: string
+  label: string
+  icon: React.ReactNode
+  status: 'complete' | 'running'
+  results?: string[]
+}
+
+type ToolCall = {
+  id: string
+  name: string
+  status: 'running' | 'completed'
+  input?: Record<string, unknown>
+  output?: unknown
+}
 
 function ConfigCard({
   icon,
@@ -81,6 +114,12 @@ export default function AgentDetailPage() {
   // 知识配置开关状态
   const [webSearchEnabled, setWebSearchEnabled] = useState(false)
   const [knowledgeSpaceEnabled, setKnowledgeSpaceEnabled] = useState(false)
+  
+  // 聊天预览相关状态
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [isChatResponding, setIsChatResponding] = useState(false)
+  const [showThinking, setShowThinking] = useState<Record<string, boolean>>({})
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -127,27 +166,266 @@ export default function AgentDetailPage() {
     }
   }, [id])
 
-  if (loading) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.loadingState}>
-          <Spin indicator={<LoadingOutlined style={{ fontSize: 32 }} spin />} tip="加载中..." />
-        </div>
-      </div>
-    )
+  // 所有的Hooks必须在early return之前调用
+  const avatarUrl = agentData?.avatar_url
+    ? agentData.avatar_url.startsWith('http')
+      ? agentData.avatar_url
+      : `http://192.168.30.238:8000${agentData.avatar_url}`
+    : ''
+
+  // 格式化时间
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
   }
 
-  if (error || !agentData) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.emptyState}>
-          <h2>加载失败</h2>
-          <p>{error || '智能体不存在或已被删除'}</p>
-        </div>
-      </div>
-    )
+  // 滚动到底部
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [])
+
+  // 消息变化时自动滚动
+  useEffect(() => {
+    scrollToBottom()
+  }, [chatMessages, scrollToBottom])
+
+  // 处理发送消息 - 调用真实API
+  const handleSendMessage = useCallback(async () => {
+    const content = chatInputValue.trim()
+    if (!content || isChatResponding) return
+
+    const now = new Date()
+    const userMessage: ChatMessage = {
+      id: `user-${now.getTime()}`,
+      role: 'user',
+      content,
+      timestamp: formatTime(now),
+    }
+
+    // 添加用户消息
+    setChatMessages((prev) => [...prev, userMessage])
+    setChatInputValue('')
+    setIsChatResponding(true)
+
+    const assistantMessageId = `assistant-${Date.now()}`
+    
+    // 创建初始AI消息
+    const initialAssistantMessage: ChatMessage = {
+      id: assistantMessageId,
+      role: 'assistant',
+      content: '',
+      timestamp: formatTime(new Date()),
+      loading: true,
+      thinking: [],
+      toolCalls: [],
+    }
+    
+    setChatMessages((prev) => [...prev, initialAssistantMessage])
+
+    try {
+      // 加载API配置
+      const config = await loadCustomAgentApiConfig()
+      
+      // 构建历史消息 - 从当前对话记录中获取
+      const history: ChatMessageItem[] = chatMessages
+        .filter((msg) => {
+          if (msg.role === 'user') {
+            return Boolean(msg.content.trim())
+          }
+
+          if (msg.role === 'assistant') {
+            const contentText = msg.content.trim()
+            if (!contentText) {
+              return false
+            }
+
+            if (contentText.startsWith('请求失败:')) {
+              return false
+            }
+
+            return true
+          }
+
+          return false
+        })
+        .map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        }))
+
+      // 构建请求payload - 所有配置参数从view_custom_agent_path接口获取
+      const payload = {
+        agent_name: agentName,
+        agent_prompt: agentInstruction,
+        description: agentSubtitle,
+        message: content,
+        history,
+        enabled_skills: agentSkills.map((s) => ({
+          skill_name: s.skill_name,
+          chinese_name: s.chinese_name,
+          description: s.description,
+        })),
+        resource_ids: resourceIds,
+        enable_web_search: webSearchEnabled,
+      }
+
+      // 创建AbortController用于取消请求
+      const controller = new AbortController()
+      
+      // 调用流式API
+      let accumulatedReasoning = ''
+      await chatCustomAgentStream(config, payload, controller.signal, {
+        onReasoningDelta: (text: string) => {
+          accumulatedReasoning += text
+          setChatMessages((prev) =>
+            prev.map((msg) => {
+              if (msg.id !== assistantMessageId) return msg
+              return {
+                ...msg,
+                thinking: [
+                  {
+                    id: 'think-reasoning',
+                    label: accumulatedReasoning,
+                    icon: <BulbOutlined />,
+                    status: 'running',
+                  },
+                ],
+              }
+            }),
+          )
+        },
+        onTextDelta: (text: string) => {
+          setChatMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMessageId
+                ? { ...msg, content: msg.content + text }
+                : msg,
+            ),
+          )
+        },
+        onThinking: (thinking) => {
+          setChatMessages((prev) =>
+            prev.map((msg) => {
+              if (msg.id !== assistantMessageId) return msg
+              
+              const existingThinking = msg.thinking || []
+              const existingIndex = existingThinking.findIndex((t) => t.label === thinking.label)
+              
+              let newThinking: typeof existingThinking
+              if (existingIndex >= 0) {
+                newThinking = existingThinking.map((t, i) =>
+                  i === existingIndex ? { ...t, ...thinking } : t,
+                )
+              } else {
+                newThinking = [...existingThinking, {
+                  id: `think-${Date.now()}`,
+                  label: thinking.label,
+                  icon: <BulbOutlined />,
+                  status: thinking.status,
+                  results: thinking.results,
+                }]
+              }
+              
+              return { ...msg, thinking: newThinking }
+            }),
+          )
+        },
+        onToolCall: (toolCall) => {
+          setChatMessages((prev) =>
+            prev.map((msg) => {
+              if (msg.id !== assistantMessageId) return msg
+              
+              const existingToolCalls = msg.toolCalls || []
+              const existingIndex = existingToolCalls.findIndex((t) => t.name === toolCall.name)
+              
+              let newToolCalls: ToolCall[]
+              if (existingIndex >= 0) {
+                newToolCalls = existingToolCalls.map((t, i) =>
+                  i === existingIndex ? { ...t, ...toolCall, input: toolCall.input as Record<string, unknown> | undefined } : t,
+                )
+              } else {
+                newToolCalls = [...existingToolCalls, {
+                  id: `tool-${Date.now()}`,
+                  name: toolCall.name,
+                  status: toolCall.status,
+                  input: toolCall.input as Record<string, unknown> | undefined,
+                  output: toolCall.output,
+                }]
+              }
+              
+              return { ...msg, toolCalls: newToolCalls }
+            }),
+          )
+        },
+        onComplete: () => {
+          setChatMessages((prev) =>
+            prev.map((msg) => {
+              if (msg.id !== assistantMessageId) return msg
+              // 将思考过程标记为完成
+              const updatedThinking = msg.thinking?.map((t) =>
+                t.id === 'think-reasoning' ? { ...t, status: 'complete' as const } : t,
+              )
+              return { ...msg, loading: false, thinking: updatedThinking }
+            }),
+          )
+          setIsChatResponding(false)
+        },
+        onError: (error) => {
+          setChatMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMessageId
+                ? {
+                    ...msg,
+                    content: msg.content || `请求失败: ${error.message}`,
+                    loading: false,
+                  }
+                : msg,
+            ),
+          )
+          setIsChatResponding(false)
+        },
+      })
+    } catch (error) {
+      setChatMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessageId
+            ? {
+                ...msg,
+                content: msg.content || `请求失败: ${error instanceof Error ? error.message : '未知错误'}`,
+                loading: false,
+              }
+            : msg,
+        ),
+      )
+      setIsChatResponding(false)
+    }
+  }, [chatInputValue, isChatResponding, chatMessages, agentName, agentInstruction, agentSubtitle, agentSkills, resourceIds, webSearchEnabled])
+
+  // 处理推荐问题点击
+  const handleSuggestionClick = useCallback((question: string) => {
+    setChatInputValue(question)
+  }, [])
+
+  // 切换思考展开状态
+  const toggleThinking = useCallback((messageId: string) => {
+    setShowThinking((prev) => ({
+      ...prev,
+      [messageId]: !prev[messageId],
+    }))
+  }, [])
+
+  // 处理键盘事件
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
+    }
   }
 
+  // 事件处理函数
   const handleEditClick = () => {
     setModalVisible(true)
   }
@@ -177,6 +455,8 @@ export default function AgentDetailPage() {
   }
 
   const handlePublish = async () => {
+    if (!agentData) return
+    
     setPublishing(true)
     setPublishStatus('idle')
 
@@ -225,9 +505,28 @@ export default function AgentDetailPage() {
     }
   }
 
-  const avatarUrl = agentData.avatar_url.startsWith('http')
-    ? agentData.avatar_url
-    : `http://192.168.30.238:8000${agentData.avatar_url}`
+  // 加载状态
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.loadingState}>
+          <Spin indicator={<LoadingOutlined style={{ fontSize: 32 }} spin />} description="加载中..." />
+        </div>
+      </div>
+    )
+  }
+
+  // 错误状态
+  if (error || !agentData) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.emptyState}>
+          <h2>加载失败</h2>
+          <p>{error || '智能体不存在或已被删除'}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={styles.page}>
@@ -273,38 +572,123 @@ export default function AgentDetailPage() {
               </button>
             </div>
 
-            <div className={styles.heroSection}>
-              <div className={styles.heroCard}>
-                <img className={styles.heroAvatar} src={avatarUrl} alt={agentName} />
-                <div className={styles.heroContent}>
-                  <h1 className={styles.heroTitle}>{agentName}</h1>
-                  <p className={styles.heroSubtitle}>{agentSubtitle}</p>
-                </div>
-              </div>
+            {/* 消息区域 */}
+            <div className={styles.messagesArea}>
+              {/* 初始欢迎区域 - 仅在没有消息时显示 */}
+              {chatMessages.length === 0 && (
+                <div className={styles.heroSection}>
+                  <div className={styles.heroCard}>
+                    <img className={styles.heroAvatar} src={avatarUrl} alt={agentName} />
+                    <div className={styles.heroContent}>
+                      <h1 className={styles.heroTitle}>{agentName}</h1>
+                      <p className={styles.heroSubtitle}>{agentSubtitle}</p>
+                    </div>
+                  </div>
 
-              <div className={styles.suggestionSection}>
-                <h3 className={styles.suggestionTitle}>推荐问题</h3>
-                <div className={styles.suggestionList}>
-                  {agentQuestions.map((item) => (
-                    <button
-                      key={item.question}
-                      type="button"
-                      className={styles.suggestionChip}
-                      onClick={() => setChatInputValue(item.category)}
-                    >
-                      {item.question}
-                    </button>
-                  ))}
+                  <div className={styles.suggestionSection}>
+                    <h3 className={styles.suggestionTitle}>推荐问题</h3>
+                    <div className={styles.suggestionList}>
+                      {agentQuestions.slice(0, 3).map((item) => (
+                        <button
+                          key={item.question}
+                          type="button"
+                          className={styles.suggestionChip}
+                          onClick={() => handleSuggestionClick(item.category)}
+                        >
+                          {item.question}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* 消息列表 */}
+              {chatMessages.length > 0 && (
+                <div className={styles.messageList}>
+                  {chatMessages.map((msg) => (
+                    <div key={msg.id} className={`${styles.messageRow} ${msg.role === 'user' ? styles.messageRowUser : styles.messageRowAssistant}`}>
+                      {msg.role === 'user' ? (
+                        <div className={styles.userMessageBubble}>
+                          {msg.content}
+                        </div>
+                      ) : (
+                        <div className={styles.assistantMessageWrap}>
+                          {/* 思考过程 */}
+                          {msg.thinking && msg.thinking.length > 0 && (
+                            <div className={styles.thinkingPanel}>
+                              <button
+                                type="button"
+                                className={styles.thinkingToggle}
+                                onClick={() => toggleThinking(msg.id)}
+                              >
+                                <BulbOutlined />
+                                <span>{showThinking[msg.id] ? '隐藏思考' : '展开思考'}</span>
+                                <CaretUpOutlined className={showThinking[msg.id] ? '' : styles.thinkingToggle} />
+                              </button>
+                              {showThinking[msg.id] && (
+                                <div className={styles.thinkingContent}>
+                                  {msg.thinking.map((step) => (
+                                    <div key={step.id} className={styles.thinkingStep}>
+                                      <span className={styles.thinkingStepIcon}>{step.icon}</span>
+                                      <span className={styles.thinkingStepLabel}>{step.label}</span>
+                                      <span className={`${styles.thinkingStepStatus} ${step.status === 'running' ? styles.thinkingStepStatusRunning : ''}`}>
+                                        {step.status === 'running' ? <LoadingOutlined spin /> : '完成'}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {/* 工具调用结果 */}
+                                  {msg.toolCalls && msg.toolCalls.some((tc) => tc.output) && (
+                                    <div className={styles.toolResultChips}>
+                                      {msg.toolCalls
+                                        .filter((tc) => tc.output)
+                                        .map((tc) => {
+                                          const output = tc.output as { results?: string[] } | undefined
+                                          return output?.results?.map((result, idx) => (
+                                            <span key={`${tc.id}-${idx}`} className={styles.toolResultChip}>
+                                              {result}
+                                            </span>
+                                          ))
+                                        })}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* 加载动画 */}
+                          {msg.loading && !msg.content && (
+                            <div className={styles.loadingDots}>
+                              <span className={styles.loadingDot} />
+                              <span className={styles.loadingDot} />
+                              <span className={styles.loadingDot} />
+                            </div>
+                          )}
+                          
+                          {/* 回复内容 */}
+                          {msg.content && (
+                            <div className={styles.assistantMessageBubble}>
+                              {msg.content}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
             </div>
 
+            {/* 输入区域 */}
             <div className={styles.chatComposerWrap}>
               <div className={styles.chatComposer}>
                 <input
                   className={styles.chatInput}
                   value={chatInputValue}
                   onChange={(e) => setChatInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   placeholder="问我任何问题"
                   aria-label="对话输入框"
                 />
@@ -332,6 +716,16 @@ export default function AgentDetailPage() {
                     </button>
                     <button type="button" className={styles.iconButton} aria-label="语音">
                       <SoundOutlined />
+                    </button>
+                    <div className={styles.divider} />
+                    <button
+                      type="button"
+                      className={`${styles.sendButton} ${chatInputValue.trim() && !isChatResponding ? styles.sendButtonActive : styles.sendButtonDisabled}`}
+                      onClick={handleSendMessage}
+                      disabled={!chatInputValue.trim() || isChatResponding}
+                      aria-label="发送消息"
+                    >
+                      {isChatResponding ? <LoadingOutlined spin /> : <ArrowUpOutlined />}
                     </button>
                   </div>
                 </div>

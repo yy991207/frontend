@@ -35,3 +35,6 @@ list_custom_agent_path: /api/v1/custom-agents
 view_custom_agent_path: /api/v1/custom-agents/{agent_id}
 update_custom_agent_path: /api/v1/custom-agents/{agent_id}
 del_custom_agent_path: /api/v1/custom-agents/{agent_id}
+chat_custom_agent_path: /api/v1/custom-agents/debug/stream
+
+
