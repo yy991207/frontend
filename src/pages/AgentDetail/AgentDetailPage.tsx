@@ -20,6 +20,7 @@ import EditAgentModal from '../../components/common/EditAgentModal'
 import {
   loadCustomAgentApiConfig,
   createCustomAgent,
+  updateCustomAgent,
   viewCustomAgent,
   type AgentDetail,
 } from '../../services/customAgentService'
@@ -170,18 +171,27 @@ export default function AgentDetailPage() {
         resource_ids: resourceIds,
       }
 
-      await createCustomAgent(config, payload)
+      const updatedAgent = await updateCustomAgent(config, agentData.agent_id, payload)
+
+      setAgentData(updatedAgent)
+      setAgentName(updatedAgent.agent_name)
+      setAgentSubtitle(updatedAgent.description)
+      setAgentInstruction(updatedAgent.agent_prompt)
+      setAgentSkills(updatedAgent.enabled_skills || [])
+      setAgentQuestions(updatedAgent.preset_questions || [])
+      setIsPublic(updatedAgent.is_public)
+      setResourceIds(updatedAgent.resource_ids || [])
 
       setPublishStatus('success')
       setHasChanges(false)
-      message.success('发布成功')
+      message.success('更新成功')
 
       setTimeout(() => {
         setPublishStatus('idle')
       }, 3000)
     } catch (error) {
       setPublishStatus('error')
-      message.error(error instanceof Error ? error.message : '发布失败，请重试')
+      message.error(error instanceof Error ? error.message : '更新失败，请重试')
 
       setTimeout(() => {
         setPublishStatus('idle')
@@ -311,7 +321,15 @@ export default function AgentDetailPage() {
             <h2 className={styles.configHeading}>搭建</h2>
 
             <ConfigCard icon={null} title="指令">
-              <div className={styles.instructionBox}>{agentInstruction}</div>
+              <textarea
+                className={styles.instructionBox}
+                value={agentInstruction}
+                onChange={(e) => {
+                  setAgentInstruction(e.target.value)
+                  setHasChanges(true)
+                  setPublishStatus('idle')
+                }}
+              />
             </ConfigCard>
 
             <ConfigCard

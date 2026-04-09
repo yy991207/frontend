@@ -487,7 +487,7 @@ function PartnerPageContent() {
   }, [])
 
   // 获取用户技能列表（我添加的 + 我创建的）
-  const fetchSkills = async (signal?: AbortSignal) => {
+  const fetchSkills = useCallback(async (signal?: AbortSignal) => {
     if (!skillApiConfig) {
       setSkills([])
       return
@@ -536,7 +536,7 @@ function PartnerPageContent() {
         setSkillsLoading(false)
       }
     }
-  }
+  }, [skillApiConfig])
 
   useEffect(() => {
     if (!isSettingsOpen || !partnerApiConfig) {
