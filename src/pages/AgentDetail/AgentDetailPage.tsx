@@ -70,6 +70,7 @@ export default function AgentDetailPage() {
   const [hoveredSkillName, setHoveredSkillName] = useState<string | null>(null)
   const [agentQuestions, setAgentQuestions] = useState<{ category: string; question: string }[]>([])
   const [expandedQuestionIndex, setExpandedQuestionIndex] = useState<number | null>(null)
+  const [chatInputValue, setChatInputValue] = useState('')
   const [isPublic, setIsPublic] = useState(false)
   const [resourceIds, setResourceIds] = useState<string[]>([])
   const [modalVisible, setModalVisible] = useState(false)
@@ -285,7 +286,12 @@ export default function AgentDetailPage() {
                 <h3 className={styles.suggestionTitle}>推荐问题</h3>
                 <div className={styles.suggestionList}>
                   {agentQuestions.map((item) => (
-                    <button key={item.question} type="button" className={styles.suggestionChip}>
+                    <button
+                      key={item.question}
+                      type="button"
+                      className={styles.suggestionChip}
+                      onClick={() => setChatInputValue(item.category)}
+                    >
                       {item.question}
                     </button>
                   ))}
@@ -297,8 +303,9 @@ export default function AgentDetailPage() {
               <div className={styles.chatComposer}>
                 <input
                   className={styles.chatInput}
-                  value="问我任何问题"
-                  readOnly
+                  value={chatInputValue}
+                  onChange={(e) => setChatInputValue(e.target.value)}
+                  placeholder="问我任何问题"
                   aria-label="对话输入框"
                 />
 
@@ -325,10 +332,6 @@ export default function AgentDetailPage() {
                     </button>
                     <button type="button" className={styles.iconButton} aria-label="语音">
                       <SoundOutlined />
-                    </button>
-                    <span className={styles.divider} />
-                    <button type="button" className={styles.sendButton} aria-label="发送">
-                      <MessageOutlined />
                     </button>
                   </div>
                 </div>
