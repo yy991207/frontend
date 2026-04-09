@@ -6,7 +6,6 @@ import {
   EditOutlined,
   EyeOutlined,
   GlobalOutlined,
-  MessageOutlined,
   PaperClipOutlined,
   PlusOutlined,
   SafetyCertificateOutlined,
@@ -14,7 +13,6 @@ import {
   LoadingOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-  CloseOutlined,
   DeleteOutlined,
   ArrowUpOutlined,
 } from '@ant-design/icons'
@@ -302,18 +300,34 @@ export default function AgentDetailPage() {
             return result.messages
           })
         },
-        onToolCall: (toolCall) => {
-          const toolCallData: ToolCall = {
-            name: toolCall.name,
-            runId: `${toolCall.name}-${Date.now()}`,
-            status: toolCall.status,
-            input: (toolCall.input as Record<string, unknown>) ?? {},
-            output: toolCall.output,
-          }
+        onToolStart: (toolCall: ToolCall) => {
           setChatMessages((prev) =>
             updateAssistantMessageById(prev, activeAssistantMessageId, (msg) =>
-              upsertToolCall(msg, toolCallData),
+              upsertToolCall(msg, toolCall),
             ),
+          )
+        },
+        onToolEnd: (toolCall: ToolCall) => {
+          setChatMessages((prev) =>
+            updateAssistantMessageById(prev, activeAssistantMessageId, (msg) =>
+              upsertToolCall(msg, toolCall),
+            ),
+          )
+        },
+        onReferences: (references) => {
+          setChatMessages((prev) =>
+            updateAssistantMessageById(prev, activeAssistantMessageId, (msg) => ({
+              ...msg,
+              references,
+            })),
+          )
+        },
+        onSkillOutput: (skillOutput) => {
+          setChatMessages((prev) =>
+            updateAssistantMessageById(prev, activeAssistantMessageId, (msg) => ({
+              ...msg,
+              skillOutput,
+            })),
           )
         },
         onComplete: () => {

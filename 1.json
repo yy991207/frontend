@@ -1,380 +1,557 @@
 event: on_chain_start
-data: {"event":"on_chain_start","name":"debug_agent","run_id":"run_204215306601","parent_ids":[],"tags":[],"metadata":{"session_id":"debug_123456_20421530"},"timestamp":"2026-04-09 16:10:06","data":{"input":{"message":"你会干啥"}}}
+data: {"event":"on_chain_start","name":"debug_agent","run_id":"run_204219270622","parent_ids":[],"tags":[],"metadata":{"session_id":"debug_123456_20421927"},"timestamp":"2026-04-09 18:47:37","data":{"input":{"message":"查询北京天气"}}}
 
 event: on_chat_model_start
-data: {"event":"on_chat_model_start","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:07","data":{"input":{}}}
+data: {"event":"on_chat_model_start","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:38","data":{"input":{}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:08","data":{"chunk":{"reasoning_content":"用户"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"用户"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:08","data":{"chunk":{"reasoning_content":"问我"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"想要"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:09","data":{"chunk":{"reasoning_content":"能做什么"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"查询北京"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:09","data":{"chunk":{"reasoning_content":"，"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"天气。"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:09","data":{"chunk":{"reasoning_content":"这是一个简单的"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"这是一个"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:09","data":{"chunk":{"reasoning_content":"自我"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"需要实时"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:09","data":{"chunk":{"reasoning_content":"介绍问题"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"信息的请求"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:09","data":{"chunk":{"reasoning_content":"，不需要"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"，天气"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:09","data":{"chunk":{"reasoning_content":"使用任何"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"信息是"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:09","data":{"chunk":{"reasoning_content":"工具"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"实时变化的"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:09","data":{"chunk":{"reasoning_content":"，直接"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"，我"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:09","data":{"chunk":{"reasoning_content":"回答即可"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"需要使用"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:09","data":{"chunk":{"reasoning_content":"。"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"web_search"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:09","data":{"chunk":{"content":"我是"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"工"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:09","data":{"chunk":{"content":"「Python"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"具"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:09","data":{"chunk":{"content":"编程助手"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"来获取"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:09","data":{"chunk":{"content":"」，"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"最新的北京"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:10","data":{"chunk":{"content":"主要帮你"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"天气信息"}}}
 
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:10","data":{"chunk":{"content":"解决Python"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:10","data":{"chunk":{"content":"编程"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:10","data":{"chunk":{"content":"相关的问题"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:10","data":{"chunk":{"content":"。\n\n##"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:10","data":{"chunk":{"content":" 我能"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:10","data":{"chunk":{"content":"做的事"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:10","data":{"chunk":{"content":"\n\n|"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:10","data":{"chunk":{"content":" 类型 |"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:10","data":{"chunk":{"content":" 示例"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:10","data":{"chunk":{"content":" |\n|"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:10","data":{"chunk":{"content":"------|"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:10","data":{"chunk":{"content":"------|\n"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:10","data":{"chunk":{"content":"| **"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:10","data":{"chunk":{"content":"代码调试"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:10","data":{"chunk":{"content":"** |"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:11","data":{"chunk":{"content":" 帮你"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:11","data":{"chunk":{"content":"找出bug"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:11","data":{"chunk":{"content":"、修复"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:11","data":{"chunk":{"content":"报错"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:11","data":{"chunk":{"content":"、"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:11","data":{"chunk":{"content":"解释错误"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:11","data":{"chunk":{"content":"原因 |\n"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:11","data":{"chunk":{"content":"| **"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:11","data":{"chunk":{"content":"语法"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:11","data":{"chunk":{"content":"解答**"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:11","data":{"chunk":{"content":" | 解释"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:12","data":{"chunk":{"content":"Python语法"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:12","data":{"chunk":{"content":"特性、"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:12","data":{"chunk":{"content":"使用"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:12","data":{"chunk":{"content":"技巧、"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:12","data":{"chunk":{"content":"注意事项 |\n"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:12","data":{"chunk":{"content":"| **"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:12","data":{"chunk":{"content":"代码"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:12","data":{"chunk":{"content":"优化**"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:12","data":{"chunk":{"content":" |"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:12","data":{"chunk":{"content":" 提升"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:12","data":{"chunk":{"content":"代码性能"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:12","data":{"chunk":{"content":"、可"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:12","data":{"chunk":{"content":"读"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:12","data":{"chunk":{"content":"性、"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:12","data":{"chunk":{"content":"遵循PE"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:13","data":{"chunk":{"content":"P8"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:13","data":{"chunk":{"content":"规范 |\n"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:13","data":{"chunk":{"content":"| **"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:13","data":{"chunk":{"content":"算法实现"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:13","data":{"chunk":{"content":"** |"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:13","data":{"chunk":{"content":" 排序"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:13","data":{"chunk":{"content":"、搜索"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:13","data":{"chunk":{"content":"、数据"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:13","data":{"chunk":{"content":"结构、"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:13","data":{"chunk":{"content":"LeetCode"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:13","data":{"chunk":{"content":"刷题"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:13","data":{"chunk":{"content":" |\n|"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:13","data":{"chunk":{"content":" **"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:13","data":{"chunk":{"content":"库/"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:13","data":{"chunk":{"content":"框架使用"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":"** |"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":" NumPy"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":"、P"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":"andas"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":"、D"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":"jango、"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":"Flask"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":"、Fast"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":"API等"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":" |\n|"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":" **项目"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":"架构**"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":" | 目录"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":"结构设计"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":"、模块"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":"划分、"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":"最佳实践"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":" |\n|"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":" **代码"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:14","data":{"chunk":{"content":"编写**"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:15","data":{"chunk":{"content":" |"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:15","data":{"chunk":{"content":" 根据"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:15","data":{"chunk":{"content":"需求帮你"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:15","data":{"chunk":{"content":"写Python"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:15","data":{"chunk":{"content":"代码 |\n\n"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:15","data":{"chunk":{"content":"##"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:15","data":{"chunk":{"content":" 简"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:15","data":{"chunk":{"content":"单说"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:15","data":{"chunk":{"content":"\n\n遇到"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:15","data":{"chunk":{"content":"任何Python"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:15","data":{"chunk":{"content":"问题，"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:15","data":{"chunk":{"content":"直接"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:15","data":{"chunk":{"content":"问我就行"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:15","data":{"chunk":{"content":"。我会"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:16","data":{"chunk":{"content":"：\n-"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:16","data":{"chunk":{"content":" 帮你"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:16","data":{"chunk":{"content":"分析"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:16","data":{"chunk":{"content":"问题\n"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:16","data":{"chunk":{"content":"- 给"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:16","data":{"chunk":{"content":"出解决方案"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:16","data":{"chunk":{"content":"\n-"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:16","data":{"chunk":{"content":" 提"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:16","data":{"chunk":{"content":"供可"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:16","data":{"chunk":{"content":"运行的代码"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:16","data":{"chunk":{"content":"示例\n\n"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:16","data":{"chunk":{"content":"有什么Python"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:16","data":{"chunk":{"content":"问题吗"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:16","data":{"chunk":{"content":"？"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"。"}}}
 
 event: on_chat_model_end
-data: {"event":"on_chat_model_end","name":"ReasoningChatOpenAI","run_id":"019d714a-9a24-7043-939a-c2aae0e62919","parent_ids":["run_204215306601"],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:16","data":{"output":{}}}
+data: {"event":"on_chat_model_end","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"output":{}}}
+
+event: on_tool_start
+data: {"event":"on_tool_start","name":"web_search","run_id":"019d71da-d8c9-7fe3-bd8b-165a427f3e4d","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:41","data":{"input":{"query":"北京天气","count":5}}}
+
+event: on_tool_end
+data: {"event":"on_tool_end","name":"web_search","run_id":"019d71da-d8c9-7fe3-bd8b-165a427f3e4d","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:56","data":{"output":"联网搜索完成，找到 5 条结果","tool_display":{"tool_name":"web_search","tool_label":"联网搜索","found":true,"items":[{"title":"北京-天气预报","url":"http://testbed.nmc.cn/publish/forecast/ABJ/beijing.html","site_name":"testbed.nmc.cn","site_icon":"https://th.bochaai.com/favicon?domain_url=http://testbed.nmc.cn/publish/forecast/ABJ/beijing.html"},{"title":"4月9日北京天气预报","url":"https://beijing.qianlong.com/2026/0409/8652135.shtml","site_name":"千龙网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://beijing.qianlong.com/2026/0409/8652135.shtml"},{"title":"北京天气_北京实时天气预报_北京24小时天气预报","url":"https://tianqi.cncn.com/beijing","site_name":"tianqi.cncn.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://tianqi.cncn.com/beijing"},{"title":"北京迎大风雷雨天气","url":"https://new.qq.com/rain/a/20250513A07IHR00","site_name":"腾讯网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://new.qq.com/rain/a/20250513A07IHR00"},{"title":"【北京天气预报】北京天气预报一周,北京天气预报15天,30天,今天,明天,7天,10天,未来北京一周天气预报查询—天气网","url":"https://www.tianqi.com/beijing/","site_name":"www.tianqi.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://www.tianqi.com/beijing/"}]}}}
+
+event: on_chat_model_start
+data: {"event":"on_chat_model_start","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:56","data":{"input":{}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"根据"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"搜索结果"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"，我可以"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"整理出"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"北京的"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"天气信息"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"。不过"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"搜索结果"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"中的"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"日期有些"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"混乱，"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"有些"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"显示4"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"月，"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"有些显示"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"5月"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"、9"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"月。"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"我应该综合"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"这些信息"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"给"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"用户一个"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"清晰的回答"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"。\n\n从"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"结果来看"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"：\n-"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"当前天气"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"：小雨"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"，"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"南风"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"微风"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"- 明"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"天（"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"4月"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"8日"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"/9"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"日）："}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"阴有小"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"雨转"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"晴"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"，气温"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"8-"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"25℃"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"-"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"后天"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"："}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"晴，"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"9-"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"25℃"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"让我整理"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"一下给"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"reasoning_content":"用户回答"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"reasoning_content":"。"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"根据搜索"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"结果，"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"为您整理"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"北京天气"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"情况：\n\n"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"## 北京"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"天气预报"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"\n\n**"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"今日天气"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"**\n"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"- 天"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"气："}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"小雨\n"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"-"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":" 风"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"向"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"风力："}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"南风"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"微风"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"\n\n**"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"明日天气"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"（"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"4月"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"9日"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"）**\n"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"-"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":" 天气"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"：阴"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"有小雨"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"转晴"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"\n-"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":" 气温"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"：8"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"℃ 至"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":" 25"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"℃\n"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"-"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":" 风"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"向风力"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"：北"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"转南"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"风 "}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"2-"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"3级"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"\n\n**"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"后天天气"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"（4"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"月10"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"日）"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"**\n-"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":" 天气"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"：晴"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"\n-"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":" 气温"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"：9"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"℃ 至"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":" 25"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"℃\n"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"-"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":" 风"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"向风力"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"：北"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"转南"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"风 "}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"2-"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"3级"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"\n\n**"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"温馨提示**\n"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"- 近"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"期有"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"降雨，"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"外出"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"请携带"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"雨具"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"\n-"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":" 紫外"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"线指数"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"：很强"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"，建议"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"涂擦"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"SPF"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"20以上"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"、PA"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"++护肤品"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"，"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"避免强"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"光照射"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"\n-"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":" 气温"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"逐渐回升"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"，早晚"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"温差较大"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"，注意"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"增减"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"衣物\n\n"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"如"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"需了解更多"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"天气详情"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"，可"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"访问天气"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"网或"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"中国气象"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"网查询"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"实时"}}}
+
+event: on_chat_model_stream
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"信息。"}}}
+
+event: on_chat_model_end
+data: {"event":"on_chat_model_end","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"output":{}}}
 
 event: on_chain_end
-data: {"event":"on_chain_end","name":"debug_agent","run_id":"run_204215306601","parent_ids":[],"tags":[],"metadata":{},"timestamp":"2026-04-09 16:10:16","data":{"output":{"content":"我是「Python编程助手」，主要帮你解决Python编程相关的问题。\n\n## 我能做的事\n\n| 类型 | 示例 |\n|------|------|\n| **代码调试** | 帮你找出bug、修复报错、解释错误原因 |\n| **语法解答** | 解释Python语法特性、使用技巧、注意事项 |\n| **代码优化** | 提升代码性能、可读性、遵循PEP8规范 |\n| **算法实现** | 排序、搜索、数据结构、LeetCode刷题 |\n| **库/框架使用** | NumPy、Pandas、Django、Flask、FastAPI等 |\n| **项目架构** | 目录结构设计、模块划分、最佳实践 |\n| **代码编写** | 根据需求帮你写Python代码 |\n\n## 简单说\n\n遇到任何Python问题，直接问我就行。我会：\n- 帮你分析问题\n- 给出解决方案\n- 提供可运行的代码示例\n\n有什么Python问题吗？","reasoning_content":"用户问我能做什么，这是一个简单的自我介绍问题，不需要使用任何工具，直接回答即可。"},"references":[],"web_references":null,"skill_output":null}}
+data: {"event":"on_chain_end","name":"debug_agent","run_id":"run_204219270622","parent_ids":[],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:08","data":{"output":{"content":"根据搜索结果，为您整理北京天气情况：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向风力：南风微风\n\n**明日天气（4月9日）**\n- 天气：阴有小雨转晴\n- 气温：8℃ 至 25℃\n- 风向风力：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：晴\n- 气温：9℃ 至 25℃\n- 风向风力：北转南风 2-3级\n\n**温馨提示**\n- 近期有降雨，外出请携带雨具\n- 紫外线指数：很强，建议涂擦SPF20以上、PA++护肤品，避免强光照射\n- 气温逐渐回升，早晚温差较大，注意增减衣物\n\n如需了解更多天气详情，可访问天气网或中国气象网查询实时信息。","reasoning_content":"用户想要查询北京天气。这是一个需要实时信息的请求，天气信息是实时变化的，我需要使用web_search工具来获取最新的北京天气信息。根据搜索结果，我可以整理出北京的天气信息。不过搜索结果中的日期有些混乱，有些显示4月，有些显示5月、9月。我应该综合这些信息给用户一个清晰的回答。\n\n从结果来看：\n-当前天气：小雨，南风微风- 明天（4月8日/9日）：阴有小雨转晴，气温8-25℃-后天：晴，9-25℃让我整理一下给用户回答。"},"references":[],"web_references":[{"title":"北京-天气预报","url":"http://testbed.nmc.cn/publish/forecast/ABJ/beijing.html","site_name":"testbed.nmc.cn","site_icon":"https://th.bochaai.com/favicon?domain_url=http://testbed.nmc.cn/publish/forecast/ABJ/beijing.html"},{"title":"4月9日北京天气预报","url":"https://beijing.qianlong.com/2026/0409/8652135.shtml","site_name":"千龙网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://beijing.qianlong.com/2026/0409/8652135.shtml"},{"title":"北京天气_北京实时天气预报_北京24小时天气预报","url":"https://tianqi.cncn.com/beijing","site_name":"tianqi.cncn.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://tianqi.cncn.com/beijing"},{"title":"北京迎大风雷雨天气","url":"https://new.qq.com/rain/a/20250513A07IHR00","site_name":"腾讯网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://new.qq.com/rain/a/20250513A07IHR00"},{"title":"【北京天气预报】北京天气预报一周,北京天气预报15天,30天,今天,明天,7天,10天,未来北京一周天气预报查询—天气网","url":"https://www.tianqi.com/beijing/","site_name":"www.tianqi.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://www.tianqi.com/beijing/"}],"skill_output":null}}
 
 event: done
 data: {}
