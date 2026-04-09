@@ -33,9 +33,7 @@ import {
 } from '../../services/customAgentService'
 import type { ToolCall } from '../../core/messages/types'
 import {
-  saveChatHistory,
-  loadChatHistory,
-  type ChatHistoryItem,
+  clearAgentStorage,
 } from '../../utils/agentStorage'
 import {
   createUserMessage,
@@ -112,25 +110,6 @@ export default function AgentDetailPage() {
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const restoreChatHistory = useCallback((agentId: string) => {
-    const history = loadChatHistory(agentId)
-    const restoredMessages: AgentChatMessage[] = history.map((item, index) => ({
-      id: `${item.role}-${agentId}-${index}`,
-      role: item.role,
-      content: item.content,
-      timestamp: '',
-      loading: false,
-      reasoningContent: null,
-      toolCalls: [],
-      references: [],
-      courses: [],
-      skillOutput: [],
-      subagentLabel: null,
-    }))
-
-    setChatMessages(restoredMessages)
-  }, [])
-
   useEffect(() => {
     let cancelled = false
 
@@ -151,7 +130,8 @@ export default function AgentDetailPage() {
       setExpandedSkillName(null)
       setHoveredSkillName(null)
       setPublishStatus('idle')
-      restoreChatHistory(id)
+      setChatMessages([])
+      clearAgentStorage(id)
 
       try {
         const config = await loadCustomAgentApiConfig()
@@ -184,7 +164,7 @@ export default function AgentDetailPage() {
     return () => {
       cancelled = true
     }
-  }, [id, restoreChatHistory])
+  }, [id])
 
   // 所有的Hooks必须在early return之前调用
   const avatarUrl = agentData?.avatar_url
@@ -211,29 +191,6 @@ export default function AgentDetailPage() {
   useEffect(() => {
     scrollToBottom()
   }, [chatMessages, scrollToBottom])
-
-  // 聊天消息变化时自动保存到本地存储
-  useEffect(() => {
-    if (!id || chatMessages.length === 0) return
-    
-    const history: ChatHistoryItem[] = chatMessages
-      .filter((msg) => {
-        if (msg.role === 'user') return Boolean(msg.content.trim())
-        if (msg.role === 'assistant') {
-          const contentText = msg.content.trim()
-          if (!contentText) return false
-          if (contentText.startsWith('请求失败:')) return false
-          return true
-        }
-        return false
-      })
-      .map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-      }))
-    
-    saveChatHistory(id, history)
-  }, [id, chatMessages])
 
   // 处理发送消息 - 调用真实API
   const handleSendMessage = useCallback(async () => {
@@ -483,23 +440,6 @@ export default function AgentDetailPage() {
         setIsPublic(updatedAgent.is_public)
         setResourceIds(updatedAgent.resource_ids || [])
       }
-
-      const nextHistory: ChatHistoryItem[] = chatMessages
-        .filter((msg) => {
-          if (msg.role === 'user') return Boolean(msg.content.trim())
-          if (msg.role === 'assistant') {
-            const contentText = msg.content.trim()
-            if (!contentText) return false
-            if (contentText.startsWith('请求失败:')) return false
-            return true
-          }
-          return false
-        })
-        .map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        }))
-      saveChatHistory(agentData.agent_id, nextHistory)
 
       setPublishStatus('success')
       message.success('更新成功')
