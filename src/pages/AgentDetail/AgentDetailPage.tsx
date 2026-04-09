@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   AppstoreAddOutlined,
@@ -17,15 +17,12 @@ import {
   CloseOutlined,
   DeleteOutlined,
   ArrowUpOutlined,
-  BulbOutlined,
-  SearchOutlined,
-  CaretUpOutlined,
 } from '@ant-design/icons'
 import { message, Spin } from 'antd'
 import EditAgentModal from '../../components/common/EditAgentModal'
 import SkillConfigModal from '../../components/common/SkillConfigModal'
 import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
-import { MarkdownContent } from '../../components/chat/markdown-content'
+import { MessageList } from '../../components/chat/message-list'
 import {
   loadCustomAgentApiConfig,
   updateCustomAgent,
@@ -35,34 +32,22 @@ import {
   type EnabledSkill,
   type ChatMessageItem,
 } from '../../services/customAgentService'
+import type { ToolCall } from '../../core/messages/types'
+import {
+  createUserMessage,
+  createLoadingAssistantMessage,
+  createFollowupAssistantMessage,
+  updateAssistantMessageById,
+  upsertToolCall,
+  advanceAssistantMessageForNextModelPhase,
+  appendTextDeltaToStreamMessages,
+  buildMessageGroups,
+  buildAssistantCopyTargets,
+  getToolDisplayTitle,
+  getToolDisplaySummary,
+  type AgentChatMessage,
+} from './chatMessageAdapter'
 import styles from './agentDetail.module.less'
-
-// 消息类型定义
-type ChatMessage = {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: string
-  thinking?: ThinkingStep[]
-  toolCalls?: ToolCall[]
-  loading?: boolean
-}
-
-type ThinkingStep = {
-  id: string
-  label: string
-  icon: React.ReactNode
-  status: 'complete' | 'running'
-  results?: string[]
-}
-
-type ToolCall = {
-  id: string
-  name: string
-  status: 'running' | 'completed'
-  input?: Record<string, unknown>
-  output?: unknown
-}
 
 function ConfigCard({
   icon,
@@ -117,10 +102,9 @@ export default function AgentDetailPage() {
   const [knowledgeSpaceEnabled, setKnowledgeSpaceEnabled] = useState(false)
   
   // 聊天预览相关状态
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [chatMessages, setChatMessages] = useState<AgentChatMessage[]>([])
   const [isChatResponding, setIsChatResponding] = useState(false)
-  // 思考过程默认展开
-  const [showThinking, setShowThinking] = useState<Record<string, boolean>>({})
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -199,13 +183,8 @@ export default function AgentDetailPage() {
     const content = chatInputValue.trim()
     if (!content || isChatResponding) return
 
-    const now = new Date()
-    const userMessage: ChatMessage = {
-      id: `user-${now.getTime()}`,
-      role: 'user',
-      content,
-      timestamp: formatTime(now),
-    }
+    const timestamp = formatTime(new Date())
+    const userMessage = createUserMessage(content, timestamp)
 
     // 添加用户消息
     setChatMessages((prev) => [...prev, userMessage])
@@ -213,44 +192,24 @@ export default function AgentDetailPage() {
     setIsChatResponding(true)
 
     const assistantMessageId = `assistant-${Date.now()}`
-    
-    // 创建初始AI消息
-    const initialAssistantMessage: ChatMessage = {
-      id: assistantMessageId,
-      role: 'assistant',
-      content: '',
-      timestamp: formatTime(new Date()),
-      loading: true,
-      thinking: [],
-      toolCalls: [],
-    }
-    
+    const initialAssistantMessage = createLoadingAssistantMessage(timestamp, assistantMessageId)
     setChatMessages((prev) => [...prev, initialAssistantMessage])
 
     try {
-      // 加载API配置
       const config = await loadCustomAgentApiConfig()
       
-      // 构建历史消息 - 从当前对话记录中获取
+      // 构建历史消息
       const history: ChatMessageItem[] = chatMessages
         .filter((msg) => {
           if (msg.role === 'user') {
             return Boolean(msg.content.trim())
           }
-
           if (msg.role === 'assistant') {
             const contentText = msg.content.trim()
-            if (!contentText) {
-              return false
-            }
-
-            if (contentText.startsWith('请求失败:')) {
-              return false
-            }
-
+            if (!contentText) return false
+            if (contentText.startsWith('请求失败:')) return false
             return true
           }
-
           return false
         })
         .map((msg) => ({
@@ -258,7 +217,6 @@ export default function AgentDetailPage() {
           content: msg.content,
         }))
 
-      // 构建请求payload - 所有配置参数从view_custom_agent_path接口获取
       const payload = {
         agent_name: agentName,
         agent_prompt: agentInstruction,
@@ -274,149 +232,108 @@ export default function AgentDetailPage() {
         enable_web_search: webSearchEnabled,
       }
 
-      // 创建AbortController用于取消请求
       const controller = new AbortController()
-      
-      // 调用流式API
-      let accumulatedReasoning = ''
+      let activeAssistantMessageId = assistantMessageId
+
       await chatCustomAgentStream(config, payload, controller.signal, {
+        onChatModelStart: () => {
+          const replyTime = formatTime(new Date())
+          setChatMessages((prev) => {
+            const result = advanceAssistantMessageForNextModelPhase(
+              prev,
+              activeAssistantMessageId,
+              replyTime,
+              createFollowupAssistantMessage,
+            )
+            activeAssistantMessageId = result.activeMessageId
+            return result.messages
+          })
+        },
         onReasoningDelta: (text: string) => {
-          accumulatedReasoning += text
           setChatMessages((prev) =>
-            prev.map((msg) => {
-              if (msg.id !== assistantMessageId) return msg
-              return {
-                ...msg,
-                thinking: [
-                  {
-                    id: 'think-reasoning',
-                    label: accumulatedReasoning,
-                    icon: <BulbOutlined />,
-                    status: 'running',
-                  },
-                ],
-              }
-            }),
+            updateAssistantMessageById(prev, activeAssistantMessageId, (msg) => ({
+              ...msg,
+              reasoningContent: `${msg.reasoningContent ?? ''}${text}`,
+            })),
           )
         },
         onTextDelta: (text: string) => {
-          setChatMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessageId
-                ? { ...msg, content: msg.content + text }
-                : msg,
-            ),
-          )
-        },
-        onThinking: (thinking) => {
-          setChatMessages((prev) =>
-            prev.map((msg) => {
-              if (msg.id !== assistantMessageId) return msg
-              
-              const existingThinking = msg.thinking || []
-              const existingIndex = existingThinking.findIndex((t) => t.label === thinking.label)
-              
-              let newThinking: typeof existingThinking
-              if (existingIndex >= 0) {
-                newThinking = existingThinking.map((t, i) =>
-                  i === existingIndex ? { ...t, ...thinking } : t,
-                )
-              } else {
-                newThinking = [...existingThinking, {
-                  id: `think-${Date.now()}`,
-                  label: thinking.label,
-                  icon: <BulbOutlined />,
-                  status: thinking.status,
-                  results: thinking.results,
-                }]
-              }
-              
-              return { ...msg, thinking: newThinking }
-            }),
-          )
+          const replyTime = formatTime(new Date())
+          setChatMessages((prev) => {
+            const result = appendTextDeltaToStreamMessages(
+              prev,
+              activeAssistantMessageId,
+              text,
+              replyTime,
+              createFollowupAssistantMessage,
+            )
+            activeAssistantMessageId = result.activeMessageId
+            return result.messages
+          })
         },
         onToolCall: (toolCall) => {
+          const toolCallData: ToolCall = {
+            name: toolCall.name,
+            runId: `${toolCall.name}-${Date.now()}`,
+            status: toolCall.status,
+            input: (toolCall.input as Record<string, unknown>) ?? {},
+            output: toolCall.output,
+          }
           setChatMessages((prev) =>
-            prev.map((msg) => {
-              if (msg.id !== assistantMessageId) return msg
-              
-              const existingToolCalls = msg.toolCalls || []
-              const existingIndex = existingToolCalls.findIndex((t) => t.name === toolCall.name)
-              
-              let newToolCalls: ToolCall[]
-              if (existingIndex >= 0) {
-                newToolCalls = existingToolCalls.map((t, i) =>
-                  i === existingIndex ? { ...t, ...toolCall, input: toolCall.input as Record<string, unknown> | undefined } : t,
-                )
-              } else {
-                newToolCalls = [...existingToolCalls, {
-                  id: `tool-${Date.now()}`,
-                  name: toolCall.name,
-                  status: toolCall.status,
-                  input: toolCall.input as Record<string, unknown> | undefined,
-                  output: toolCall.output,
-                }]
-              }
-              
-              return { ...msg, toolCalls: newToolCalls }
-            }),
+            updateAssistantMessageById(prev, activeAssistantMessageId, (msg) =>
+              upsertToolCall(msg, toolCallData),
+            ),
           )
         },
         onComplete: () => {
           setChatMessages((prev) =>
-            prev.map((msg) => {
-              if (msg.id !== assistantMessageId) return msg
-              // 将思考过程标记为完成
-              const updatedThinking = msg.thinking?.map((t) =>
-                t.id === 'think-reasoning' ? { ...t, status: 'complete' as const } : t,
-              )
-              return { ...msg, loading: false, thinking: updatedThinking }
-            }),
+            updateAssistantMessageById(prev, activeAssistantMessageId, (msg) => ({
+              ...msg,
+              loading: false,
+            })),
           )
           setIsChatResponding(false)
         },
         onError: (error) => {
           setChatMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessageId
-                ? {
-                    ...msg,
-                    content: msg.content || `请求失败: ${error.message}`,
-                    loading: false,
-                  }
-                : msg,
-            ),
+            updateAssistantMessageById(prev, activeAssistantMessageId, (msg) => ({
+              ...msg,
+              content: msg.content || `请求失败: ${error.message}`,
+              loading: false,
+            })),
           )
           setIsChatResponding(false)
         },
       })
     } catch (error) {
       setChatMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === assistantMessageId
-            ? {
-                ...msg,
-                content: msg.content || `请求失败: ${error instanceof Error ? error.message : '未知错误'}`,
-                loading: false,
-              }
-            : msg,
-        ),
+        updateAssistantMessageById(prev, assistantMessageId, (msg) => ({
+          ...msg,
+          content: msg.content || `请求失败: ${error instanceof Error ? error.message : '未知错误'}`,
+          loading: false,
+        })),
       )
       setIsChatResponding(false)
     }
   }, [chatInputValue, isChatResponding, chatMessages, agentName, agentInstruction, agentSubtitle, agentSkills, resourceIds, webSearchEnabled])
 
+  // 消息分组和复制目标（复用 ChatPage 的渲染逻辑）
+  const groupedMessages = useMemo(() => buildMessageGroups(chatMessages), [chatMessages])
+  const assistantCopyTargets = useMemo(() => buildAssistantCopyTargets(chatMessages), [chatMessages])
+
+  const handleCopy = useCallback(async (messageId: string, content: string) => {
+    try {
+      await navigator.clipboard.writeText(content)
+      setCopiedMessageId(messageId)
+      setTimeout(() => setCopiedMessageId(null), 2000)
+    } catch {
+      // 剪贴板不可用，忽略
+    }
+  }, [])
+
   // 处理推荐问题点击
   const handleSuggestionClick = useCallback((question: string) => {
     setChatInputValue(question)
-  }, [])
-
-  // 切换思考展开状态
-  const toggleThinking = useCallback((messageId: string) => {
-    setShowThinking((prev) => ({
-      ...prev,
-      [messageId]: !prev[messageId],
-    }))
   }, [])
 
   // 处理键盘事件 - 支持中文输入法，composition期间不发送
@@ -609,87 +526,21 @@ export default function AgentDetailPage() {
                 </div>
               )}
 
-              {/* 消息列表 */}
-              {chatMessages.length > 0 && (
-                <div className={styles.messageColumn}>
-                  <div className={styles.messageList}>
-                  {chatMessages.map((msg) => (
-                    <div key={msg.id} className={`${styles.messageRow} ${msg.role === 'user' ? styles.messageRowUser : styles.messageRowAssistant}`}>
-                      {msg.role === 'user' ? (
-                        <div className={styles.userMessageBubble}>
-                          {msg.content}
-                        </div>
-                      ) : (
-                        <div className={styles.assistantMessageWrap}>
-                          {/* 思考过程 */}
-                          {msg.thinking && msg.thinking.length > 0 && (
-                            <div className={styles.thinkingPanel}>
-                              <button
-                                type="button"
-                                className={styles.thinkingToggle}
-                                onClick={() => toggleThinking(msg.id)}
-                              >
-                                <BulbOutlined />
-                                <span>{showThinking[msg.id] !== false ? '隐藏思考' : '展开思考'}</span>
-                                <CaretUpOutlined className={showThinking[msg.id] !== false ? styles.thinkingArrowUp : styles.thinkingArrowDown} />
-                              </button>
-                              {showThinking[msg.id] !== false && (
-                                <div className={styles.thinkingContent}>
-                                  {msg.thinking.map((step) => (
-                                    <div key={step.id} className={styles.thinkingStep}>
-                                      <span className={styles.thinkingStepIcon}>{step.icon}</span>
-                                      <span className={styles.thinkingStepLabel}>{step.label}</span>
-                                      <span className={`${styles.thinkingStepStatus} ${step.status === 'running' ? styles.thinkingStepStatusRunning : ''}`}>
-                                        {step.status === 'running' ? <LoadingOutlined spin /> : '完成'}
-                                      </span>
-                                    </div>
-                                  ))}
-                                  {/* 工具调用结果 */}
-                                  {msg.toolCalls && msg.toolCalls.some((tc) => tc.output) && (
-                                    <div className={styles.toolResultChips}>
-                                      {msg.toolCalls
-                                        .filter((tc) => tc.output)
-                                        .map((tc) => {
-                                          const output = tc.output as { results?: string[] } | undefined
-                                          return output?.results?.map((result, idx) => (
-                                            <span key={`${tc.id}-${idx}`} className={styles.toolResultChip}>
-                                              {result}
-                                            </span>
-                                          ))
-                                        })}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          
-                          {/* 加载动画 */}
-                          {msg.loading && !msg.content && (
-                            <div className={styles.loadingDots}>
-                              <span className={styles.loadingDot} />
-                              <span className={styles.loadingDot} />
-                              <span className={styles.loadingDot} />
-                            </div>
-                          )}
-                          
-                          {/* 回复内容 - 使用Markdown渲染 */}
-                          {msg.content && (
-                            <div className={styles.assistantMessageBubble}>
-                              <MarkdownContent
-                                content={msg.content}
-                                isStreaming={msg.loading}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+              {/* 消息列表 - 复用 ChatPage 的 MessageList 组件 */}
+              <div className={styles.messageColumn}>
+                <div className={styles.messageList}>
+                  <MessageList
+                    groups={groupedMessages}
+                    threadLoading={false}
+                    copiedMessageId={copiedMessageId}
+                    assistantCopyTargets={assistantCopyTargets}
+                    onCopy={handleCopy}
+                    getToolDisplayTitle={getToolDisplayTitle}
+                    getToolDisplaySummary={getToolDisplaySummary}
+                  />
                   <div ref={messagesEndRef} />
-                  </div>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* 输入区域 */}

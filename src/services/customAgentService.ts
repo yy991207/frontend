@@ -333,6 +333,7 @@ export async function chatCustomAgentStream(
   payload: Omit<ChatAgentRequest, 'user_id'>,
   signal: AbortSignal,
   callbacks: {
+    onChatModelStart?: () => void
     onTextDelta?: (text: string) => void
     onReasoningDelta?: (text: string) => void
     onThinking?: (thinking: { label: string; status: 'running' | 'complete'; results?: string[] }) => void
@@ -409,6 +410,11 @@ export async function chatCustomAgentStream(
             if (currentEvent === 'done') {
               callbacks.onComplete?.()
               return
+            }
+            
+            // 处理 on_chat_model_start 事件（标记新一轮模型输出开始）
+            if (currentEvent === 'on_chat_model_start') {
+              callbacks.onChatModelStart?.()
             }
             
             // 处理 on_chat_model_stream 事件
