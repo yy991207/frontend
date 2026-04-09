@@ -4,6 +4,7 @@ export type CustomAgentApiConfig = {
   createAgentEndpoint: string
   listAgentEndpoint: string
   viewAgentEndpoint: string
+  updateAgentEndpoint: string
 }
 
 export type PresetQuestion = {
@@ -96,10 +97,11 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
   const createAgentPath = parsedConfig.create_custom_agent_path
   const listAgentPath = parsedConfig.list_custom_agent_path
   const viewAgentPath = parsedConfig.view_custom_agent_path
+  const updateAgentPath = parsedConfig.update_custom_agent_path
   const userId = parsedConfig.user_id
 
-  if (!baseUrl || !createAgentPath || !listAgentPath || !viewAgentPath || !userId) {
-    throw new Error('config.yaml 缺少 url、create_custom_agent_path、list_custom_agent_path、view_custom_agent_path 或 user_id 配置')
+  if (!baseUrl || !createAgentPath || !listAgentPath || !viewAgentPath || !updateAgentPath || !userId) {
+    throw new Error('config.yaml 缺少必要的接口配置')
   }
 
   return {
@@ -108,6 +110,7 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
     createAgentEndpoint: buildAbsoluteUrl(baseUrl, createAgentPath),
     listAgentEndpoint: buildAbsoluteUrl(baseUrl, listAgentPath),
     viewAgentEndpoint: buildAbsoluteUrl(baseUrl, viewAgentPath),
+    updateAgentEndpoint: buildAbsoluteUrl(baseUrl, updateAgentPath),
   }
 }
 
@@ -217,6 +220,59 @@ export async function viewCustomAgent(
 
   if (!data.success) {
     throw new Error(data.msg || '获取智能体详情失败')
+  }
+
+  return data.data?.agent as AgentDetail
+}
+
+export type UpdateCustomAgentPayload = {
+  agent_name?: string
+  description?: string
+  avatar_url?: string
+  agent_prompt?: string
+  enabled_skills?: string[]
+  preset_questions?: PresetQuestion[]
+  resource_ids?: string[]
+  is_public?: boolean
+  is_active?: boolean
+}
+
+type UpdateCustomAgentResponse = {
+  success?: boolean
+  code?: number
+  msg?: string
+  data?: {
+    agent: AgentDetail
+  }
+}
+
+export async function updateCustomAgent(
+  config: CustomAgentApiConfig,
+  agentId: string,
+  payload: UpdateCustomAgentPayload,
+  signal?: AbortSignal,
+): Promise<AgentDetail> {
+  const requestUrl = new URL(config.updateAgentEndpoint.replace('{agent_id}', agentId))
+  requestUrl.searchParams.set('user_id', config.userId)
+
+  const response = await fetch(requestUrl.toString(), {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(payload),
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(`更新智能体失败: HTTP ${response.status}`)
+  }
+
+  const data = (await response.json()) as UpdateCustomAgentResponse
+
+  if (!data.success) {
+    throw new Error(data.msg || '更新智能体失败')
   }
 
   return data.data?.agent as AgentDetail
