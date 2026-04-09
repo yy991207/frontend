@@ -1,0 +1,345 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: overlayFadeIn 0.2s ease;
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modalContainer {
+  width: 720px;
+  max-width: 90vw;
+  max-height: 85vh;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideIn 0.25s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #eef1f5;
+  flex-shrink: 0;
+}
+
+.modalTitleWrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.modalIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #edf3ff 0%, #dbeafe 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.modalIconText {
+  font-size: 18px;
+  font-weight: 600;
+  color: #245bdb;
+}
+
+.modalTitleInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.modalTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2329;
+  margin: 0 0 4px 0;
+  line-height: 24px;
+}
+
+.modalSubtitle {
+  font-size: 13px;
+  color: #8f959e;
+  line-height: 20px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.modalCloseBtn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #8f959e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  font-size: 14px;
+
+  &:hover {
+    background: #f5f5f5;
+    color: #1f2329;
+  }
+}
+
+.modalBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px 24px;
+}
+
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 0;
+  color: #8f959e;
+  font-size: 14px;
+}
+
+.errorState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+  color: #ff4d4f;
+  font-size: 14px;
+}
+
+.detailContent {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.detailSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2329;
+  margin: 0;
+  line-height: 22px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.markdownWrap {
+  padding: 16px;
+  background: #fafbfc;
+  border-radius: 8px;
+  border: 1px solid #eef1f5;
+  font-size: 13px;
+  line-height: 22px;
+  color: #333;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.markdownWrap :global(h1),
+.markdownWrap :global(h2),
+.markdownWrap :global(h3),
+.markdownWrap :global(h4),
+.markdownWrap :global(h5),
+.markdownWrap :global(h6) {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #1f2329;
+}
+
+.markdownWrap :global(h1) { font-size: 18px; }
+.markdownWrap :global(h2) { font-size: 16px; }
+.markdownWrap :global(h3) { font-size: 14px; }
+
+.markdownWrap :global(p) {
+  margin: 8px 0;
+}
+
+.markdownWrap :global(ul),
+.markdownWrap :global(ol) {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.markdownWrap :global(li) {
+  margin: 4px 0;
+}
+
+.markdownWrap :global(code) {
+  padding: 2px 6px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #d63384;
+}
+
+.markdownWrap :global(pre) {
+  padding: 12px;
+  background: #1e1e1e;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.markdownWrap :global(pre code) {
+  background: transparent;
+  color: #d4d4d4;
+  padding: 0;
+}
+
+.markdownWrap :global(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 12px;
+}
+
+.markdownWrap :global(th),
+.markdownWrap :global(td) {
+  padding: 8px 12px;
+  border: 1px solid #e5e6eb;
+  text-align: left;
+}
+
+.markdownWrap :global(th) {
+  background: #f5f5f5;
+  font-weight: 600;
+}
+
+.markdownWrap :global(blockquote) {
+  padding: 8px 16px;
+  border-left: 3px solid #245bdb;
+  background: #f0f5ff;
+  margin: 8px 0;
+  color: #555;
+}
+
+.templateBox {
+  padding: 14px 16px;
+  background: #f6f8fa;
+  border-radius: 8px;
+  border: 1px solid #e5e6eb;
+}
+
+.templateBox code {
+  font-size: 13px;
+  color: #333;
+  line-height: 22px;
+  word-break: break-word;
+}
+
+.configFieldsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.configFieldItem {
+  padding: 14px 16px;
+  background: #fafbfc;
+  border-radius: 8px;
+  border: 1px solid #eef1f5;
+}
+
+.configFieldHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.configFieldKey {
+  font-size: 13px;
+  font-weight: 600;
+  color: #245bdb;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.configFieldLabel {
+  font-size: 13px;
+  color: #1f2329;
+}
+
+.configFieldRequired {
+  padding: 0 6px;
+  border-radius: 4px;
+  background: #fff1f0;
+  color: #ff4d4f;
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.configFieldMeta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.configFieldType,
+.configFieldDefault {
+  font-size: 12px;
+  color: #8f959e;
+}
+
+.configFieldOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.configFieldOption {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #edf3ff;
+  color: #245bdb;
+  font-size: 12px;
+  line-height: 20px;
+}

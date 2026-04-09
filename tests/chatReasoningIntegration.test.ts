@@ -79,3 +79,11 @@ test('agent detail page reuses shared message rendering and adapter helpers for 
   assert.match(customAgentService, /onChatModelStart\?: \(\) => void/)
   assert.match(customAgentService, /currentEvent === 'on_chat_model_start'/)
 })
+
+test('agent detail adapter advances phase when previous assistant already has visible text output even without toolcalls', async () => {
+  const agentAdapter = await readFromSrc('pages/AgentDetail/chatMessageAdapter.ts')
+
+  assert.match(agentAdapter, /const hasText = Boolean\(activeMessage\.content\.trim\(\)\)/)
+  assert.doesNotMatch(agentAdapter, /if \(!hasToolCalls \|\| !hasText\)/)
+  assert.match(agentAdapter, /if \(!hasText\)/)
+})
