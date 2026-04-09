@@ -203,12 +203,6 @@ export default function AgentDetailPage() {
           <EditOutlined className={styles.topEditIcon} onClick={handleEditClick} />
         </div>
 
-        <div className={styles.topTabs}>
-          <button type="button" className={`${styles.topTab} ${styles.topTabActive}`}>
-            搭建
-          </button>
-        </div>
-
         <div className={styles.topBarRight}>
           <button
             type="button"
