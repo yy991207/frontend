@@ -3,6 +3,7 @@ export type CustomAgentApiConfig = {
   baseUrl: string
   createAgentEndpoint: string
   listAgentEndpoint: string
+  viewAgentEndpoint: string
 }
 
 export type PresetQuestion = {
@@ -94,10 +95,11 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
   const baseUrl = parsedConfig.url
   const createAgentPath = parsedConfig.create_custom_agent_path
   const listAgentPath = parsedConfig.list_custom_agent_path
+  const viewAgentPath = parsedConfig.view_custom_agent_path
   const userId = parsedConfig.user_id
 
-  if (!baseUrl || !createAgentPath || !listAgentPath || !userId) {
-    throw new Error('config.yaml 缺少 url、create_custom_agent_path、list_custom_agent_path 或 user_id 配置')
+  if (!baseUrl || !createAgentPath || !listAgentPath || !viewAgentPath || !userId) {
+    throw new Error('config.yaml 缺少 url、create_custom_agent_path、list_custom_agent_path、view_custom_agent_path 或 user_id 配置')
   }
 
   return {
@@ -105,6 +107,7 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
     baseUrl,
     createAgentEndpoint: buildAbsoluteUrl(baseUrl, createAgentPath),
     listAgentEndpoint: buildAbsoluteUrl(baseUrl, listAgentPath),
+    viewAgentEndpoint: buildAbsoluteUrl(baseUrl, viewAgentPath),
   }
 }
 
@@ -161,4 +164,60 @@ export async function listCustomAgents(
   }
 
   return data.data?.agents || []
+}
+
+export type AgentDetail = {
+  agent_id: string
+  creator_user_id: string
+  agent_name: string
+  description: string
+  avatar_url: string
+  agent_prompt: string
+  enabled_skills: string[]
+  resource_ids: string[]
+  preset_questions: PresetQuestion[]
+  is_active: boolean
+  is_public: boolean
+  created_at: string
+  updated_at: string
+}
+
+type ViewCustomAgentResponse = {
+  success?: boolean
+  code?: number
+  msg?: string
+  data?: {
+    agent: AgentDetail
+    skills: unknown[]
+    preset_questions: PresetQuestion[]
+  }
+}
+
+export async function viewCustomAgent(
+  config: CustomAgentApiConfig,
+  agentId: string,
+  signal?: AbortSignal,
+): Promise<AgentDetail> {
+  const requestUrl = new URL(config.viewAgentEndpoint.replace('{agent_id}', agentId))
+  requestUrl.searchParams.set('user_id', config.userId)
+
+  const response = await fetch(requestUrl.toString(), {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(`获取智能体详情失败: HTTP ${response.status}`)
+  }
+
+  const data = (await response.json()) as ViewCustomAgentResponse
+
+  if (!data.success) {
+    throw new Error(data.msg || '获取智能体详情失败')
+  }
+
+  return data.data?.agent as AgentDetail
 }

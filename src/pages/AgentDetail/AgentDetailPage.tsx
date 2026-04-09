@@ -15,75 +15,15 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
 } from '@ant-design/icons'
-import { message } from 'antd'
+import { message, Spin } from 'antd'
 import EditAgentModal from '../../components/common/EditAgentModal'
-import { loadCustomAgentApiConfig, createCustomAgent } from '../../services/customAgentService'
+import {
+  loadCustomAgentApiConfig,
+  createCustomAgent,
+  viewCustomAgent,
+  type AgentDetail,
+} from '../../services/customAgentService'
 import styles from './agentDetail.module.less'
-
-type AgentConfig = {
-  instruction: string
-  mcpServices: Array<{
-    name: string
-    description: string
-    badge?: string
-  }>
-  suggestedQuestions: string[]
-}
-
-type AgentData = {
-  id: string
-  name: string
-  subtitle: string
-  avatar: string
-  instruction: string
-  suggestions: string[]
-  config: AgentConfig
-}
-
-const mockAgentData: Record<string, AgentData> = {
-  '1': {
-    id: '1',
-    name: '学习公社6.0答疑助手',
-    subtitle: '专业的学习调研助手，能依据相关信息对课程问题进行全面分析，提供有价值的见解和建议。',
-    avatar: '/img/ScreenShot_2026-04-07_175908_563.png',
-    instruction: '问我任何问题',
-    suggestions: ['☕ 学习公社6.0课程推荐', '💻 AI Coding领域的主要产品分析', '📱 手机市场调研'],
-    config: {
-      instruction: `## 角色定义
-你是一位资深的学习调研助手，拥有15年以上的跨行业调研经验。你擅长运用科学的调研方法论，深入洞察市场趋势、消费者行为和竞争格局，为企业提供准确、实用的决策支持。  
-
-  ## 核心能力
-  - **市场分析**：深度分析市场规模、增长趋势、细分市场机会
-  - **竞争研究**：全面评估竞争对手的产品策略、定价模式、市场表现
-  - **消费者洞察**：挖掘目标用户的真实需求、痛点和购买行为
-  - **产品评估**：从市场角度评估产品的可行性、差异化优势和改进方向
-  - **数据分析**：运用统计方法和工具，将复杂数据转化为清晰的商业见解
-  - **趋势预测**：基于多维度信息，预判市场发展趋势和潜在机会
-
-## 工作方法
-1. **结构化思维**：采用MECE原则，确保分析全面且不重复
-2. **数据驱动**：优先使用可靠数据源，避免主观臆断
-3. **多维度分析**：从宏观环境、行业特征、企业内部等多角度审视问题
-4. **实用导向**：提供具体可执行的建议，而非空泛的理论
-5. **风险识别**：主动识别潜在风险和不确定性因素
-
-## 输出标准`,
-      mcpServices: [
-        {
-          name: '课程推荐',
-          description: '支持推荐学习公社6.0相关课程',
-          badge: '官方',
-        },
-        {
-          name: '多维表格',
-          description: '支持创建和修改表格、新增和修改字段、新增和查询数据等操作',
-          badge: '官方',
-        },
-      ],
-      suggestedQuestions: ['问题1'],
-    },
-  },
-}
 
 function ConfigCard({
   icon,
@@ -113,13 +53,16 @@ function ConfigCard({
 
 export default function AgentDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const initialAgent = id ? mockAgentData[id] : null
 
-  const [agentName, setAgentName] = useState(initialAgent?.name || '')
-  const [agentSubtitle, setAgentSubtitle] = useState(initialAgent?.subtitle || '')
-  const [agentInstruction, setAgentInstruction] = useState(initialAgent?.config.instruction || '')
-  const [agentSkills, setAgentSkills] = useState(initialAgent?.config.mcpServices || [])
-  const [agentQuestions, setAgentQuestions] = useState(initialAgent?.config.suggestedQuestions || [])
+  const [agentData, setAgentData] = useState<AgentDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const [agentName, setAgentName] = useState('')
+  const [agentSubtitle, setAgentSubtitle] = useState('')
+  const [agentInstruction, setAgentInstruction] = useState('')
+  const [agentSkills, setAgentSkills] = useState<string[]>([])
+  const [agentQuestions, setAgentQuestions] = useState<{ category: string; question: string }[]>([])
   const [isPublic, setIsPublic] = useState(false)
   const [resourceIds, setResourceIds] = useState<string[]>([])
   const [modalVisible, setModalVisible] = useState(false)
@@ -128,21 +71,66 @@ export default function AgentDetailPage() {
   const [hasChanges, setHasChanges] = useState(false)
 
   useEffect(() => {
-    if (initialAgent) {
-      setAgentName(initialAgent.name)
-      setAgentSubtitle(initialAgent.subtitle)
-      setAgentInstruction(initialAgent.config.instruction)
-      setAgentSkills(initialAgent.config.mcpServices)
-      setAgentQuestions(initialAgent.config.suggestedQuestions)
-    }
-  }, [initialAgent])
+    let cancelled = false
 
-  if (!initialAgent) {
+    async function fetchAgentDetail() {
+      if (!id) {
+        setError('智能体ID不能为空')
+        setLoading(false)
+        return
+      }
+
+      setLoading(true)
+      setError(null)
+
+      try {
+        const config = await loadCustomAgentApiConfig()
+        const agent = await viewCustomAgent(config, id)
+
+        if (!cancelled) {
+          setAgentData(agent)
+          setAgentName(agent.agent_name)
+          setAgentSubtitle(agent.description)
+          setAgentInstruction(agent.agent_prompt)
+          setAgentSkills(agent.enabled_skills || [])
+          setAgentQuestions(agent.preset_questions || [])
+          setIsPublic(agent.is_public)
+          setResourceIds(agent.resource_ids || [])
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '获取智能体详情失败')
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchAgentDetail()
+
+    return () => {
+      cancelled = true
+    }
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.loadingState}>
+          <Spin indicator={<LoadingOutlined style={{ fontSize: 32 }} spin />} tip="加载中..." />
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !agentData) {
     return (
       <div className={styles.page}>
         <div className={styles.emptyState}>
-          <h2>智能体不存在</h2>
-          <p>抱歉，您访问的智能体不存在或已被删除。</p>
+          <h2>加载失败</h2>
+          <p>{error || '智能体不存在或已被删除'}</p>
         </div>
       </div>
     )
@@ -174,16 +162,11 @@ export default function AgentDetailPage() {
       const payload = {
         agent_name: agentName,
         agent_prompt: agentInstruction,
-        avatar_url: initialAgent.avatar.startsWith('http')
-          ? initialAgent.avatar
-          : `${config.baseUrl.replace(/\/+$/, '')}${initialAgent.avatar}`,
+        avatar_url: agentData.avatar_url,
         description: agentSubtitle,
-        enabled_skills: agentSkills.map((s) => s.name),
+        enabled_skills: agentSkills,
         is_public: isPublic,
-        preset_questions: agentQuestions.map((q) => ({
-          category: '默认',
-          question: q,
-        })),
+        preset_questions: agentQuestions,
         resource_ids: resourceIds,
       }
 
@@ -208,12 +191,16 @@ export default function AgentDetailPage() {
     }
   }
 
+  const avatarUrl = agentData.avatar_url.startsWith('http')
+    ? agentData.avatar_url
+    : `http://192.168.30.238:8000${agentData.avatar_url}`
+
   return (
     <div className={styles.page}>
       <div className={styles.topBar}>
         <div className={styles.topBarLeft}>
           <span className={styles.backIcon}>⌂</span>
-          <img className={styles.topAvatar} src={initialAgent.avatar} alt={agentName} />
+          <img className={styles.topAvatar} src={avatarUrl} alt={agentName} />
           <span className={styles.topTitle}>{agentName}</span>
           <EditOutlined className={styles.topEditIcon} onClick={handleEditClick} />
         </div>
@@ -269,7 +256,7 @@ export default function AgentDetailPage() {
 
             <div className={styles.heroSection}>
               <div className={styles.heroCard}>
-                <img className={styles.heroAvatar} src={initialAgent.avatar} alt={agentName} />
+                <img className={styles.heroAvatar} src={avatarUrl} alt={agentName} />
                 <div className={styles.heroContent}>
                   <h1 className={styles.heroTitle}>{agentName}</h1>
                   <p className={styles.heroSubtitle}>{agentSubtitle}</p>
@@ -279,9 +266,9 @@ export default function AgentDetailPage() {
               <div className={styles.suggestionSection}>
                 <h3 className={styles.suggestionTitle}>推荐问题</h3>
                 <div className={styles.suggestionList}>
-                  {initialAgent.suggestions.map((suggestion: string) => (
-                    <button key={suggestion} type="button" className={styles.suggestionChip}>
-                      {suggestion}
+                  {agentQuestions.map((item) => (
+                    <button key={item.question} type="button" className={styles.suggestionChip}>
+                      {item.question}
                     </button>
                   ))}
                 </div>
@@ -292,7 +279,7 @@ export default function AgentDetailPage() {
               <div className={styles.chatComposer}>
                 <input
                   className={styles.chatInput}
-                  value={initialAgent.instruction}
+                  value="问我任何问题"
                   readOnly
                   aria-label="对话输入框"
                 />
@@ -353,18 +340,18 @@ export default function AgentDetailPage() {
             >
               <p className={styles.cardHint}>添加 Skills 服务后，可见范围内的用户均可在对话中使用该 Skills 服务</p>
               <div className={styles.serviceList}>
-                {agentSkills.map((service: { name: string; description: string; badge?: string }) => (
-                  <div key={service.name} className={styles.serviceCard}>
+                {agentSkills.map((skillName) => (
+                  <div key={skillName} className={styles.serviceCard}>
                     <div className={styles.serviceIconWrap}>
                       <SafetyCertificateOutlined />
                     </div>
                     <div className={styles.serviceContent}>
                       <div className={styles.serviceTopLine}>
-                        <span className={styles.serviceName}>{service.name}</span>
-                        {service.badge ? <span className={styles.serviceBadge}>{service.badge}</span> : null}
+                        <span className={styles.serviceName}>{skillName}</span>
+                        <span className={styles.serviceBadge}>官方</span>
                         <span className={styles.serviceArrow}>›</span>
                       </div>
-                      <p className={styles.serviceDesc}>{service.description}</p>
+                      <p className={styles.serviceDesc}>支持{skillName}相关功能</p>
                     </div>
                   </div>
                 ))}
@@ -440,9 +427,9 @@ export default function AgentDetailPage() {
             >
               <div className={styles.dialogConfigBlock}>
                 <div className={styles.dialogLabel}>推荐问题</div>
-                {agentQuestions.map((question: string, index: number) => (
-                  <div key={question} className={styles.questionRow}>
-                    <span className={styles.questionText}>{question}</span>
+                {agentQuestions.map((item, index: number) => (
+                  <div key={item.question} className={styles.questionRow}>
+                    <span className={styles.questionText}>{item.question}</span>
                     <div className={styles.questionActions}>
                       <button type="button" className={styles.smallIconButton} aria-label={`展开问题${index + 1}`}>
                         ⌃
@@ -482,7 +469,7 @@ export default function AgentDetailPage() {
         visible={modalVisible}
         name={agentName}
         description={agentSubtitle}
-        avatar={initialAgent.avatar}
+        avatar={avatarUrl}
         onCancel={handleModalCancel}
         onSave={handleModalSave}
       />
