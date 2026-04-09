@@ -191,6 +191,7 @@ export type AgentDetail = {
   enabled_skills: EnabledSkill[]
   resource_ids: string[]
   preset_questions: PresetQuestion[]
+  enable_web_search: boolean
   is_active: boolean
   is_public: boolean
   created_at: string
@@ -245,6 +246,7 @@ export type UpdateCustomAgentPayload = {
   enabled_skills?: { skill_name: string }[]
   preset_questions?: PresetQuestion[]
   resource_ids?: string[]
+  enable_web_search?: boolean
   is_public?: boolean
   is_active?: boolean
 }

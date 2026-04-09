@@ -33,9 +33,8 @@ import {
 } from '../../services/customAgentService'
 import type { ToolCall } from '../../core/messages/types'
 import {
-  saveAgentConfig,
   saveChatHistory,
-  type AgentLocalConfig,
+  loadChatHistory,
   type ChatHistoryItem,
 } from '../../utils/agentStorage'
 import {
@@ -113,6 +112,25 @@ export default function AgentDetailPage() {
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  const restoreChatHistory = useCallback((agentId: string) => {
+    const history = loadChatHistory(agentId)
+    const restoredMessages: AgentChatMessage[] = history.map((item, index) => ({
+      id: `${item.role}-${agentId}-${index}`,
+      role: item.role,
+      content: item.content,
+      timestamp: '',
+      loading: false,
+      reasoningContent: null,
+      toolCalls: [],
+      references: [],
+      courses: [],
+      skillOutput: [],
+      subagentLabel: null,
+    }))
+
+    setChatMessages(restoredMessages)
+  }, [])
+
   useEffect(() => {
     let cancelled = false
 
@@ -125,6 +143,15 @@ export default function AgentDetailPage() {
 
       setLoading(true)
       setError(null)
+      setAgentData(null)
+      setChatInputValue('')
+      setIsChatResponding(false)
+      setCopiedMessageId(null)
+      setExpandedQuestionIndex(null)
+      setExpandedSkillName(null)
+      setHoveredSkillName(null)
+      setPublishStatus('idle')
+      restoreChatHistory(id)
 
       try {
         const config = await loadCustomAgentApiConfig()
@@ -137,6 +164,7 @@ export default function AgentDetailPage() {
           setAgentInstruction(agent.agent_prompt)
           setAgentSkills(agent.enabled_skills || [])
           setAgentQuestions(agent.preset_questions || [])
+          setWebSearchEnabled(agent.enable_web_search)
           setIsPublic(agent.is_public)
           setResourceIds(agent.resource_ids || [])
         }
@@ -156,7 +184,7 @@ export default function AgentDetailPage() {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, restoreChatHistory])
 
   // 所有的Hooks必须在early return之前调用
   const avatarUrl = agentData?.avatar_url
@@ -456,33 +484,22 @@ export default function AgentDetailPage() {
         setResourceIds(updatedAgent.resource_ids || [])
       }
 
-      const localConfig: AgentLocalConfig = {
-        agent_id: agentData.agent_id,
-        agent_name: agentName,
-        agent_prompt: agentInstruction,
-        description: agentSubtitle,
-        enable_web_search: webSearchEnabled,
-        enabled_skills: agentSkills,
-        resource_ids: resourceIds,
-        chat_history: chatMessages
-          .filter((msg) => {
-            if (msg.role === 'user') return Boolean(msg.content.trim())
-            if (msg.role === 'assistant') {
-              const contentText = msg.content.trim()
-              if (!contentText) return false
-              if (contentText.startsWith('请求失败:')) return false
-              return true
-            }
-            return false
-          })
-          .map((msg) => ({
-            role: msg.role,
-            content: msg.content,
-          })),
-        updated_at: Date.now(),
-      }
-      saveAgentConfig(localConfig)
-      saveChatHistory(agentData.agent_id, localConfig.chat_history)
+      const nextHistory: ChatHistoryItem[] = chatMessages
+        .filter((msg) => {
+          if (msg.role === 'user') return Boolean(msg.content.trim())
+          if (msg.role === 'assistant') {
+            const contentText = msg.content.trim()
+            if (!contentText) return false
+            if (contentText.startsWith('请求失败:')) return false
+            return true
+          }
+          return false
+        })
+        .map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        }))
+      saveChatHistory(agentData.agent_id, nextHistory)
 
       setPublishStatus('success')
       message.success('更新成功')
