@@ -417,16 +417,30 @@
 }
 
 .sendButton {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border: none;
   border-radius: 50%;
-  background: #d0d3d9;
-  color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sendButtonDisabled {
+  background: #d0d3d9;
+  color: #fff;
+  cursor: not-allowed;
+}
+
+.sendButtonActive {
+  background: #245bdb;
+  color: #fff;
+  
+  &:hover {
+    background: #1a4bc4;
+  }
 }
 
 .disclaimer {
@@ -435,6 +449,187 @@
   font-size: 12px;
   line-height: 20px;
   color: #8f959e;
+}
+
+// 消息区域样式
+.messagesArea {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.messageList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.messageRow {
+  display: flex;
+  width: 100%;
+}
+
+.messageRowUser {
+  justify-content: flex-end;
+}
+
+.messageRowAssistant {
+  justify-content: flex-start;
+}
+
+.userMessageBubble {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 18px 18px 4px 18px;
+  background: #f1f1ec;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.assistantMessageWrap {
+  max-width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assistantMessageBubble {
+  padding: 12px 16px;
+  border-radius: 18px 18px 18px 4px;
+  background: #ffffff;
+  color: #1f2329;
+  font-size: 14px;
+  line-height: 1.5;
+  word-break: break-word;
+  border: 1px solid #e5e6eb;
+}
+
+// 思考过程样式
+.thinkingPanel {
+  margin-bottom: 8px;
+}
+
+.thinkingToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: none;
+  background: #f7f8fa;
+  border-radius: 8px;
+  color: #8f959e;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: #eef1f5;
+    color: #1f2329;
+  }
+}
+
+.thinkingContent {
+  margin-top: 8px;
+  padding: 12px;
+  background: #f7f8fa;
+  border-radius: 12px;
+}
+
+.thinkingStep {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+  color: #646a73;
+  font-size: 13px;
+  line-height: 1.5;
+  
+  &:not(:last-child) {
+    border-bottom: 1px solid #e5e6eb;
+  }
+}
+
+.thinkingStepIcon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #245bdb;
+}
+
+.thinkingStepLabel {
+  flex: 1;
+  min-width: 0;
+}
+
+.thinkingStepStatus {
+  font-size: 12px;
+  color: #8f959e;
+  flex-shrink: 0;
+}
+
+.thinkingStepStatusRunning {
+  color: #245bdb;
+}
+
+// 工具调用结果样式
+.toolResultChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.toolResultChip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid #e5e6eb;
+  color: #646a73;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+// 加载动画样式
+.loadingDots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0;
+}
+
+.loadingDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #8f959e;
+  animation: loadingPulse 1.4s ease-in-out infinite;
+  
+  &:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  
+  &:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+}
+
+@keyframes loadingPulse {
+  0%, 80%, 100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .configPanelInner {
