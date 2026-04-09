@@ -14,15 +14,19 @@ import {
   LoadingOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  CloseOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons'
 import { message, Spin } from 'antd'
 import EditAgentModal from '../../components/common/EditAgentModal'
+import SkillConfigModal from '../../components/common/SkillConfigModal'
+import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
 import {
   loadCustomAgentApiConfig,
-  createCustomAgent,
   updateCustomAgent,
   viewCustomAgent,
   type AgentDetail,
+  type EnabledSkill,
 } from '../../services/customAgentService'
 import styles from './agentDetail.module.less'
 
@@ -62,14 +66,20 @@ export default function AgentDetailPage() {
   const [agentName, setAgentName] = useState('')
   const [agentSubtitle, setAgentSubtitle] = useState('')
   const [agentInstruction, setAgentInstruction] = useState('')
-  const [agentSkills, setAgentSkills] = useState<string[]>([])
+  const [agentSkills, setAgentSkills] = useState<EnabledSkill[]>([])
+  const [hoveredSkillName, setHoveredSkillName] = useState<string | null>(null)
   const [agentQuestions, setAgentQuestions] = useState<{ category: string; question: string }[]>([])
+  const [expandedQuestionIndex, setExpandedQuestionIndex] = useState<number | null>(null)
   const [isPublic, setIsPublic] = useState(false)
   const [resourceIds, setResourceIds] = useState<string[]>([])
   const [modalVisible, setModalVisible] = useState(false)
+  const [skillModalVisible, setSkillModalVisible] = useState(false)
+  const [knowledgeModalVisible, setKnowledgeModalVisible] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [publishStatus, setPublishStatus] = useState<'idle' | 'success' | 'error'>('idle')
-  const [hasChanges, setHasChanges] = useState(false)
+  // 知识配置开关状态
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false)
+  const [knowledgeSpaceEnabled, setKnowledgeSpaceEnabled] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -149,7 +159,19 @@ export default function AgentDetailPage() {
     setAgentName(data.name)
     setAgentSubtitle(data.description)
     setModalVisible(false)
-    setHasChanges(true)
+    setPublishStatus('idle')
+  }
+
+  const handleOpenSkillModal = () => {
+    setSkillModalVisible(true)
+  }
+
+  const handleSkillModalCancel = () => {
+    setSkillModalVisible(false)
+  }
+
+  const handleSkillChange = (skills: EnabledSkill[]) => {
+    setAgentSkills(skills)
     setPublishStatus('idle')
   }
 
@@ -165,7 +187,7 @@ export default function AgentDetailPage() {
         agent_prompt: agentInstruction,
         avatar_url: agentData.avatar_url,
         description: agentSubtitle,
-        enabled_skills: agentSkills,
+        enabled_skills: agentSkills.map((s) => ({ skill_name: s.skill_name })),
         is_public: isPublic,
         preset_questions: agentQuestions,
         resource_ids: resourceIds,
@@ -173,17 +195,18 @@ export default function AgentDetailPage() {
 
       const updatedAgent = await updateCustomAgent(config, agentData.agent_id, payload)
 
-      setAgentData(updatedAgent)
-      setAgentName(updatedAgent.agent_name)
-      setAgentSubtitle(updatedAgent.description)
-      setAgentInstruction(updatedAgent.agent_prompt)
-      setAgentSkills(updatedAgent.enabled_skills || [])
-      setAgentQuestions(updatedAgent.preset_questions || [])
-      setIsPublic(updatedAgent.is_public)
-      setResourceIds(updatedAgent.resource_ids || [])
+      if (updatedAgent) {
+        setAgentData(updatedAgent)
+        setAgentName(updatedAgent.agent_name)
+        setAgentSubtitle(updatedAgent.description)
+        setAgentInstruction(updatedAgent.agent_prompt)
+        setAgentSkills(updatedAgent.enabled_skills || [])
+        setAgentQuestions(updatedAgent.preset_questions || [])
+        setIsPublic(updatedAgent.is_public)
+        setResourceIds(updatedAgent.resource_ids || [])
+      }
 
       setPublishStatus('success')
-      setHasChanges(false)
       message.success('更新成功')
 
       setTimeout(() => {
@@ -326,7 +349,6 @@ export default function AgentDetailPage() {
                 value={agentInstruction}
                 onChange={(e) => {
                   setAgentInstruction(e.target.value)
-                  setHasChanges(true)
                   setPublishStatus('idle')
                 }}
               />
@@ -336,26 +358,45 @@ export default function AgentDetailPage() {
               icon={null}
               title="Skills 服务"
               extra={
-                <button type="button" className={styles.linkAction}>
+                <button type="button" className={styles.linkAction} onClick={handleOpenSkillModal}>
                   <PlusOutlined /> 添加
                 </button>
               }
             >
               <p className={styles.cardHint}>添加 Skills 服务后，可见范围内的用户均可在对话中使用该 Skills 服务</p>
               <div className={styles.serviceList}>
-                {agentSkills.map((skillName) => (
-                  <div key={skillName} className={styles.serviceCard}>
+                {agentSkills.map((skill) => (
+                  <div
+                    key={skill.skill_name}
+                    className={styles.serviceCard}
+                    onMouseEnter={() => setHoveredSkillName(skill.skill_name)}
+                    onMouseLeave={() => setHoveredSkillName(null)}
+                  >
                     <div className={styles.serviceIconWrap}>
                       <SafetyCertificateOutlined />
                     </div>
                     <div className={styles.serviceContent}>
                       <div className={styles.serviceTopLine}>
-                        <span className={styles.serviceName}>{skillName}</span>
+                        <span className={styles.serviceName}>{skill.chinese_name}</span>
                         <span className={styles.serviceBadge}>官方</span>
                         <span className={styles.serviceArrow}>›</span>
                       </div>
-                      <p className={styles.serviceDesc}>支持{skillName}相关功能</p>
+                      {hoveredSkillName === skill.skill_name && (
+                        <div className={styles.serviceTooltip}>
+                          {skill.description || `支持${skill.chinese_name}相关功能`}
+                        </div>
+                      )}
                     </div>
+                    <button
+                      type="button"
+                      className={styles.serviceDeleteBtn}
+                      onClick={() => {
+                        setAgentSkills(agentSkills.filter((s) => s.skill_name !== skill.skill_name))
+                        setPublishStatus('idle')
+                      }}
+                    >
+                      <DeleteOutlined />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -367,7 +408,13 @@ export default function AgentDetailPage() {
                   <GlobalOutlined />
                   <span>联网检索</span>
                 </div>
-                <span className={`${styles.switch} ${styles.switchOn}`}>
+                <span
+                  className={`${styles.switch} ${webSearchEnabled ? styles.switchOn : ''}`}
+                  onClick={() => {
+                    setWebSearchEnabled(!webSearchEnabled)
+                    setPublishStatus('idle')
+                  }}
+                >
                   <span className={styles.switchHandle} />
                 </span>
               </div>
@@ -378,7 +425,13 @@ export default function AgentDetailPage() {
                     <CameraOutlined />
                     <span>知识空间</span>
                   </div>
-                  <span className={styles.switch}>
+                  <span
+                    className={`${styles.switch} ${knowledgeSpaceEnabled ? styles.switchOn : ''}`}
+                    onClick={() => {
+                      setKnowledgeSpaceEnabled(!knowledgeSpaceEnabled)
+                      setPublishStatus('idle')
+                    }}
+                  >
                     <span className={styles.switchHandle} />
                   </span>
                 </div>
@@ -386,12 +439,7 @@ export default function AgentDetailPage() {
                   type="button"
                   className={styles.knowledgeButton}
                   onClick={() => {
-                    const resourceId = prompt('请输入资源ID：')
-                    if (resourceId && resourceId.trim()) {
-                      setResourceIds([...resourceIds, resourceId.trim()])
-                      setHasChanges(true)
-                      setPublishStatus('idle')
-                    }
+                    setKnowledgeModalVisible(true)
                   }}
                 >
                   <PlusOutlined /> 关联知识空间
@@ -406,7 +454,6 @@ export default function AgentDetailPage() {
                           className={styles.removeResourceBtn}
                           onClick={() => {
                             setResourceIds(resourceIds.filter((r) => r !== id))
-                            setHasChanges(true)
                             setPublishStatus('idle')
                           }}
                         >
@@ -423,26 +470,105 @@ export default function AgentDetailPage() {
               icon={null}
               title="对话配置"
               extra={
-                <button type="button" className={styles.linkAction}>
+                <button
+                  type="button"
+                  className={styles.linkAction}
+                  onClick={() => {
+                    setAgentQuestions([...agentQuestions, { category: '默认', question: '' }])
+                    setPublishStatus('idle')
+                  }}
+                >
                   <PlusOutlined /> 添加
                 </button>
               }
             >
               <div className={styles.dialogConfigBlock}>
                 <div className={styles.dialogLabel}>推荐问题</div>
-                {agentQuestions.map((item, index: number) => (
-                  <div key={item.question} className={styles.questionRow}>
-                    <span className={styles.questionText}>{item.question}</span>
-                    <div className={styles.questionActions}>
-                      <button type="button" className={styles.smallIconButton} aria-label={`展开问题${index + 1}`}>
-                        ⌃
-                      </button>
-                      <button type="button" className={styles.smallIconButton} aria-label={`删除问题${index + 1}`}>
-                        🗑
-                      </button>
+                {agentQuestions.map((item, index: number) => {
+                  const isExpanded = expandedQuestionIndex === index
+                  const displayName = item.question || `问题${index + 1}`
+                  return (
+                    <div key={`${item.question}-${index}`} className={styles.questionCard}>
+                      <div className={styles.questionHeader}>
+                        <span className={styles.questionLabel}>
+                          {isExpanded ? `问题${index + 1}` : `问题${index + 1}：${displayName}`}
+                        </span>
+                        <div className={styles.questionActions}>
+                          <button
+                            type="button"
+                            className={styles.smallIconButton}
+                            onClick={() => setExpandedQuestionIndex(isExpanded ? null : index)}
+                            aria-label={isExpanded ? '收起' : '展开'}
+                          >
+                            {isExpanded ? '⌃' : '⌄'}
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.smallIconButton}
+                            onClick={() => {
+                              setAgentQuestions(agentQuestions.filter((_, i) => i !== index))
+                              if (expandedQuestionIndex === index) {
+                                setExpandedQuestionIndex(null)
+                              }
+                              setPublishStatus('idle')
+                            }}
+                            aria-label="删除"
+                          >
+                            <DeleteOutlined />
+                          </button>
+                        </div>
+                      </div>
+                      {isExpanded && (
+                        <div className={styles.questionBody}>
+                          <div className={styles.questionField}>
+                            <label className={styles.fieldLabel}>
+                              名称 <span className={styles.required}>*</span>
+                            </label>
+                            <div className={styles.fieldWithCount}>
+                              <input
+                                className={`${styles.fieldInput} ${!item.question ? styles.fieldError : ''}`}
+                                value={item.question}
+                                onChange={(e) => {
+                                  const newQuestions = [...agentQuestions]
+                                  newQuestions[index] = { ...newQuestions[index], question: e.target.value }
+                                  setAgentQuestions(newQuestions)
+                                  setPublishStatus('idle')
+                                }}
+                                maxLength={20}
+                                placeholder="请输入"
+                              />
+                              <span className={styles.charCount}>{item.question.length}/20</span>
+                            </div>
+                            {!item.question && (
+                              <span className={styles.fieldErrorText}>名字不能为空</span>
+                            )}
+                          </div>
+                          <div className={styles.questionField}>
+                            <label className={styles.fieldLabel}>
+                              指令 <span className={styles.required}>*</span>
+                            </label>
+                            <div className={styles.fieldWithCount}>
+                              <textarea
+                                className={styles.fieldTextarea}
+                                value={item.category}
+                                onChange={(e) => {
+                                  const newQuestions = [...agentQuestions]
+                                  newQuestions[index] = { ...newQuestions[index], category: e.target.value }
+                                  setAgentQuestions(newQuestions)
+                                  setPublishStatus('idle')
+                                }}
+                                maxLength={1000}
+                                placeholder="请输入指令内容"
+                                rows={4}
+                              />
+                              <span className={styles.charCount}>{item.category.length}/1000</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </ConfigCard>
 
@@ -455,7 +581,6 @@ export default function AgentDetailPage() {
                   className={`${styles.switch} ${isPublic ? styles.switchOn : ''}`}
                   onClick={() => {
                     setIsPublic(!isPublic)
-                    setHasChanges(true)
                     setPublishStatus('idle')
                   }}
                 >
@@ -475,6 +600,24 @@ export default function AgentDetailPage() {
         avatar={avatarUrl}
         onCancel={handleModalCancel}
         onSave={handleModalSave}
+      />
+
+      <SkillConfigModal
+        visible={skillModalVisible}
+        onCancel={handleSkillModalCancel}
+        onSkillChange={handleSkillChange}
+        currentSkills={agentSkills}
+      />
+
+      <KnowledgeSpaceModal
+        visible={knowledgeModalVisible}
+        onCancel={() => setKnowledgeModalVisible(false)}
+        onConfirm={(selectedIds: string[]) => {
+          setResourceIds(selectedIds)
+          setKnowledgeModalVisible(false)
+          setPublishStatus('idle')
+        }}
+        currentResourceIds={resourceIds}
       />
     </div>
   )
