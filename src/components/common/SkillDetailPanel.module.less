@@ -1,0 +1,236 @@
+.detailPanel {
+  margin-top: 8px;
+  border: 1px solid #e5e6eb;
+  border-radius: 8px;
+  background: #fafbfc;
+  max-height: 400px;
+  overflow-y: auto;
+  animation: panelSlideDown 0.2s ease;
+}
+
+@keyframes panelSlideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 400px;
+  }
+}
+
+.loadingState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 30px 0;
+  color: #8f959e;
+  font-size: 13px;
+}
+
+.errorState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 0;
+  color: #ff4d4f;
+  font-size: 13px;
+}
+
+.detailContent {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detailSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2329;
+  margin: 0;
+  line-height: 20px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #eef1f5;
+}
+
+.markdownWrap {
+  padding: 12px;
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #eef1f5;
+  font-size: 12px;
+  line-height: 20px;
+  color: #333;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.markdownWrap :global(h1),
+.markdownWrap :global(h2),
+.markdownWrap :global(h3),
+.markdownWrap :global(h4),
+.markdownWrap :global(h5),
+.markdownWrap :global(h6) {
+  margin-top: 12px;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #1f2329;
+}
+
+.markdownWrap :global(h1) { font-size: 15px; }
+.markdownWrap :global(h2) { font-size: 14px; }
+.markdownWrap :global(h3) { font-size: 13px; }
+
+.markdownWrap :global(p) {
+  margin: 6px 0;
+}
+
+.markdownWrap :global(ul),
+.markdownWrap :global(ol) {
+  padding-left: 18px;
+  margin: 6px 0;
+}
+
+.markdownWrap :global(li) {
+  margin: 3px 0;
+}
+
+.markdownWrap :global(code) {
+  padding: 1px 5px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  font-size: 11px;
+  color: #d63384;
+}
+
+.markdownWrap :global(pre) {
+  padding: 10px;
+  background: #1e1e1e;
+  border-radius: 5px;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+
+.markdownWrap :global(pre code) {
+  background: transparent;
+  color: #d4d4d4;
+  padding: 0;
+}
+
+.markdownWrap :global(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 6px 0;
+  font-size: 11px;
+}
+
+.markdownWrap :global(th),
+.markdownWrap :global(td) {
+  padding: 6px 10px;
+  border: 1px solid #e5e6eb;
+  text-align: left;
+}
+
+.markdownWrap :global(th) {
+  background: #f5f5f5;
+  font-weight: 600;
+}
+
+.markdownWrap :global(blockquote) {
+  padding: 6px 12px;
+  border-left: 3px solid #245bdb;
+  background: #f0f5ff;
+  margin: 6px 0;
+  color: #555;
+}
+
+.templateBox {
+  padding: 10px 14px;
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #e5e6eb;
+}
+
+.templateBox code {
+  font-size: 12px;
+  color: #333;
+  line-height: 20px;
+  word-break: break-word;
+}
+
+.configFieldsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.configFieldItem {
+  padding: 10px 12px;
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #eef1f5;
+}
+
+.configFieldHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.configFieldKey {
+  font-size: 12px;
+  font-weight: 600;
+  color: #245bdb;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.configFieldLabel {
+  font-size: 12px;
+  color: #1f2329;
+}
+
+.configFieldRequired {
+  padding: 0 5px;
+  border-radius: 3px;
+  background: #fff1f0;
+  color: #ff4d4f;
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.configFieldMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.configFieldType,
+.configFieldDefault {
+  font-size: 11px;
+  color: #8f959e;
+}
+
+.configFieldOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.configFieldOption {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #edf3ff;
+  color: #245bdb;
+  font-size: 11px;
+  line-height: 18px;
+}
