@@ -200,7 +200,6 @@ export default function AgentDetailPage() {
       <div className={styles.topBar}>
         <div className={styles.topBarLeft}>
           <span className={styles.backIcon}>⌂</span>
-          <img className={styles.topAvatar} src={avatarUrl} alt={agentName} />
           <span className={styles.topTitle}>{agentName}</span>
           <EditOutlined className={styles.topEditIcon} onClick={handleEditClick} />
         </div>
@@ -209,15 +208,9 @@ export default function AgentDetailPage() {
           <button type="button" className={`${styles.topTab} ${styles.topTabActive}`}>
             搭建
           </button>
-          <button type="button" className={styles.topTab}>
-            分析
-          </button>
         </div>
 
         <div className={styles.topBarRight}>
-          <span className={`${styles.savedStatus} ${hasChanges ? styles.unsavedStatus : ''}`}>
-            {hasChanges ? '未保存' : '已保存'}
-          </span>
           <button
             type="button"
             className={`${styles.publishButton} ${publishStatus === 'success' ? styles.publishSuccess : ''} ${publishStatus === 'error' ? styles.publishError : ''}`}
@@ -240,7 +233,6 @@ export default function AgentDetailPage() {
               '发布'
             )}
           </button>
-          <div className={styles.userBadge}>🪽</div>
         </div>
       </div>
 
