@@ -729,7 +729,7 @@ function PartnerPageContent() {
     userMessage: ChatMessage,
     loadingMessage: ChatMessage,
     baseMessages: ChatMessage[],
-    toolType: string | null = null,
+    _toolType: string | null = null,
   ) => {
     if (!chatApiConfig) {
       setRequestError('聊天配置读取失败，请检查 config.yaml')
@@ -804,7 +804,8 @@ function PartnerPageContent() {
           config: chatApiConfig,
           payload: {
             message: prompt,
-            tool_type: toolType,
+            enable_web_search: webSearchEnabled,
+            include_tool_details: true,
           },
           messages: nextMessages,
           loadingMessageId: loadingMessage.id,
@@ -821,7 +822,8 @@ function PartnerPageContent() {
         resolvedSessionId,
         {
           message: prompt,
-          tool_type: toolType,
+          enable_web_search: webSearchEnabled,
+          include_tool_details: true,
         },
         controller.signal,
       )

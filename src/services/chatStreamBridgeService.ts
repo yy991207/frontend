@@ -27,7 +27,8 @@ export type StreamBridgeSnapshot = {
 
 type StreamPayload = {
   message: string
-  tool_type?: string | null
+  enable_web_search?: boolean
+  include_tool_details?: boolean
 }
 
 type SubscribeCommand = {

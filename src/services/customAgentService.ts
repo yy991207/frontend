@@ -1,3 +1,5 @@
+import { readSseStream, type ChatReference, type SkillOutputItem, type ToolCall } from './chatService'
+
 export type CustomAgentApiConfig = {
   userId: string
   baseUrl: string
@@ -306,28 +308,6 @@ export type ChatAgentRequest = {
   enable_web_search?: boolean
 }
 
-// SSE事件类型
-export type SseEvent = {
-  event?: string
-  data?: string
-  id?: string
-}
-
-// 解析SSE事件
-function parseSseEvent(line: string): SseEvent | null {
-  if (line.startsWith('event:')) {
-    return { event: line.slice(6).trim() }
-  }
-  if (line.startsWith('data:')) {
-    return { data: line.slice(5).trim() }
-  }
-  if (line.startsWith('id:')) {
-    return { id: line.slice(3).trim() }
-  }
-  return null
-}
-
-// 流式聊天请求
 export async function chatCustomAgentStream(
   config: CustomAgentApiConfig,
   payload: Omit<ChatAgentRequest, 'user_id'>,
@@ -336,8 +316,10 @@ export async function chatCustomAgentStream(
     onChatModelStart?: () => void
     onTextDelta?: (text: string) => void
     onReasoningDelta?: (text: string) => void
-    onThinking?: (thinking: { label: string; status: 'running' | 'complete'; results?: string[] }) => void
-    onToolCall?: (toolCall: { name: string; status: 'running' | 'completed'; input?: unknown; output?: unknown }) => void
+    onToolStart?: (toolCall: ToolCall) => void
+    onToolEnd?: (toolCall: ToolCall) => void
+    onReferences?: (references: ChatReference[]) => void
+    onSkillOutput?: (skillOutput: SkillOutputItem[]) => void
     onComplete?: () => void
     onError?: (error: Error) => void
   },
@@ -367,103 +349,17 @@ export async function chatCustomAgentStream(
     throw new Error('响应体为空')
   }
 
-  const reader = response.body.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ''
-  let currentEvent = ''
-
   try {
-    while (true) {
-      const { done, value } = await reader.read()
-
-      if (done) {
-        callbacks.onComplete?.()
-        break
-      }
-
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
-
-      for (const line of lines) {
-        const trimmedLine = line.trim()
-        
-        // 解析SSE事件
-        if (trimmedLine.startsWith('event:')) {
-          currentEvent = trimmedLine.slice(6).trim()
-          continue
-        }
-        
-        if (trimmedLine.startsWith('data:')) {
-          const dataStr = trimmedLine.slice(5).trim()
-          
-          // 处理空数据行（事件分隔符）
-          if (!dataStr) {
-            currentEvent = ''
-            continue
-          }
-          
-          try {
-            const data = JSON.parse(dataStr)
-            
-            // 处理 done 事件
-            if (currentEvent === 'done') {
-              callbacks.onComplete?.()
-              return
-            }
-            
-            // 处理 on_chat_model_start 事件（标记新一轮模型输出开始）
-            if (currentEvent === 'on_chat_model_start') {
-              callbacks.onChatModelStart?.()
-            }
-            
-            // 处理 on_chat_model_stream 事件
-            if (currentEvent === 'on_chat_model_stream' && data.data?.chunk) {
-              const chunk = data.data.chunk
-              
-              // 处理 reasoning_content（思考过程）
-              if (chunk.reasoning_content) {
-                callbacks.onReasoningDelta?.(chunk.reasoning_content)
-              }
-              
-              // 处理 content（正式回复）
-              if (chunk.content) {
-                callbacks.onTextDelta?.(chunk.content)
-              }
-            }
-            
-            // 处理 on_tool_start 事件
-            if (currentEvent === 'on_tool_start' && data.data?.input) {
-              callbacks.onToolCall?.({
-                name: data.name,
-                status: 'running',
-                input: data.data.input,
-              })
-            }
-            
-            // 处理 on_tool_end 事件
-            if (currentEvent === 'on_tool_end' && data.data?.output) {
-              const toolDisplay = data.data.tool_display
-              callbacks.onToolCall?.({
-                name: data.name,
-                status: 'completed',
-                input: data.data.input,
-                output: {
-                  text: data.data.output,
-                  tool_display: toolDisplay,
-                },
-              })
-            }
-            
-            // 处理 on_chain_end 事件（仅用于标记完成，不输出content避免重复）
-            // content 已经在 on_chat_model_stream 中完整输出
-          } catch (e) {
-            // 忽略解析错误
-            console.warn('SSE data parse error:', e)
-          }
-        }
-      }
-    }
+    await readSseStream(response.body, {
+      onChatModelStart: callbacks.onChatModelStart,
+      onTextDelta: callbacks.onTextDelta,
+      onReasoningDelta: callbacks.onReasoningDelta,
+      onToolStart: callbacks.onToolStart,
+      onToolEnd: callbacks.onToolEnd,
+      onReferences: callbacks.onReferences,
+      onSkillOutput: callbacks.onSkillOutput,
+    })
+    callbacks.onComplete?.()
   } catch (error) {
     if (signal.aborted) {
       return

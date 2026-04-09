@@ -41,7 +41,8 @@ type SessionResponse = Record<string, unknown> & {
 
 type StreamPayload = {
   message: string
-  tool_type?: string | null
+  enable_web_search?: boolean
+  include_tool_details?: boolean
 }
 
 export type SkillOutputItem = {
@@ -211,7 +212,8 @@ export async function streamChatMessage(
       Accept: 'text/event-stream',
     },
     body: JSON.stringify({
-      tool_type: payload.tool_type ?? null,
+      enable_web_search: payload.enable_web_search ?? false,
+      include_tool_details: payload.include_tool_details ?? true,
       message: payload.message,
     }),
     signal,
