@@ -169,6 +169,13 @@ export async function listCustomAgents(
   return data.data?.agents || []
 }
 
+export type EnabledSkill = {
+  skill_name: string
+  chinese_name: string
+  description: string
+  template?: string
+}
+
 export type AgentDetail = {
   agent_id: string
   creator_user_id: string
@@ -176,7 +183,7 @@ export type AgentDetail = {
   description: string
   avatar_url: string
   agent_prompt: string
-  enabled_skills: string[]
+  enabled_skills: EnabledSkill[]
   resource_ids: string[]
   preset_questions: PresetQuestion[]
   is_active: boolean
@@ -230,7 +237,7 @@ export type UpdateCustomAgentPayload = {
   description?: string
   avatar_url?: string
   agent_prompt?: string
-  enabled_skills?: string[]
+  enabled_skills?: { skill_name: string }[]
   preset_questions?: PresetQuestion[]
   resource_ids?: string[]
   is_public?: boolean
@@ -243,7 +250,7 @@ type UpdateCustomAgentResponse = {
   msg?: string
   data?: {
     agent: AgentDetail
-  }
+  } | null
 }
 
 export async function updateCustomAgent(
@@ -251,7 +258,7 @@ export async function updateCustomAgent(
   agentId: string,
   payload: UpdateCustomAgentPayload,
   signal?: AbortSignal,
-): Promise<AgentDetail> {
+): Promise<AgentDetail | null> {
   const requestUrl = new URL(config.updateAgentEndpoint.replace('{agent_id}', agentId))
   requestUrl.searchParams.set('user_id', config.userId)
 
@@ -275,5 +282,5 @@ export async function updateCustomAgent(
     throw new Error(data.msg || '更新智能体失败')
   }
 
-  return data.data?.agent as AgentDetail
+  return data.data?.agent ?? null
 }

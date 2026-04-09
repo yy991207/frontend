@@ -538,6 +538,7 @@
   border: 1px solid #e5e6eb;
   border-radius: 8px;
   background: #fff;
+  position: relative;
 }
 
 .serviceIconWrap {
@@ -585,11 +586,56 @@
   color: #8f959e;
 }
 
-.serviceDesc {
-  margin: 0;
+.serviceTooltip {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 100%;
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.85);
+  color: #ffffff;
   font-size: 12px;
   line-height: 20px;
+  border-radius: 8px;
+  white-space: normal;
+  word-break: break-word;
+  z-index: 100;
+  pointer-events: none;
+  animation: tooltipFadeIn 0.15s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.serviceDeleteBtn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
   color: #8f959e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  font-size: 14px;
+
+  &:hover {
+    background: #fff1f0;
+    color: #ff4d4f;
+  }
 }
 
 .toggleItem {
@@ -722,34 +768,161 @@
   font-weight: 500;
 }
 
-.questionRow {
+.questionCard {
+  border: 1px solid #e5e6eb;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+
+  &:hover {
+    border-color: #baceff;
+  }
+}
+
+.questionHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  padding: 10px 14px;
   min-height: 40px;
-  padding: 0 12px;
-  border: 1px solid #d9dde6;
-  border-radius: 8px;
 }
 
-.questionText {
+.questionLabel {
   font-size: 14px;
-  color: #646a73;
+  color: #1f2329;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70%;
 }
 
 .questionActions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .smallIconButton {
+  width: 28px;
+  height: 28px;
   border: none;
   background: transparent;
   color: #8f959e;
   cursor: pointer;
-  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 14px;
+
+  &:hover {
+    background: #f2f3f5;
+    color: #1f2329;
+  }
+}
+
+.questionBody {
+  padding: 0 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: questionExpand 0.2s ease;
+}
+
+@keyframes questionExpand {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 600px;
+  }
+}
+
+.questionField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  color: #1f2329;
+  font-weight: 500;
+}
+
+.required {
+  color: #ff4d4f;
+}
+
+.fieldWithCount {
+  position: relative;
+}
+
+.fieldInput {
+  width: 100%;
+  height: 36px;
+  padding: 0 60px 0 10px;
+  border: 1px solid #d9dde6;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1f2329;
+  outline: none;
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    border-color: #245bdb;
+  }
+}
+
+.fieldError {
+  border-color: #ff4d4f !important;
+
+  &:focus {
+    border-color: #ff4d4f !important;
+  }
+}
+
+.fieldErrorText {
+  font-size: 12px;
+  color: #ff4d4f;
+  margin-top: 4px;
+}
+
+.fieldTextarea {
+  width: 100%;
+  padding: 8px 10px;
+  padding-right: 60px;
+  border: 1px solid #d9dde6;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1f2329;
+  line-height: 20px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s ease;
+  font-family: inherit;
+
+  &:focus {
+    border-color: #245bdb;
+  }
+}
+
+.charCount {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  font-size: 12px;
+  color: #8f959e;
+  pointer-events: none;
+}
+
+.fieldInput ~ .charCount {
+  bottom: 8px;
 }
 
 .emptyState {
