@@ -199,7 +199,6 @@ export default function AgentDetailPage() {
     <div className={styles.page}>
       <div className={styles.topBar}>
         <div className={styles.topBarLeft}>
-          <span className={styles.backIcon}>⌂</span>
           <span className={styles.topTitle}>{agentName}</span>
           <EditOutlined className={styles.topEditIcon} onClick={handleEditClick} />
         </div>
