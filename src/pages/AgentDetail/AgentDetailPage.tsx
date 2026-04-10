@@ -196,6 +196,11 @@ export default function AgentDetailPage() {
       : `http://192.168.30.238:8000${agentData.avatar_url}`
     : ''
 
+  // 获取头像首字母
+  const getAvatarLetter = (name: string) => {
+    return name?.trim().charAt(0).toUpperCase() || 'A'
+  }
+
   // 格式化时间
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('zh-CN', {
@@ -600,7 +605,9 @@ export default function AgentDetailPage() {
               {chatMessages.length === 0 && (
                 <div className={styles.heroSection}>
                   <div className={styles.heroCard}>
-                    <img className={styles.heroAvatar} src={avatarUrl} alt={agentName} />
+                    <div className={styles.heroAvatar}>
+                      <span className={styles.avatarLetter}>{getAvatarLetter(agentName)}</span>
+                    </div>
                     <div className={styles.heroContent}>
                       <h1 className={styles.heroTitle}>{agentName}</h1>
                       <p className={styles.heroSubtitle}>{agentSubtitle}</p>

@@ -11,21 +11,10 @@ import {
 import CreateAgentModal from '../../components/common/CreateAgentModal'
 import styles from './discover.module.less'
 
-// 本地图片资源
-const localImages = [
-  '/img/ScreenShot_2026-04-07_175908_563.png',
-  '/img/ScreenShot_2026-04-07_175930_033.png',
-  '/img/ScreenShot_2026-04-07_175937_566.png',
-  '/img/ScreenShot_2026-04-07_180223_916.png',
-  '/img/ScreenShot_2026-04-07_180238_348.png',
-  '/img/ScreenShot_2026-04-07_180301_473.png',
-  '/img/ScreenShot_2026-04-07_180409_903.png',
-  '/img/ScreenShot_2026-04-07_180418_553.png',
-  '/img/ScreenShot_2026-04-07_180425_683.png',
-  '/img/ScreenShot_2026-04-07_180431_524.png',
-  '/img/ScreenShot_2026-04-07_180438_183.png',
-  '/img/ScreenShot_2026-04-07_180446_294.png',
-]
+// 获取头像首字母
+function getAvatarLetter(name: string) {
+  return name?.trim().charAt(0).toUpperCase() || 'A'
+}
 
 // Mock 数据 - 企业精选
 const featuredAgents = [
@@ -33,81 +22,61 @@ const featuredAgents = [
     id: 1,
     name: '智能客服助手',
     description: '7x24小时在线，自动回复客户咨询',
-    avatar: localImages[0],
-    author: { name: '@果仁官方', avatar: localImages[1], usage: 12580 },
-    color: '#1677ff',
+    author: { name: '@果仁官方', usage: 12580 },
   },
   {
     id: 2,
     name: '数据分析专家',
     description: '快速分析业务数据，生成可视化报表',
-    avatar: localImages[2],
-    author: { name: '@果仁官方', avatar: localImages[3], usage: 8932 },
-    color: '#52c41a',
+    author: { name: '@果仁官方', usage: 8932 },
   },
   {
     id: 3,
     name: '代码审查助手',
     description: '自动检测代码问题，提升代码质量',
-    avatar: localImages[4],
-    author: { name: '@果仁官方', avatar: localImages[5], usage: 15670 },
-    color: '#722ed1',
+    author: { name: '@果仁官方', usage: 15670 },
   },
   {
     id: 4,
     name: '文档生成器',
     description: '根据代码自动生成技术文档',
-    avatar: localImages[6],
-    author: { name: '@果仁官方', avatar: localImages[7], usage: 6789 },
-    color: '#fa8c16',
+    author: { name: '@果仁官方', usage: 6789 },
   },
   {
     id: 5,
     name: '会议纪要助手',
     description: '实时转录会议内容，自动生成摘要',
-    avatar: localImages[8],
-    author: { name: '@果仁官方', avatar: localImages[9], usage: 9876 },
-    color: '#eb2f96',
+    author: { name: '@果仁官方', usage: 9876 },
   },
   {
     id: 6,
     name: '营销文案生成',
     description: '一键生成高质量营销文案',
-    avatar: localImages[10],
-    author: { name: '@果仁官方', avatar: localImages[11], usage: 23456 },
-    color: '#f5222d',
+    author: { name: '@果仁官方', usage: 23456 },
   },
   {
     id: 7,
     name: '智能翻译官',
     description: '支持多语言实时翻译',
-    avatar: localImages[0],
-    author: { name: '@果仁官方', avatar: localImages[1], usage: 11234 },
-    color: '#13c2c2',
+    author: { name: '@果仁官方', usage: 11234 },
   },
   {
     id: 8,
     name: 'PPT设计师',
     description: '自动生成精美PPT演示文稿',
-    avatar: localImages[2],
-    author: { name: '@果仁官方', avatar: localImages[3], usage: 14567 },
-    color: '#faad14',
+    author: { name: '@果仁官方', usage: 14567 },
   },
   {
     id: 9,
     name: '邮件助手',
     description: '智能撰写和回复邮件',
-    avatar: localImages[4],
-    author: { name: '@果仁官方', avatar: localImages[5], usage: 18901 },
-    color: '#1890ff',
+    author: { name: '@果仁官方', usage: 18901 },
   },
   {
     id: 10,
     name: '日程管理师',
     description: '智能安排日程，提醒重要事项',
-    avatar: localImages[6],
-    author: { name: '@果仁官方', avatar: localImages[7], usage: 7654 },
-    color: '#2f54eb',
+    author: { name: '@果仁官方', usage: 7654 },
   },
 ]
 
@@ -117,48 +86,42 @@ const enterpriseAgents = [
     id: 1,
     name: '企业知识库助手',
     description: '基于企业知识库，快速回答员工问题，提升工作效率',
-    avatar: localImages[8],
-    author: { name: '@张洪磊', avatar: localImages[9], usage: 56789 },
+    author: { name: '@张洪磊', usage: 56789 },
     tags: ['企业', '知识管理'],
   },
   {
     id: 2,
     name: '财务报表分析',
     description: '自动分析财务报表，识别异常数据，生成分析报告',
-    avatar: localImages[10],
-    author: { name: '@张洪磊', avatar: localImages[11], usage: 34567 },
+    author: { name: '@张洪磊', usage: 34567 },
     tags: ['财务', '数据分析'],
   },
   {
     id: 3,
     name: 'HR招聘助手',
     description: '智能筛选简历，自动安排面试，跟踪招聘进度',
-    avatar: localImages[0],
-    author: { name: '@张洪磊', avatar: localImages[1], usage: 42345 },
+    author: { name: '@张洪磊', usage: 42345 },
     tags: ['HR', '招聘'],
   },
   {
     id: 4,
     name: '合同审查专家',
     description: '自动审查合同条款，识别风险点，提供修改建议',
-    avatar: localImages[2],
-    author: { name: '@张洪磊', avatar: localImages[3], usage: 28901 },
+    author: { name: '@张洪磊', usage: 28901 },
     tags: ['法务', '合同'],
   },
   {
     id: 5,
     name: 'IT运维监控',
     description: '实时监控系统状态，自动告警，快速定位故障',
-    avatar: localImages[4],
-    author: { name: '@张洪磊', avatar: localImages[5], usage: 15678 },
+    author: { name: '@张洪磊', usage: 15678 },
     tags: ['IT', '运维'],
   },
   {
     id: 6,
     name: '客户画像分析',
     description: '整合客户数据，构建精准画像，助力精准营销',
-    avatar: localImages[6],
-    author: { name: '@张洪磊', avatar: localImages[7], usage: 51234 },
+    author: { name: '@张洪磊', usage: 51234 },
     tags: ['CRM', '营销'],
   },
 ]
@@ -283,11 +246,8 @@ export default function DiscoverPage() {
               {getCurrentFeaturedAgents().map((agent) => (
                 <div key={agent.id} className={styles.featuredCard}>
                   <div className={styles.featuredCardHeader}>
-                    <div
-                      className={styles.featuredAvatar}
-                      style={{ backgroundColor: `${agent.color}15` }}
-                    >
-                      <img src={agent.avatar} alt={agent.name} />
+                    <div className={styles.featuredAvatar}>
+                      <span className={styles.avatarLetter}>{getAvatarLetter(agent.name)}</span>
                     </div>
                   </div>
                   <div className={styles.featuredCardBody}>
@@ -334,7 +294,7 @@ export default function DiscoverPage() {
                 <div key={agent.id} className={styles.enterpriseCard}>
                   <div className={styles.enterpriseCardLeft}>
                     <div className={styles.enterpriseAvatar}>
-                      <img src={agent.avatar} alt={agent.name} />
+                      <span className={styles.avatarLetter}>{getAvatarLetter(agent.name)}</span>
                     </div>
                   </div>
                   <div className={styles.enterpriseCardRight}>
