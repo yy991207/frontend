@@ -245,8 +245,9 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
     }
   }
 
-  const renderSessionItem = (session: ChatSession) => {
+  const renderSessionItem = (session: ChatSession, options?: { collapsed?: boolean }) => {
     const isRemoving = removingSessionIds.has(session.session_id)
+    const collapsed = options?.collapsed ?? false
     return (
       <div
         key={session.session_id}
@@ -255,8 +256,8 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
         title={getSessionDisplayName(session)}
       >
         <MessageOutlined className={styles.sessionIcon} />
-        <span className={styles.sessionName}>{getSessionDisplayName(session)}</span>
-        <SessionMenu session={session} onDelete={setDeleteTargetSession} />
+        {!collapsed && <span className={styles.sessionName}>{getSessionDisplayName(session)}</span>}
+        {!collapsed && <SessionMenu session={session} onDelete={setDeleteTargetSession} />}
       </div>
     )
   }
@@ -271,7 +272,7 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
         {expanded && showDivider && <div className={styles.sectionDivider} />}
         {expanded && <div className={styles.sectionHeader}>{title}</div>}
         <div className={styles.sectionContent}>
-          {items.map((item) => renderSessionItem(item))}
+          {items.map((item) => renderSessionItem(item, { collapsed: !expanded }))}
         </div>
       </div>
     )
@@ -284,6 +285,15 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
   const shouldShowBlockingState = !hasLoadedOnce && loading && !hasAnySessions
   const shouldShowEmptyState = hasLoadedOnce && !error && !hasAnySessions
   const shouldShowList = hasAnySessions
+  const collapsedLatestSession = useMemo(() => {
+    if (sessions.today.length > 0) {
+      return sessions.today[0]
+    }
+    if (sessions.within7Days.length > 0) {
+      return sessions.within7Days[0]
+    }
+    return sessions.beyond7Days[0] ?? null
+  }, [sessions.beyond7Days, sessions.today, sessions.within7Days])
   const contentClassName = useMemo(
     () => `${styles.content} ${expanded ? styles.contentExpanded : styles.contentCollapsed}`,
     [expanded],
@@ -314,9 +324,15 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
 
           {!error && shouldShowList && (
             <div className={contentClassName}>
-              {renderSection('今天', sessions.today)}
-              {renderSection('7天内', sessions.within7Days, sessions.today.length > 0)}
-              {renderSection('7天外', sessions.beyond7Days, sessions.today.length > 0 || sessions.within7Days.length > 0)}
+              {expanded ? (
+                <>
+                  {renderSection('今天', sessions.today)}
+                  {renderSection('7天内', sessions.within7Days, sessions.today.length > 0)}
+                  {renderSection('7天外', sessions.beyond7Days, sessions.today.length > 0 || sessions.within7Days.length > 0)}
+                </>
+              ) : (
+                collapsedLatestSession ? renderSessionItem(collapsedLatestSession, { collapsed: true }) : null
+              )}
             </div>
           )}
         </div>
