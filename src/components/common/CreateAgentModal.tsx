@@ -8,18 +8,14 @@ import styles from './CreateAgentModal.module.less'
 interface CreateAgentModalProps {
   visible: boolean
   onCancel: () => void
-  onConfirm: (data: { name: string; description: string; icon: string }) => void
 }
 
-// 模板标签配置
 const templateTags = [
-  // 第一行
   ['企业财报解读专家', '图片生成助手', '产品/市场调研专家', '帮助文档写作助手'],
-  // 第二行
   ['任务日程助手', '数据分析专家', '会议总结助手', '飞书智能客服'],
 ]
 
-export default function CreateAgentModal({ visible, onCancel, onConfirm }: CreateAgentModalProps) {
+export default function CreateAgentModal({ visible, onCancel }: CreateAgentModalProps) {
   const navigate = useNavigate()
   const [inputValue, setInputValue] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -53,13 +49,8 @@ export default function CreateAgentModal({ visible, onCancel, onConfirm }: Creat
 
     setIsSubmitting(true)
     try {
-      // 从输入内容中提取名称（取前20个字符作为名称）
-      const name = inputValue.trim().slice(0, 20)
-      await onConfirm({
-        name,
-        description: inputValue.trim(),
-        icon: 'robot',
-      })
+      onCancel()
+      navigate('/agent/create')
     } finally {
       setIsSubmitting(false)
     }
@@ -73,9 +64,8 @@ export default function CreateAgentModal({ visible, onCancel, onConfirm }: Creat
   }
 
   const handleTagClick = () => {
-    // 先关闭弹窗，再走前端路由跳转，保留浏览器历史栈，返回时才能回到发现页。
     onCancel()
-    navigate('/agent/1')
+    navigate('/agent/create')
   }
 
   const handleClose = () => {

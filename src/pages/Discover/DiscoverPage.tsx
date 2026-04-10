@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Input, Button, Dropdown, message } from 'antd'
+import { Input, Button, Dropdown } from 'antd'
 import {
   SearchOutlined,
   PlusOutlined,
@@ -182,15 +182,6 @@ export default function DiscoverPage() {
     setIsModalVisible(false)
   }
 
-  // 确认创建智能体
-  const handleConfirmCreate = async (data: { name: string; description: string; icon: string }) => {
-    // 模拟创建过程
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    message.success(`智能体 "${data.name}" 创建成功！`)
-    setIsModalVisible(false)
-    // 可以在这里添加跳转到新创建的智能体详情页的逻辑
-  }
-
   return (
     <div className={styles.page}>
       <div className={styles.panel}>
@@ -208,7 +199,7 @@ export default function DiscoverPage() {
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}
                   className={styles.searchInput}
-                  bordered={false}
+                  variant="borderless"
                 />
               </div>
               <Button
@@ -321,7 +312,6 @@ export default function DiscoverPage() {
       <CreateAgentModal
         visible={isModalVisible}
         onCancel={handleCloseModal}
-        onConfirm={handleConfirmCreate}
       />
     </div>
   )
