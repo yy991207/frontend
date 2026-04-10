@@ -133,6 +133,8 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
   const [error, setError] = useState<string | null>(null)
   const [deleteTargetSession, setDeleteTargetSession] = useState<ChatSession | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [removingSessionIds, setRemovingSessionIds] = useState<Set<string>>(new Set())
+  const isFirstLoadRef = useRef(true)
 
   // 获取当前会话 ID
   const getCurrentSessionId = useCallback(() => {
@@ -165,7 +167,12 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
 
   useEffect(() => {
     if (expanded) {
-      loadSessions()
+      if (isFirstLoadRef.current) {
+        isFirstLoadRef.current = false
+        loadSessions()
+      } else {
+        loadSessions({ silent: true })
+      }
     }
   }, [expanded, loadSessions, location.pathname, location.search])
 
@@ -196,17 +203,32 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
   const handleDeleteSession = async (session: ChatSession) => {
     try {
       setDeleteLoading(true)
+      setRemovingSessionIds((prev) => new Set(prev).add(session.session_id))
+
+      await new Promise((resolve) => setTimeout(resolve, 200))
+
       const config = await loadConfig()
       await deleteChatSession(config, session.session_id)
-      // 删除成功后重新加载列表
-      await loadSessions()
+
+      setRemovingSessionIds((prev) => {
+        const next = new Set(prev)
+        next.delete(session.session_id)
+        return next
+      })
+
+      await loadSessions({ silent: true })
       setDeleteTargetSession(null)
-      // 如果删除的是当前正在查看的会话，跳转到首页
+
       const currentSessionId = getCurrentSessionId()
       if (currentSessionId === session.session_id) {
         navigate('/')
       }
     } catch (err) {
+      setRemovingSessionIds((prev) => {
+        const next = new Set(prev)
+        next.delete(session.session_id)
+        return next
+      })
       console.error('删除会话失败:', err)
       alert(err instanceof Error ? err.message : '删除会话失败')
     } finally {
@@ -214,18 +236,22 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
     }
   }
 
-  const renderSessionItem = (session: ChatSession) => (
-    <div
-      key={session.session_id}
-      className={styles.sessionItem}
-      onClick={() => handleSessionClick(session.session_id)}
-      title={getSessionDisplayName(session)}
-    >
-      <MessageOutlined className={styles.sessionIcon} />
-      <span className={styles.sessionName}>{getSessionDisplayName(session)}</span>
-      <SessionMenu session={session} onDelete={setDeleteTargetSession} />
-    </div>
-  )
+  const renderSessionItem = (session: ChatSession, index: number) => {
+    const isRemoving = removingSessionIds.has(session.session_id)
+    return (
+      <div
+        key={session.session_id}
+        className={`${styles.sessionItem} ${isRemoving ? styles.sessionItemRemoving : ''}`}
+        style={{ animationDelay: `${index * 30}ms` }}
+        onClick={() => handleSessionClick(session.session_id)}
+        title={getSessionDisplayName(session)}
+      >
+        <MessageOutlined className={styles.sessionIcon} />
+        <span className={styles.sessionName}>{getSessionDisplayName(session)}</span>
+        <SessionMenu session={session} onDelete={setDeleteTargetSession} />
+      </div>
+    )
+  }
 
   const renderSection = (title: string, items: ChatSession[], showDivider: boolean = false) => {
     if (items.length === 0) {
@@ -237,7 +263,7 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
         {showDivider && <div className={styles.sectionDivider} />}
         <div className={styles.sectionHeader}>{title}</div>
         <div className={styles.sectionContent}>
-          {items.map(renderSessionItem)}
+          {items.map((item, index) => renderSessionItem(item, index))}
         </div>
       </div>
     )
