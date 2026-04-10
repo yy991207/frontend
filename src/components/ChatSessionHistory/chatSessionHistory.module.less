@@ -21,6 +21,7 @@
   flex-direction: column;
   gap: 4px;
   min-height: 0;
+  flex: 1;
 }
 
 .sessionListExpanded {
@@ -36,12 +37,14 @@
   flex-direction: column;
   gap: 8px;
   min-height: 0;
+  flex: 1;
 }
 
 .contentExpanded {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding-right: 4px;
+  padding: 4px 4px 0 0;
 
   &::-webkit-scrollbar {
     width: 4px;
