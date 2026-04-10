@@ -1,558 +1,340 @@
+id: 1
 event: on_chain_start
-data: {"event":"on_chain_start","name":"debug_agent","run_id":"run_204219270622","parent_ids":[],"tags":[],"metadata":{"session_id":"debug_123456_20421927"},"timestamp":"2026-04-09 18:47:37","data":{"input":{"message":"查询北京天气"}}}
+data: {"event":"on_chain_start","name":"chat_agent","run_id":"run_204242212599","parent_ids":[],"tags":[],"metadata":{"session_id":"123456_20260410_20424181"},"timestamp":"2026-04-10 09:59:15","data":{"input":{"message":"查询北京天气"}}}
 
+id: 2
 event: on_chat_model_start
-data: {"event":"on_chat_model_start","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:38","data":{"input":{}}}
+data: {"event":"on_chat_model_start","name":"ReasoningChatOpenAI","run_id":"019d751d-6e46-7102-8881-ef771dfd5933","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:16","data":{"input":{}}}
 
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"用户"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"想要"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"查询北京"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"天气。"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"这是一个"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"需要实时"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"信息的请求"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"，天气"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:39","data":{"chunk":{"reasoning_content":"信息是"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"实时变化的"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"，我"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"需要使用"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"web_search"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"工"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"具"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"来获取"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"最新的北京"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"天气信息"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"chunk":{"reasoning_content":"。"}}}
-
+id: 3
 event: on_chat_model_end
-data: {"event":"on_chat_model_end","name":"ReasoningChatOpenAI","run_id":"019d71da-cf89-7150-b339-de13e6cb6f6b","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:40","data":{"output":{}}}
+data: {"event":"on_chat_model_end","name":"ReasoningChatOpenAI","run_id":"019d751d-6e46-7102-8881-ef771dfd5933","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:19","data":{"output":{}}}
 
+id: 4
 event: on_tool_start
-data: {"event":"on_tool_start","name":"web_search","run_id":"019d71da-d8c9-7fe3-bd8b-165a427f3e4d","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:41","data":{"input":{"query":"北京天气","count":5}}}
+data: {"event":"on_tool_start","name":"web_search","run_id":"019d751d-7b42-7590-8baa-77154a6d2367","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:19","data":{"input":{"query":"北京天气"}}}
 
+id: 5
 event: on_tool_end
-data: {"event":"on_tool_end","name":"web_search","run_id":"019d71da-d8c9-7fe3-bd8b-165a427f3e4d","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:56","data":{"output":"联网搜索完成，找到 5 条结果","tool_display":{"tool_name":"web_search","tool_label":"联网搜索","found":true,"items":[{"title":"北京-天气预报","url":"http://testbed.nmc.cn/publish/forecast/ABJ/beijing.html","site_name":"testbed.nmc.cn","site_icon":"https://th.bochaai.com/favicon?domain_url=http://testbed.nmc.cn/publish/forecast/ABJ/beijing.html"},{"title":"4月9日北京天气预报","url":"https://beijing.qianlong.com/2026/0409/8652135.shtml","site_name":"千龙网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://beijing.qianlong.com/2026/0409/8652135.shtml"},{"title":"北京天气_北京实时天气预报_北京24小时天气预报","url":"https://tianqi.cncn.com/beijing","site_name":"tianqi.cncn.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://tianqi.cncn.com/beijing"},{"title":"北京迎大风雷雨天气","url":"https://new.qq.com/rain/a/20250513A07IHR00","site_name":"腾讯网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://new.qq.com/rain/a/20250513A07IHR00"},{"title":"【北京天气预报】北京天气预报一周,北京天气预报15天,30天,今天,明天,7天,10天,未来北京一周天气预报查询—天气网","url":"https://www.tianqi.com/beijing/","site_name":"www.tianqi.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://www.tianqi.com/beijing/"}]}}}
+data: {"event":"on_tool_end","name":"web_search","run_id":"019d751d-7b42-7590-8baa-77154a6d2367","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:30","data":{"output":"联网搜索完成，找到 8 条结果","tool_display":{"tool_name":"web_search","tool_label":"联网搜索","found":true,"items":[{"title":"今天傍晚开始,北京将有小到中雨!预计持续到- - 今日头条","url":"https://www.toutiao.com/article/7626289690806616602/","site_name":"今日头条","site_icon":"https://th.bochaai.com/favicon?domain_url=https://www.toutiao.com/article/7626289690806616602/"},{"title":"北京今天最高气温25 周末晴暖持续","url":"https://new.qq.com/rain/a/20260410A0121500","site_name":"腾讯网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://new.qq.com/rain/a/20260410A0121500"},{"title":"北京今天傍晚到前半夜有雨,明天白天晴,最高气温25__财经头条__新浪财经","url":"https://cj.sina.cn/articles/view/1893892941/70e2834d02001z2hc%3Ffroms%3Dggmp%26vt%3D4","site_name":"新浪财经","site_icon":"https://th.bochaai.com/favicon?domain_url=https://cj.sina.cn/articles/view/1893892941/70e2834d02001z2hc%3Ffroms%3Dggmp%26vt%3D4"},{"title":"北京今天最高气温25,阵风五六级,早晨有轻雾_北京时间","url":"https://item.btime.com/40p5f9uutg2909r5v9r1pl1muld","site_name":"item.btime.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://item.btime.com/40p5f9uutg2909r5v9r1pl1muld"},{"title":"北京今天以晴为主最高温可达25 周末晴暖持续昼夜温差较大","url":"https://www.toutiao.com/article/7626932589353337371/","site_name":"今日头条","site_icon":"https://th.bochaai.com/favicon?domain_url=https://www.toutiao.com/article/7626932589353337371/"},{"title":"北京明日阵风五六级,山区七八级,最高气温25 - 今日头条","url":"https://www.toutiao.com/article/7626801659154383423/","site_name":"今日头条","site_icon":"https://th.bochaai.com/favicon?domain_url=https://www.toutiao.com/article/7626801659154383423/"},{"title":"天气预报,天气预报查询一周,天气预报15天查询,今天,明天,7天,10天,15天,30天,今天,明天,40天,未来一周天气预报查询_天气网","url":"http://www.tianqi.com/index.php?c=history&md=0325","site_name":"www.tianqi.com","site_icon":"https://th.bochaai.com/favicon?domain_url=http://www.tianqi.com/index.php?c=history&md=0325"},{"title":"北京4月08日天气预报-2026年4月08日北京天气-北京本地宝","url":"http://bj.bendibao.com/tianqi/lishi/20260408.shtm","site_name":"本地宝","site_icon":"https://th.bochaai.com/favicon?domain_url=http://bj.bendibao.com/tianqi/lishi/20260408.shtm"}]}}}
 
+id: 6
 event: on_chat_model_start
-data: {"event":"on_chat_model_start","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:56","data":{"input":{}}}
+data: {"event":"on_chat_model_start","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:31","data":{"input":{}}}
 
+id: 7
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"根据"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:33","data":{"chunk":{"content":"根据"},"accumulated_content":"根据","accumulated_reasoning_content":""}}
 
+id: 8
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"搜索结果"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:33","data":{"chunk":{"content":"最新天气预报"},"accumulated_content":"根据最新天气预报","accumulated_reasoning_content":""}}
 
+id: 9
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"，我可以"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:33","data":{"chunk":{"content":"，北京"},"accumulated_content":"根据最新天气预报，北京","accumulated_reasoning_content":""}}
 
+id: 10
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"整理出"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:33","data":{"chunk":{"content":"今日（"},"accumulated_content":"根据最新天气预报，北京今日（","accumulated_reasoning_content":""}}
 
+id: 11
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"北京的"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:33","data":{"chunk":{"content":"4月"},"accumulated_content":"根据最新天气预报，北京今日（4月","accumulated_reasoning_content":""}}
 
+id: 12
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"天气信息"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:33","data":{"chunk":{"content":"10日"},"accumulated_content":"根据最新天气预报，北京今日（4月10日","accumulated_reasoning_content":""}}
 
+id: 13
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"。不过"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:33","data":{"chunk":{"content":"）天气"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气","accumulated_reasoning_content":""}}
 
+id: 14
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"搜索结果"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:33","data":{"chunk":{"content":"情况如下"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下","accumulated_reasoning_content":""}}
 
+id: 15
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"中的"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:33","data":{"chunk":{"content":"：\n\n**"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**","accumulated_reasoning_content":""}}
 
+id: 16
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"日期有些"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:33","data":{"chunk":{"content":"今日天气"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气","accumulated_reasoning_content":""}}
 
+id: 17
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"混乱，"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:33","data":{"chunk":{"content":"**\n"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n","accumulated_reasoning_content":""}}
 
+id: 18
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:58","data":{"chunk":{"reasoning_content":"有些"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"- 天"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天","accumulated_reasoning_content":""}}
 
+id: 19
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"显示4"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"气："},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：","accumulated_reasoning_content":""}}
 
+id: 20
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"月，"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"晴转"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转","accumulated_reasoning_content":""}}
 
+id: 21
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"有些显示"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"多云\n"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n","accumulated_reasoning_content":""}}
 
+id: 22
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"5月"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"- 最高"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高","accumulated_reasoning_content":""}}
 
+id: 23
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"、9"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"气温："},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：","accumulated_reasoning_content":""}}
 
+id: 24
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"月。"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"25℃"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃","accumulated_reasoning_content":""}}
 
+id: 25
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"我应该综合"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"\n-"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n-","accumulated_reasoning_content":""}}
 
+id: 26
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"这些信息"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":" 最低"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低","accumulated_reasoning_content":""}}
 
+id: 27
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"给"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"气温："},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：","accumulated_reasoning_content":""}}
 
+id: 28
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"用户一个"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"约"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约","accumulated_reasoning_content":""}}
 
+id: 29
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:47:59","data":{"chunk":{"reasoning_content":"清晰的回答"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"8-"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-","accumulated_reasoning_content":""}}
 
+id: 30
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"。\n\n从"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"10℃"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃","accumulated_reasoning_content":""}}
 
+id: 31
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"结果来看"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"\n-"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n-","accumulated_reasoning_content":""}}
 
+id: 32
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"：\n-"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":" 风力"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力","accumulated_reasoning_content":""}}
 
+id: 33
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"当前天气"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"：偏"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏","accumulated_reasoning_content":""}}
 
+id: 34
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"：小雨"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"北风"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风","accumulated_reasoning_content":""}}
 
+id: 35
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"，"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"，"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，","accumulated_reasoning_content":""}}
 
+id: 36
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"南风"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"阵风"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风","accumulated_reasoning_content":""}}
 
+id: 37
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"微风"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"5-"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-","accumulated_reasoning_content":""}}
 
+id: 38
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"- 明"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"6级"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级","accumulated_reasoning_content":""}}
 
+id: 39
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"天（"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:34","data":{"chunk":{"content":"，山区"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区","accumulated_reasoning_content":""}}
 
+id: 40
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"4月"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:35","data":{"chunk":{"content":"可达7"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7","accumulated_reasoning_content":""}}
 
+id: 41
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"8日"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:35","data":{"chunk":{"content":"-8"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8","accumulated_reasoning_content":""}}
 
+id: 42
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:00","data":{"chunk":{"reasoning_content":"/9"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:35","data":{"chunk":{"content":"级\n"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n","accumulated_reasoning_content":""}}
 
+id: 43
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"日）："}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:35","data":{"chunk":{"content":"- "},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- ","accumulated_reasoning_content":""}}
 
+id: 44
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"阴有小"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:35","data":{"chunk":{"content":"早晨："},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：","accumulated_reasoning_content":""}}
 
+id: 45
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"雨转"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:35","data":{"chunk":{"content":"平原地区"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区","accumulated_reasoning_content":""}}
 
+id: 46
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"晴"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:35","data":{"chunk":{"content":"有轻"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻","accumulated_reasoning_content":""}}
 
+id: 47
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"，气温"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:35","data":{"chunk":{"content":"雾或"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或","accumulated_reasoning_content":""}}
 
+id: 48
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"8-"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:35","data":{"chunk":{"content":"雾\n\n"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n","accumulated_reasoning_content":""}}
 
+id: 49
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"25℃"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:35","data":{"chunk":{"content":"**未来"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来","accumulated_reasoning_content":""}}
 
+id: 50
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"-"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:35","data":{"chunk":{"content":"几天预报"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报","accumulated_reasoning_content":""}}
 
+id: 51
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"后天"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:35","data":{"chunk":{"content":"**\n-"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n-","accumulated_reasoning_content":""}}
 
+id: 52
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"："}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:35","data":{"chunk":{"content":" 周末"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末","accumulated_reasoning_content":""}}
 
+id: 53
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"晴，"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:35","data":{"chunk":{"content":"两天以"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以","accumulated_reasoning_content":""}}
 
+id: 54
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"9-"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:35","data":{"chunk":{"content":"晴为主"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主","accumulated_reasoning_content":""}}
 
+id: 55
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"25℃"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:35","data":{"chunk":{"content":"，气温"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温","accumulated_reasoning_content":""}}
 
+id: 56
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"让我整理"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"23-"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-","accumulated_reasoning_content":""}}
 
+id: 57
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:01","data":{"chunk":{"reasoning_content":"一下给"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"25℃"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃","accumulated_reasoning_content":""}}
 
+id: 58
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"reasoning_content":"用户回答"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"\n"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n","accumulated_reasoning_content":""}}
 
+id: 59
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"reasoning_content":"。"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"-"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n-","accumulated_reasoning_content":""}}
 
+id: 60
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"根据搜索"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":" 昼夜"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜","accumulated_reasoning_content":""}}
 
+id: 61
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"结果，"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"温差较大"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大","accumulated_reasoning_content":""}}
 
+id: 62
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"为您整理"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"（10"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10","accumulated_reasoning_content":""}}
 
+id: 63
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"北京天气"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"℃以上"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上","accumulated_reasoning_content":""}}
 
+id: 64
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"情况：\n\n"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"）\n\n"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n","accumulated_reasoning_content":""}}
 
+id: 65
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"## 北京"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"**出行"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行","accumulated_reasoning_content":""}}
 
+id: 66
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"天气预报"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"提示**\n"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n","accumulated_reasoning_content":""}}
 
+id: 67
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"\n\n**"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"- 白"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n- 白","accumulated_reasoning_content":""}}
 
+id: 68
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"今日天气"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"天风力"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n- 白天风力","accumulated_reasoning_content":""}}
 
+id: 69
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"**\n"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"较强，"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n- 白天风力较强，","accumulated_reasoning_content":""}}
 
+id: 70
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"- 天"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"注意防"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n- 白天风力较强，注意防","accumulated_reasoning_content":""}}
 
+id: 71
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"气："}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"风\n"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n- 白天风力较强，注意防风\n","accumulated_reasoning_content":""}}
 
+id: 72
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"小雨\n"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"-"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n- 白天风力较强，注意防风\n-","accumulated_reasoning_content":""}}
 
+id: 73
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"-"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":" 昼夜"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n- 白天风力较强，注意防风\n- 昼夜","accumulated_reasoning_content":""}}
 
+id: 74
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":" 风"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"温差大"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n- 白天风力较强，注意防风\n- 昼夜温差大","accumulated_reasoning_content":""}}
 
+id: 75
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:02","data":{"chunk":{"content":"向"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:36","data":{"chunk":{"content":"，请"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n- 白天风力较强，注意防风\n- 昼夜温差大，请","accumulated_reasoning_content":""}}
 
+id: 76
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"风力："}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:37","data":{"chunk":{"content":"适时增"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n- 白天风力较强，注意防风\n- 昼夜温差大，请适时增","accumulated_reasoning_content":""}}
 
+id: 77
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"南风"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:37","data":{"chunk":{"content":"减衣物"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n- 白天风力较强，注意防风\n- 昼夜温差大，请适时增减衣物","accumulated_reasoning_content":""}}
 
+id: 78
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"微风"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:37","data":{"chunk":{"content":"\n-"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n- 白天风力较强，注意防风\n- 昼夜温差大，请适时增减衣物\n-","accumulated_reasoning_content":""}}
 
+id: 79
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"\n\n**"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:37","data":{"chunk":{"content":" 早晨"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n- 白天风力较强，注意防风\n- 昼夜温差大，请适时增减衣物\n- 早晨","accumulated_reasoning_content":""}}
 
+id: 80
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"明日天气"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:37","data":{"chunk":{"content":"有雾"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n- 白天风力较强，注意防风\n- 昼夜温差大，请适时增减衣物\n- 早晨有雾","accumulated_reasoning_content":""}}
 
+id: 81
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"（"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:37","data":{"chunk":{"content":"，驾车"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n- 白天风力较强，注意防风\n- 昼夜温差大，请适时增减衣物\n- 早晨有雾，驾车","accumulated_reasoning_content":""}}
 
+id: 82
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"4月"}}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:37","data":{"chunk":{"content":"注意安全"},"accumulated_content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n- 白天风力较强，注意防风\n- 昼夜温差大，请适时增减衣物\n- 早晨有雾，驾车注意安全","accumulated_reasoning_content":""}}
 
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"9日"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"）**\n"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"-"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":" 天气"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"：阴"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"有小雨"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"转晴"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"\n-"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":" 气温"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:03","data":{"chunk":{"content":"：8"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"℃ 至"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":" 25"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"℃\n"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"-"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":" 风"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"向风力"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"：北"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"转南"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"风 "}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"2-"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"3级"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"\n\n**"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"后天天气"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"（4"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"月10"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"日）"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"**\n-"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":" 天气"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"：晴"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:04","data":{"chunk":{"content":"\n-"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":" 气温"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"：9"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"℃ 至"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":" 25"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"℃\n"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"-"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":" 风"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"向风力"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"：北"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"转南"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"风 "}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"2-"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"3级"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"\n\n**"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"温馨提示**\n"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"- 近"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"期有"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"降雨，"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"外出"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"请携带"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:05","data":{"chunk":{"content":"雨具"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"\n-"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":" 紫外"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"线指数"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"：很强"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"，建议"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"涂擦"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"SPF"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"20以上"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"、PA"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"++护肤品"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"，"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"避免强"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"光照射"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:06","data":{"chunk":{"content":"\n-"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":" 气温"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"逐渐回升"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"，早晚"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"温差较大"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"，注意"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"增减"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"衣物\n\n"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"如"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"需了解更多"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"天气详情"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"，可"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"访问天气"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"网或"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"中国气象"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"网查询"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"实时"}}}
-
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"chunk":{"content":"信息。"}}}
-
+id: 83
 event: on_chat_model_end
-data: {"event":"on_chat_model_end","name":"ReasoningChatOpenAI","run_id":"019d71db-16d3-75d0-ad36-030e596d0348","parent_ids":["run_204219270622"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:07","data":{"output":{}}}
+data: {"event":"on_chat_model_end","name":"ReasoningChatOpenAI","run_id":"019d751d-a7c2-7871-82e1-3cca5bc3ea66","parent_ids":["run_204242212599"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:37","data":{"output":{}}}
 
+id: 84
 event: on_chain_end
-data: {"event":"on_chain_end","name":"debug_agent","run_id":"run_204219270622","parent_ids":[],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:48:08","data":{"output":{"content":"根据搜索结果，为您整理北京天气情况：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向风力：南风微风\n\n**明日天气（4月9日）**\n- 天气：阴有小雨转晴\n- 气温：8℃ 至 25℃\n- 风向风力：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：晴\n- 气温：9℃ 至 25℃\n- 风向风力：北转南风 2-3级\n\n**温馨提示**\n- 近期有降雨，外出请携带雨具\n- 紫外线指数：很强，建议涂擦SPF20以上、PA++护肤品，避免强光照射\n- 气温逐渐回升，早晚温差较大，注意增减衣物\n\n如需了解更多天气详情，可访问天气网或中国气象网查询实时信息。","reasoning_content":"用户想要查询北京天气。这是一个需要实时信息的请求，天气信息是实时变化的，我需要使用web_search工具来获取最新的北京天气信息。根据搜索结果，我可以整理出北京的天气信息。不过搜索结果中的日期有些混乱，有些显示4月，有些显示5月、9月。我应该综合这些信息给用户一个清晰的回答。\n\n从结果来看：\n-当前天气：小雨，南风微风- 明天（4月8日/9日）：阴有小雨转晴，气温8-25℃-后天：晴，9-25℃让我整理一下给用户回答。"},"references":[],"web_references":[{"title":"北京-天气预报","url":"http://testbed.nmc.cn/publish/forecast/ABJ/beijing.html","site_name":"testbed.nmc.cn","site_icon":"https://th.bochaai.com/favicon?domain_url=http://testbed.nmc.cn/publish/forecast/ABJ/beijing.html"},{"title":"4月9日北京天气预报","url":"https://beijing.qianlong.com/2026/0409/8652135.shtml","site_name":"千龙网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://beijing.qianlong.com/2026/0409/8652135.shtml"},{"title":"北京天气_北京实时天气预报_北京24小时天气预报","url":"https://tianqi.cncn.com/beijing","site_name":"tianqi.cncn.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://tianqi.cncn.com/beijing"},{"title":"北京迎大风雷雨天气","url":"https://new.qq.com/rain/a/20250513A07IHR00","site_name":"腾讯网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://new.qq.com/rain/a/20250513A07IHR00"},{"title":"【北京天气预报】北京天气预报一周,北京天气预报15天,30天,今天,明天,7天,10天,未来北京一周天气预报查询—天气网","url":"https://www.tianqi.com/beijing/","site_name":"www.tianqi.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://www.tianqi.com/beijing/"}],"skill_output":null}}
+data: {"event":"on_chain_end","name":"chat_agent","run_id":"run_204242212599","parent_ids":[],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:37","data":{"output":{"content":"根据最新天气预报，北京今日（4月10日）天气情况如下：\n\n**今日天气**\n- 天气：晴转多云\n- 最高气温：25℃\n- 最低气温：约8-10℃\n- 风力：偏北风，阵风5-6级，山区可达7-8级\n- 早晨：平原地区有轻雾或雾\n\n**未来几天预报**\n- 周末两天以晴为主，气温23-25℃\n- 昼夜温差较大（10℃以上）\n\n**出行提示**\n- 白天风力较强，注意防风\n- 昼夜温差大，请适时增减衣物\n- 早晨有雾，驾车注意安全","reasoning_content":null},"references":[],"web_references":[{"title":"今天傍晚开始,北京将有小到中雨!预计持续到- - 今日头条","url":"https://www.toutiao.com/article/7626289690806616602/","site_name":"今日头条","site_icon":"https://th.bochaai.com/favicon?domain_url=https://www.toutiao.com/article/7626289690806616602/"},{"title":"北京今天最高气温25 周末晴暖持续","url":"https://new.qq.com/rain/a/20260410A0121500","site_name":"腾讯网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://new.qq.com/rain/a/20260410A0121500"},{"title":"北京今天傍晚到前半夜有雨,明天白天晴,最高气温25__财经头条__新浪财经","url":"https://cj.sina.cn/articles/view/1893892941/70e2834d02001z2hc%3Ffroms%3Dggmp%26vt%3D4","site_name":"新浪财经","site_icon":"https://th.bochaai.com/favicon?domain_url=https://cj.sina.cn/articles/view/1893892941/70e2834d02001z2hc%3Ffroms%3Dggmp%26vt%3D4"},{"title":"北京今天最高气温25,阵风五六级,早晨有轻雾_北京时间","url":"https://item.btime.com/40p5f9uutg2909r5v9r1pl1muld","site_name":"item.btime.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://item.btime.com/40p5f9uutg2909r5v9r1pl1muld"},{"title":"北京今天以晴为主最高温可达25 周末晴暖持续昼夜温差较大","url":"https://www.toutiao.com/article/7626932589353337371/","site_name":"今日头条","site_icon":"https://th.bochaai.com/favicon?domain_url=https://www.toutiao.com/article/7626932589353337371/"},{"title":"北京明日阵风五六级,山区七八级,最高气温25 - 今日头条","url":"https://www.toutiao.com/article/7626801659154383423/","site_name":"今日头条","site_icon":"https://th.bochaai.com/favicon?domain_url=https://www.toutiao.com/article/7626801659154383423/"},{"title":"天气预报,天气预报查询一周,天气预报15天查询,今天,明天,7天,10天,15天,30天,今天,明天,40天,未来一周天气预报查询_天气网","url":"http://www.tianqi.com/index.php?c=history&md=0325","site_name":"www.tianqi.com","site_icon":"https://th.bochaai.com/favicon?domain_url=http://www.tianqi.com/index.php?c=history&md=0325"},{"title":"北京4月08日天气预报-2026年4月08日北京天气-北京本地宝","url":"http://bj.bendibao.com/tianqi/lishi/20260408.shtm","site_name":"本地宝","site_icon":"https://th.bochaai.com/favicon?domain_url=http://bj.bendibao.com/tianqi/lishi/20260408.shtm"}],"skill_output":null}}
 
+id: 85
 event: done
 data: {}
 

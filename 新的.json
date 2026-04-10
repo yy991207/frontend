@@ -1,772 +1,222 @@
-id: 1
 event: on_chain_start
-data: {"event":"on_chain_start","name":"chat_agent","run_id":"run_204219215865","parent_ids":[],"tags":[],"metadata":{"session_id":"123456_20260409_20421921"},"timestamp":"2026-04-09 18:45:27","data":{"input":{"message":"查询北京天气"}}}
+data: {"event":"on_chain_start","name":"debug_agent","run_id":"run_204242196143","parent_ids":[],"tags":[],"metadata":{"session_id":"debug_123456_20424219"},"timestamp":"2026-04-10 09:58:36","data":{"input":{"message":"查询北京天气"}}}
 
-id: 2
 event: on_chat_model_start
-data: {"event":"on_chat_model_start","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:27","data":{"input":{"messages":[[{"content":[{"type":"text","text":"你是一个专业的知识检索与问答助手，基于用户提供的文档知识库进行精准检索和高质量回答。\n\n## 工具使用\n\n**知识检索**（仅在用户明确选中参考资料 / 传入 resource_ids 时使用）：\n- 具体问题用 `rag_enhanced_search`（必须传入 resource_ids）\n- 文档概览用 `rag_get_highest_layer`\n- 指定范围用 `rag_search_with_filters`（必须透传 resource_ids）\n- 用户未选中任何资料时，不要调用 RAG 工具，直接基于已有知识回答\n\n**实时资讯**：用 `web_search`，回答时不要附加来源链接。\n**媒体生成**：图片/视频/音乐前先用 `rag_enhanced_search` 检索（需 resource_ids），将相关内容融入生成 prompt；媒体生成为异步任务，调用后告知用户。\n**文件上传**：结果文件用 `write_oss_file` 或 `upload_result`（需传 skill_name 参数）。\n\n## 文件输出规则（最高优先级）\n\n**判定标准**：需要展示给用户、供下载或作为最终产物的文件（HTML、文档、报告、图片等） → **必须**用 `write_oss_file` 上传到 OSS。**临时文件**（脚本、中间代码）→ 用 `write_file` 写入沙箱。\n\n用户可见的文件必须调用 `write_oss_file` 上传到 OSS，否则前端无法显示下载卡片。\n\n## 核心规则\n\n1. **一次调用**：每个工具针对同一问题只调用一次\n2. **无结果坦诚**：检索无结果时告知\"未找到相关信息\"，不编造\n3. **不叠加工具**：信息足够后不再调用其他工具\n4. **语言风格**：中文回答，不使用 emoji，保持专业简洁\n\n## 执行环境\n\n代码在隔离的 Linux 沙箱中执行（bash 语法）：\n- /output/ /tmp/ /source/ 读写\n- Python 3.11 + Node.js 20\n\nIn order to complete the objective that the user asks of you, you have access to a number of standard tools."},{"type":"text","text":"\n\n## `write_todos`\n\nYou have access to the `write_todos` tool to help you manage and plan complex objectives.\nUse this tool for complex objectives to ensure that you are tracking each necessary step and giving the user visibility into your progress.\nThis tool is very helpful for planning complex objectives, and for breaking down these larger complex objectives into smaller steps.\n\nIt is critical that you mark todos as completed as soon as you are done with a step. Do not batch up multiple steps before marking them as completed.\nFor simple objectives that only require a few steps, it is better to just complete the objective directly and NOT use this tool.\nWriting todos takes time and tokens, use it when it is helpful for managing complex many-step problems! But not for simple few-step requests.\n\n## Important To-Do List Usage Notes to Remember\n- The `write_todos` tool should never be called multiple times in parallel.\n- Don't be afraid to revise the To-Do list as you go. New information may reveal new tasks that need to be done, or old tasks that are irrelevant."},{"type":"text","text":"\n\n## Filesystem Tools `ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep`\n\nYou have access to a filesystem which you can interact with using these tools.\nAll file paths must start with a /.\n\n- ls: list files in a directory (requires absolute path)\n- read_file: read a file from the filesystem\n- write_file: write to a file in the filesystem\n- edit_file: edit a file in the filesystem\n- glob: find files matching a pattern (e.g., \"**/*.py\")\n- grep: search for text within files\n\n## Execute Tool `execute`\n\nYou have access to an `execute` tool for running shell commands in a sandboxed environment.\nUse this tool to run commands, scripts, tests, builds, and other shell operations.\n\n- execute: run a shell command in the sandbox (returns output and exit code)"},{"type":"text","text":"\n\n## `task` (subagent spawner)\n\nYou have access to a `task` tool to launch short-lived subagents that handle isolated tasks. These agents are ephemeral — they live only for the duration of the task and return a single result.\n\nWhen to use the task tool:\n- When a task is complex and multi-step, and can be fully delegated in isolation\n- When a task is independent of other tasks and can run in parallel\n- When a task requires focused reasoning or heavy token/context usage that would bloat the orchestrator thread\n- When sandboxing improves reliability (e.g. code execution, structured searches, data formatting)\n- When you only care about the output of the subagent, and not the intermediate steps (ex. performing a lot of research and then returned a synthesized report, performing a series of computations or lookups to achieve a concise, relevant answer.)\n\nSubagent lifecycle:\n1. **Spawn** → Provide clear role, instructions, and expected output\n2. **Run** → The subagent completes the task autonomously\n3. **Return** → The subagent provides a single structured result\n4. **Reconcile** → Incorporate or synthesize the result into the main thread\n\nWhen NOT to use the task tool:\n- If you need to see the intermediate reasoning or steps after the subagent has completed (the task tool hides them)\n- If the task is trivial (a few tool calls or simple lookup)\n- If delegating does not reduce token usage, complexity, or context switching\n- If splitting would add latency without benefit\n\n## Important Task Tool Usage Notes to Remember\n- Whenever possible, parallelize the work that you do. This is true for both tool_calls, and for tasks. Whenever you have independent steps to complete - make tool_calls, or kick off tasks (subagents) in parallel to accomplish them faster. This saves time for the user, which is incredibly important.\n- Remember to use the `task` tool to silo independent tasks within a multi-part objective.\n- You should use the `task` tool whenever you have a complex task that will take multiple steps, and is independent from other tasks that the agent needs to complete. These agents are highly competent and efficient.\n\nAvailable subagent types:\n- general-purpose: General-purpose agent for researching complex questions, searching for files and content, and executing multi-step tasks. When you are searching for a keyword or file and are not confident that you will find the right match in the first few tries use this agent to perform the search for you. This agent has access to all tools as the main agent."},{"type":"text","text":"\n\n【用户自定义技能】\n\n### buddy-reroll\n- Reroll your Claude Code buddy (pet). Use this skill when the user wants to change their buddy, get a new pet, reroll companion, or mentions buddy/pet/companion with specific requirements like species (mushroom, dragon, cat, penguin, owl, duck, etc.), rarity (legendary, epic, rare, uncommon, common), shiny status, hats (crown, tophat, halo, wizard, beanie, tinyduck, propeller), or specific stats. Trigger even if they just say \"换个宠物\", \"reroll my buddy\", \"给我换个 buddy\" without specifics.\n\n技能文件（位于 skills/users/123456/custom/buddy-reroll/）：\n- SKILL.md\n- scripts/buddy-reroll.js\n\n如需使用该技能，请读取 SKILL.md 获取完整指令。\n\n---\n\n### tang-poetry（唐诗五言绝句）\n- 创作唐代五言绝句。当用户要求写诗、作诗、吟诗、赋诗，或提及五言绝句、唐诗、古诗词创作时触发此技能。支持指定主题、意境，可结合知识库内容创作自然清新风格的诗歌。\n\n技能文件（位于 skills/users/123456/custom/tang-poetry/）：\n- SKILL.md\n\n如需使用该技能，请读取 SKILL.md 获取完整指令。\n\n---\n\n### frontend-design\n- Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts, posters, or applications (examples include websites, landing pages, dashboards, React components, HTML/CSS layouts, or when styling/beautifying any web UI). Generates creative, polished code and UI design that avoids generic AI aesthetics.\n\n技能文件（位于 skills/users/123456/custom/frontend-design/）：\n- SKILL.md\n- hello.html\n- output/apple-iphone.html\n- output/apple-mac.html\n- output/tencent-website.html\n\n如需使用该技能，请读取 SKILL.md 获取完整指令。\n\n---\n\n### lu-xun-prose（鲁迅散文集）\n- 创作鲁迅风格的散文、杂文、随笔。当用户要求写鲁迅风格的文章、模仿鲁迅笔触、创作杂文散文，或提及鲁迅式写作、鲁迅体、仿鲁迅风格时触发此技能。支持指定主题、篇幅，生成具有尖锐批判、冷峻讽刺、深刻洞察的散文作品。\n\n技能文件（位于 skills/users/123456/custom/lu-xun-prose/）：\n- SKILL.md\n- works/spring-essay.md\n\n如需使用该技能，请读取 SKILL.md 获取完整指令。"}],"additional_kwargs":{},"response_metadata":{},"type":"system"},{"content":"【联网搜索已禁用】用户未开启联网搜索功能。\n请勿使用 web_search 工具，直接基于已有知识回答用户问题。\n如果知识库中没有相关信息，明确告知用户。","additional_kwargs":{},"response_metadata":{},"type":"system","id":"43d9c83e-795b-4869-9d6d-c27f28b12754"},{"content":"查询北京天气","additional_kwargs":{},"response_metadata":{},"type":"human","id":"a644c5a3-826c-48ce-806f-9765105cdee2"},{"content":"【联网搜索已启用】用户已开启联网搜索功能。\n当知识库中找不到答案，或用户明确需要实时/最新信息时，请使用 web_search 工具进行联网搜索。\n搜索结果请标注来源URL。","additional_kwargs":{},"response_metadata":{},"type":"system","id":"0299f8c4-fde6-4952-9250-9bf6088fd034"},{"content":"查询北京天气","additional_kwargs":{},"response_metadata":{},"type":"human","id":"cd12ae36-f1fe-446e-9fcb-7bdddc390b42"}]]}}}
+data: {"event":"on_chat_model_start","name":"ReasoningChatOpenAI","run_id":"019d751c-d50b-7013-b3ed-07ac3516561b","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:58:37","data":{"input":{}}}
 
-id: 3
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:28","data":{"chunk":{"reasoning_content":"用户"},"accumulated_content":"","accumulated_reasoning_content":"用户"}}
-
-id: 4
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:28","data":{"chunk":{"reasoning_content":"想查询"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询"}}
-
-id: 5
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:28","data":{"chunk":{"reasoning_content":"北京天气"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气"}}
-
-id: 6
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:29","data":{"chunk":{"reasoning_content":"。天气"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气"}}
-
-id: 7
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:29","data":{"chunk":{"reasoning_content":"是"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是"}}
-
-id: 8
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:29","data":{"chunk":{"reasoning_content":"实时信息"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息"}}
-
-id: 9
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:29","data":{"chunk":{"reasoning_content":"，需要"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要"}}
-
-id: 10
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:29","data":{"chunk":{"reasoning_content":"联网搜索"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索"}}
-
-id: 11
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:29","data":{"chunk":{"reasoning_content":"才能获取"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取"}}
-
-id: 12
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:29","data":{"chunk":{"reasoning_content":"最新的"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的"}}
-
-id: 13
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:29","data":{"chunk":{"reasoning_content":"天气数据"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据"}}
-
-id: 14
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:29","data":{"chunk":{"reasoning_content":"。用户"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户"}}
-
-id: 15
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:29","data":{"chunk":{"reasoning_content":"已开启"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启"}}
-
-id: 16
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:29","data":{"chunk":{"reasoning_content":"联网搜索"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索"}}
-
-id: 17
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:29","data":{"chunk":{"reasoning_content":"功能"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能"}}
-
-id: 18
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:29","data":{"chunk":{"reasoning_content":"，我应该"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该"}}
-
-id: 19
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:29","data":{"chunk":{"reasoning_content":"使用 web"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web"}}
-
-id: 20
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:29","data":{"chunk":{"reasoning_content":"_search"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search"}}
-
-id: 21
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:29","data":{"chunk":{"reasoning_content":"工具"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具"}}
-
-id: 22
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:30","data":{"chunk":{"reasoning_content":"来查询"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询"}}
-
-id: 23
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:30","data":{"chunk":{"reasoning_content":"北京天气"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气"}}
-
-id: 24
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:30","data":{"chunk":{"reasoning_content":"。"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。"}}
-
-id: 25
 event: on_chat_model_end
-data: {"event":"on_chat_model_end","name":"ReasoningChatOpenAI","run_id":"019d71d8-d00d-7413-a30b-1e9033695e5a","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:30","data":{"output":{"content":"","additional_kwargs":{"reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。"},"response_metadata":{"finish_reason":"tool_calls","model_name":"glm-5","model_provider":"openai"},"type":"ai","id":"lc_run--019d71d8-d00d-7413-a30b-1e9033695e5a","tool_calls":[{"name":"web_search","args":{"query":"北京天气","count":5},"id":"tool-b11b2477c3ce48beb4fc3343f4a1dbc3","type":"tool_call"}],"invalid_tool_calls":[]}}}
+data: {"event":"on_chat_model_end","name":"ReasoningChatOpenAI","run_id":"019d751c-d50b-7013-b3ed-07ac3516561b","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:58:40","data":{"output":{}}}
 
-id: 26
 event: on_tool_start
-data: {"event":"on_tool_start","name":"web_search","run_id":"019d71d8-db81-7c82-8b4e-27734100c231","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:30","data":{"input":{"query":"北京天气","count":5}}}
+data: {"event":"on_tool_start","name":"web_search","run_id":"019d751c-e45c-7110-ac01-40842f8d6e53","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:58:40","data":{"input":{"query":"北京天气","count":5}}}
 
-id: 27
 event: on_tool_end
-data: {"event":"on_tool_end","name":"web_search","run_id":"019d71d8-db81-7c82-8b4e-27734100c231","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:43","data":{"output":"联网搜索完成，找到 5 条结果","tool_display":{"tool_name":"web_search","tool_label":"联网搜索","found":true,"items":[{"title":"北京-天气预报","url":"http://testbed.nmc.cn/publish/forecast/ABJ/beijing.html","site_name":"testbed.nmc.cn","site_icon":"https://th.bochaai.com/favicon?domain_url=http://testbed.nmc.cn/publish/forecast/ABJ/beijing.html"},{"title":"4月9日北京天气预报","url":"https://beijing.qianlong.com/2026/0409/8652135.shtml","site_name":"千龙网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://beijing.qianlong.com/2026/0409/8652135.shtml"},{"title":"北京天气_北京实时天气预报_北京24小时天气预报","url":"https://tianqi.cncn.com/beijing","site_name":"tianqi.cncn.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://tianqi.cncn.com/beijing"},{"title":"北京迎大风雷雨天气","url":"https://new.qq.com/rain/a/20250513A07IHR00","site_name":"腾讯网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://new.qq.com/rain/a/20250513A07IHR00"},{"title":"【北京天气预报】北京天气预报一周,北京天气预报15天,30天,今天,明天,7天,10天,未来北京一周天气预报查询—天气网","url":"https://www.tianqi.com/beijing/","site_name":"www.tianqi.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://www.tianqi.com/beijing/"}]}}}
+data: {"event":"on_tool_end","name":"web_search","run_id":"019d751c-e45c-7110-ac01-40842f8d6e53","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:58:52","data":{"output":"联网搜索完成，找到 5 条结果","tool_display":{"tool_name":"web_search","tool_label":"联网搜索","found":true,"items":[{"title":"今天傍晚开始,北京将有小到中雨!预计持续到- - 今日头条","url":"https://www.toutiao.com/article/7626289690806616602/","site_name":"今日头条","site_icon":"https://th.bochaai.com/favicon?domain_url=https://www.toutiao.com/article/7626289690806616602/"},{"title":"北京今天最高气温25 周末晴暖持续","url":"https://new.qq.com/rain/a/20260410A0121500","site_name":"腾讯网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://new.qq.com/rain/a/20260410A0121500"},{"title":"北京今天傍晚到前半夜有雨,明天白天晴,最高气温25__财经头条__新浪财经","url":"https://cj.sina.cn/articles/view/1893892941/70e2834d02001z2hc%3Ffroms%3Dggmp%26vt%3D4","site_name":"新浪财经","site_icon":"https://th.bochaai.com/favicon?domain_url=https://cj.sina.cn/articles/view/1893892941/70e2834d02001z2hc%3Ffroms%3Dggmp%26vt%3D4"},{"title":"北京今天最高气温25,阵风五六级,早晨有轻雾_北京时间","url":"https://item.btime.com/40p5f9uutg2909r5v9r1pl1muld","site_name":"item.btime.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://item.btime.com/40p5f9uutg2909r5v9r1pl1muld"},{"title":"北京今天以晴为主最高温可达25 周末晴暖持续昼夜温差较大","url":"https://www.toutiao.com/article/7626932589353337371/","site_name":"今日头条","site_icon":"https://th.bochaai.com/favicon?domain_url=https://www.toutiao.com/article/7626932589353337371/"}]}}}
 
-id: 28
 event: on_chat_model_start
-data: {"event":"on_chat_model_start","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:44","data":{"input":{"messages":[[{"content":[{"type":"text","text":"你是一个专业的知识检索与问答助手，基于用户提供的文档知识库进行精准检索和高质量回答。\n\n## 工具使用\n\n**知识检索**（仅在用户明确选中参考资料 / 传入 resource_ids 时使用）：\n- 具体问题用 `rag_enhanced_search`（必须传入 resource_ids）\n- 文档概览用 `rag_get_highest_layer`\n- 指定范围用 `rag_search_with_filters`（必须透传 resource_ids）\n- 用户未选中任何资料时，不要调用 RAG 工具，直接基于已有知识回答\n\n**实时资讯**：用 `web_search`，回答时不要附加来源链接。\n**媒体生成**：图片/视频/音乐前先用 `rag_enhanced_search` 检索（需 resource_ids），将相关内容融入生成 prompt；媒体生成为异步任务，调用后告知用户。\n**文件上传**：结果文件用 `write_oss_file` 或 `upload_result`（需传 skill_name 参数）。\n\n## 文件输出规则（最高优先级）\n\n**判定标准**：需要展示给用户、供下载或作为最终产物的文件（HTML、文档、报告、图片等） → **必须**用 `write_oss_file` 上传到 OSS。**临时文件**（脚本、中间代码）→ 用 `write_file` 写入沙箱。\n\n用户可见的文件必须调用 `write_oss_file` 上传到 OSS，否则前端无法显示下载卡片。\n\n## 核心规则\n\n1. **一次调用**：每个工具针对同一问题只调用一次\n2. **无结果坦诚**：检索无结果时告知\"未找到相关信息\"，不编造\n3. **不叠加工具**：信息足够后不再调用其他工具\n4. **语言风格**：中文回答，不使用 emoji，保持专业简洁\n\n## 执行环境\n\n代码在隔离的 Linux 沙箱中执行（bash 语法）：\n- /output/ /tmp/ /source/ 读写\n- Python 3.11 + Node.js 20\n\nIn order to complete the objective that the user asks of you, you have access to a number of standard tools."},{"type":"text","text":"\n\n## `write_todos`\n\nYou have access to the `write_todos` tool to help you manage and plan complex objectives.\nUse this tool for complex objectives to ensure that you are tracking each necessary step and giving the user visibility into your progress.\nThis tool is very helpful for planning complex objectives, and for breaking down these larger complex objectives into smaller steps.\n\nIt is critical that you mark todos as completed as soon as you are done with a step. Do not batch up multiple steps before marking them as completed.\nFor simple objectives that only require a few steps, it is better to just complete the objective directly and NOT use this tool.\nWriting todos takes time and tokens, use it when it is helpful for managing complex many-step problems! But not for simple few-step requests.\n\n## Important To-Do List Usage Notes to Remember\n- The `write_todos` tool should never be called multiple times in parallel.\n- Don't be afraid to revise the To-Do list as you go. New information may reveal new tasks that need to be done, or old tasks that are irrelevant."},{"type":"text","text":"\n\n## Filesystem Tools `ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep`\n\nYou have access to a filesystem which you can interact with using these tools.\nAll file paths must start with a /.\n\n- ls: list files in a directory (requires absolute path)\n- read_file: read a file from the filesystem\n- write_file: write to a file in the filesystem\n- edit_file: edit a file in the filesystem\n- glob: find files matching a pattern (e.g., \"**/*.py\")\n- grep: search for text within files\n\n## Execute Tool `execute`\n\nYou have access to an `execute` tool for running shell commands in a sandboxed environment.\nUse this tool to run commands, scripts, tests, builds, and other shell operations.\n\n- execute: run a shell command in the sandbox (returns output and exit code)"},{"type":"text","text":"\n\n## `task` (subagent spawner)\n\nYou have access to a `task` tool to launch short-lived subagents that handle isolated tasks. These agents are ephemeral — they live only for the duration of the task and return a single result.\n\nWhen to use the task tool:\n- When a task is complex and multi-step, and can be fully delegated in isolation\n- When a task is independent of other tasks and can run in parallel\n- When a task requires focused reasoning or heavy token/context usage that would bloat the orchestrator thread\n- When sandboxing improves reliability (e.g. code execution, structured searches, data formatting)\n- When you only care about the output of the subagent, and not the intermediate steps (ex. performing a lot of research and then returned a synthesized report, performing a series of computations or lookups to achieve a concise, relevant answer.)\n\nSubagent lifecycle:\n1. **Spawn** → Provide clear role, instructions, and expected output\n2. **Run** → The subagent completes the task autonomously\n3. **Return** → The subagent provides a single structured result\n4. **Reconcile** → Incorporate or synthesize the result into the main thread\n\nWhen NOT to use the task tool:\n- If you need to see the intermediate reasoning or steps after the subagent has completed (the task tool hides them)\n- If the task is trivial (a few tool calls or simple lookup)\n- If delegating does not reduce token usage, complexity, or context switching\n- If splitting would add latency without benefit\n\n## Important Task Tool Usage Notes to Remember\n- Whenever possible, parallelize the work that you do. This is true for both tool_calls, and for tasks. Whenever you have independent steps to complete - make tool_calls, or kick off tasks (subagents) in parallel to accomplish them faster. This saves time for the user, which is incredibly important.\n- Remember to use the `task` tool to silo independent tasks within a multi-part objective.\n- You should use the `task` tool whenever you have a complex task that will take multiple steps, and is independent from other tasks that the agent needs to complete. These agents are highly competent and efficient.\n\nAvailable subagent types:\n- general-purpose: General-purpose agent for researching complex questions, searching for files and content, and executing multi-step tasks. When you are searching for a keyword or file and are not confident that you will find the right match in the first few tries use this agent to perform the search for you. This agent has access to all tools as the main agent."},{"type":"text","text":"\n\n【用户自定义技能】\n\n### buddy-reroll\n- Reroll your Claude Code buddy (pet). Use this skill when the user wants to change their buddy, get a new pet, reroll companion, or mentions buddy/pet/companion with specific requirements like species (mushroom, dragon, cat, penguin, owl, duck, etc.), rarity (legendary, epic, rare, uncommon, common), shiny status, hats (crown, tophat, halo, wizard, beanie, tinyduck, propeller), or specific stats. Trigger even if they just say \"换个宠物\", \"reroll my buddy\", \"给我换个 buddy\" without specifics.\n\n技能文件（位于 skills/users/123456/custom/buddy-reroll/）：\n- SKILL.md\n- scripts/buddy-reroll.js\n\n如需使用该技能，请读取 SKILL.md 获取完整指令。\n\n---\n\n### tang-poetry（唐诗五言绝句）\n- 创作唐代五言绝句。当用户要求写诗、作诗、吟诗、赋诗，或提及五言绝句、唐诗、古诗词创作时触发此技能。支持指定主题、意境，可结合知识库内容创作自然清新风格的诗歌。\n\n技能文件（位于 skills/users/123456/custom/tang-poetry/）：\n- SKILL.md\n\n如需使用该技能，请读取 SKILL.md 获取完整指令。\n\n---\n\n### frontend-design\n- Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts, posters, or applications (examples include websites, landing pages, dashboards, React components, HTML/CSS layouts, or when styling/beautifying any web UI). Generates creative, polished code and UI design that avoids generic AI aesthetics.\n\n技能文件（位于 skills/users/123456/custom/frontend-design/）：\n- SKILL.md\n- hello.html\n- output/apple-iphone.html\n- output/apple-mac.html\n- output/tencent-website.html\n\n如需使用该技能，请读取 SKILL.md 获取完整指令。\n\n---\n\n### lu-xun-prose（鲁迅散文集）\n- 创作鲁迅风格的散文、杂文、随笔。当用户要求写鲁迅风格的文章、模仿鲁迅笔触、创作杂文散文，或提及鲁迅式写作、鲁迅体、仿鲁迅风格时触发此技能。支持指定主题、篇幅，生成具有尖锐批判、冷峻讽刺、深刻洞察的散文作品。\n\n技能文件（位于 skills/users/123456/custom/lu-xun-prose/）：\n- SKILL.md\n- works/spring-essay.md\n\n如需使用该技能，请读取 SKILL.md 获取完整指令。"}],"additional_kwargs":{},"response_metadata":{},"type":"system"},{"content":"【联网搜索已禁用】用户未开启联网搜索功能。\n请勿使用 web_search 工具，直接基于已有知识回答用户问题。\n如果知识库中没有相关信息，明确告知用户。","additional_kwargs":{},"response_metadata":{},"type":"system","id":"43d9c83e-795b-4869-9d6d-c27f28b12754"},{"content":"查询北京天气","additional_kwargs":{},"response_metadata":{},"type":"human","id":"a644c5a3-826c-48ce-806f-9765105cdee2"},{"content":"【联网搜索已启用】用户已开启联网搜索功能。\n当知识库中找不到答案，或用户明确需要实时/最新信息时，请使用 web_search 工具进行联网搜索。\n搜索结果请标注来源URL。","additional_kwargs":{},"response_metadata":{},"type":"system","id":"0299f8c4-fde6-4952-9250-9bf6088fd034"},{"content":"查询北京天气","additional_kwargs":{},"response_metadata":{},"type":"human","id":"cd12ae36-f1fe-446e-9fcb-7bdddc390b42"},{"content":"","additional_kwargs":{"reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。"},"response_metadata":{"finish_reason":"tool_calls","model_name":"glm-5","model_provider":"openai"},"type":"ai","id":"lc_run--019d71d8-d00d-7413-a30b-1e9033695e5a","tool_calls":[{"name":"web_search","args":{"query":"北京天气","count":5},"id":"tool-b11b2477c3ce48beb4fc3343f4a1dbc3","type":"tool_call"}],"invalid_tool_calls":[]},{"content":"1. 北京-天气预报\n日出 北京 日落 降水量 相对湿度 体感温度 雷达图 发布时间:04-08 20:00 小雨 南风 微风 周四 小雨 东风 微风 阴 西风 微风 周五 晴 西风 微风 晴 北风 微风 周六 晴 东南风\n\n2. 4月9日北京天气预报\n4月9日天气天气 11℃至14℃,阴有小到中雨转分散性小雨,北转南风2､3级 明天天气 阴有分散性小雨转晴,北转南风3级,8℃至25℃ 后天天气 晴,北转南风2､3级,9℃至25℃ 气象信息由北京市专\n\n3. 北京天气_北京实时天气预报_北京24小时天气预报\n北京天气 明天 (04/08) 后天 (04/09) 第四天 (04/10) 北京今日旅游指数 紫外线指数: 很强,涂擦SPF20以上,PA++护肤品,避强光｡ 北京天气分享 用文本方式发送给朋友: \n\n4. 北京迎大风雷雨天气\n新华社北京5月13日电(记者田晨旭)13日16时30分,北京市气象台发布大风蓝色预警信号:受雷雨影响,预计13日傍晚到前半夜,北京市局地有8级左右短时大风｡受冷空气影响,后半夜至14日中午,北京市大部\n\n5. 【北京天气预报】北京天气预报一周,北京天气预报15天,30天,今天,明天,7天,10天,未来北京一周天气预报查询—天气网\n陆地方面,28日全市阴天有暴雨到大暴雨､局部特大暴雨;29日转为多云间阴天,有中雨到大雨､局部暴雨｡28日至29日,内陆地区阵风9~10级,沿海地区阵风11~12级｡ 北京今日(9月16日)以多云天气\n","additional_kwargs":{},"response_metadata":{},"type":"tool","name":"web_search","id":"4af9dae1-d4cb-4693-a4b1-91d606f632c7","tool_call_id":"tool-b11b2477c3ce48beb4fc3343f4a1dbc3","artifact":{"success":true,"found":true,"count":5,"results":[{"title":"北京-天气预报","url":"http://testbed.nmc.cn/publish/forecast/ABJ/beijing.html","site_name":"testbed.nmc.cn","site_icon":"https://th.bochaai.com/favicon?domain_url=http://testbed.nmc.cn/publish/forecast/ABJ/beijing.html"},{"title":"4月9日北京天气预报","url":"https://beijing.qianlong.com/2026/0409/8652135.shtml","site_name":"千龙网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://beijing.qianlong.com/2026/0409/8652135.shtml"},{"title":"北京天气_北京实时天气预报_北京24小时天气预报","url":"https://tianqi.cncn.com/beijing","site_name":"tianqi.cncn.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://tianqi.cncn.com/beijing"},{"title":"北京迎大风雷雨天气","url":"https://new.qq.com/rain/a/20250513A07IHR00","site_name":"腾讯网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://new.qq.com/rain/a/20250513A07IHR00"},{"title":"【北京天气预报】北京天气预报一周,北京天气预报15天,30天,今天,明天,7天,10天,未来北京一周天气预报查询—天气网","url":"https://www.tianqi.com/beijing/","site_name":"www.tianqi.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://www.tianqi.com/beijing/"}]},"status":"success"}]]}}}
+data: {"event":"on_chat_model_start","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:58:52","data":{"input":{}}}
 
-id: 29
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:46","data":{"chunk":{"reasoning_content":"搜索"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:00","data":{"chunk":{"content":"根据"},"accumulated_content":"根据","accumulated_reasoning_content":""}}
 
-id: 30
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:46","data":{"chunk":{"reasoning_content":"结果"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:00","data":{"chunk":{"content":"最新"},"accumulated_content":"根据最新","accumulated_reasoning_content":""}}
 
-id: 31
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:47","data":{"chunk":{"reasoning_content":"返回了"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:00","data":{"chunk":{"content":"天气信息"},"accumulated_content":"根据最新天气信息","accumulated_reasoning_content":""}}
 
-id: 32
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:47","data":{"chunk":{"reasoning_content":"北京天气"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:00","data":{"chunk":{"content":"，北京"},"accumulated_content":"根据最新天气信息，北京","accumulated_reasoning_content":""}}
 
-id: 33
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:47","data":{"chunk":{"reasoning_content":"的相关"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:01","data":{"chunk":{"content":"今日（"},"accumulated_content":"根据最新天气信息，北京今日（","accumulated_reasoning_content":""}}
 
-id: 34
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:47","data":{"chunk":{"reasoning_content":"信息。"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:01","data":{"chunk":{"content":"4月"},"accumulated_content":"根据最新天气信息，北京今日（4月","accumulated_reasoning_content":""}}
 
-id: 35
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:47","data":{"chunk":{"reasoning_content":"我来整理"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:01","data":{"chunk":{"content":"10日"},"accumulated_content":"根据最新天气信息，北京今日（4月10日","accumulated_reasoning_content":""}}
 
-id: 36
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:47","data":{"chunk":{"reasoning_content":"一下："},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下："}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:01","data":{"chunk":{"content":"）天气"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气","accumulated_reasoning_content":""}}
 
-id: 37
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:47","data":{"chunk":{"reasoning_content":"从搜索"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:01","data":{"chunk":{"content":"情况：\n\n"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n","accumulated_reasoning_content":""}}
 
-id: 38
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:47","data":{"chunk":{"reasoning_content":"结果来看"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:01","data":{"chunk":{"content":"**今日"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日","accumulated_reasoning_content":""}}
 
-id: 39
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:47","data":{"chunk":{"reasoning_content":"：\n1"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:01","data":{"chunk":{"content":"天气**\n"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n","accumulated_reasoning_content":""}}
 
-id: 40
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:47","data":{"chunk":{"reasoning_content":". 当前"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:01","data":{"chunk":{"content":"- 天"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天","accumulated_reasoning_content":""}}
 
-id: 41
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:47","data":{"chunk":{"reasoning_content":"有小雨"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:01","data":{"chunk":{"content":"气："},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：","accumulated_reasoning_content":""}}
 
-id: 42
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:47","data":{"chunk":{"reasoning_content":"，南"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:01","data":{"chunk":{"content":"晴，"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，","accumulated_reasoning_content":""}}
 
-id: 43
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:47","data":{"chunk":{"reasoning_content":"风微风"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:01","data":{"chunk":{"content":"早晨平原"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原","accumulated_reasoning_content":""}}
 
-id: 44
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:47","data":{"chunk":{"reasoning_content":"2"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:01","data":{"chunk":{"content":"地区有"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有","accumulated_reasoning_content":""}}
 
-id: 45
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:47","data":{"chunk":{"reasoning_content":"."},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2."}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:01","data":{"chunk":{"content":"轻雾"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾","accumulated_reasoning_content":""}}
 
-id: 46
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:47","data":{"chunk":{"reasoning_content":"4月"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:01","data":{"chunk":{"content":"或雾"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾","accumulated_reasoning_content":""}}
 
-id: 47
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:47","data":{"chunk":{"reasoning_content":"9日"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:01","data":{"chunk":{"content":"\n-"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n-","accumulated_reasoning_content":""}}
 
-id: 48
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"：11"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:01","data":{"chunk":{"content":" 气温"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温","accumulated_reasoning_content":""}}
 
-id: 49
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"℃至"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":"：最高"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高","accumulated_reasoning_content":""}}
 
-id: 50
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"14℃，"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":" 25"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25","accumulated_reasoning_content":""}}
 
-id: 51
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"阴有小"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":"℃，昼夜"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜","accumulated_reasoning_content":""}}
 
-id: 52
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"到中"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":"温差超"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超","accumulated_reasoning_content":""}}
 
-id: 53
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"雨转"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":" 10"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10","accumulated_reasoning_content":""}}
 
-id: 54
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"分散性"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":"℃\n"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n","accumulated_reasoning_content":""}}
 
-id: 55
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"小雨，"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":"-"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n-","accumulated_reasoning_content":""}}
 
-id: 56
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"北转"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":" 风"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风","accumulated_reasoning_content":""}}
 
-id: 57
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"南风"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":"力："},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：","accumulated_reasoning_content":""}}
 
-id: 58
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"2、"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":"偏北"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北","accumulated_reasoning_content":""}}
 
-id: 59
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"3级"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":"风，"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，","accumulated_reasoning_content":""}}
 
-id: 60
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"3"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":"阵风"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风","accumulated_reasoning_content":""}}
 
-id: 61
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":". 明"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":" 5"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5","accumulated_reasoning_content":""}}
 
-id: 62
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"天："},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天："}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":"-6"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6","accumulated_reasoning_content":""}}
 
-id: 63
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"阴有"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":" 级"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级","accumulated_reasoning_content":""}}
 
-id: 64
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"分散性"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":"，山区"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区","accumulated_reasoning_content":""}}
 
-id: 65
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"小雨转"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":" 7"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7","accumulated_reasoning_content":""}}
 
-id: 66
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"晴，"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":"-8"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8","accumulated_reasoning_content":""}}
 
-id: 67
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:48","data":{"chunk":{"reasoning_content":"北转"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":" 级\n"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n","accumulated_reasoning_content":""}}
 
-id: 68
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"南风"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":"- 夜"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜","accumulated_reasoning_content":""}}
 
-id: 69
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"3级"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":"间："},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：","accumulated_reasoning_content":""}}
 
-id: 70
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"，8"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:02","data":{"chunk":{"content":"晴\n\n"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n","accumulated_reasoning_content":""}}
 
-id: 71
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"℃至"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:03","data":{"chunk":{"content":"**周末"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末","accumulated_reasoning_content":""}}
 
-id: 72
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"25℃"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:03","data":{"chunk":{"content":"预报**\n"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n","accumulated_reasoning_content":""}}
 
-id: 73
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"4"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:03","data":{"chunk":{"content":"- 天"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天","accumulated_reasoning_content":""}}
 
-id: 74
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":". 后"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:03","data":{"chunk":{"content":"气："},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：","accumulated_reasoning_content":""}}
 
-id: 75
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"天："},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天："}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:03","data":{"chunk":{"content":"晴暖"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖","accumulated_reasoning_content":""}}
 
-id: 76
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"晴，"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:03","data":{"chunk":{"content":"持续\n"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n","accumulated_reasoning_content":""}}
 
-id: 77
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"北转"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:03","data":{"chunk":{"content":"-"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n-","accumulated_reasoning_content":""}}
 
-id: 78
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"南风"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:03","data":{"chunk":{"content":" 气"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n- 气","accumulated_reasoning_content":""}}
 
-id: 79
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"2、"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:03","data":{"chunk":{"content":"温："},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n- 气温：","accumulated_reasoning_content":""}}
 
-id: 80
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"3级"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:03","data":{"chunk":{"content":"最高 "},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n- 气温：最高 ","accumulated_reasoning_content":""}}
 
-id: 81
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"，9"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:03","data":{"chunk":{"content":"23-"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n- 气温：最高 23-","accumulated_reasoning_content":""}}
 
-id: 82
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"℃至"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:03","data":{"chunk":{"content":"25℃"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n- 气温：最高 23-25℃","accumulated_reasoning_content":""}}
 
-id: 83
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"25℃"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:03","data":{"chunk":{"content":"\n-"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n- 气温：最高 23-25℃\n-","accumulated_reasoning_content":""}}
 
-id: 84
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"不过"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:03","data":{"chunk":{"content":" 提醒"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n- 气温：最高 23-25℃\n- 提醒","accumulated_reasoning_content":""}}
 
-id: 85
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"这些信息"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:03","data":{"chunk":{"content":"：昼夜"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n- 气温：最高 23-25℃\n- 提醒：昼夜","accumulated_reasoning_content":""}}
 
-id: 86
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:49","data":{"chunk":{"reasoning_content":"看起来有些"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:04","data":{"chunk":{"content":"温差大"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n- 气温：最高 23-25℃\n- 提醒：昼夜温差大","accumulated_reasoning_content":""}}
 
-id: 87
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:50","data":{"chunk":{"reasoning_content":"混乱，"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:04","data":{"chunk":{"content":"，注意"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n- 气温：最高 23-25℃\n- 提醒：昼夜温差大，注意","accumulated_reasoning_content":""}}
 
-id: 88
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:50","data":{"chunk":{"reasoning_content":"可能来自"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:04","data":{"chunk":{"content":"适时"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n- 气温：最高 23-25℃\n- 提醒：昼夜温差大，注意适时","accumulated_reasoning_content":""}}
 
-id: 89
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:50","data":{"chunk":{"reasoning_content":"不同的"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:04","data":{"chunk":{"content":"增减"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n- 气温：最高 23-25℃\n- 提醒：昼夜温差大，注意适时增减","accumulated_reasoning_content":""}}
 
-id: 90
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:50","data":{"chunk":{"reasoning_content":"时间和来源"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:04","data":{"chunk":{"content":"衣物\n\n"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n- 气温：最高 23-25℃\n- 提醒：昼夜温差大，注意适时增减衣物\n\n","accumulated_reasoning_content":""}}
 
-id: 91
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:50","data":{"chunk":{"reasoning_content":"。让我"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:04","data":{"chunk":{"content":"来源："},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n- 气温：最高 23-25℃\n- 提醒：昼夜温差大，注意适时增减衣物\n\n来源：","accumulated_reasoning_content":""}}
 
-id: 92
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:50","data":{"chunk":{"reasoning_content":"整理出"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:04","data":{"chunk":{"content":"北京市气象"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n- 气温：最高 23-25℃\n- 提醒：昼夜温差大，注意适时增减衣物\n\n来源：北京市气象","accumulated_reasoning_content":""}}
 
-id: 93
 event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:50","data":{"chunk":{"reasoning_content":"清晰的天气预报"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报"}}
+data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:04","data":{"chunk":{"content":"台"},"accumulated_content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n- 气温：最高 23-25℃\n- 提醒：昼夜温差大，注意适时增减衣物\n\n来源：北京市气象台","accumulated_reasoning_content":""}}
 
-id: 94
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:50","data":{"chunk":{"reasoning_content":"信息。"},"accumulated_content":"","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 95
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:50","data":{"chunk":{"content":"根据"},"accumulated_content":"根据","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 96
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:50","data":{"chunk":{"content":"联网"},"accumulated_content":"根据联网","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 97
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:50","data":{"chunk":{"content":"搜索结果"},"accumulated_content":"根据联网搜索结果","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 98
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:50","data":{"chunk":{"content":"，北京"},"accumulated_content":"根据联网搜索结果，北京","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 99
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:50","data":{"chunk":{"content":"天气情况"},"accumulated_content":"根据联网搜索结果，北京天气情况","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 100
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:50","data":{"chunk":{"content":"如下：\n\n"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 101
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:51","data":{"chunk":{"content":"## 北京"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 102
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:51","data":{"chunk":{"content":"天气预报\n\n"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 103
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:51","data":{"chunk":{"content":"**今日"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 104
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:51","data":{"chunk":{"content":"天气**\n"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 105
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:51","data":{"chunk":{"content":"- 天"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 106
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:51","data":{"chunk":{"content":"气："},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 107
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:51","data":{"chunk":{"content":"小雨\n"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 108
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:51","data":{"chunk":{"content":"-"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n-","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 109
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:51","data":{"chunk":{"content":" 风"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 110
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:51","data":{"chunk":{"content":"向："},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 111
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:51","data":{"chunk":{"content":"南风"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 112
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:51","data":{"chunk":{"content":" 微"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 113
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:51","data":{"chunk":{"content":"风\n\n"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 114
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:51","data":{"chunk":{"content":"**明日"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 115
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":"天气（"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 116
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":"4月"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 117
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":"9"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 118
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":"日）"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 119
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":"**\n-"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n-","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 120
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":" 气温"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 121
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":"：11"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 122
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":"℃ ~"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 123
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":" 14"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 124
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":"℃\n"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 125
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":"- 天"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 126
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":"气："},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 127
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":"阴有小"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 128
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":"到中"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 129
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":"雨转"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 130
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":"分散性"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 131
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":"小雨\n"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 132
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":"-"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n-","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 133
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":" 风"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 134
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:52","data":{"chunk":{"content":"向："},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 135
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":"北转"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 136
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":"南风"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 137
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":" 2"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 138
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":"-3"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 139
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":"级\n\n"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 140
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":"**"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 141
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":"后天天气"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 142
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":"（4"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 143
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":"月10"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 144
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":"日）"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 145
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":"**\n-"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n-","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 146
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":" 天气"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 147
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":"：阴"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 148
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":"有分散"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 149
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":"性小雨"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 150
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":"转晴"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 151
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":"\n-"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n-","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 152
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:53","data":{"chunk":{"content":" 气温"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 153
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":"：8"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 154
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":"℃ ~"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 155
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":" 25"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 156
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":"℃\n"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 157
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":"-"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n-","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 158
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":" 风"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 159
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":"向："},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 160
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":"北转"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 161
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":"南风"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 162
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":" "},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 ","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 163
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":"3级"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 164
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":"\n\n**"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 165
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":"第四天"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 166
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":"天气**\n"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 167
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":"- 天"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 168
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":"气："},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 169
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":"晴\n"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 170
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:54","data":{"chunk":{"content":"-"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n-","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 171
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":" 气"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 172
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":"温："},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 173
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":"9℃"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 174
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":" ~ "},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ ","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 175
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":"25℃"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 176
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":"\n-"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃\n-","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 177
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":" 风向"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃\n- 风向","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 178
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":"：北"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃\n- 风向：北","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 179
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":"转南"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃\n- 风向：北转南","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 180
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":"风 "},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃\n- 风向：北转南风 ","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 181
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":"2"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃\n- 风向：北转南风 2","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 182
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":"-3"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃\n- 风向：北转南风 2-3","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 183
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":"级\n\n"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃\n- 风向：北转南风 2-3级\n\n","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 184
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":"---\n*"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃\n- 风向：北转南风 2-3级\n\n---\n*","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 185
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":"数据来源"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃\n- 风向：北转南风 2-3级\n\n---\n*数据来源","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 186
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":"：天气"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃\n- 风向：北转南风 2-3级\n\n---\n*数据来源：天气","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 187
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":"网、"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃\n- 风向：北转南风 2-3级\n\n---\n*数据来源：天气网、","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 188
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:55","data":{"chunk":{"content":"北京市专业"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃\n- 风向：北转南风 2-3级\n\n---\n*数据来源：天气网、北京市专业","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 189
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:56","data":{"chunk":{"content":"气象台"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃\n- 风向：北转南风 2-3级\n\n---\n*数据来源：天气网、北京市专业气象台","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 190
-event: on_chat_model_stream
-data: {"event":"on_chat_model_stream","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:56","data":{"chunk":{"content":"*"},"accumulated_content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃\n- 风向：北转南风 2-3级\n\n---\n*数据来源：天气网、北京市专业气象台*","accumulated_reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"}}
-
-id: 191
 event: on_chat_model_end
-data: {"event":"on_chat_model_end","name":"ReasoningChatOpenAI","run_id":"019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","parent_ids":["run_204219215865"],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:56","data":{"output":{"content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃\n- 风向：北转南风 2-3级\n\n---\n*数据来源：天气网、北京市专业气象台*","additional_kwargs":{"reasoning_content":"搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"},"response_metadata":{"finish_reason":"stop","model_name":"glm-5","model_provider":"openai"},"type":"ai","id":"lc_run--019d71d9-10b1-73c0-a0b9-0a8e9e79e14c","tool_calls":[],"invalid_tool_calls":[]}}}
+data: {"event":"on_chat_model_end","name":"ReasoningChatOpenAI","run_id":"019d751d-120f-7bd1-8060-e60e0ccf9b4a","parent_ids":["run_204242196143"],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:04","data":{"output":{}}}
 
-id: 192
 event: on_chain_end
-data: {"event":"on_chain_end","name":"chat_agent","run_id":"run_204219215865","parent_ids":[],"tags":[],"metadata":{},"timestamp":"2026-04-09 18:45:56","data":{"output":{"content":"根据联网搜索结果，北京天气情况如下：\n\n## 北京天气预报\n\n**今日天气**\n- 天气：小雨\n- 风向：南风 微风\n\n**明日天气（4月9日）**\n- 气温：11℃ ~ 14℃\n- 天气：阴有小到中雨转分散性小雨\n- 风向：北转南风 2-3级\n\n**后天天气（4月10日）**\n- 天气：阴有分散性小雨转晴\n- 气温：8℃ ~ 25℃\n- 风向：北转南风 3级\n\n**第四天天气**\n- 天气：晴\n- 气温：9℃ ~ 25℃\n- 风向：北转南风 2-3级\n\n---\n*数据来源：天气网、北京市专业气象台*","reasoning_content":"用户想查询北京天气。天气是实时信息，需要联网搜索才能获取最新的天气数据。用户已开启联网搜索功能，我应该使用 web_search工具来查询北京天气。搜索结果返回了北京天气的相关信息。我来整理一下：从搜索结果来看：\n1. 当前有小雨，南风微风2.4月9日：11℃至14℃，阴有小到中雨转分散性小雨，北转南风2、3级3. 明天：阴有分散性小雨转晴，北转南风3级，8℃至25℃4. 后天：晴，北转南风2、3级，9℃至25℃不过这些信息看起来有些混乱，可能来自不同的时间和来源。让我整理出清晰的天气预报信息。"},"references":[],"web_references":[{"title":"北京-天气预报","url":"http://testbed.nmc.cn/publish/forecast/ABJ/beijing.html","site_name":"testbed.nmc.cn","site_icon":"https://th.bochaai.com/favicon?domain_url=http://testbed.nmc.cn/publish/forecast/ABJ/beijing.html"},{"title":"4月9日北京天气预报","url":"https://beijing.qianlong.com/2026/0409/8652135.shtml","site_name":"千龙网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://beijing.qianlong.com/2026/0409/8652135.shtml"},{"title":"北京天气_北京实时天气预报_北京24小时天气预报","url":"https://tianqi.cncn.com/beijing","site_name":"tianqi.cncn.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://tianqi.cncn.com/beijing"},{"title":"北京迎大风雷雨天气","url":"https://new.qq.com/rain/a/20250513A07IHR00","site_name":"腾讯网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://new.qq.com/rain/a/20250513A07IHR00"},{"title":"【北京天气预报】北京天气预报一周,北京天气预报15天,30天,今天,明天,7天,10天,未来北京一周天气预报查询—天气网","url":"https://www.tianqi.com/beijing/","site_name":"www.tianqi.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://www.tianqi.com/beijing/"}],"skill_output":null}}
+data: {"event":"on_chain_end","name":"debug_agent","run_id":"run_204242196143","parent_ids":[],"tags":[],"metadata":{},"timestamp":"2026-04-10 09:59:04","data":{"output":{"content":"根据最新天气信息，北京今日（4月10日）天气情况：\n\n**今日天气**\n- 天气：晴，早晨平原地区有轻雾或雾\n- 气温：最高 25℃，昼夜温差超 10℃\n- 风力：偏北风，阵风 5-6 级，山区 7-8 级\n- 夜间：晴\n\n**周末预报**\n- 天气：晴暖持续\n- 气温：最高 23-25℃\n- 提醒：昼夜温差大，注意适时增减衣物\n\n来源：北京市气象台","reasoning_content":null},"references":[],"web_references":[{"title":"今天傍晚开始,北京将有小到中雨!预计持续到- - 今日头条","url":"https://www.toutiao.com/article/7626289690806616602/","site_name":"今日头条","site_icon":"https://th.bochaai.com/favicon?domain_url=https://www.toutiao.com/article/7626289690806616602/"},{"title":"北京今天最高气温25 周末晴暖持续","url":"https://new.qq.com/rain/a/20260410A0121500","site_name":"腾讯网","site_icon":"https://th.bochaai.com/favicon?domain_url=https://new.qq.com/rain/a/20260410A0121500"},{"title":"北京今天傍晚到前半夜有雨,明天白天晴,最高气温25__财经头条__新浪财经","url":"https://cj.sina.cn/articles/view/1893892941/70e2834d02001z2hc%3Ffroms%3Dggmp%26vt%3D4","site_name":"新浪财经","site_icon":"https://th.bochaai.com/favicon?domain_url=https://cj.sina.cn/articles/view/1893892941/70e2834d02001z2hc%3Ffroms%3Dggmp%26vt%3D4"},{"title":"北京今天最高气温25,阵风五六级,早晨有轻雾_北京时间","url":"https://item.btime.com/40p5f9uutg2909r5v9r1pl1muld","site_name":"item.btime.com","site_icon":"https://th.bochaai.com/favicon?domain_url=https://item.btime.com/40p5f9uutg2909r5v9r1pl1muld"},{"title":"北京今天以晴为主最高温可达25 周末晴暖持续昼夜温差较大","url":"https://www.toutiao.com/article/7626932589353337371/","site_name":"今日头条","site_icon":"https://th.bochaai.com/favicon?domain_url=https://www.toutiao.com/article/7626932589353337371/"}],"skill_output":null}}
 
-id: 193
 event: done
 data: {}
 

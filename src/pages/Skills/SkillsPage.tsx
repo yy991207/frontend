@@ -16,6 +16,7 @@ import {
   ThunderboltOutlined,
   UploadOutlined,
 } from '@ant-design/icons'
+import SkillDetailModal from '../../components/common/SkillDetailModal'
 import skillConfigText from '../../../config.yaml?raw'
 import homeAvatar from '../../assets/home-avatar.png'
 import { deleteCreatedSkill as deleteCreatedSkillFromApi, fetchCreatedSkills as fetchCreatedSkillsFromApi, parseCustomSkillListApiConfig } from '../../services/customSkillListService'
@@ -42,6 +43,7 @@ type ManageSkillCard = {
   title: string
   description: string
   template: string
+  isSelected: boolean
   toneClassName: 'manageCardGreen' | 'manageCardAmber'
   icon: React.ReactNode
 }
@@ -204,6 +206,7 @@ export default function SkillsPage() {
   const [createdSkillsError, setCreatedSkillsError] = useState('')
   const [removeSkillLoadingId, setRemoveSkillLoadingId] = useState<string | null>(null)
   const [openManageMenuId, setOpenManageMenuId] = useState<string | null>(null)
+  const [selectedSkillForDetail, setSelectedSkillForDetail] = useState<SkillApiItem | null>(null)
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [uploadingSkill, setUploadingSkill] = useState(false)
   const [isUploadDragging, setIsUploadDragging] = useState(false)
@@ -842,6 +845,7 @@ export default function SkillsPage() {
         title: item.title,
         description: item.description,
         template: item.template,
+        isSelected: item.isSelected,
         toneClassName: presentation.toneClassName,
         icon: presentation.icon,
       }
@@ -888,6 +892,21 @@ export default function SkillsPage() {
 
     return getUploadedSkillPresentation(uploadedSkillSummary.skillName || uploadedSkillSummary.skillId)
   }, [uploadedSkillSummary])
+
+  const handleOpenSkillDetail = useCallback((skill: Pick<SkillApiItem, 'id' | 'skillName' | 'title' | 'description' | 'template' | 'isSelected'>) => {
+    setSelectedSkillForDetail({
+      id: skill.id,
+      skillName: skill.skillName,
+      title: skill.title,
+      description: skill.description,
+      template: skill.template,
+      isSelected: skill.isSelected,
+    })
+  }, [])
+
+  const handleCloseSkillDetail = useCallback(() => {
+    setSelectedSkillForDetail(null)
+  }, [])
 
   const handleLaunchSkill = useCallback(
     (skill: Pick<SkillApiItem, 'id' | 'skillName' | 'template' | 'title' | 'description'>) => {
@@ -1018,24 +1037,26 @@ export default function SkillsPage() {
               {featuredList.length > 0 ? (
                 <div className={styles.featuredGrid}>
                   {featuredList.map((item) => (
-                  <article key={item.id} className={styles.featuredCard}>
-                    <div className={`${styles.featuredBadge} ${styles[item.toneClassName]}`}>{item.icon}</div>
-                    <h3 className={styles.featuredTitle}>{item.title}</h3>
-                    <p className={styles.featuredDesc}>{item.description}</p>
-                    {'isSelected' in item ? (
-                      <div className={styles.featuredActionBar}>
-                        <span className={styles.featuredActionSource}>果仁数据源</span>
-                        <button
-                          type="button"
-                          className={styles.featuredActionButton}
-                          onClick={() => handleUseSkill(item)}
-                          disabled={skillActionLoadingId === item.id}
-                        >
-                          {skillActionLoadingId === item.id ? '处理中...' : item.isSelected ? '使用' : '添加'}
-                        </button>
-                      </div>
-                    ) : null}
-                  </article>
+                    <article key={item.id} className={styles.featuredCard}>
+                      <button type="button" className={styles.skillDetailCardTrigger} onClick={() => handleOpenSkillDetail(item)}>
+                        <div className={`${styles.featuredBadge} ${styles[item.toneClassName]}`}>{item.icon}</div>
+                        <h3 className={styles.featuredTitle}>{item.title}</h3>
+                        <p className={styles.featuredDesc}>{item.description}</p>
+                      </button>
+                      {'isSelected' in item ? (
+                        <div className={styles.featuredActionBar}>
+                          <span className={styles.featuredActionSource}>果仁数据源</span>
+                          <button
+                            type="button"
+                            className={styles.featuredActionButton}
+                            onClick={() => handleUseSkill(item)}
+                            disabled={skillActionLoadingId === item.id}
+                          >
+                            {skillActionLoadingId === item.id ? '处理中...' : item.isSelected ? '使用' : '添加'}
+                          </button>
+                        </div>
+                      ) : null}
+                    </article>
                   ))}
                 </div>
               ) : null}
@@ -1160,13 +1181,15 @@ export default function SkillsPage() {
                         </div>
                       ) : null}
                     </div>
-                    <div className={styles.manageTitleRow}>
-                      <h3 className={styles.manageCardTitle}>{item.title}</h3>
-                    </div>
-                    <p className={styles.manageCardDesc}>{item.description}</p>
-                      <button type="button" className={styles.useButton} onClick={() => handleLaunchSkill(item)}>
-                        立即使用
-                      </button>
+                    <button type="button" className={styles.skillDetailCardTrigger} onClick={() => handleOpenSkillDetail(item)}>
+                      <div className={styles.manageTitleRow}>
+                        <h3 className={styles.manageCardTitle}>{item.title}</h3>
+                      </div>
+                      <p className={styles.manageCardDesc}>{item.description}</p>
+                    </button>
+                    <button type="button" className={styles.useButton} onClick={() => handleLaunchSkill(item)}>
+                      立即使用
+                    </button>
                   </article>
                 ))}
               </div>
@@ -1280,6 +1303,11 @@ export default function SkillsPage() {
           </div>
         </div>
       ) : null}
+      <SkillDetailModal
+        visible={Boolean(selectedSkillForDetail)}
+        skillName={selectedSkillForDetail?.skillName || selectedSkillForDetail?.id || ''}
+        onCancel={handleCloseSkillDetail}
+      />
     </main>
   )
 }
