@@ -56,23 +56,38 @@ function ConfigCard({
   title,
   children,
   extra,
+  defaultExpanded = true,
 }: {
   icon?: React.ReactNode
   title: string
   children: React.ReactNode
   extra?: React.ReactNode
+  defaultExpanded?: boolean
 }) {
+  const [expanded, setExpanded] = useState(defaultExpanded)
+
   return (
     <section className={styles.configCard}>
-      <div className={styles.configCardHeader}>
+      <div
+        className={styles.configCardHeader}
+        onClick={() => setExpanded(!expanded)}
+        style={{ cursor: 'pointer' }}
+      >
         <div className={styles.configCardTitleWrap}>
-          <span className={styles.configCardArrow}>▾</span>
+          <span className={`${styles.configCardArrow} ${expanded ? styles.configCardArrowExpanded : ''}`}>›</span>
           {icon ? <span className={styles.configCardIcon}>{icon}</span> : null}
           <h4 className={styles.configCardTitle}>{title}</h4>
         </div>
-        {extra ? <div className={styles.configCardExtra}>{extra}</div> : null}
+        {extra ? (
+          <div
+            className={styles.configCardExtra}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {extra}
+          </div>
+        ) : null}
       </div>
-      <div className={styles.configCardBody}>{children}</div>
+      {expanded && <div className={styles.configCardBody}>{children}</div>}
     </section>
   )
 }
