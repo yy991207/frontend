@@ -3,7 +3,7 @@ import {
   CopyOutlined,
   DownloadOutlined,
   EyeOutlined,
-  LinkOutlined,
+  ExpandOutlined,
   CloseOutlined,
 } from '@ant-design/icons'
 import { Button, message, Segmented } from 'antd'
@@ -344,9 +344,9 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
               type="text"
               size="small"
               className={styles.artifactIconButton}
-              icon={<LinkOutlined />}
-              aria-label="新窗口打开"
-              title="新窗口"
+              icon={<ExpandOutlined />}
+              aria-label="全屏查看"
+              title="全屏查看"
               onClick={handleOpenInNewTab}
             />
             <Button
