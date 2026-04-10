@@ -47,6 +47,27 @@ test('skills page wires featured and manage cards to skill detail modal entry', 
   assert.match(content, /visible=\{Boolean\(selectedSkillForDetail\)\}/)
 })
 
+test('skill detail modal syncs add/use button state and handlers with skills page', async () => {
+  const skills = await read('pages/Skills/SkillsPage.tsx')
+  const modal = await read('components/common/SkillDetailModal.tsx')
+
+  assert.match(skills, /handleUseSkill = async/)
+  assert.match(skills, /if \(skill\.isSelected\)/)
+  assert.match(skills, /method:\s*'POST'/)
+  assert.match(skills, /skill_name:\s*skill\.skillName \|\| skill\.id/)
+  assert.match(skills, /isSelected:\s*true/)
+  assert.match(skills, /setSelectedSkillForDetail\(/)
+  assert.match(skills, /previous\?\.id === skill\.id/)
+  assert.match(skills, /\? \{[\s\S]*isSelected:\s*true/)
+
+  assert.match(modal, /isSelected:\s*boolean/)
+  assert.match(modal, /actionLoading:\s*boolean/)
+  assert.match(modal, /onAction:\s*\(\) => void/)
+  assert.match(modal, /actionLabel/)
+  assert.match(modal, /const actionLabel = isSelected \? '使用' : '添加'/)
+  assert.match(modal, /\{actionLoading \? '处理中\.\.\.' : actionLabel\}/)
+})
+
 test('skill detail modal uses sticky header, metadata cards and scene grid layout from skill spec', async () => {
   const component = await read('components/common/SkillDetailModal.tsx')
   const styles = await read('components/common/SkillDetailModal.module.less')
@@ -59,12 +80,12 @@ test('skill detail modal uses sticky header, metadata cards and scene grid layou
   assert.match(component, /configTable/)
   assert.match(component, /custom_agent/)
 
-  assert.match(styles, /\.stickyHeader\s*\{/) 
+  assert.match(styles, /\.stickyHeader\s*\{/)
   assert.match(styles, /position:\s*sticky/)
-  assert.match(styles, /\.heroSection\s*\{/) 
-  assert.match(styles, /\.metaGrid\s*\{/) 
+  assert.match(styles, /\.heroSection\s*\{/)
+  assert.match(styles, /\.metaGrid\s*\{/)
   assert.match(styles, /grid-template-columns:\s*repeat\(4, minmax\(0, 1fr\)\)/)
-  assert.match(styles, /\.sceneGrid\s*\{/) 
+  assert.match(styles, /\.sceneGrid\s*\{/)
   assert.match(styles, /@media \(max-width:\s*960px\)/)
 })
 

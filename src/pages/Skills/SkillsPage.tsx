@@ -703,6 +703,14 @@ export default function SkillsPage() {
             : item,
         ),
       )
+      setSelectedSkillForDetail((previous) =>
+        previous?.id === skill.id
+          ? {
+              ...previous,
+              isSelected: true,
+            }
+          : previous,
+      )
 
       setAddSkillSuccessMessage('添加成功，快到管理技能中查看吧')
       if (successToastTimerRef.current !== null) {
@@ -1306,6 +1314,13 @@ export default function SkillsPage() {
       <SkillDetailModal
         visible={Boolean(selectedSkillForDetail)}
         skillName={selectedSkillForDetail?.skillName || selectedSkillForDetail?.id || ''}
+        isSelected={Boolean(selectedSkillForDetail?.isSelected)}
+        actionLoading={skillActionLoadingId === selectedSkillForDetail?.id}
+        onAction={() => {
+          if (selectedSkillForDetail) {
+            void handleUseSkill(selectedSkillForDetail)
+          }
+        }}
         onCancel={handleCloseSkillDetail}
       />
     </main>
