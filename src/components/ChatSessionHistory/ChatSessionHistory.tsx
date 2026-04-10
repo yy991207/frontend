@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { HistoryOutlined, MoreOutlined, DeleteOutlined, MessageOutlined } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -129,12 +129,13 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
     within7Days: ChatSession[]
     beyond7Days: ChatSession[]
   }>({ today: [], within7Days: [], beyond7Days: [] })
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
   const [deleteTargetSession, setDeleteTargetSession] = useState<ChatSession | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [removingSessionIds, setRemovingSessionIds] = useState<Set<string>>(new Set())
-  const isFirstLoadRef = useRef(true)
+  const hasPrefetchedRef = useRef(false)
 
   // 获取当前会话 ID
   const getCurrentSessionId = useCallback(() => {
@@ -154,6 +155,8 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
       const allSessions = await fetchChatSessions(config)
       const grouped = groupSessionsByTime(allSessions)
       setSessions(grouped)
+      setHasLoadedOnce(true)
+      setError(null)
     } catch (err) {
       if (!silent) {
         setError(err instanceof Error ? err.message : '加载会话列表失败')
@@ -166,19 +169,30 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
   }, [])
 
   useEffect(() => {
-    if (expanded) {
-      if (isFirstLoadRef.current) {
-        isFirstLoadRef.current = false
-        loadSessions()
-      } else {
-        loadSessions({ silent: true })
-      }
+    if (hasPrefetchedRef.current) {
+      return
     }
-  }, [expanded, loadSessions, location.pathname, location.search])
+
+    hasPrefetchedRef.current = true
+    // 组件挂载后先静默预取一轮，避免用户首次展开侧边栏时先看到整块 loading 闪一下。
+    void loadSessions({ silent: true })
+  }, [loadSessions])
+
+  useEffect(() => {
+    if (!expanded) {
+      return
+    }
+
+    if (!hasLoadedOnce) {
+      return
+    }
+
+    void loadSessions({ silent: true })
+  }, [expanded, hasLoadedOnce, loadSessions, location.pathname, location.search])
 
   useEffect(() => {
     const handleRefresh = () => {
-      if (!expanded) {
+      if (!expanded || !hasLoadedOnce) {
         return
       }
 
@@ -190,7 +204,7 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
     return () => {
       window.removeEventListener(CHAT_SESSION_HISTORY_REFRESH_EVENT, handleRefresh)
     }
-  }, [expanded, loadSessions])
+  }, [expanded, hasLoadedOnce, loadSessions])
 
   const handleSessionClick = (sessionId: string) => {
     navigate(`/chat?sessionId=${sessionId}`)
@@ -236,13 +250,12 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
     }
   }
 
-  const renderSessionItem = (session: ChatSession, index: number) => {
+  const renderSessionItem = (session: ChatSession) => {
     const isRemoving = removingSessionIds.has(session.session_id)
     return (
       <div
         key={session.session_id}
         className={`${styles.sessionItem} ${isRemoving ? styles.sessionItemRemoving : ''}`}
-        style={{ animationDelay: `${index * 30}ms` }}
         onClick={() => handleSessionClick(session.session_id)}
         title={getSessionDisplayName(session)}
       >
@@ -263,7 +276,7 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
         {showDivider && <div className={styles.sectionDivider} />}
         <div className={styles.sectionHeader}>{title}</div>
         <div className={styles.sectionContent}>
-          {items.map((item, index) => renderSessionItem(item, index))}
+          {items.map((item) => renderSessionItem(item))}
         </div>
       </div>
     )
@@ -273,56 +286,53 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
     sessions.today.length > 0 ||
     sessions.within7Days.length > 0 ||
     sessions.beyond7Days.length > 0
+  const shouldShowBlockingState = !hasLoadedOnce && loading && !hasAnySessions
+  const shouldShowEmptyState = hasLoadedOnce && !error && !hasAnySessions
+  const shouldShowList = hasAnySessions
+  const contentClassName = useMemo(
+    () => `${styles.content} ${expanded ? styles.contentExpanded : ''}`,
+    [expanded],
+  )
 
-  // 收起状态：显示图标按钮
-  if (!expanded) {
-    return (
-      <button
-        type="button"
-        className={`${styles.collapsedButton} ${styles.tooltipTarget}`}
-        data-tooltip="会话历史"
-        onClick={handleToggle}
-      >
-        <span className={styles.iconCell}>
-          <HistoryOutlined />
-        </span>
-      </button>
-    )
-  }
-
-  // 展开状态：显示完整面板
   return (
     <>
       <div className={styles.container}>
-        <div className={styles.header}>
-          <HistoryOutlined className={styles.headerIcon} />
-          <span className={styles.headerTitle}>会话历史</span>
-        </div>
+        <button
+          type="button"
+          className={`${styles.historyEntry} ${styles.tooltipTarget}`}
+          data-tooltip="会话历史"
+          onClick={handleToggle}
+        >
+          <span className={styles.iconCell}>
+            <HistoryOutlined />
+          </span>
+          <span className={styles.entryLabel}>会话历史</span>
+        </button>
 
-        <div className={styles.content}>
-          {loading && <div className={styles.loading}>加载中...</div>}
+        {expanded && (
+          <div className={contentClassName}>
+            {shouldShowBlockingState && <div className={styles.loading}>加载中...</div>}
 
-          {!loading && error && (
-            <div className={styles.error}>
-              <div>{error}</div>
-              <button onClick={() => void loadSessions()} className={styles.retryButton}>
-                重试
-              </button>
-            </div>
-          )}
+            {!shouldShowBlockingState && error && !hasAnySessions && (
+              <div className={styles.error}>
+                <div>{error}</div>
+                <button onClick={() => void loadSessions()} className={styles.retryButton}>
+                  重试
+                </button>
+              </div>
+            )}
 
-          {!loading && !error && !hasAnySessions && (
-            <div className={styles.empty}>暂无会话记录</div>
-          )}
+            {!shouldShowBlockingState && shouldShowEmptyState && <div className={styles.empty}>暂无会话记录</div>}
 
-          {!loading && !error && hasAnySessions && (
-            <>
-              {renderSection('今天', sessions.today)}
-              {renderSection('7天内', sessions.within7Days, sessions.today.length > 0)}
-              {renderSection('7天外', sessions.beyond7Days, sessions.today.length > 0 || sessions.within7Days.length > 0)}
-            </>
-          )}
-        </div>
+            {!error && shouldShowList && (
+              <>
+                {renderSection('今天', sessions.today)}
+                {renderSection('7天内', sessions.within7Days, sessions.today.length > 0)}
+                {renderSection('7天外', sessions.beyond7Days, sessions.today.length > 0 || sessions.within7Days.length > 0)}
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       <DeleteConfirmModal

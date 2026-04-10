@@ -45,7 +45,7 @@ type ManageSkillCard = {
   template: string
   isSelected: boolean
   toneClassName: 'manageCardGreen' | 'manageCardAmber'
-  icon: React.ReactNode
+  badgeLetter: string
 }
 
 const CREATE_OPTIONS: Array<{
@@ -135,55 +135,42 @@ function buildSkillNameSet(items: SkillApiItem[]) {
   return new Set(items.map((item) => item.skillName || item.id).filter(Boolean))
 }
 
-function getFeaturedCardPresentation(index: number) {
+function getSkillBadgeLetter(skillName: string, title: string) {
+  const displayName = title || skillName
+  return displayName?.trim().charAt(0).toUpperCase() || 'S'
+}
+
+function getFeaturedCardTone(index: number): 'skillCardAmber' | 'skillCardIndigo' | 'skillCardGreen' {
   if (index % 3 === 0) {
-    return {
-      toneClassName: 'skillCardAmber' as const,
-      icon: <StarFilled />,
-    }
+    return 'skillCardAmber'
   }
 
   if (index % 3 === 1) {
-    return {
-      toneClassName: 'skillCardIndigo' as const,
-      icon: <ShareAltOutlined />,
-    }
+    return 'skillCardIndigo'
   }
 
-  return {
-    toneClassName: 'skillCardGreen' as const,
-    icon: <SwapOutlined />,
-  }
+  return 'skillCardGreen'
 }
 
-function getManageCardPresentation(index: number) {
+function getManageCardTone(index: number): 'manageCardGreen' | 'manageCardAmber' {
   if (index % 3 === 0) {
-    return {
-      toneClassName: 'manageCardGreen' as const,
-      icon: <CheckCircleFilled />,
-    }
+    return 'manageCardGreen'
   }
 
   if (index % 3 === 1) {
-    return {
-      toneClassName: 'manageCardAmber' as const,
-      icon: <ShareAltOutlined />,
-    }
+    return 'manageCardAmber'
   }
 
-  return {
-    toneClassName: 'manageCardGreen' as const,
-    icon: <ThunderboltOutlined />,
-  }
+  return 'manageCardGreen'
 }
 
-function getUploadedSkillPresentation(skillName: string) {
+function getUploadedSkillTone(skillName: string): 'manageCardGreen' | 'manageCardAmber' {
   const normalizedSkillName = skillName.trim()
   const toneSeed = normalizedSkillName
     ? Array.from(normalizedSkillName).reduce((total, char) => total + char.charCodeAt(0), 0)
     : 0
 
-  return getManageCardPresentation(toneSeed)
+  return getManageCardTone(toneSeed)
 }
 
 export default function SkillsPage() {
@@ -845,7 +832,7 @@ export default function SkillsPage() {
     const sourceSkills = manageTab === 'created' ? createdSkills : addedSkills
 
     return sourceSkills.map((item, index) => {
-      const presentation = getManageCardPresentation(index)
+      const toneClassName = getManageCardTone(index)
 
       return {
         id: item.id,
@@ -854,8 +841,8 @@ export default function SkillsPage() {
         description: item.description,
         template: item.template,
         isSelected: item.isSelected,
-        toneClassName: presentation.toneClassName,
-        icon: presentation.icon,
+        toneClassName,
+        badgeLetter: getSkillBadgeLetter(item.skillName, item.title),
       }
     })
   }, [addedSkills, createdSkills, manageTab])
@@ -864,7 +851,7 @@ export default function SkillsPage() {
 
   const featuredList = useMemo(() => {
     return featuredSkills.map((item, index) => {
-      const presentation = getFeaturedCardPresentation(index)
+      const toneClassName = getFeaturedCardTone(index)
 
       return {
         id: item.id,
@@ -873,8 +860,8 @@ export default function SkillsPage() {
         description: item.description,
         template: item.template,
         isSelected: item.isSelected,
-        toneClassName: presentation.toneClassName,
-        icon: presentation.icon,
+        toneClassName,
+        badgeLetter: getSkillBadgeLetter(item.skillName, item.title),
         tags: ['果仁数据源'],
         count: '',
       }
@@ -898,7 +885,11 @@ export default function SkillsPage() {
       return null
     }
 
-    return getUploadedSkillPresentation(uploadedSkillSummary.skillName || uploadedSkillSummary.skillId)
+    const skillName = uploadedSkillSummary.skillName || uploadedSkillSummary.skillId
+    return {
+      toneClassName: getUploadedSkillTone(skillName),
+      badgeLetter: getSkillBadgeLetter(skillName, uploadedSkillSummary.skillName),
+    }
   }, [uploadedSkillSummary])
 
   const handleOpenSkillDetail = useCallback(
@@ -1050,7 +1041,9 @@ export default function SkillsPage() {
                   {featuredList.map((item) => (
                     <article key={item.id} className={styles.featuredCard}>
                       <button type="button" className={styles.skillDetailCardTrigger} onClick={() => handleOpenSkillDetail(item)}>
-                        <div className={`${styles.featuredBadge} ${styles[item.toneClassName]}`}>{item.icon}</div>
+                        <div className={`${styles.featuredBadge} ${styles[item.toneClassName]}`}>
+                          <span className={styles.badgeLetter}>{item.badgeLetter}</span>
+                        </div>
                         <h3 className={styles.featuredTitle}>{item.title}</h3>
                         <p className={styles.featuredDesc}>{item.description}</p>
                       </button>
@@ -1152,7 +1145,9 @@ export default function SkillsPage() {
                     onClick={() => handleOpenSkillDetail(item)}
                   >
                     <div className={styles.manageCardHead}>
-                      <span className={`${styles.manageCardIcon} ${styles[item.toneClassName]}`}>{item.icon}</span>
+                      <span className={`${styles.manageCardIcon} ${styles[item.toneClassName]}`}>
+                        <span className={styles.badgeLetter}>{item.badgeLetter}</span>
+                      </span>
                       {manageTab === 'added' || manageTab === 'created' ? (
                         <div className={styles.manageMenuRoot} data-manage-menu-root="true">
                           <button
@@ -1261,7 +1256,7 @@ export default function SkillsPage() {
                     className={`${styles.manageCardIcon} ${styles.uploadSkillIconPreview} ${uploadedSkillPresentation ? styles[uploadedSkillPresentation.toneClassName] : ''}`}
                     aria-hidden="true"
                   >
-                    {uploadedSkillPresentation?.icon}
+                    <span className={styles.badgeLetter}>{uploadedSkillPresentation?.badgeLetter}</span>
                   </span>
                 </div>
 
