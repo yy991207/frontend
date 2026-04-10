@@ -1146,7 +1146,11 @@ export default function SkillsPage() {
             ) : manageList.length > 0 ? (
               <div className={styles.manageGrid}>
                 {manageList.map((item) => (
-                  <article key={item.id} className={styles.manageCard}>
+                  <article
+                    key={item.id}
+                    className={styles.manageCard}
+                    onClick={() => handleOpenSkillDetail(item)}
+                  >
                     <div className={styles.manageCardHead}>
                       <span className={`${styles.manageCardIcon} ${styles[item.toneClassName]}`}>{item.icon}</span>
                       {manageTab === 'added' || manageTab === 'created' ? (
@@ -1156,7 +1160,10 @@ export default function SkillsPage() {
                             className={styles.moreButton}
                             aria-label="更多操作"
                             aria-expanded={openManageMenuId === item.id}
-                            onClick={() => setOpenManageMenuId((previous) => (previous === item.id ? null : item.id))}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setOpenManageMenuId((previous) => (previous === item.id ? null : item.id))
+                            }}
                             disabled={removeSkillLoadingId === item.id}
                           >
                             <EllipsisOutlined />
@@ -1165,13 +1172,13 @@ export default function SkillsPage() {
                             <div className={styles.manageCardMenu}>
                               {manageTab === 'added' ? (
                                 <>
-                                  <button type="button" className={styles.manageCardMenuItem} onClick={() => handleShareSkill(item)}>
+                                  <button type="button" className={styles.manageCardMenuItem} onClick={(event) => { event.stopPropagation(); handleShareSkill(item); }}>
                                     分享
                                   </button>
                                   <button
                                     type="button"
                                     className={`${styles.manageCardMenuItem} ${styles.manageCardMenuItemDanger}`}
-                                    onClick={() => handleRemoveSkill(item)}
+                                    onClick={(event) => { event.stopPropagation(); handleRemoveSkill(item); }}
                                     disabled={removeSkillLoadingId === item.id}
                                   >
                                     {removeSkillLoadingId === item.id ? '移除中...' : '移除'}
@@ -1181,7 +1188,7 @@ export default function SkillsPage() {
                                 <button
                                   type="button"
                                   className={`${styles.manageCardMenuItem} ${styles.manageCardMenuItemDanger}`}
-                                  onClick={() => handleDeleteCreatedSkill(item)}
+                                  onClick={(event) => { event.stopPropagation(); handleDeleteCreatedSkill(item); }}
                                   disabled={removeSkillLoadingId === item.id}
                                 >
                                   {removeSkillLoadingId === item.id ? '删除中...' : '删除'}
@@ -1192,13 +1199,18 @@ export default function SkillsPage() {
                         </div>
                       ) : null}
                     </div>
-                    <button type="button" className={styles.skillDetailCardTrigger} onClick={() => handleOpenSkillDetail(item, true)}>
-                      <div className={styles.manageTitleRow}>
-                        <h3 className={styles.manageCardTitle}>{item.title}</h3>
-                      </div>
+                    <div className={styles.manageCardContent}>
+                      <h3 className={styles.manageCardTitle}>{item.title}</h3>
                       <p className={styles.manageCardDesc}>{item.description}</p>
-                    </button>
-                    <button type="button" className={styles.useButton} onClick={() => handleLaunchSkill(item)}>
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.useButton}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        handleLaunchSkill(item)
+                      }}
+                    >
                       立即使用
                     </button>
                   </article>
