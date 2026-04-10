@@ -54,6 +54,7 @@ import {
 import { notifyChatSessionHistoryRefresh } from '../../services/chatSessionEvents'
 import {
   deleteChatSession,
+  findLatestEmptySession,
   getDefaultConfig,
   getChatSession,
   parseChatSessionConfig,
@@ -589,8 +590,14 @@ function ChatPageContent() {
     try {
       // 会话一旦创建成功，就必须复用同一个 sessionId，避免刷新或继续追问时被拆成新会话。
       if (!sessionId) {
-        const createdSession = await createChatSession(chatApiConfig, controller.signal)
-        sessionId = createdSession.sessionId
+        const sessionConfig = parseChatSessionConfig(chatConfigText)
+        const existingEmptySessionId = await findLatestEmptySession(sessionConfig, controller.signal)
+        if (existingEmptySessionId) {
+          sessionId = existingEmptySessionId
+        } else {
+          const createdSession = await createChatSession(chatApiConfig, controller.signal)
+          sessionId = createdSession.sessionId
+        }
       }
 
       if (!sessionId) {

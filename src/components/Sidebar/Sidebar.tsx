@@ -53,6 +53,9 @@ export default function Sidebar() {
   const [hoveredAgentId, setHoveredAgentId] = useState<string | null>(null)
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 })
   const agentRowRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
+  const agentListRef = useRef<HTMLDivElement>(null)
+  const [agentListScrolling, setAgentListScrolling] = useState(false)
+  const agentListScrollTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -78,6 +81,29 @@ export default function Sidebar() {
 
     return () => {
       cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    const listEl = agentListRef.current
+    if (!listEl) return
+
+    const handleScroll = () => {
+      setAgentListScrolling(true)
+      if (agentListScrollTimeoutRef.current) {
+        clearTimeout(agentListScrollTimeoutRef.current)
+      }
+      agentListScrollTimeoutRef.current = window.setTimeout(() => {
+        setAgentListScrolling(false)
+      }, 800)
+    }
+
+    listEl.addEventListener('scroll', handleScroll)
+    return () => {
+      listEl.removeEventListener('scroll', handleScroll)
+      if (agentListScrollTimeoutRef.current) {
+        clearTimeout(agentListScrollTimeoutRef.current)
+      }
     }
   }, [])
 
@@ -196,7 +222,7 @@ export default function Sidebar() {
 
       {/* 智能体列表 */}
       <div className={styles.sectionTitle}>智能体</div>
-      <div className={styles.agentList}>
+      <div ref={agentListRef} className={`${styles.agentList} ${agentListScrolling ? styles.scrolling : ''}`}>
         {agentLoading ? (
           <div className={styles.agentLoading}>
             <LoadingOutlined />
