@@ -20,7 +20,8 @@ export type CreateCustomAgentPayload = {
   agent_prompt: string
   avatar_url: string
   description: string
-  enabled_skills: string[]
+  enable_web_search: boolean
+  enabled_skills: EnabledSkill[]
   is_public: boolean
   preset_questions: PresetQuestion[]
   resource_ids: string[]

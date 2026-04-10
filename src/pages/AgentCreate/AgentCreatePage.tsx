@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   AppstoreAddOutlined,
   ArrowUpOutlined,
@@ -18,7 +19,11 @@ import EditAgentModal from '../../components/common/EditAgentModal'
 import SkillConfigModal from '../../components/common/SkillConfigModal'
 import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
 import SkillDetailPanel from '../../components/common/SkillDetailPanel'
-import type { EnabledSkill } from '../../services/customAgentService'
+import {
+  loadCustomAgentApiConfig,
+  createCustomAgent,
+  type EnabledSkill,
+} from '../../services/customAgentService'
 import styles from '../AgentDetail/agentDetail.module.less'
 
 function ConfigCard({
@@ -63,6 +68,7 @@ function ConfigCard({
 }
 
 export default function AgentCreatePage() {
+  const navigate = useNavigate()
   const [agentName, setAgentName] = useState('未命名智能体')
   const [agentSubtitle, setAgentSubtitle] = useState('')
   const [agentInstruction, setAgentInstruction] = useState('')
@@ -76,8 +82,8 @@ export default function AgentCreatePage() {
   const [skillModalVisible, setSkillModalVisible] = useState(false)
   const [knowledgeModalVisible, setKnowledgeModalVisible] = useState(false)
   const [expandedSkillName, setExpandedSkillName] = useState<string | null>(null)
-  const [creating, setCreating] = useState(false)
-  const [createStatus, setCreateStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [publishing, setPublishing] = useState(false)
+  const [publishStatus, setPublishStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [webSearchEnabled, setWebSearchEnabled] = useState(false)
   const [knowledgeSpaceEnabled, setKnowledgeSpaceEnabled] = useState(false)
 
@@ -93,11 +99,11 @@ export default function AgentCreatePage() {
     setModalVisible(false)
   }
 
-  const handleModalSave = (data: { name: string; description: string }) => {
+const handleModalSave = (data: { name: string; description: string }) => {
     setAgentName(data.name)
     setAgentSubtitle(data.description)
     setModalVisible(false)
-    setCreateStatus('idle')
+    setPublishStatus('idle')
   }
 
   const handleOpenSkillModal = () => {
@@ -110,10 +116,10 @@ export default function AgentCreatePage() {
 
   const handleSkillChange = (skills: EnabledSkill[]) => {
     setAgentSkills(skills)
-    setCreateStatus('idle')
+    setPublishStatus('idle')
   }
 
-  const handleCreate = async () => {
+  const handlePublish = async () => {
     if (!agentName.trim()) {
       message.error('智能体名称不能为空')
       return
@@ -129,31 +135,49 @@ export default function AgentCreatePage() {
       const emptyIndexes = agentQuestions
         .map((q, i) => (!q.question || !q.category) ? i + 1 : null)
         .filter((i): i is number => i !== null)
-      message.error(`问题${emptyIndexes.join('、')}的名称或指令不能为空，请填写完整后再创建`)
+      message.error(`问题${emptyIndexes.join('、')}的名称或指令不能为空，请填写完整后再发布`)
       return
     }
 
-    setCreating(true)
-    setCreateStatus('idle')
+    setPublishing(true)
+    setPublishStatus('idle')
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const config = await loadCustomAgentApiConfig()
       
-      setCreateStatus('success')
-      message.success('智能体创建成功！')
+      const payload = {
+        agent_name: agentName,
+        agent_prompt: agentInstruction,
+        avatar_url: 'https://example.com/avatar.png',
+        description: agentSubtitle,
+        enable_web_search: webSearchEnabled,
+        enabled_skills: agentSkills,
+        is_public: isPublic,
+        preset_questions: agentQuestions,
+        resource_ids: resourceIds,
+      }
 
-      setTimeout(() => {
-        setCreateStatus('idle')
-      }, 3000)
+      const response = await createCustomAgent(config, payload)
+      
+      if (response.success && response.data?.agent_id) {
+        setPublishStatus('success')
+        message.success('智能体发布成功！')
+        
+        setTimeout(() => {
+          navigate(`/agent/${response.data!.agent_id}`)
+        }, 1500)
+      } else {
+        throw new Error(response.message || '发布失败')
+      }
     } catch (error) {
-      setCreateStatus('error')
-      message.error(error instanceof Error ? error.message : '创建失败，请重试')
+      setPublishStatus('error')
+      message.error(error instanceof Error ? error.message : '发布失败，请重试')
 
       setTimeout(() => {
-        setCreateStatus('idle')
+        setPublishStatus('idle')
       }, 3000)
     } finally {
-      setCreating(false)
+      setPublishing(false)
     }
   }
 
@@ -168,22 +192,22 @@ export default function AgentCreatePage() {
         <div className={styles.topBarRight}>
           <button
             type="button"
-            className={`${styles.publishButton} ${createStatus === 'success' ? styles.publishSuccess : ''} ${createStatus === 'error' ? styles.publishError : ''}`}
-            onClick={handleCreate}
-            disabled={creating}
+            className={`${styles.publishButton} ${publishStatus === 'success' ? styles.publishSuccess : ''} ${publishStatus === 'error' ? styles.publishError : ''}`}
+            onClick={handlePublish}
+            disabled={publishing}
           >
-            {creating ? (
-              '创建中...'
-            ) : createStatus === 'success' ? (
+            {publishing ? (
+              '发布中...'
+            ) : publishStatus === 'success' ? (
               <>
-                <CheckCircleOutlined /> 创建成功
+                <CheckCircleOutlined /> 发布成功
               </>
-            ) : createStatus === 'error' ? (
+            ) : publishStatus === 'error' ? (
               <>
-                <CloseCircleOutlined /> 创建失败
+                <CloseCircleOutlined /> 发布失败
               </>
             ) : (
-              '创建'
+              '发布'
             )}
           </button>
         </div>
@@ -292,7 +316,7 @@ export default function AgentCreatePage() {
                 value={agentInstruction}
                 onChange={(e) => {
                   setAgentInstruction(e.target.value)
-                  setCreateStatus('idle')
+                  setPublishStatus('idle')
                 }}
                 placeholder="请输入智能体的指令内容..."
               />
@@ -350,7 +374,7 @@ export default function AgentCreatePage() {
                               if (expandedSkillName === skill.skill_name) {
                                 setExpandedSkillName(null)
                               }
-                              setCreateStatus('idle')
+                              setPublishStatus('idle')
                             }}
                             aria-label="删除"
                           >
@@ -382,7 +406,7 @@ export default function AgentCreatePage() {
                   className={`${styles.switch} ${webSearchEnabled ? styles.switchOn : ''}`}
                   onClick={() => {
                     setWebSearchEnabled(!webSearchEnabled)
-                    setCreateStatus('idle')
+                    setPublishStatus('idle')
                   }}
                 >
                   <span className={styles.switchHandle} />
@@ -399,7 +423,7 @@ export default function AgentCreatePage() {
                     className={`${styles.switch} ${knowledgeSpaceEnabled ? styles.switchOn : ''}`}
                     onClick={() => {
                       setKnowledgeSpaceEnabled(!knowledgeSpaceEnabled)
-                      setCreateStatus('idle')
+                      setPublishStatus('idle')
                     }}
                   >
                     <span className={styles.switchHandle} />
@@ -424,7 +448,7 @@ export default function AgentCreatePage() {
                           className={styles.removeResourceBtn}
                           onClick={() => {
                             setResourceIds(resourceIds.filter((r) => r !== id))
-                            setCreateStatus('idle')
+                            setPublishStatus('idle')
                           }}
                         >
                           ×
@@ -445,7 +469,7 @@ export default function AgentCreatePage() {
                   className={styles.linkAction}
                   onClick={() => {
                     setAgentQuestions([...agentQuestions, { category: '默认', question: '' }])
-                    setCreateStatus('idle')
+                    setPublishStatus('idle')
                   }}
                 >
                   <PlusOutlined /> 添加
@@ -480,7 +504,7 @@ export default function AgentCreatePage() {
                               if (expandedQuestionIndex === index) {
                                 setExpandedQuestionIndex(null)
                               }
-                              setCreateStatus('idle')
+                              setPublishStatus('idle')
                             }}
                             aria-label="删除"
                           >
@@ -502,7 +526,7 @@ export default function AgentCreatePage() {
                                   const newQuestions = [...agentQuestions]
                                   newQuestions[index] = { ...newQuestions[index], question: e.target.value }
                                   setAgentQuestions(newQuestions)
-                                  setCreateStatus('idle')
+                                  setPublishStatus('idle')
                                 }}
                                 maxLength={20}
                                 placeholder="请输入"
@@ -525,7 +549,7 @@ export default function AgentCreatePage() {
                                   const newQuestions = [...agentQuestions]
                                   newQuestions[index] = { ...newQuestions[index], category: e.target.value }
                                   setAgentQuestions(newQuestions)
-                                  setCreateStatus('idle')
+                                  setPublishStatus('idle')
                                 }}
                                 maxLength={1000}
                                 placeholder="请输入指令内容"
@@ -551,7 +575,7 @@ export default function AgentCreatePage() {
                   className={`${styles.switch} ${isPublic ? styles.switchOn : ''}`}
                   onClick={() => {
                     setIsPublic(!isPublic)
-                    setCreateStatus('idle')
+                    setPublishStatus('idle')
                   }}
                 >
                   <span className={styles.switchHandle} />
@@ -584,7 +608,7 @@ export default function AgentCreatePage() {
         onConfirm={(selectedIds: string[]) => {
           setResourceIds(selectedIds)
           setKnowledgeModalVisible(false)
-          setCreateStatus('idle')
+          setPublishStatus('idle')
         }}
         currentResourceIds={resourceIds}
       />
