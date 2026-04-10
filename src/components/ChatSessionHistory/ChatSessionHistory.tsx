@@ -249,12 +249,12 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
     const isRemoving = removingSessionIds.has(session.session_id)
     const collapsed = options?.collapsed ?? false
     return (
-      <button
+      <div
         key={session.session_id}
-        type="button"
         className={`${styles.sessionItem} ${isRemoving ? styles.sessionItemRemoving : ''}`}
         onClick={() => handleSessionClick(session.session_id)}
         title={getSessionDisplayName(session)}
+        style={{ cursor: 'pointer' }}
       >
         <span className={styles.iconCell}>
           <MessageOutlined />
@@ -265,7 +265,7 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
             <SessionMenu session={session} onDelete={setDeleteTargetSession} />
           </span>
         )}
-      </button>
+      </div>
     )
   }
 
