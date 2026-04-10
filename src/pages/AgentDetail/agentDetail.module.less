@@ -246,13 +246,30 @@
   font-weight: 600;
 }
 
-.previewButton {
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: transparent;
-  color: #8f959e;
+.newSessionButton {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #d0d7e2;
+  border-radius: 999px;
+  background: #fff;
+  color: #1f2329;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #245bdb;
+    border-color: #b7cdfb;
+    background: #f5f8ff;
+  }
+
+  &:active {
+    background: #edf3ff;
+  }
 }
 
 .heroSection {

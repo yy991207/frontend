@@ -4,7 +4,6 @@ import {
   AppstoreAddOutlined,
   CameraOutlined,
   EditOutlined,
-  EyeOutlined,
   GlobalOutlined,
   PaperClipOutlined,
   PlusOutlined,
@@ -124,6 +123,7 @@ export default function AgentDetailPage() {
   const [isChatResponding, setIsChatResponding] = useState(false)
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const chatAbortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -262,6 +262,7 @@ export default function AgentDetailPage() {
       }
 
       const controller = new AbortController()
+      chatAbortControllerRef.current = controller
       let activeAssistantMessageId = assistantMessageId
 
       await chatCustomAgentStream(config, payload, controller.signal, {
@@ -338,6 +339,7 @@ export default function AgentDetailPage() {
             })),
           )
           setIsChatResponding(false)
+          chatAbortControllerRef.current = null
         },
         onError: (error) => {
           setChatMessages((prev) =>
@@ -348,6 +350,7 @@ export default function AgentDetailPage() {
             })),
           )
           setIsChatResponding(false)
+          chatAbortControllerRef.current = null
         },
       })
     } catch (error) {
@@ -359,8 +362,21 @@ export default function AgentDetailPage() {
         })),
       )
       setIsChatResponding(false)
+      chatAbortControllerRef.current = null
     }
   }, [chatInputValue, isChatResponding, chatMessages, agentName, agentInstruction, agentSubtitle, agentSkills, resourceIds, webSearchEnabled])
+
+  const handleStartNewSession = useCallback(() => {
+    chatAbortControllerRef.current?.abort()
+    chatAbortControllerRef.current = null
+    setIsChatResponding(false)
+    setChatInputValue('')
+    setCopiedMessageId(null)
+    setChatMessages([])
+    if (id) {
+      clearAgentStorage(id)
+    }
+  }, [id])
 
   // 消息分组和复制目标（复用 ChatPage 的渲染逻辑）
   const groupedMessages = useMemo(() => buildMessageGroups(chatMessages), [chatMessages])
@@ -424,7 +440,17 @@ export default function AgentDetailPage() {
 
   const handlePublish = async () => {
     if (!agentData) return
-    
+
+    // 验证推荐问题必填项
+    const emptyQuestions = agentQuestions.filter((q, i) => !q.question || !q.category)
+    if (emptyQuestions.length > 0) {
+      const emptyIndexes = agentQuestions
+        .map((q, i) => (!q.question || !q.category) ? i + 1 : null)
+        .filter((i): i is number => i !== null)
+      message.error(`问题${emptyIndexes.join('、')}的名称或指令不能为空，请填写完整后再发布`)
+      return
+    }
+
     setPublishing(true)
     setPublishStatus('idle')
 
@@ -536,8 +562,14 @@ export default function AgentDetailPage() {
           <div className={styles.chatPanelInner}>
             <div className={styles.chatHeader}>
               <h2 className={styles.chatHeading}>测试与预览</h2>
-              <button type="button" className={styles.previewButton} aria-label="预览设置">
-                <EyeOutlined />
+              <button
+                type="button"
+                className={styles.newSessionButton}
+                aria-label="新建会话"
+                onClick={handleStartNewSession}
+              >
+                <PlusOutlined />
+                新建会话
               </button>
             </div>
 
@@ -808,7 +840,7 @@ export default function AgentDetailPage() {
                   const isExpanded = expandedQuestionIndex === index
                   const displayName = item.question || `问题${index + 1}`
                   return (
-                    <div key={`${item.question}-${index}`} className={styles.questionCard}>
+                    <div key={index} className={styles.questionCard}>
                       <div className={styles.questionHeader}>
                         <span className={styles.questionLabel}>
                           {isExpanded ? `问题${index + 1}` : `问题${index + 1}：${displayName}`}

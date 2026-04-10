@@ -7,3 +7,8 @@ class ResizeObserverMock {
 }
 
 globalThis.ResizeObserver = ResizeObserverMock as typeof ResizeObserver
+
+Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+  value() {},
+  writable: true,
+})
