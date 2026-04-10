@@ -4,7 +4,6 @@
   width: 100%;
   flex: 1;
   min-height: 0;
-  margin-top: 8px;
   overflow: hidden;
 }
 
@@ -111,7 +110,7 @@
 .sectionCollapsed {
   .sectionDivider,
   .sectionHeader,
-  .sessionName,
+  .labelCell,
   .menuContainer {
     display: none;
   }
@@ -123,14 +122,12 @@
 
   .sessionItem {
     justify-content: center;
-    padding: 0;
     width: 44px;
     height: 44px;
-    border-radius: 16px;
     margin: 0 auto;
   }
 
-  .sessionIcon {
+  .iconCell {
     margin-right: 0;
   }
 }
@@ -142,29 +139,35 @@
 }
 
 .sectionHeader {
-  padding: 8px 16px;
-  font-size: 12px;
-  font-weight: 500;
+  margin: 0 0 10px 12px;
   color: #9ca3af;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .sectionContent {
   display: flex;
   flex-direction: column;
-  padding: 0 12px;
+  gap: 4px;
   transition: all 0.2s ease;
 }
 
 .sessionItem {
-  display: flex;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
   align-items: center;
-  padding: 8px 12px;
-  border-radius: 8px;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 16px;
+  border: none;
+  background: transparent;
+  color: #4b5563;
+  text-align: left;
   cursor: pointer;
-  transition: background-color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
-  margin-bottom: 2px;
+  transition: background-color 0.18s ease, color 0.18s ease, opacity 0.2s ease, transform 0.2s ease;
   position: relative;
 
   &.sessionItemRemoving {
@@ -175,20 +178,18 @@
     from {
       opacity: 1;
       transform: translateY(0);
-      max-height: 40px;
+      max-height: 44px;
     }
     to {
       opacity: 0;
       transform: translateY(-4px);
       max-height: 0;
-      padding-top: 0;
-      padding-bottom: 0;
-      margin-bottom: 0;
     }
   }
 
   &:hover {
     background: #f3f4f6;
+    color: #111827;
 
     .moreButton {
       opacity: 1;
@@ -200,24 +201,36 @@
   }
 }
 
-.sessionIcon {
-  font-size: 14px;
-  color: #9ca3af;
-  margin-right: 8px;
-  flex-shrink: 0;
+.iconCell {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #6b7280;
 }
 
-.sessionName {
-  flex: 1;
-  font-size: 13px;
-  color: #374151;
+.labelCell {
+  min-width: 0;
+  overflow: hidden;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sessionNameText {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: inherit;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.4;
+  white-space: nowrap;
 }
 
-.sectionCollapsed .sessionName {
+.sectionCollapsed .sessionNameText {
   display: none;
 }
 
@@ -225,6 +238,7 @@
 .menuContainer {
   position: relative;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .sectionCollapsed .menuContainer {
@@ -232,16 +246,16 @@
 }
 
 .moreButton {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   background: transparent;
   color: #9ca3af;
-  font-size: 14px;
+  font-size: 16px;
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease;
