@@ -41,3 +41,24 @@ export async function loadPreviewContent({
 
   return response.text()
 }
+
+export async function getDownloadUrl({
+  baseUrl,
+  url,
+  signal,
+}: {
+  baseUrl: string
+  url: string
+  signal?: AbortSignal
+}): Promise<string> {
+  const cleanBaseUrl = baseUrl.replace(/\/+$/, '')
+  const apiUrl = `${cleanBaseUrl}/api/v1/chat/files/download-url?url=${encodeURIComponent(url)}`
+  const response = await fetch(apiUrl, { signal })
+
+  if (!response.ok) {
+    throw new Error(`Failed to get download URL: ${url}`)
+  }
+
+  const data = await response.json()
+  return data.data.url
+}
