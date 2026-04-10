@@ -702,55 +702,66 @@ export default function AgentDetailPage() {
             >
               <p className={styles.cardHint}>添加 Skills 服务后，可见范围内的用户均可在对话中使用该 Skills 服务</p>
               <div className={styles.serviceList}>
-                {agentSkills.map((skill) => (
-                  <div key={skill.skill_name}>
+                {agentSkills.map((skill) => {
+                  const isExpanded = expandedSkillName === skill.skill_name
+                  return (
                     <div
+                      key={skill.skill_name}
                       className={styles.serviceCard}
                       onMouseEnter={() => setHoveredSkillName(skill.skill_name)}
                       onMouseLeave={() => setHoveredSkillName(null)}
                     >
-                      <div
-                        className={styles.serviceClickableArea}
-                        onClick={() => {
-                          setExpandedSkillName(expandedSkillName === skill.skill_name ? null : skill.skill_name)
-                        }}
-                      >
-                        <div className={styles.serviceIconWrap}>
-                          <SafetyCertificateOutlined />
-                        </div>
-                        <div className={styles.serviceContent}>
-                          <div className={styles.serviceTopLine}>
-                            <span className={styles.serviceName}>{skill.chinese_name}</span>
-                            <span className={styles.serviceBadge}>官方</span>
-                            <span className={`${styles.serviceArrow} ${expandedSkillName === skill.skill_name ? styles.serviceArrowExpanded : ''}`}>›</span>
+                      <div className={styles.serviceHeader}>
+                        <div
+                          className={styles.serviceClickableArea}
+                          onClick={() => {
+                            setExpandedSkillName(isExpanded ? null : skill.skill_name)
+                          }}
+                        >
+                          <div className={styles.serviceIconWrap}>
+                            <SafetyCertificateOutlined />
                           </div>
-                          {hoveredSkillName === skill.skill_name && expandedSkillName !== skill.skill_name && (
-                            <div className={styles.serviceTooltip}>
-                              {skill.description || `支持${skill.chinese_name}相关功能`}
+                          <div className={styles.serviceContent}>
+                            <div className={styles.serviceTopLine}>
+                              <span className={styles.serviceName}>{skill.chinese_name}</span>
+                              <span className={styles.serviceBadge}>官方</span>
+                              <span className={`${styles.serviceArrow} ${isExpanded ? styles.serviceArrowExpanded : ''}`}>›</span>
                             </div>
-                          )}
+                            {hoveredSkillName === skill.skill_name && !isExpanded && (
+                              <div className={styles.serviceTooltip}>
+                                {skill.description || `支持${skill.chinese_name}相关功能`}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className={styles.serviceActions}>
+                          <button
+                            type="button"
+                            className={styles.smallIconButton}
+                            onClick={() => {
+                              setAgentSkills(agentSkills.filter((s) => s.skill_name !== skill.skill_name))
+                              if (expandedSkillName === skill.skill_name) {
+                                setExpandedSkillName(null)
+                              }
+                              setPublishStatus('idle')
+                            }}
+                            aria-label="删除"
+                          >
+                            <DeleteOutlined />
+                          </button>
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        className={styles.serviceDeleteBtn}
-                        onClick={() => {
-                          setAgentSkills(agentSkills.filter((s) => s.skill_name !== skill.skill_name))
-                          if (expandedSkillName === skill.skill_name) {
-                            setExpandedSkillName(null)
-                          }
-                          setPublishStatus('idle')
-                        }}
-                      >
-                        <DeleteOutlined />
-                      </button>
+                      {isExpanded && (
+                        <div className={styles.serviceBody}>
+                          <SkillDetailPanel
+                            visible={true}
+                            skillName={skill.skill_name}
+                          />
+                        </div>
+                      )}
                     </div>
-                    <SkillDetailPanel
-                      visible={expandedSkillName === skill.skill_name}
-                      skillName={skill.skill_name}
-                    />
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </ConfigCard>
 
