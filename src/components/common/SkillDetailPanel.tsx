@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react'
-import { LoadingOutlined } from '@ant-design/icons'
 import { MarkdownContent } from '../chat/markdown-content'
 import styles from './SkillDetailPanel.module.less'
 
@@ -111,13 +110,6 @@ export default function SkillDetailPanel({ visible, skillName }: SkillDetailPane
 
   return (
     <div className={styles.detailPanel}>
-      {loading && (
-        <div className={styles.loadingState}>
-          <LoadingOutlined spin style={{ fontSize: 20, color: '#245bdb' }} />
-          <span>加载中...</span>
-        </div>
-      )}
-
       {error && (
         <div className={styles.errorState}>
           <span>{error}</span>
