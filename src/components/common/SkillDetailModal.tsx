@@ -33,6 +33,9 @@ export type SkillDetail = {
 type SkillDetailModalProps = {
   visible: boolean
   skillName: string
+  isSelected: boolean
+  actionLoading: boolean
+  onAction: () => void
   onCancel: () => void
 }
 
@@ -122,7 +125,7 @@ function buildSceneCards(detail: SkillDetail) {
     .map((item) => item.trim())
     .filter(Boolean)
 
-  const cards = [
+  return [
     {
       title: '适用场景',
       description: descriptionParts[0] || '适用于技能首页、管理技能以及需要快速了解技能能力的场景。',
@@ -136,8 +139,6 @@ function buildSceneCards(detail: SkillDetail) {
       description: descriptionParts[2] || '帮助用户快速理解技能能力边界、入参结构和推荐使用方式。',
     },
   ]
-
-  return cards
 }
 
 function parseSkillMarkdown(markdown: string): ParsedSkillDoc {
@@ -179,9 +180,7 @@ function parseSkillMarkdown(markdown: string): ParsedSkillDoc {
     }
 
     const cleaned = line.replace(/^[-*\d.\s]+/, '').trim()
-    if (!cleaned) {
-      return
-    }
+    if (!cleaned) return
     result[currentSection].push(cleaned)
   })
 
@@ -195,7 +194,7 @@ function formatConfigValue(value: string | number | undefined | null) {
   return String(value)
 }
 
-export default function SkillDetailModal({ visible, skillName, onCancel }: SkillDetailModalProps) {
+export default function SkillDetailModal({ visible, skillName, isSelected, actionLoading, onAction, onCancel }: SkillDetailModalProps) {
   const [loading, setLoading] = useState(false)
   const [skillDetail, setSkillDetail] = useState<SkillDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -238,6 +237,7 @@ export default function SkillDetailModal({ visible, skillName, onCancel }: Skill
 
   const displayName = skillDetail?.chinese_name || skillName
   const displayDescription = skillDetail?.description || '该技能用于完成特定任务，并按照技能配置要求生成结果。'
+  const actionLabel = isSelected ? '使用' : '添加'
 
   return (
     <div className={styles.modalOverlay} onClick={onCancel}>
@@ -251,8 +251,8 @@ export default function SkillDetailModal({ visible, skillName, onCancel }: Skill
               <ForwardOutlined />
               <span>分享</span>
             </button>
-            <button type="button" className={styles.primaryAction}>
-              使用
+            <button type="button" className={styles.primaryAction} onClick={onAction} disabled={actionLoading}>
+              {actionLoading ? '处理中...' : actionLabel}
             </button>
             <button type="button" className={styles.modalCloseBtn} onClick={onCancel} aria-label="关闭技能详情弹窗">
               <CloseOutlined />
@@ -260,10 +260,7 @@ export default function SkillDetailModal({ visible, skillName, onCancel }: Skill
           </div>
         </div>
 
-        <div
-          className={styles.modalBody}
-          onScroll={(event) => setHeaderCompact(event.currentTarget.scrollTop > 48)}
-        >
+        <div className={styles.modalBody} onScroll={(event) => setHeaderCompact(event.currentTarget.scrollTop > 48)}>
           {loading ? (
             <div className={styles.loadingState}>
               <LoadingOutlined spin style={{ fontSize: 24, color: '#245bdb' }} />
@@ -392,7 +389,7 @@ export default function SkillDetailModal({ visible, skillName, onCancel }: Skill
                 </section>
               ) : null}
 
-              {(parsedDoc.triggers.length > 0 || parsedDoc.workflow.length > 0 || parsedDoc.notes.length > 0) ? (
+              {parsedDoc.triggers.length > 0 || parsedDoc.workflow.length > 0 || parsedDoc.notes.length > 0 ? (
                 <section className={styles.detailSection}>
                   <h4 className={styles.sectionTitle}>技能补充说明</h4>
                   <div className={styles.noteGrid}>
