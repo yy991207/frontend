@@ -212,7 +212,7 @@ export default function Sidebar() {
               }}
               onMouseEnter={(e) => handleAgentHover(agent.agent_id, e)}
               onMouseLeave={handleAgentLeave}
-              onClick={() => navigate(`/agent/${agent.agent_id}`)}
+              onClick={() => navigate(`/agent/${agent.agent_id}/chat`)}
             >
               <span className={styles.iconCell}>{getAgentIcon(index)}</span>
               <span className={styles.labelCell}>{agent.agent_name}</span>
@@ -249,7 +249,7 @@ export default function Sidebar() {
 
       {/* 会话历史组件 */}
       <div className={styles.sessionHistoryWrapper}>
-        <ChatSessionHistory expanded={expanded} onExpand={() => setExpanded(true)} />
+        <ChatSessionHistory expanded={expanded} />
       </div>
 
       <div className={styles.spacer} />
