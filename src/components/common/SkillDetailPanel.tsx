@@ -126,11 +126,8 @@ export default function SkillDetailPanel({ visible, skillName }: SkillDetailPane
 
       {skillDetail && !loading && (
         <div className={styles.detailContent}>
-          <div className={styles.detailSection}>
-            <h4 className={styles.sectionTitle}>技能说明</h4>
-            <div className={styles.markdownWrap}>
-              <MarkdownContent content={skillDetail.skill_md} isStreaming={false} />
-            </div>
+          <div className={styles.markdownWrap}>
+            <MarkdownContent content={skillDetail.skill_md} isStreaming={false} />
           </div>
 
           {skillDetail.template && (
