@@ -252,3 +252,27 @@ export async function getChatSession(
 
   return (await response.json()) as ChatSessionDetail
 }
+
+export async function findLatestEmptySession(
+  config: ChatSessionConfig,
+  signal?: AbortSignal,
+): Promise<string | null> {
+  const sessions = await fetchChatSessions(config, signal)
+  
+  const sortedByCreatedAt = [...sessions].sort((a, b) => {
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  })
+  
+  for (const session of sortedByCreatedAt) {
+    try {
+      const detail = await getChatSession(config, session.session_id, signal)
+      if (detail.message_count === 0) {
+        return session.session_id
+      }
+    } catch {
+      continue
+    }
+  }
+  
+  return null
+}

@@ -19,6 +19,7 @@ import chatConfigText from '../../../config.yaml?raw'
 import homeAvatar from '../../assets/home-avatar.png'
 import { createNewChatPagePath } from '../../services/chatService'
 import { loadCustomAgentApiConfig, listCustomAgents, type CustomAgentItem } from '../../services/customAgentService'
+import { parseChatSessionConfig, findLatestEmptySession } from '../../services/chatSessionService'
 import ChatSessionHistory from '../ChatSessionHistory/ChatSessionHistory'
 import styles from './sidebar.module.less'
 
@@ -109,8 +110,15 @@ export default function Sidebar() {
     setCreatingSession(true)
 
     try {
-      await createNewChatPagePath(chatConfigText)
-      navigate('/', { state: null })
+      let sessionConfig = parseChatSessionConfig(chatConfigText)
+      const existingEmptySessionId = await findLatestEmptySession(sessionConfig)
+      
+      if (existingEmptySessionId) {
+        navigate('/', { state: null })
+      } else {
+        await createNewChatPagePath(chatConfigText)
+        navigate('/', { state: null })
+      }
     } catch (error) {
       console.error('创建会话失败:', error)
       alert(error instanceof Error ? error.message : '创建会话失败，请稍后重试')
