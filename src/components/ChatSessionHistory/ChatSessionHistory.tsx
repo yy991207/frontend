@@ -31,7 +31,6 @@ async function loadConfig(): Promise<ChatSessionConfig> {
 
 interface ChatSessionHistoryProps {
   expanded: boolean
-  onExpand?: () => void
 }
 
 // 会话菜单组件
@@ -121,7 +120,7 @@ function SessionMenu({ session, onDelete }: SessionMenuProps) {
   )
 }
 
-export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHistoryProps) {
+export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const [sessions, setSessions] = useState<{
@@ -210,10 +209,6 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
     navigate(`/chat?sessionId=${sessionId}`)
   }
 
-  const handleToggle = () => {
-    onExpand?.()
-  }
-
   const handleDeleteSession = async (session: ChatSession) => {
     try {
       setDeleteLoading(true)
@@ -272,9 +267,9 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
     }
 
     return (
-      <div className={styles.section}>
-        {showDivider && <div className={styles.sectionDivider} />}
-        <div className={styles.sectionHeader}>{title}</div>
+      <div className={`${styles.section} ${expanded ? '' : styles.sectionCollapsed}`}>
+        {expanded && showDivider && <div className={styles.sectionDivider} />}
+        {expanded && <div className={styles.sectionHeader}>{title}</div>}
         <div className={styles.sectionContent}>
           {items.map((item) => renderSessionItem(item))}
         </div>
@@ -293,27 +288,17 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
     () => `${styles.content} ${expanded ? styles.contentExpanded : styles.contentCollapsed}`,
     [expanded],
   )
+  const listClassName = useMemo(
+    () => `${styles.sessionList} ${expanded ? styles.sessionListExpanded : styles.sessionListCollapsed}`,
+    [expanded],
+  )
 
   return (
     <>
-      <div className={`${styles.container} ${expanded ? styles.containerExpanded : styles.containerCollapsed}`}>
-        <button
-          type="button"
-          className={`${styles.historyEntry} ${styles.tooltipTarget}`}
-          data-tooltip="会话历史"
-          onClick={handleToggle}
-          aria-expanded={expanded}
-        >
-          <span className={styles.iconCell}>
-            <HistoryOutlined />
-          </span>
-          <span className={styles.entryLabel}>会话历史</span>
-        </button>
+      <div className={styles.container}>
+        {expanded && <div className={styles.sectionTitle}>会话历史</div>}
 
-        <div
-          className={contentClassName}
-          aria-hidden={!expanded}
-        >
+        <div className={listClassName}>
           {shouldShowBlockingState && <div className={styles.loading}>加载中...</div>}
 
           {!shouldShowBlockingState && error && !hasAnySessions && (
@@ -328,11 +313,11 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
           {!shouldShowBlockingState && shouldShowEmptyState && <div className={styles.empty}>暂无会话记录</div>}
 
           {!error && shouldShowList && (
-            <>
+            <div className={contentClassName}>
               {renderSection('今天', sessions.today)}
               {renderSection('7天内', sessions.within7Days, sessions.today.length > 0)}
               {renderSection('7天外', sessions.beyond7Days, sessions.today.length > 0 || sessions.within7Days.length > 0)}
-            </>
+            </div>
           )}
         </div>
       </div>

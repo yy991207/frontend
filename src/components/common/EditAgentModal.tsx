@@ -8,7 +8,6 @@ interface EditAgentModalProps {
   visible: boolean
   name: string
   description: string
-  avatar: string
   onCancel: () => void
   onSave: (data: { name: string; description: string }) => void
 }
@@ -16,11 +15,15 @@ interface EditAgentModalProps {
 const MAX_NAME_LENGTH = 20
 const MAX_DESC_LENGTH = 100
 
+// 获取头像首字母
+const getAvatarLetter = (name: string) => {
+  return name?.trim().charAt(0).toUpperCase() || 'A'
+}
+
 export default function EditAgentModal({
   visible,
   name,
   description,
-  avatar,
   onCancel,
   onSave,
 }: EditAgentModalProps) {
@@ -76,7 +79,7 @@ export default function EditAgentModal({
         <div className={styles.modalBody}>
           <div className={styles.avatarSection}>
             <div className={styles.avatarWrap}>
-              <img className={styles.avatar} src={avatar} alt="avatar" />
+              <span className={styles.avatarLetter}>{getAvatarLetter(name)}</span>
               <div className={styles.avatarEditBtn}>
                 <EditOutlined />
               </div>

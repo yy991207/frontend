@@ -190,11 +190,6 @@ export default function AgentDetailPage() {
   }, [commitChatMessages, id])
 
   // 所有的Hooks必须在early return之前调用
-  const avatarUrl = agentData?.avatar_url
-    ? agentData.avatar_url.startsWith('http')
-      ? agentData.avatar_url
-      : `http://192.168.30.238:8000${agentData.avatar_url}`
-    : ''
 
   // 获取头像首字母
   const getAvatarLetter = (name: string) => {
@@ -1022,7 +1017,6 @@ export default function AgentDetailPage() {
         visible={modalVisible}
         name={agentName}
         description={agentSubtitle}
-        avatar={avatarUrl}
         onCancel={handleModalCancel}
         onSave={handleModalSave}
       />
