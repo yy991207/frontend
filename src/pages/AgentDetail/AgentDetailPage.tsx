@@ -816,11 +816,11 @@ export default function AgentDetailPage() {
                         <div className={styles.questionActions}>
                           <button
                             type="button"
-                            className={styles.smallIconButton}
+                            className={`${styles.smallIconButton} ${isExpanded ? styles.questionArrowExpanded : ''}`}
                             onClick={() => setExpandedQuestionIndex(isExpanded ? null : index)}
                             aria-label={isExpanded ? '收起' : '展开'}
                           >
-                            {isExpanded ? '⌃' : '⌄'}
+                            ›
                           </button>
                           <button
                             type="button"
