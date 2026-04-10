@@ -135,6 +135,9 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [removingSessionIds, setRemovingSessionIds] = useState<Set<string>>(new Set())
   const hasPrefetchedRef = useRef(false)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [contentScrolling, setContentScrolling] = useState(false)
+  const contentScrollTimeoutRef = useRef<number | null>(null)
 
   // 获取当前会话 ID
   const getCurrentSessionId = useCallback(() => {
@@ -188,6 +191,31 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
 
     void loadSessions({ silent: true })
   }, [expanded, hasLoadedOnce, loadSessions, location.pathname, location.search])
+
+  useEffect(() => {
+    if (!expanded) return
+
+    const contentEl = contentRef.current
+    if (!contentEl) return
+
+    const handleScroll = () => {
+      setContentScrolling(true)
+      if (contentScrollTimeoutRef.current) {
+        clearTimeout(contentScrollTimeoutRef.current)
+      }
+      contentScrollTimeoutRef.current = window.setTimeout(() => {
+        setContentScrolling(false)
+      }, 800)
+    }
+
+    contentEl.addEventListener('scroll', handleScroll)
+    return () => {
+      contentEl.removeEventListener('scroll', handleScroll)
+      if (contentScrollTimeoutRef.current) {
+        clearTimeout(contentScrollTimeoutRef.current)
+      }
+    }
+  }, [expanded])
 
   useEffect(() => {
     const handleRefresh = () => {
@@ -302,8 +330,8 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
     return sessions.beyond7Days[0] ?? null
   }, [sessions.beyond7Days, sessions.today, sessions.within7Days])
   const contentClassName = useMemo(
-    () => `${styles.content} ${expanded ? styles.contentExpanded : styles.contentCollapsed}`,
-    [expanded],
+    () => `${styles.content} ${expanded ? styles.contentExpanded : styles.contentCollapsed} ${contentScrolling ? styles.scrolling : ''}`,
+    [expanded, contentScrolling],
   )
   const listClassName = useMemo(
     () => `${styles.sessionList} ${expanded ? styles.sessionListExpanded : styles.sessionListCollapsed}`,
@@ -330,7 +358,7 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
           {!shouldShowBlockingState && shouldShowEmptyState && <div className={styles.empty}>暂无会话记录</div>}
 
           {!error && shouldShowList && (
-            <div className={contentClassName}>
+            <div ref={contentRef} className={contentClassName}>
               {expanded ? (
                 <>
                   {renderSection('今天', sessions.today)}

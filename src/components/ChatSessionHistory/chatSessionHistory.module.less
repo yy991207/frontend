@@ -54,12 +54,17 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #d1d5db;
+    background: transparent;
     border-radius: 2px;
+    transition: background 0.3s ease;
   }
 
   &::-webkit-scrollbar-thumb:hover {
     background: #9ca3af;
+  }
+
+  &.scrolling::-webkit-scrollbar-thumb {
+    background: #d1d5db;
   }
 }
 
