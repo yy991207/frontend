@@ -290,18 +290,19 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
   const shouldShowEmptyState = hasLoadedOnce && !error && !hasAnySessions
   const shouldShowList = hasAnySessions
   const contentClassName = useMemo(
-    () => `${styles.content} ${expanded ? styles.contentExpanded : ''}`,
+    () => `${styles.content} ${expanded ? styles.contentExpanded : styles.contentCollapsed}`,
     [expanded],
   )
 
   return (
     <>
-      <div className={styles.container}>
+      <div className={`${styles.container} ${expanded ? styles.containerExpanded : styles.containerCollapsed}`}>
         <button
           type="button"
           className={`${styles.historyEntry} ${styles.tooltipTarget}`}
           data-tooltip="会话历史"
           onClick={handleToggle}
+          aria-expanded={expanded}
         >
           <span className={styles.iconCell}>
             <HistoryOutlined />
@@ -309,30 +310,31 @@ export default function ChatSessionHistory({ expanded, onExpand }: ChatSessionHi
           <span className={styles.entryLabel}>会话历史</span>
         </button>
 
-        {expanded && (
-          <div className={contentClassName}>
-            {shouldShowBlockingState && <div className={styles.loading}>加载中...</div>}
+        <div
+          className={contentClassName}
+          aria-hidden={!expanded}
+        >
+          {shouldShowBlockingState && <div className={styles.loading}>加载中...</div>}
 
-            {!shouldShowBlockingState && error && !hasAnySessions && (
-              <div className={styles.error}>
-                <div>{error}</div>
-                <button onClick={() => void loadSessions()} className={styles.retryButton}>
-                  重试
-                </button>
-              </div>
-            )}
+          {!shouldShowBlockingState && error && !hasAnySessions && (
+            <div className={styles.error}>
+              <div>{error}</div>
+              <button onClick={() => void loadSessions()} className={styles.retryButton}>
+                重试
+              </button>
+            </div>
+          )}
 
-            {!shouldShowBlockingState && shouldShowEmptyState && <div className={styles.empty}>暂无会话记录</div>}
+          {!shouldShowBlockingState && shouldShowEmptyState && <div className={styles.empty}>暂无会话记录</div>}
 
-            {!error && shouldShowList && (
-              <>
-                {renderSection('今天', sessions.today)}
-                {renderSection('7天内', sessions.within7Days, sessions.today.length > 0)}
-                {renderSection('7天外', sessions.beyond7Days, sessions.today.length > 0 || sessions.within7Days.length > 0)}
-              </>
-            )}
-          </div>
-        )}
+          {!error && shouldShowList && (
+            <>
+              {renderSection('今天', sessions.today)}
+              {renderSection('7天内', sessions.within7Days, sessions.today.length > 0)}
+              {renderSection('7天外', sessions.beyond7Days, sessions.today.length > 0 || sessions.within7Days.length > 0)}
+            </>
+          )}
+        </div>
       </div>
 
       <DeleteConfirmModal
