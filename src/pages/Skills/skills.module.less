@@ -760,18 +760,18 @@
   height: 32px;
   padding: 0 16px;
   border-radius: 999px;
-  border: 1px solid rgba(59, 130, 246, 0.25);
-  background: #2563eb;
+  border: 1px solid #111827;
+  background: #111827;
   color: #ffffff;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: filter 0.16s ease;
+  transition: opacity 0.18s ease;
   white-space: nowrap;
   flex-shrink: 0;
 
   &:hover:not(:disabled) {
-    filter: brightness(1.05);
+    opacity: 0.92;
   }
 
   &:disabled {
@@ -1146,12 +1146,17 @@
   margin-top: auto;
   height: 40px;
   border-radius: 999px;
-  border: 1px solid rgba(226, 232, 240, 0.95);
-  background: #ffffff;
-  color: #374151;
+  border: 1px solid #111827;
+  background: #111827;
+  color: #ffffff;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
+  transition: opacity 0.18s ease;
+
+  &:hover {
+    opacity: 0.92;
+  }
 }
 
 .manageStatus {
