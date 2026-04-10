@@ -47,6 +47,19 @@ test('skills page wires featured and manage cards to skill detail modal entry', 
   assert.match(content, /visible=\{Boolean\(selectedSkillForDetail\)\}/)
 })
 
+test('manage tabs open skill detail modal with 使用 action aligned to 立即使用 behavior', async () => {
+  const skills = await read('pages/Skills/SkillsPage.tsx')
+  const modal = await read('components/common/SkillDetailModal.tsx')
+
+  assert.match(skills, /const sourceSkills = manageTab === 'created' \? createdSkills : addedSkills/)
+  assert.match(skills, /<button type="button" className=\{styles\.useButton\} onClick=\{\(\) => handleLaunchSkill\(item\)\}/)
+  assert.match(skills, /onClick=\{\(\) => handleOpenSkillDetail\(item, true\)\}/)
+  assert.match(skills, /forceUseAction: boolean = false/)
+  assert.match(skills, /isSelected: forceUseAction \? true : skill\.isSelected/)
+
+  assert.match(modal, /const actionLabel = isSelected \? '使用' : '添加'/)
+})
+
 test('skill detail modal syncs add/use button state and handlers with skills page', async () => {
   const skills = await read('pages/Skills/SkillsPage.tsx')
   const modal = await read('components/common/SkillDetailModal.tsx')
@@ -64,7 +77,6 @@ test('skill detail modal syncs add/use button state and handlers with skills pag
   assert.match(modal, /actionLoading:\s*boolean/)
   assert.match(modal, /onAction:\s*\(\) => void/)
   assert.match(modal, /actionLabel/)
-  assert.match(modal, /const actionLabel = isSelected \? '使用' : '添加'/)
   assert.match(modal, /\{actionLoading \? '处理中\.\.\.' : actionLabel\}/)
 })
 

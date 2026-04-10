@@ -901,16 +901,19 @@ export default function SkillsPage() {
     return getUploadedSkillPresentation(uploadedSkillSummary.skillName || uploadedSkillSummary.skillId)
   }, [uploadedSkillSummary])
 
-  const handleOpenSkillDetail = useCallback((skill: Pick<SkillApiItem, 'id' | 'skillName' | 'title' | 'description' | 'template' | 'isSelected'>) => {
-    setSelectedSkillForDetail({
-      id: skill.id,
-      skillName: skill.skillName,
-      title: skill.title,
-      description: skill.description,
-      template: skill.template,
-      isSelected: skill.isSelected,
-    })
-  }, [])
+  const handleOpenSkillDetail = useCallback(
+    (skill: Pick<SkillApiItem, 'id' | 'skillName' | 'title' | 'description' | 'template' | 'isSelected'>, forceUseAction: boolean = false) => {
+      setSelectedSkillForDetail({
+        id: skill.id,
+        skillName: skill.skillName,
+        title: skill.title,
+        description: skill.description,
+        template: skill.template,
+        isSelected: forceUseAction ? true : skill.isSelected,
+      })
+    },
+    [],
+  )
 
   const handleCloseSkillDetail = useCallback(() => {
     setSelectedSkillForDetail(null)
@@ -1189,7 +1192,7 @@ export default function SkillsPage() {
                         </div>
                       ) : null}
                     </div>
-                    <button type="button" className={styles.skillDetailCardTrigger} onClick={() => handleOpenSkillDetail(item)}>
+                    <button type="button" className={styles.skillDetailCardTrigger} onClick={() => handleOpenSkillDetail(item, true)}>
                       <div className={styles.manageTitleRow}>
                         <h3 className={styles.manageCardTitle}>{item.title}</h3>
                       </div>
