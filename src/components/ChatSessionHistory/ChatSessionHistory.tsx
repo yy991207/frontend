@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { HistoryOutlined, MoreOutlined, DeleteOutlined, MessageOutlined } from '@ant-design/icons'
+import { MoreOutlined, DeleteOutlined, MessageOutlined } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import type { ChatSession, ChatSessionConfig } from '../../services/chatSessionService'
 import {
@@ -249,16 +249,23 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
     const isRemoving = removingSessionIds.has(session.session_id)
     const collapsed = options?.collapsed ?? false
     return (
-      <div
+      <button
         key={session.session_id}
+        type="button"
         className={`${styles.sessionItem} ${isRemoving ? styles.sessionItemRemoving : ''}`}
         onClick={() => handleSessionClick(session.session_id)}
         title={getSessionDisplayName(session)}
       >
-        <MessageOutlined className={styles.sessionIcon} />
-        {!collapsed && <span className={styles.sessionName}>{getSessionDisplayName(session)}</span>}
-        {!collapsed && <SessionMenu session={session} onDelete={setDeleteTargetSession} />}
-      </div>
+        <span className={styles.iconCell}>
+          <MessageOutlined />
+        </span>
+        {!collapsed && (
+          <span className={styles.labelCell}>
+            <span className={styles.sessionNameText}>{getSessionDisplayName(session)}</span>
+            <SessionMenu session={session} onDelete={setDeleteTargetSession} />
+          </span>
+        )}
+      </button>
     )
   }
 
