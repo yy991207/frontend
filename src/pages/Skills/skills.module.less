@@ -1124,6 +1124,24 @@
   min-height: calc(1.75em * 3);
 }
 
+.skillDetailCardTrigger {
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  &:focus-visible {
+    outline: 2px solid rgba(59, 130, 246, 0.28);
+    outline-offset: 4px;
+    border-radius: 18px;
+  }
+}
+
 .useButton {
   margin-top: auto;
   height: 40px;
