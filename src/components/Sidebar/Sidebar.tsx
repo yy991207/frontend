@@ -109,9 +109,8 @@ export default function Sidebar() {
     setCreatingSession(true)
 
     try {
-      // 这里先创建空会话再跳转，避免 chat 页面首次进入时还拿不到真实的 sessionId。
-      const chatPagePath = await createNewChatPagePath(chatConfigText)
-      navigate(chatPagePath, { state: null })
+      await createNewChatPagePath(chatConfigText)
+      navigate('/', { state: null })
     } catch (error) {
       console.error('创建会话失败:', error)
       alert(error instanceof Error ? error.message : '创建会话失败，请稍后重试')

@@ -159,8 +159,19 @@ export function groupSessionsByTime(sessions: ChatSession[]): {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
 
+  // 去重：按 session_id 唯一化，保留最新的记录
+  const uniqueSessions = Object.values(
+    sessions.reduce<Record<string, ChatSession>>((acc, session) => {
+      const existing = acc[session.session_id]
+      if (!existing || new Date(session.updated_at).getTime() > new Date(existing.updated_at).getTime()) {
+        acc[session.session_id] = session
+      }
+      return acc
+    }, {}),
+  )
+
   // 按 updated_at 倒序排序（最新的在前）
-  const sortedSessions = [...sessions].sort((a, b) => {
+  const sortedSessions = [...uniqueSessions].sort((a, b) => {
     return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
   })
 
