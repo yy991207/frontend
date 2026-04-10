@@ -122,8 +122,15 @@ export default function AgentDetailPage() {
   const [chatMessages, setChatMessages] = useState<AgentChatMessage[]>([])
   const [isChatResponding, setIsChatResponding] = useState(false)
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
+  const chatMessagesRef = useRef<AgentChatMessage[]>([])
+  const activeAssistantMessageIdRef = useRef<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatAbortControllerRef = useRef<AbortController | null>(null)
+
+  const commitChatMessages = useCallback((nextMessages: AgentChatMessage[]) => {
+    chatMessagesRef.current = nextMessages
+    setChatMessages(nextMessages)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -145,7 +152,8 @@ export default function AgentDetailPage() {
       setExpandedSkillName(null)
       setHoveredSkillName(null)
       setPublishStatus('idle')
-      setChatMessages([])
+      activeAssistantMessageIdRef.current = null
+      commitChatMessages([])
       clearAgentStorage(id)
 
       try {
@@ -179,7 +187,7 @@ export default function AgentDetailPage() {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [commitChatMessages, id])
 
   // 所有的Hooks必须在early return之前调用
   const avatarUrl = agentData?.avatar_url
@@ -213,22 +221,22 @@ export default function AgentDetailPage() {
     if (!content || isChatResponding) return
 
     const timestamp = formatTime(new Date())
+    const previousMessages = chatMessagesRef.current
     const userMessage = createUserMessage(content, timestamp)
-
-    // 添加用户消息
-    setChatMessages((prev) => [...prev, userMessage])
-    setChatInputValue('')
-    setIsChatResponding(true)
-
     const assistantMessageId = `assistant-${Date.now()}`
     const initialAssistantMessage = createLoadingAssistantMessage(timestamp, assistantMessageId)
-    setChatMessages((prev) => [...prev, initialAssistantMessage])
+    const nextMessages = [...previousMessages, userMessage, initialAssistantMessage]
+
+    setChatInputValue('')
+    setIsChatResponding(true)
+    activeAssistantMessageIdRef.current = assistantMessageId
+    commitChatMessages(nextMessages)
 
     try {
       const config = await loadCustomAgentApiConfig()
       
       // 构建历史消息
-      const history: ChatMessageItem[] = chatMessages
+      const history: ChatMessageItem[] = previousMessages
         .filter((msg) => {
           if (msg.role === 'user') {
             return Boolean(msg.content.trim())
@@ -263,120 +271,138 @@ export default function AgentDetailPage() {
 
       const controller = new AbortController()
       chatAbortControllerRef.current = controller
-      let activeAssistantMessageId = assistantMessageId
 
       await chatCustomAgentStream(config, payload, controller.signal, {
         onChatModelStart: () => {
+          const activeAssistantMessageId = activeAssistantMessageIdRef.current ?? assistantMessageId
           const replyTime = formatTime(new Date())
-          setChatMessages((prev) => {
-            const result = advanceAssistantMessageForNextModelPhase(
-              prev,
-              activeAssistantMessageId,
-              replyTime,
-              createFollowupAssistantMessage,
-            )
-            activeAssistantMessageId = result.activeMessageId
-            return result.messages
-          })
+          const result = advanceAssistantMessageForNextModelPhase(
+            chatMessagesRef.current,
+            activeAssistantMessageId,
+            replyTime,
+            createFollowupAssistantMessage,
+          )
+          activeAssistantMessageIdRef.current = result.activeMessageId
+          commitChatMessages(result.messages)
         },
         onReasoningDelta: (text: string) => {
-          setChatMessages((prev) =>
-            updateAssistantMessageById(prev, activeAssistantMessageId, (msg) => ({
+          const activeAssistantMessageId = activeAssistantMessageIdRef.current ?? assistantMessageId
+          commitChatMessages(
+            updateAssistantMessageById(chatMessagesRef.current, activeAssistantMessageId, (msg) => ({
               ...msg,
               reasoningContent: `${msg.reasoningContent ?? ''}${text}`,
             })),
           )
         },
         onTextDelta: (text: string) => {
+          const activeAssistantMessageId = activeAssistantMessageIdRef.current ?? assistantMessageId
           const replyTime = formatTime(new Date())
-          setChatMessages((prev) => {
-            const result = appendTextDeltaToStreamMessages(
-              prev,
-              activeAssistantMessageId,
-              text,
-              replyTime,
-              createFollowupAssistantMessage,
-            )
-            activeAssistantMessageId = result.activeMessageId
-            return result.messages
-          })
+          const result = appendTextDeltaToStreamMessages(
+            chatMessagesRef.current,
+            activeAssistantMessageId,
+            text,
+            replyTime,
+            createFollowupAssistantMessage,
+          )
+          activeAssistantMessageIdRef.current = result.activeMessageId
+          commitChatMessages(result.messages)
         },
         onToolStart: (toolCall: ToolCall) => {
-          setChatMessages((prev) =>
-            updateAssistantMessageById(prev, activeAssistantMessageId, (msg) =>
+          const toolMessageId = activeAssistantMessageIdRef.current
+
+          if (!toolMessageId) {
+            return
+          }
+
+          commitChatMessages(
+            updateAssistantMessageById(chatMessagesRef.current, toolMessageId, (msg) =>
               upsertToolCall(msg, toolCall),
             ),
           )
         },
         onToolEnd: (toolCall: ToolCall) => {
-          setChatMessages((prev) =>
-            updateAssistantMessageById(prev, activeAssistantMessageId, (msg) =>
+          const toolMessageId = activeAssistantMessageIdRef.current
+
+          if (!toolMessageId) {
+            return
+          }
+
+          commitChatMessages(
+            updateAssistantMessageById(chatMessagesRef.current, toolMessageId, (msg) =>
               upsertToolCall(msg, toolCall),
             ),
           )
         },
         onReferences: (references) => {
-          setChatMessages((prev) =>
-            updateAssistantMessageById(prev, activeAssistantMessageId, (msg) => ({
+          const activeAssistantMessageId = activeAssistantMessageIdRef.current ?? assistantMessageId
+          commitChatMessages(
+            updateAssistantMessageById(chatMessagesRef.current, activeAssistantMessageId, (msg) => ({
               ...msg,
               references,
             })),
           )
         },
         onSkillOutput: (skillOutput) => {
-          setChatMessages((prev) =>
-            updateAssistantMessageById(prev, activeAssistantMessageId, (msg) => ({
+          const activeAssistantMessageId = activeAssistantMessageIdRef.current ?? assistantMessageId
+          commitChatMessages(
+            updateAssistantMessageById(chatMessagesRef.current, activeAssistantMessageId, (msg) => ({
               ...msg,
               skillOutput,
             })),
           )
         },
         onComplete: () => {
-          setChatMessages((prev) =>
-            updateAssistantMessageById(prev, activeAssistantMessageId, (msg) => ({
+          const activeAssistantMessageId = activeAssistantMessageIdRef.current ?? assistantMessageId
+          commitChatMessages(
+            updateAssistantMessageById(chatMessagesRef.current, activeAssistantMessageId, (msg) => ({
               ...msg,
               loading: false,
             })),
           )
+          activeAssistantMessageIdRef.current = null
           setIsChatResponding(false)
           chatAbortControllerRef.current = null
         },
         onError: (error) => {
-          setChatMessages((prev) =>
-            updateAssistantMessageById(prev, activeAssistantMessageId, (msg) => ({
+          const activeAssistantMessageId = activeAssistantMessageIdRef.current ?? assistantMessageId
+          commitChatMessages(
+            updateAssistantMessageById(chatMessagesRef.current, activeAssistantMessageId, (msg) => ({
               ...msg,
               content: msg.content || `请求失败: ${error.message}`,
               loading: false,
             })),
           )
+          activeAssistantMessageIdRef.current = null
           setIsChatResponding(false)
           chatAbortControllerRef.current = null
         },
       })
     } catch (error) {
-      setChatMessages((prev) =>
-        updateAssistantMessageById(prev, assistantMessageId, (msg) => ({
+      commitChatMessages(
+        updateAssistantMessageById(chatMessagesRef.current, assistantMessageId, (msg) => ({
           ...msg,
           content: msg.content || `请求失败: ${error instanceof Error ? error.message : '未知错误'}`,
           loading: false,
         })),
       )
+      activeAssistantMessageIdRef.current = null
       setIsChatResponding(false)
       chatAbortControllerRef.current = null
     }
-  }, [chatInputValue, isChatResponding, chatMessages, agentName, agentInstruction, agentSubtitle, agentSkills, resourceIds, webSearchEnabled])
+  }, [agentInstruction, agentName, agentSkills, agentSubtitle, chatInputValue, commitChatMessages, isChatResponding, resourceIds, webSearchEnabled])
 
   const handleStartNewSession = useCallback(() => {
     chatAbortControllerRef.current?.abort()
     chatAbortControllerRef.current = null
+    activeAssistantMessageIdRef.current = null
     setIsChatResponding(false)
     setChatInputValue('')
     setCopiedMessageId(null)
-    setChatMessages([])
+    commitChatMessages([])
     if (id) {
       clearAgentStorage(id)
     }
-  }, [id])
+  }, [commitChatMessages, id])
 
   // 消息分组和复制目标（复用 ChatPage 的渲染逻辑）
   const groupedMessages = useMemo(() => buildMessageGroups(chatMessages), [chatMessages])
