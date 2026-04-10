@@ -15,7 +15,7 @@ import {
   DeleteOutlined,
   ArrowUpOutlined,
 } from '@ant-design/icons'
-import { message, Spin } from 'antd'
+import { message, Spin, Input } from 'antd'
 import EditAgentModal from '../../components/common/EditAgentModal'
 import SkillConfigModal from '../../components/common/SkillConfigModal'
 import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
@@ -391,6 +391,13 @@ export default function AgentDetailPage() {
     }
   }, [agentInstruction, agentName, agentSkills, agentSubtitle, chatInputValue, commitChatMessages, isChatResponding, resourceIds, webSearchEnabled])
 
+  // 停止生成
+  const handleStop = useCallback(() => {
+    chatAbortControllerRef.current?.abort()
+    chatAbortControllerRef.current = null
+    setIsChatResponding(false)
+  }, [])
+
   const handleStartNewSession = useCallback(() => {
     chatAbortControllerRef.current?.abort()
     chatAbortControllerRef.current = null
@@ -422,18 +429,6 @@ export default function AgentDetailPage() {
   const handleSuggestionClick = useCallback((question: string) => {
     setChatInputValue(question)
   }, [])
-
-  // 处理键盘事件 - 支持中文输入法，composition期间不发送
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // 中文输入法composition期间不触发发送
-    if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) {
-      return
-    }
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
-    }
-  }
 
   // 事件处理函数
   const handleEditClick = () => {
@@ -647,57 +642,91 @@ export default function AgentDetailPage() {
               </div>
             </div>
 
-            {/* 输入区域 */}
-            <div className={styles.chatComposerWrap}>
-              <div className={styles.chatComposer}>
-                <input
-                  className={styles.chatInput}
-                  value={chatInputValue}
-                  onChange={(e) => setChatInputValue(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="问我任何问题"
-                  aria-label="对话输入框"
-                />
-
-                <div className={styles.chatToolsRow}>
-                  <div className={styles.leftTools}>
-                    <button type="button" className={styles.toolPill}>
-                      <SoundOutlined />
-                      深度规划
-                    </button>
-                    <button type="button" className={`${styles.toolPill} ${styles.toolPillActive}`}>
-                      <GlobalOutlined />
-                      联网
-                    </button>
-                    <button type="button" className={styles.toolPill}>
-                      <AppstoreAddOutlined />
-                      工具
-                      <span className={styles.toolCaret}>⌄</span>
-                    </button>
+            {/* 输入区域 - 使用 ChatPage 样式 */}
+            <div className={styles.composerArea}>
+              <div className={styles.composerWrap}>
+                <div className={styles.inputWrap}>
+                  {/* 上方输入区域 */}
+                  <div className={styles.inputTopArea}>
+                    <Input.TextArea
+                      value={chatInputValue}
+                      onChange={(e) => setChatInputValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        // 中文输入法composition期间不触发发送
+                        if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) {
+                          return
+                        }
+                        // 支持 Enter 发送，Shift+Enter 换行
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault()
+                          handleSendMessage()
+                        }
+                      }}
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        border: 'none',
+                        boxShadow: 'none',
+                        background: 'transparent',
+                        fontSize: 14,
+                        resize: 'none',
+                        minHeight: 24,
+                        maxHeight: 200,
+                        overflowY: 'auto',
+                        lineHeight: 1.5,
+                        padding: 0,
+                      }}
+                      variant="borderless"
+                      placeholder="问我任何问题"
+                      autoSize={{ minRows: 1, maxRows: 8 }}
+                    />
                   </div>
-
-                  <div className={styles.rightTools}>
-                    <button type="button" className={styles.iconButton} aria-label="附件">
-                      <PaperClipOutlined />
-                    </button>
-                    <button type="button" className={styles.iconButton} aria-label="语音">
-                      <SoundOutlined />
-                    </button>
-                    <div className={styles.divider} />
-                    <button
-                      type="button"
-                      className={`${styles.sendButton} ${chatInputValue.trim() && !isChatResponding ? styles.sendButtonActive : styles.sendButtonDisabled}`}
-                      onClick={handleSendMessage}
-                      disabled={!chatInputValue.trim() || isChatResponding}
-                      aria-label="发送消息"
-                    >
-                      {isChatResponding ? <LoadingOutlined spin /> : <ArrowUpOutlined />}
-                    </button>
+                  {/* 下方按钮区域 */}
+                  <div className={styles.inputBottomArea}>
+                    <div className={styles.inputBottomLeft}>
+                      <button type="button" className={styles.toolPill}>
+                        <SoundOutlined />
+                        深度规划
+                      </button>
+                      <button type="button" className={`${styles.toolPill} ${webSearchEnabled ? styles.toolPillActive : ''}`} onClick={() => setWebSearchEnabled(v => !v)}>
+                        <GlobalOutlined />
+                        联网
+                      </button>
+                      <button type="button" className={styles.toolPill}>
+                        <AppstoreAddOutlined />
+                        工具
+                        <span className={styles.toolCaret}>⌄</span>
+                      </button>
+                    </div>
+                    <div className={styles.inputBottomRight}>
+                      <span className={styles.tabHint}>Tab</span>
+                      <div className={styles.inputActions}>
+                        <button type="button" className={styles.iconBtn} aria-label="附件">
+                          <PaperClipOutlined />
+                        </button>
+                        <button type="button" className={styles.iconBtn} aria-label="语音">
+                          <SoundOutlined />
+                        </button>
+                        {isChatResponding ? (
+                          <button type="button" className={`${styles.iconBtn} ${styles.stopBtn}`} onClick={handleStop}>
+                            <span className={styles.stopInner} />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className={`${styles.iconBtn} ${styles.sendBtn} ${!chatInputValue.trim() ? styles.sendBtnDisabled : ''}`}
+                            onClick={handleSendMessage}
+                            disabled={!chatInputValue.trim()}
+                          >
+                            <ArrowUpOutlined />
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-
-              <p className={styles.disclaimer}>AI 生成内容可能有误，请核实重要信息</p>
+              <div className={styles.footerHint}>AI 生成内容可能有误，请核实重要信息</div>
             </div>
           </div>
         </main>

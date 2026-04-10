@@ -350,46 +350,101 @@
   cursor: pointer;
 }
 
-.chatComposerWrap {
-  padding-bottom: 16px;
+// 输入区域样式 - 参考 ChatPage
+.composerArea {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 28px 16px;
+  background: #f7f8fa;
 }
 
-.chatComposer {
+.composerArea::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 72px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(247, 248, 250, 0.8), rgba(247, 248, 250, 0.96));
+  pointer-events: none;
+}
+
+.composerWrap {
+  position: relative;
   width: 100%;
-  max-width: 664px;
-  margin: 0 auto;
-  border: 1px solid #d9dde6;
-  border-radius: 20px;
-  background: #ffffff;
-  box-shadow: 0 8px 30px rgba(31, 35, 41, 0.06);
-  padding: 16px 12px 10px;
+  max-width: 780px;
 }
 
-.chatInput {
+// 新的垂直分层布局
+.inputWrap {
+  position: relative;
   width: 100%;
-  border: none;
-  outline: none;
-  font-size: 14px;
-  color: #1f2329;
-  line-height: 22px;
-  padding: 0 0 14px;
-  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-radius: 28px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  padding: 12px 8px 12px 14px;
+  min-height: 58px;
+
+  &:focus-within {
+    border-color: rgba(22, 119, 255, 0.5);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08), 0 0 0 2px rgba(22, 119, 255, 0.1);
+  }
+
+  // TextArea 样式调整
+  :global(.ant-input) {
+    padding: 0 !important;
+    line-height: 1.5 !important;
+  }
+
+  :global(.ant-input-textarea) {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
-.chatToolsRow {
+// 上方输入区域
+.inputTopArea {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+// 下方按钮区域
+.inputBottomArea {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
+  width: 100%;
 }
 
-.leftTools,
-.rightTools {
+// 底部左侧区域（工具按钮）
+.inputBottomLeft {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
+// 底部右侧区域（Tab提示 + 语音/发送按钮）
+.inputBottomRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+// 工具按钮样式
 .toolPill {
   height: 30px;
   padding: 0 10px;
@@ -402,6 +457,12 @@
   align-items: center;
   gap: 6px;
   cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #baceff;
+    background: #f2f6ff;
+  }
 }
 
 .toolPillActive {
@@ -415,53 +476,79 @@
   font-size: 12px;
 }
 
-.iconButton {
-  width: 28px;
-  height: 28px;
+// Tab 提示文字
+.tabHint {
+  font-size: 12px;
+  color: #9ca3af;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+// 输入操作按钮组
+.inputActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+// 图标按钮样式
+.iconBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   border: none;
   background: transparent;
-  color: #1f2329;
-  display: inline-flex;
+  cursor: pointer;
+  display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-}
+  font-size: 16px;
+  color: #6b7280;
+  transition: background-color 0.15s;
 
-.divider {
-  width: 1px;
-  height: 18px;
-  background: #d9dde6;
-}
-
-.sendButton {
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.sendButtonDisabled {
-  background: #d0d3d9;
-  color: #fff;
-  cursor: not-allowed;
-}
-
-.sendButtonActive {
-  background: #245bdb;
-  color: #fff;
-  
   &:hover {
-    background: #1a4bc4;
+    background-color: #f3f4f6;
   }
 }
 
-.disclaimer {
-  margin: 8px 0 0;
+.sendBtn {
+  background-color: #111827;
+  color: #ffffff;
+
+  &:hover {
+    background-color: #1f2937;
+  }
+}
+
+.sendBtnDisabled {
+  background-color: #d1d5db;
+  color: #ffffff;
+  cursor: not-allowed;
+
+  &:hover {
+    background-color: #d1d5db;
+  }
+}
+
+.stopBtn {
+  background-color: #111827;
+  color: #ffffff;
+
+  &:hover {
+    background-color: #1f2937;
+  }
+}
+
+.stopInner {
+  width: 12px;
+  height: 12px;
+  background-color: currentColor;
+  border-radius: 2px;
+}
+
+// 底部提示文字
+.footerHint {
+  margin-top: 8px;
   text-align: center;
   font-size: 12px;
   line-height: 20px;
