@@ -52,7 +52,8 @@ function getArtifactDisplayName(filepath: string): string {
   if (filepath.startsWith('http://') || filepath.startsWith('https://')) {
     try {
       const url = new URL(filepath)
-      return url.pathname.split('/').pop() || filepath
+      const rawName = url.pathname.split('/').pop() || filepath
+      return decodeURIComponent(rawName)
     } catch {
       return filepath
     }
