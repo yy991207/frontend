@@ -1,6 +1,6 @@
 import { useLocation, useParams, useNavigate } from 'react-router-dom'
 import { Dropdown, Input } from 'antd'
-import { SettingOutlined, ArrowUpOutlined, AudioOutlined, CloseOutlined } from '@ant-design/icons'
+import { SettingOutlined, ArrowUpOutlined, CloseOutlined } from '@ant-design/icons'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
 import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts-context'
@@ -454,11 +454,7 @@ function AgentConversationPageContent() {
                     />
                   </div>
                   <div className={styles.inputBottomRight}>
-                    <span className={styles.tabHint}>Tab</span>
                     <div className={styles.inputActions}>
-                      <button type="button" className={styles.iconBtn} aria-label="语音输入">
-                        <AudioOutlined />
-                      </button>
                       <button
                         type="button"
                         className={`${styles.iconBtn} ${styles.sendBtn} ${!draft.trim() ? styles.sendBtnDisabled : ''}`}

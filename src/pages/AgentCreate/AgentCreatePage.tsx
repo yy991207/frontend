@@ -421,9 +421,6 @@ const handleModalSave = (data: { name: string; description: string }) => {
                         <button type="button" className={styles.iconBtn} disabled style={{ opacity: 0.5 }} aria-label="附件">
                           <PaperClipOutlined />
                         </button>
-                        <button type="button" className={styles.iconBtn} disabled style={{ opacity: 0.5 }} aria-label="语音">
-                          <SoundOutlined />
-                        </button>
                         <button
                           type="button"
                           className={`${styles.iconBtn} ${styles.sendBtn} ${!draft.trim() ? styles.sendBtnDisabled : ''}`}

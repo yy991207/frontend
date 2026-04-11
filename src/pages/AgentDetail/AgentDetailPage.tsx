@@ -702,13 +702,9 @@ export default function AgentDetailPage() {
                       </button>
                     </div>
                     <div className={styles.inputBottomRight}>
-                      <span className={styles.tabHint}>Tab</span>
                       <div className={styles.inputActions}>
                         <button type="button" className={styles.iconBtn} aria-label="附件">
                           <PaperClipOutlined />
-                        </button>
-                        <button type="button" className={styles.iconBtn} aria-label="语音">
-                          <SoundOutlined />
                         </button>
                         {isChatResponding ? (
                           <button type="button" className={`${styles.iconBtn} ${styles.stopBtn}`} onClick={handleStop}>

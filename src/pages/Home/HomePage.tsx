@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Avatar, Input, Tabs } from 'antd'
 import {
-  AudioOutlined,
   ArrowUpOutlined,
   BarChartOutlined,
   BookOutlined,
@@ -775,11 +774,7 @@ export default function HomePage() {
                         />
                       </div>
                       <div className={styles.inputBottomRight}>
-                        <span className={styles.tabHint}>Tab</span>
                         <div className={styles.inputActions}>
-                          <button type="button" className={styles.iconBtn}>
-                            <AudioOutlined />
-                          </button>
                           <button
                             type="button"
                             className={`${styles.iconBtn} ${styles.sendBtn} ${!prompt.trim() ? styles.sendBtnDisabled : ''}`}
