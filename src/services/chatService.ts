@@ -165,16 +165,25 @@ export function extractSessionId(response: SessionResponse): string {
   return sessionId
 }
 
-export async function createChatSession(config: ChatApiConfig, signal?: AbortSignal): Promise<CreateSessionResult> {
+export async function createChatSession(
+  config: ChatApiConfig,
+  signal?: AbortSignal,
+  agentId?: string | null,
+): Promise<CreateSessionResult> {
+  const body: Record<string, string> = {
+    user_id: config.userId,
+  }
+  if (agentId) {
+    body.agent_id = agentId
+  }
+
   const response = await fetch(config.createSessionEndpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
-    body: JSON.stringify({
-      user_id: config.userId,
-    }),
+    body: JSON.stringify(body),
     signal,
   })
 

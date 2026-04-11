@@ -163,6 +163,7 @@ type UseSharedChatRuntimeOptions = {
   routeSessionId?: string | null
   setSessionId: (sessionId: string) => void
   enableWebSearch?: boolean
+  agentId?: string | null
 }
 
 export function useSharedChatRuntime({
@@ -171,6 +172,7 @@ export function useSharedChatRuntime({
   routeSessionId = null,
   setSessionId,
   enableWebSearch = true,
+  agentId = null,
 }: UseSharedChatRuntimeOptions) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
@@ -438,7 +440,7 @@ export function useSharedChatRuntime({
     try {
       let resolvedSessionId = sessionId
       if (!resolvedSessionId) {
-        const createdSession = await createChatSession(chatApiConfig, controller.signal)
+        const createdSession = await createChatSession(chatApiConfig, controller.signal, agentId)
         resolvedSessionId = createdSession.sessionId
         setSessionId(resolvedSessionId)
       }

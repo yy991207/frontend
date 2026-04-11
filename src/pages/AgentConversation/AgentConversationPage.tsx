@@ -48,6 +48,7 @@ function AgentConversationPageContent() {
     routeSessionId: new URLSearchParams(location.search).get('sessionId'),
     setSessionId,
     enableWebSearch: true,
+    agentId: id,
   })
 
   const sessionBaseUrl = useMemo(() => {
