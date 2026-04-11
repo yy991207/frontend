@@ -65,6 +65,22 @@ function AgentConversationPageContent() {
     return routeSessionId || sessionId || null
   }, [location.search, sessionId])
 
+  const syncSessionToRoute = useCallback((newSessionId: string) => {
+    navigate(
+      {
+        pathname: location.pathname,
+        search: `?sessionId=${newSessionId}`,
+      },
+      { replace: true, state: null },
+    )
+  }, [location.pathname, navigate])
+
+  useEffect(() => {
+    if (sessionId && !new URLSearchParams(location.search).get('sessionId')) {
+      syncSessionToRoute(sessionId)
+    }
+  }, [sessionId, location.search, syncSessionToRoute])
+
   const handleOpenFile = useCallback((filepath: string, originalUrl?: string) => {
     if (!currentSessionId || !sessionBaseUrl) return
     const artifactFile = { filepath, sessionId: currentSessionId, baseUrl: sessionBaseUrl, originalUrl }

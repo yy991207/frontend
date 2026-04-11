@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import {
   AppstoreAddOutlined,
   ArrowUpOutlined,
@@ -25,6 +25,15 @@ import {
   type EnabledSkill,
 } from '../../services/customAgentService'
 import styles from '../AgentDetail/agentDetail.module.less'
+
+type GeneratedTemplateState = {
+  generatedTemplate?: {
+    agentName: string
+    description: string
+    agentPrompt: string
+    presetQuestions: Array<{ question: string; category: string }>
+  }
+}
 
 function ConfigCard({
   icon,
@@ -69,6 +78,8 @@ function ConfigCard({
 
 export default function AgentCreatePage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const state = location.state as GeneratedTemplateState | null
   const [agentName, setAgentName] = useState('未命名智能体')
   const [agentSubtitle, setAgentSubtitle] = useState('')
   const [agentInstruction, setAgentInstruction] = useState('')
@@ -86,6 +97,17 @@ export default function AgentCreatePage() {
   const [publishStatus, setPublishStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [webSearchEnabled, setWebSearchEnabled] = useState(false)
   const [knowledgeSpaceEnabled, setKnowledgeSpaceEnabled] = useState(false)
+
+  useEffect(() => {
+    if (state?.generatedTemplate) {
+      const template = state.generatedTemplate
+      setAgentName(template.agentName || '未命名智能体')
+      setAgentSubtitle(template.description || '')
+      setAgentInstruction(template.agentPrompt || '')
+      setAgentQuestions(template.presetQuestions || [])
+      message.success('智能体配置已自动生成，请检查并完善后发布')
+    }
+  }, [state])
 
   const getAvatarLetter = (name: string) => {
     return name?.trim().charAt(0).toUpperCase() || 'A'
