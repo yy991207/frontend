@@ -28,6 +28,12 @@ import {
   loadChatStreamSnapshot,
   persistChatStreamSnapshot,
 } from './chatStreamSnapshotStore'
+import {
+  getChatSession,
+  parseChatSessionConfig,
+  type ChatSessionMessage,
+  type ChatSessionConfig,
+} from './chatSessionService'
 
 function formatTime(date: Date) {
   return date.toLocaleTimeString('zh-CN', {
@@ -128,6 +134,56 @@ async function loadCourseTable(
 function parseLastEventSequence(eventId: string) {
   const parsedSequence = Number.parseInt(eventId, 10)
   return Number.isFinite(parsedSequence) ? parsedSequence : null
+}
+
+function convertSessionMessageToChatMessage(msg: ChatSessionMessage, sessionId: string): ChatMessage {
+  const toolCalls = (msg.tool_calls || []).map((tc) => ({
+    runId: tc.call_id || '',
+    name: tc.name || '',
+    input: tc.input || {},
+    output: tc.output,
+    status: (tc.status === 'running' ? 'running' : 'completed') as 'running' | 'completed',
+    toolDisplay: tc.tool_display,
+  }))
+
+  const references = (msg.references || []).map((ref) => ({
+    title: ref.title,
+    url: ref.url,
+  }))
+
+  const skillOutput = Array.isArray(msg.skill_output) ? msg.skill_output : []
+
+  return {
+    id: msg.message_id,
+    role: msg.role,
+    content: msg.content || '',
+    timestamp: msg.created_at,
+    sessionId,
+    reasoningContent: msg.reasoning_content || null,
+    toolCalls,
+    references,
+    courses: [],
+    skillOutput,
+    loading: false,
+  }
+}
+
+async function loadSessionHistoryMessages(
+  sessionId: string,
+  signal: AbortSignal,
+): Promise<ChatMessage[]> {
+  try {
+    const response = await fetch('/config.yaml')
+    if (!response.ok) {
+      return []
+    }
+    const rawText = await response.text()
+    const sessionConfig: ChatSessionConfig = parseChatSessionConfig(rawText)
+    const detail = await getChatSession(sessionConfig, sessionId, signal)
+    return (detail.messages || []).map((msg) => convertSessionMessageToChatMessage(msg, sessionId))
+  } catch {
+    return []
+  }
 }
 
 function resolveActiveStreamingMessageId(messages: ChatMessage[], fallbackMessageId: string) {
@@ -383,6 +439,24 @@ export function useSharedChatRuntime({
           if (restoreController.signal.aborted || cancelled) {
             return
           }
+        }
+      }
+
+      controller = new AbortController()
+      const historyController = controller
+
+      try {
+        const historyMessages = await loadSessionHistoryMessages(routeSessionId, historyController.signal)
+        if (cancelled || historyController.signal.aborted) {
+          return
+        }
+        if (historyMessages.length > 0) {
+          messagesRef.current = historyMessages
+          setMessages(historyMessages)
+        }
+      } catch {
+        if (cancelled || historyController.signal.aborted) {
+          return
         }
       }
 

@@ -1,14 +1,81 @@
 import { useLocation, useParams, useNavigate } from 'react-router-dom'
 import { Dropdown, Input } from 'antd'
-import { SettingOutlined, ArrowUpOutlined, AudioOutlined } from '@ant-design/icons'
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { SettingOutlined, ArrowUpOutlined, AudioOutlined, CloseOutlined } from '@ant-design/icons'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
 import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts-context'
 import { MessageList } from '../../components/chat/message-list'
-import { viewCustomAgent, loadCustomAgentApiConfig, type AgentDetail } from '../../services/customAgentService'
+import { viewCustomAgent, loadCustomAgentApiConfig, type AgentDetail, type EnabledSkill } from '../../services/customAgentService'
 import { parseChatApiConfig, type ChatApiConfig } from '../../services/chatService'
 import { useSharedChatRuntime } from '../../services/sharedChatRuntime'
+import { AttachmentMenu, type AttachmentSkillItem } from '../../components/common/AttachmentMenu'
+import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
+import {
+  buildSkillDisplayName,
+  extractSkillItemsFromResponse,
+  type SkillApiResponse,
+} from '../../services/skillPromptService'
+import chatConfigText from '../../../config.yaml?raw'
 import styles from './agentConversation.module.less'
+
+type SkillItemType = AttachmentSkillItem
+
+function parseSimpleYaml(rawText: string) {
+  return rawText.split(/\r?\n/).reduce<Record<string, string>>((result, line) => {
+    const trimmedLine = line.trim()
+
+    if (!trimmedLine || trimmedLine.startsWith('#')) {
+      return result
+    }
+
+    const separatorIndex = trimmedLine.indexOf(':')
+
+    if (separatorIndex === -1) {
+      return result
+    }
+
+    const key = trimmedLine.slice(0, separatorIndex).trim()
+    const value = trimmedLine.slice(separatorIndex + 1).trim().replace(/^['"]|['"]$/g, '')
+
+    if (key) {
+      result[key] = value
+    }
+
+    return result
+  }, {})
+}
+
+function buildAbsoluteUrl(baseUrl: string, path: string) {
+  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
+}
+
+function parseSkillApiConfig(rawText: string) {
+  const parsedConfig = parseSimpleYaml(rawText)
+  const baseUrl = parsedConfig.url
+  const managePath = parsedConfig.view_user_skills_path
+  const listPath = parsedConfig.list_user_skills_path
+  const userId = parsedConfig.user_id
+  const userIdParam = parsedConfig.skill_user_id_param
+
+  if (!baseUrl || !managePath || !userId || !userIdParam) {
+    throw new Error('config.yaml 缺少 url、view_user_skills_path、user_id 或 skill_user_id_param 配置')
+  }
+
+  const managePathWithUser = managePath.includes('{user_id}')
+    ? managePath.replace('{user_id}', encodeURIComponent(userId))
+    : managePath
+
+  const listEndpoint = listPath
+    ? buildAbsoluteUrl(baseUrl, listPath)
+    : null
+
+  return {
+    manageEndpoint: buildAbsoluteUrl(baseUrl, managePathWithUser),
+    listEndpoint,
+    userId,
+    userIdParam,
+  }
+}
 
 export default function AgentConversationPage() {
   return (
@@ -28,6 +95,36 @@ function AgentConversationPageContent() {
   const [error, setError] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [chatApiConfig, setChatApiConfig] = useState<ChatApiConfig | null>(null)
+  const [skills, setSkills] = useState<SkillItemType[]>([])
+  const [webSearchEnabled, setWebSearchEnabled] = useState(true)
+  const [webSearchLocked, setWebSearchLocked] = useState(false)
+  const [preferredToolType, setPreferredToolType] = useState<string | null>(null)
+  const [selectedSkillName, setSelectedSkillName] = useState('')
+  const [selectedSkillDescription, setSelectedSkillDescription] = useState('')
+  const [slashCommandOpen, setSlashCommandOpen] = useState(false)
+  const [slashQuery, setSlashQuery] = useState('')
+  const [selectedSkillIndex, setSelectedSkillIndex] = useState(0)
+
+  const clearSelectedSkill = () => {
+    setPreferredToolType(null)
+    setSelectedSkillName('')
+    setSelectedSkillDescription('')
+  }
+
+  const handleManageSkills = () => {
+    navigate('/skills', {
+      state: {
+        mode: 'manage',
+      },
+    })
+  }
+
+  const handleSelectSkill = (skill: SkillItemType) => {
+    setSelectedSkillName(skill.skillName || skill.id)
+    setSelectedSkillDescription(skill.description)
+    setPreferredToolType(skill.skillName || skill.id)
+    setDraft(skill.template)
+  }
 
   const {
     draft,
@@ -47,9 +144,12 @@ function AgentConversationPageContent() {
     sessionId,
     routeSessionId: new URLSearchParams(location.search).get('sessionId'),
     setSessionId,
-    enableWebSearch: true,
+    enableWebSearch: webSearchEnabled,
     agentId: id,
   })
+
+  const routeSessionId = new URLSearchParams(location.search).get('sessionId')
+  const shouldShowHistoryLoading = routeSessionId && sessionLoading && groupedMessages.length === 0
 
   const sessionBaseUrl = useMemo(() => {
     if (!chatApiConfig) return null
@@ -112,6 +212,18 @@ function AgentConversationPageContent() {
         if (!cancelled) {
           setAgentData(agent)
           setChatApiConfig(nextChatApiConfig)
+          setWebSearchEnabled(agent.enable_web_search)
+          setWebSearchLocked(!agent.enable_web_search)
+
+          const agentSkills: SkillItemType[] = (agent.enabled_skills || []).map((skill: EnabledSkill) => ({
+            id: skill.skill_name,
+            skillName: skill.skill_name,
+            title: skill.chinese_name || skill.skill_name,
+            description: skill.description || '',
+            template: skill.template || '',
+            isSelected: false,
+          }))
+          setSkills(agentSkills)
         }
       } catch (err) {
         if (!cancelled) {
@@ -199,9 +311,17 @@ function AgentConversationPageContent() {
             </div>
           </header>
 
-          <div className={styles.messages}>
+          const routeSessionId = new URLSearchParams(location.search).get('sessionId')
+
+  const shouldShowHistoryLoading = routeSessionId && sessionLoading && groupedMessages.length === 0
+
+  <div className={styles.messages}>
             <div className={styles.messageColumn}>
-              {groupedMessages.length > 0 ? (
+              {shouldShowHistoryLoading ? (
+                <div className={styles.loadingState}>
+                  <span>加载历史消息...</span>
+                </div>
+              ) : groupedMessages.length > 0 ? (
                 <MessageList
                   groups={groupedMessages}
                   threadLoading={sessionLoading}
@@ -228,7 +348,7 @@ function AgentConversationPageContent() {
                             key={index}
                             type="button"
                             className={styles.suggestionItem}
-                            onClick={() => handleSuggestionClick(item.question)}
+                            onClick={() => handleSuggestionClick(item.instruction || item.question)}
                           >
                             {item.question}
                           </button>
@@ -244,16 +364,113 @@ function AgentConversationPageContent() {
           <div className={styles.composerArea}>
             <div className={styles.composerWrap}>
               <div className={styles.inputWrap}>
+                <SkillSlashCommand
+                  visible={slashCommandOpen}
+                  query={slashQuery}
+                  setQuery={(query) => {
+                    setSlashQuery(query)
+                    setDraft('/' + query)
+                  }}
+                  skills={skills.filter((skill) => {
+                    if (!slashQuery) return true
+                    const q = slashQuery.toLowerCase()
+                    return (
+                      skill.title.toLowerCase().includes(q) ||
+                      skill.description.toLowerCase().includes(q) ||
+                      skill.skillName.toLowerCase().includes(q)
+                    )
+                  })}
+                  loading={false}
+                  selectedIndex={selectedSkillIndex}
+                  onSelectSkill={(skill) => {
+                    handleSelectSkill(skill)
+                    setSlashCommandOpen(false)
+                    setDraft('')
+                  }}
+                  onClose={() => setSlashCommandOpen(false)}
+                  onManageSkills={handleManageSkills}
+                />
                 <div className={styles.inputTopArea}>
+                  {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
+                  {selectedSkillName ? (
+                    <span className={styles.skillTagWrap}>
+                      <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
+                      <button
+                        type="button"
+                        className={styles.skillRemoveButton}
+                        aria-label="移除已选技能"
+                        onClick={clearSelectedSkill}
+                      >
+                        <CloseOutlined />
+                      </button>
+                      {selectedSkillDescription ? (
+                        <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
+                      ) : null}
+                    </span>
+                  ) : null}
                   <Input.TextArea
                     value={draft}
                     onChange={(event) => {
-                      setDraft(event.target.value)
+                      const value = event.target.value
+                      setDraft(value)
+                      
+                      if (value === '/' && !slashCommandOpen) {
+                        setSlashCommandOpen(true)
+                        setSlashQuery('')
+                        setSelectedSkillIndex(0)
+                      } else if (!value.startsWith('/')) {
+                        setSlashCommandOpen(false)
+                      } else if (value.startsWith('/')) {
+                        setSlashQuery(value.slice(1))
+                      }
                     }}
                     onKeyDown={(event) => {
                       if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
                         return
                       }
+
+                      if (slashCommandOpen) {
+                        switch (event.key) {
+                          case 'ArrowDown':
+                            event.preventDefault()
+                            setSelectedSkillIndex((prev) =>
+                              prev < skills.length - 1 ? prev + 1 : prev
+                            )
+                            return
+                          case 'ArrowUp':
+                            event.preventDefault()
+                            setSelectedSkillIndex((prev) => (prev > 0 ? prev - 1 : 0))
+                            return
+                          case 'Enter':
+                            event.preventDefault()
+                            const filteredSkills = skills.filter((skill) => {
+                              if (!slashQuery) return true
+                              const q = slashQuery.toLowerCase()
+                              return (
+                                skill.title.toLowerCase().includes(q) ||
+                                skill.description.toLowerCase().includes(q) ||
+                                skill.skillName.toLowerCase().includes(q)
+                              )
+                            })
+                            if (filteredSkills[selectedSkillIndex]) {
+                              handleSelectSkill(filteredSkills[selectedSkillIndex])
+                              setSlashCommandOpen(false)
+                              setDraft('')
+                            }
+                            return
+                          case 'Escape':
+                            event.preventDefault()
+                            setSlashCommandOpen(false)
+                            return
+                        }
+                      }
+
+                      if (event.key === 'Backspace' && !draft.trim() && selectedSkillName) {
+                        event.preventDefault()
+                        clearSelectedSkill()
+                        return
+                      }
+
                       if (event.key === 'Enter' && !event.shiftKey) {
                         event.preventDefault()
                         handleSend()
@@ -274,12 +491,30 @@ function AgentConversationPageContent() {
                       padding: 0,
                     }}
                     variant="borderless"
-                    placeholder="输入你的问题..."
+                    placeholder='输入你的问题或输入"/"选择想要使用技能'
                     autoSize={{ minRows: 1, maxRows: 8 }}
                   />
                 </div>
                 <div className={styles.inputBottomArea}>
-                  <div className={styles.inputBottomLeft} />
+                  <div className={styles.inputBottomLeft}>
+                    <AttachmentMenu
+                      placement="top"
+                      skills={skills}
+                      skillsLoading={skillsLoading}
+                      loadSkills={fetchSkills}
+                      onSelectSkill={handleSelectSkill}
+                      onManageSkills={handleManageSkills}
+                      showTools
+                      webSearchEnabled={webSearchEnabled}
+                      knowledgeEnabled={false}
+                      onToggleWebSearch={() => {
+                        if (!webSearchLocked) {
+                          setWebSearchEnabled((value) => !value)
+                        }
+                      }}
+                      onToggleKnowledge={() => {}}
+                    />
+                  </div>
                   <div className={styles.inputBottomRight}>
                     <span className={styles.tabHint}>Tab</span>
                     <div className={styles.inputActions}>

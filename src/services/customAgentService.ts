@@ -15,6 +15,7 @@ export type CustomAgentApiConfig = {
 export type PresetQuestion = {
   category: string
   question: string
+  instruction?: string
 }
 
 export type CreateCustomAgentPayload = {
