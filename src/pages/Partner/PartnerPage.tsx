@@ -22,6 +22,7 @@ import chatConfigText from '../../../config.yaml?raw'
 import { useLocation, useNavigate } from 'react-router-dom'
 import homeAvatar from '../../assets/home-avatar.png'
 import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
+import { MarkdownContent } from '../../components/chat/markdown-content'
 import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts-context'
 import { MessageList } from '../../components/chat/message-list'
 import { useStickToBottom } from '../../components/chat/use-stick-to-bottom'
@@ -356,37 +357,6 @@ function resolveActiveStreamingMessageId(messages: ChatMessage[], fallbackMessag
 function parseLastEventSequence(eventId: string) {
   const parsedSequence = Number.parseInt(eventId, 10)
   return Number.isFinite(parsedSequence) ? parsedSequence : null
-}
-
-function renderMarkdownContent(content: string) {
-  return content.split('\n').map((line, index) => {
-    if (line.startsWith('## ')) {
-      return <h3 key={index}>{line.replace('## ', '')}</h3>
-    }
-
-    if (line.startsWith('**') && line.includes('**')) {
-      return (
-        <p key={index}>
-          <strong>{line.match(/\*\*(.*?)\*\*/)?.[1]}</strong>
-          {line.replace(/\*\*.*?\*\*/, '')}
-        </p>
-      )
-    }
-
-    if (line.startsWith('- ')) {
-      return (
-        <ul key={index}>
-          <li>{line.replace('- ', '')}</li>
-        </ul>
-      )
-    }
-
-    if (line.trim() === '') {
-      return null
-    }
-
-    return <p key={index}>{line}</p>
-  })
 }
 
 export default function PartnerPage() {
@@ -1649,7 +1619,7 @@ function PartnerPageContent() {
                   placeholder="请输入行为准则内容..."
                 />
               ) : (
-                <div className={styles.markdownContent}>{renderMarkdownContent(currentContent)}</div>
+                <MarkdownContent className={styles.markdownContent} content={currentContent} />
               )}
             </div>
           </div>
