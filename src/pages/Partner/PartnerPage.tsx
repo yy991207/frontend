@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Input } from 'antd'
 import {
-  AudioOutlined,
   ArrowUpOutlined,
   BarsOutlined,
   CameraFilled,
@@ -1980,11 +1979,7 @@ function PartnerPageContent() {
                         />
                       </div>
                       <div className={styles.inputBottomRight}>
-                        <span className={styles.tabHint}>Tab</span>
                         <div className={styles.inputActions}>
-                          <button type="button" className={styles.iconBtn} aria-label="语音输入">
-                            <AudioOutlined />
-                          </button>
                           {isResponding ? (
                             <button type="button" className={`${styles.iconBtn} ${styles.stopBtn}`} onClick={handleStop}>
                               <span className={styles.stopInner} />
