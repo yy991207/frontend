@@ -1,19 +1,24 @@
-import { useState, useRef } from 'react'
-import { Input, Button, Dropdown } from 'antd'
+import { useState, useRef, useEffect } from 'react'
+import { Input, Button, Pagination } from 'antd'
 import {
   SearchOutlined,
   PlusOutlined,
   LeftOutlined,
   RightOutlined,
-  DownOutlined,
+  LoadingOutlined,
   FireOutlined,
 } from '@ant-design/icons'
 import CreateAgentModal from '../../components/common/CreateAgentModal'
 import styles from './discover.module.less'
 
-// 获取头像首字母
 function getAvatarLetter(name: string) {
   return name?.trim().charAt(0).toUpperCase() || 'A'
+}
+
+type MyCreatedAgent = {
+  agent_id: string
+  agent_name: string
+  description: string
 }
 
 // Mock 数据 - 企业精选
@@ -80,65 +85,49 @@ const featuredAgents = [
   },
 ]
 
-// Mock 数据 - 企业智能体
-const enterpriseAgents = [
-  {
-    id: 1,
-    name: '企业知识库助手',
-    description: '基于企业知识库，快速回答员工问题，提升工作效率',
-    author: { name: '@张洪磊', usage: 56789 },
-    tags: ['企业', '知识管理'],
-  },
-  {
-    id: 2,
-    name: '财务报表分析',
-    description: '自动分析财务报表，识别异常数据，生成分析报告',
-    author: { name: '@张洪磊', usage: 34567 },
-    tags: ['财务', '数据分析'],
-  },
-  {
-    id: 3,
-    name: 'HR招聘助手',
-    description: '智能筛选简历，自动安排面试，跟踪招聘进度',
-    author: { name: '@张洪磊', usage: 42345 },
-    tags: ['HR', '招聘'],
-  },
-  {
-    id: 4,
-    name: '合同审查专家',
-    description: '自动审查合同条款，识别风险点，提供修改建议',
-    author: { name: '@张洪磊', usage: 28901 },
-    tags: ['法务', '合同'],
-  },
-  {
-    id: 5,
-    name: 'IT运维监控',
-    description: '实时监控系统状态，自动告警，快速定位故障',
-    author: { name: '@张洪磊', usage: 15678 },
-    tags: ['IT', '运维'],
-  },
-  {
-    id: 6,
-    name: '客户画像分析',
-    description: '整合客户数据，构建精准画像，助力精准营销',
-    author: { name: '@张洪磊', usage: 51234 },
-    tags: ['CRM', '营销'],
-  },
-]
-
-// 排序选项
-const sortOptions = [
-  { key: 'latest', label: '最新' },
-  { key: 'hot', label: '最热' },
-  { key: 'usage', label: '使用最多' },
-]
 
 export default function DiscoverPage() {
   const [searchValue, setSearchValue] = useState('')
   const [currentFeaturedPage, setCurrentFeaturedPage] = useState(0)
-  const [sortBy, setSortBy] = useState('latest')
   const [isModalVisible, setIsModalVisible] = useState(false)
   const featuredContainerRef = useRef<HTMLDivElement>(null)
+  const [myCreatedAgents, setMyCreatedAgents] = useState<MyCreatedAgent[]>([])
+  const [myCreatedLoading, setMyCreatedLoading] = useState(false)
+  const [myCreatedPage, setMyCreatedPage] = useState(1)
+  const myCreatedPageSize = 16
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchMyCreatedAgents() {
+      setMyCreatedLoading(true)
+      try {
+        const response = await fetch('http://192.168.30.238:8000/api/v1/custom-agents?user_id=123456', {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+        })
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+        const data = await response.json()
+        if (!cancelled && data.success && data.data?.agents) {
+          setMyCreatedAgents(data.data.agents)
+        }
+      } catch (error) {
+        console.error('获取我创建的智能体列表失败:', error)
+      } finally {
+        if (!cancelled) {
+          setMyCreatedLoading(false)
+        }
+      }
+    }
+
+    fetchMyCreatedAgents()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // 每页显示10个企业精选卡片（两行，每行5个）
   const featuredPageSize = 10
@@ -157,11 +146,6 @@ export default function DiscoverPage() {
 
   const handleNextPage = () => {
     setCurrentFeaturedPage((prev) => (prev < totalFeaturedPages - 1 ? prev + 1 : 0))
-  }
-
-  // 处理排序
-  const handleSortChange = (key: string) => {
-    setSortBy(key)
   }
 
   // 格式化使用数
@@ -259,51 +243,49 @@ export default function DiscoverPage() {
             </div>
           </section>
 
-          {/* 企业智能体区域 */}
+          {/* 我创建的智能体区域 */}
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>企业智能体</h2>
-              <Dropdown
-                menu={{
-                  items: sortOptions.map((opt) => ({
-                    key: opt.key,
-                    label: opt.label,
-                    onClick: () => handleSortChange(opt.key),
-                  })),
-                  selectedKeys: [sortBy],
-                }}
-                placement="bottomRight"
-              >
-                <button className={styles.sortButton}>
-                  {sortOptions.find((opt) => opt.key === sortBy)?.label}
-                  <DownOutlined className={styles.sortIcon} />
-                </button>
-              </Dropdown>
+              <h2 className={styles.sectionTitle}>我创建的</h2>
             </div>
             <div className={styles.enterpriseGrid}>
-              {enterpriseAgents.map((agent) => (
-                <div key={agent.id} className={styles.enterpriseCard}>
-                  <div className={styles.enterpriseCardLeft}>
-                    <div className={styles.enterpriseAvatar}>
-                      <span className={styles.avatarLetter}>{getAvatarLetter(agent.name)}</span>
-                    </div>
-                  </div>
-                  <div className={styles.enterpriseCardRight}>
-                    <h3 className={styles.enterpriseCardTitle}>{agent.name}</h3>
-                    <p className={styles.enterpriseCardDesc}>{agent.description}</p>
-                    <div className={styles.enterpriseCardFooter}>
-                      <div className={styles.authorInfo}>
-                        <span className={styles.authorName}>{agent.author.name}</span>
-                      </div>
-                      <div className={styles.usageInfo}>
-                        <FireOutlined className={styles.usageIcon} />
-                        <span>{formatUsage(agent.author.usage)}</span>
-                      </div>
-                    </div>
-                  </div>
+              {myCreatedLoading ? (
+                <div className={styles.loadingContainer}>
+                  <LoadingOutlined className={styles.loadingIcon} />
+                  <span>加载中...</span>
                 </div>
-              ))}
+              ) : myCreatedAgents.length > 0 ? (
+                myCreatedAgents
+                  .slice((myCreatedPage - 1) * myCreatedPageSize, myCreatedPage * myCreatedPageSize)
+                  .map((agent) => (
+                    <div key={agent.agent_id} className={styles.enterpriseCard}>
+                      <div className={styles.enterpriseCardLeft}>
+                        <div className={styles.enterpriseAvatar}>
+                          <span className={styles.avatarLetter}>{getAvatarLetter(agent.agent_name)}</span>
+                        </div>
+                      </div>
+                      <div className={styles.enterpriseCardRight}>
+                        <h3 className={styles.enterpriseCardTitle}>{agent.agent_name}</h3>
+                        <p className={styles.enterpriseCardDesc}>{agent.description}</p>
+                      </div>
+                    </div>
+                  ))
+              ) : (
+                <div className={styles.emptyContainer}>暂无创建的智能体</div>
+              )}
             </div>
+            {myCreatedAgents.length > myCreatedPageSize && (
+              <div className={styles.paginationWrapper}>
+                <Pagination
+                  current={myCreatedPage}
+                  pageSize={myCreatedPageSize}
+                  total={myCreatedAgents.length}
+                  onChange={(page) => setMyCreatedPage(page)}
+                  showSizeChanger={false}
+                  showTotal={(total) => `共 ${total} 个`}
+                />
+              </div>
+            )}
           </section>
         </div>
       </div>

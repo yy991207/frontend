@@ -302,10 +302,10 @@
   border-top: 1px solid #f3f4f6;
 }
 
-// 企业智能体网格 - 每行3个
+// 我创建的智能体网格 - 每行4个
 .enterpriseGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
 }
 
@@ -349,13 +349,13 @@
   width: 80px;
   height: 80px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #5b5ff8 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #1677ff 0%, #0958d9 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   transition: transform 0.3s ease;
-  box-shadow: 0 14px 28px rgba(79, 70, 229, 0.24);
+  box-shadow: 0 14px 28px rgba(22, 119, 255, 0.24);
 }
 
 .enterpriseCard:hover .enterpriseAvatar {
@@ -463,6 +463,41 @@
   }
 }
 
+// 加载状态
+.loadingContainer {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.loadingIcon {
+  font-size: 18px;
+}
+
+// 空状态
+.emptyContainer {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+// 分页容器
+.paginationWrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  padding-top: 16px;
+}
+
 // 企业精选卡片的使用按钮位置调整
 .featuredCard .useButton {
   bottom: 12px;
@@ -482,13 +517,17 @@
   }
 
   .enterpriseGrid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
 @media (max-width: 1200px) {
   .featuredGrid {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .enterpriseGrid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -553,7 +592,7 @@
   }
 
   .enterpriseGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
 
