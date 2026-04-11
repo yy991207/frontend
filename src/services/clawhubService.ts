@@ -16,6 +16,33 @@ export type ClawhubBrowseResult = {
   msg?: string
 }
 
+export type ClawhubSkillDetail = {
+  id: string
+  skillName: string
+  title: string
+  description: string
+  template: string
+  isSelected: boolean
+  tags: string[]
+  downloads: number
+  stars: number
+  owner: string
+  version: string
+  summary: string
+}
+
+export type ClawhubDetailParams = {
+  baseUrl: string
+  slug: string
+  signal?: AbortSignal
+}
+
+export type ClawhubDetailResult = {
+  success: boolean
+  skill?: ClawhubSkillDetail
+  msg?: string
+}
+
 export async function fetchClawhubSkills(params: ClawhubBrowseParams): Promise<ClawhubBrowseResult> {
   const { baseUrl, userId, limit, offset = 0, signal } = params
 
@@ -58,6 +85,91 @@ export async function fetchClawhubSkills(params: ClawhubBrowseParams): Promise<C
       skills: [],
       total: 0,
       msg: error instanceof Error ? error.message : 'Clawhub 技能加载失败',
+    }
+  }
+}
+
+export async function fetchClawhubSkillDetail(params: ClawhubDetailParams): Promise<ClawhubDetailResult> {
+  const { baseUrl, slug, signal } = params
+
+  const endpoint = `${baseUrl.replace(/\/+$/, '')}/api/v1/skills/clawhub/${encodeURIComponent(slug)}`
+
+  try {
+    const response = await fetch(endpoint, { signal })
+
+    if (!response.ok) {
+      throw new Error('Clawhub 详情接口请求失败')
+    }
+
+    const data = (await response.json()) as {
+      success: boolean
+      code: string
+      msg: string
+      data?: {
+        skill?: {
+          slug: string
+          displayName: string
+          summary: string
+          tags?: string[]
+          stats?: {
+            downloads: number
+            stars: number
+          }
+        }
+        latestVersion?: {
+          version: string
+        }
+        owner?: {
+          handle: string
+          displayName: string
+        }
+        metaContent?: {
+          DisplayDescription?: string
+          Keywords?: string[]
+          skillMd?: string
+        }
+      }
+    }
+
+    if (!data.success) {
+      throw new Error(data.msg || 'Clawhub 详情接口返回失败')
+    }
+
+    const payload = data.data
+    if (!payload?.skill) {
+      throw new Error('Clawhub 详情数据格式错误')
+    }
+
+    const skill = payload.skill
+    const metaContent = payload.metaContent || {}
+    const description = metaContent.DisplayDescription || skill.summary || ''
+    const template = metaContent.skillMd || ''
+
+    return {
+      success: true,
+      skill: {
+        id: skill.slug,
+        skillName: skill.slug,
+        title: skill.displayName,
+        description,
+        template,
+        isSelected: false,
+        tags: skill.tags || metaContent.Keywords || [],
+        downloads: skill.stats?.downloads || 0,
+        stars: skill.stats?.stars || 0,
+        owner: payload.owner?.displayName || payload.owner?.handle || '',
+        version: payload.latestVersion?.version || '1.0.0',
+        summary: skill.summary,
+      },
+    }
+  } catch (error) {
+    if (signal?.aborted) {
+      return { success: false }
+    }
+
+    return {
+      success: false,
+      msg: error instanceof Error ? error.message : 'Clawhub 技能详情加载失败',
     }
   }
 }

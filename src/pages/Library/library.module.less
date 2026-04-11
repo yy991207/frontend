@@ -59,7 +59,7 @@
 
 .cascadeFilterGroup {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   padding: 6px;
   border-radius: 18px;
@@ -68,8 +68,12 @@
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
 }
 
-.cascadeSelectPrimary,
-.cascadeSelectSecondary {
+.filterDropdownWrap {
+  position: relative;
+}
+
+.filterDropdownButton {
+  min-width: 86px;
   height: 36px;
   border-radius: 12px;
   border: 1px solid transparent;
@@ -77,21 +81,71 @@
   color: #475569;
   font-size: 14px;
   padding: 0 12px;
-  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
 
-  &:focus {
-    border-color: #93c5fd;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  &:hover {
+    border-color: #dce3ed;
   }
 }
 
-.cascadeSelectPrimary {
-  min-width: 86px;
+.filterDropdownButtonOpen {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
 }
 
-.cascadeSelectSecondary {
-  min-width: 120px;
+.filterDropdownArrow {
+  font-size: 10px;
+  transition: transform 0.18s ease;
+}
+
+.filterDropdownArrowOpen {
+  transform: rotate(180deg);
+}
+
+.filterDropdownMenu {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  min-width: 140px;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filterDropdownOption {
+  width: 100%;
+  min-height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #475569;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.16s ease, color 0.16s ease;
+
+  &:hover {
+    background: #f7f8fa;
+    color: #1f2937;
+  }
+}
+
+.filterDropdownOptionActive {
+  color: #2563eb;
+  background: #eff6ff;
 }
 
 .filterWrap {
@@ -361,63 +415,17 @@
 }
 
 .fileIcon {
-  position: relative;
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #3370ff;
+  color: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
   flex-shrink: 0;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
-}
-
-.fileIconBadge {
-  position: absolute;
-  left: 8px;
-  top: 7px;
-  font-size: 10px;
-  line-height: 1;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
-.fileIconGlyph {
-  font-size: 18px;
-  transform: translateY(5px);
-}
-
-.iconDocument {
-  background: linear-gradient(180deg, #5b8cff 0%, #3c6df0 100%);
-}
-
-.iconWord {
-  background: linear-gradient(180deg, #4c7dff 0%, #2852d8 100%);
-}
-
-.iconMarkdown {
-  background: linear-gradient(180deg, #64748b 0%, #475569 100%);
-}
-
-.iconPdf {
-  background: linear-gradient(180deg, #ff7c6b 0%, #ef4444 100%);
-}
-
-.iconImage {
-  background: linear-gradient(180deg, #7c9cff 0%, #5b6dff 100%);
-}
-
-.iconVideo {
-  background: linear-gradient(180deg, #a855f7 0%, #7c3aed 100%);
-}
-
-.iconAudio {
-  background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
-}
-
-.iconOther {
-  background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
 }
 
 .fileMeta {
@@ -448,15 +456,15 @@
 }
 
 .agentAvatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  background: #3b82f6;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #3370ff;
   color: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   flex-shrink: 0;
 }

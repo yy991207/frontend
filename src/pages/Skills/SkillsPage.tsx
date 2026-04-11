@@ -6,9 +6,7 @@ import {
   DownOutlined,
   EllipsisOutlined,
   FileZipOutlined,
-  LeftOutlined,
   PlusOutlined,
-  RightOutlined,
   SearchOutlined,
   SettingOutlined,
   StarFilled,
@@ -16,13 +14,13 @@ import {
   ThunderboltOutlined,
   UploadOutlined,
 } from '@ant-design/icons'
-import SkillDetailModal from '../../components/common/SkillDetailModal'
+import SkillDetailModal, { type SkillDetail } from '../../components/common/SkillDetailModal'
 import skillConfigText from '../../../config.yaml?raw'
 import homeAvatar from '../../assets/home-avatar.png'
 import { deleteCreatedSkill as deleteCreatedSkillFromApi, fetchCreatedSkills as fetchCreatedSkillsFromApi, parseCustomSkillListApiConfig } from '../../services/customSkillListService'
 import { buildSkillInitialPrompt, extractSkillItemsFromResponse, type SkillApiResponse, type SkillItem as SkillApiItem } from '../../services/skillPromptService'
 import { parseSkillUploadApiConfig, uploadCustomSkill, type UploadedSkillSummary } from '../../services/skillUploadService'
-import { fetchClawhubSkills } from '../../services/clawhubService'
+import { fetchClawhubSkills, fetchClawhubSkillDetail, type ClawhubSkillDetail } from '../../services/clawhubService'
 import styles from './skills.module.less'
 
 type SkillsMode = 'discover' | 'manage'
@@ -174,6 +172,23 @@ function getUploadedSkillTone(skillName: string): 'manageCardGreen' | 'manageCar
   return getManageCardTone(toneSeed)
 }
 
+function convertClawhubToSkillDetail(clawhub: ClawhubSkillDetail): SkillDetail {
+  return {
+    skill_name: clawhub.skillName,
+    chinese_name: clawhub.title,
+    description: clawhub.description || clawhub.summary,
+    source: 'clawhub',
+    skill_type: 'clawhub',
+    skill_md: clawhub.template,
+    template: clawhub.template,
+    placeholders: [],
+    config_fields: [],
+    scripts: null,
+    references: null,
+    assets: null,
+  }
+}
+
 export default function SkillsPage() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -195,11 +210,13 @@ export default function SkillsPage() {
   const [removeSkillLoadingId, setRemoveSkillLoadingId] = useState<string | null>(null)
   const [openManageMenuId, setOpenManageMenuId] = useState<string | null>(null)
   const [selectedSkillForDetail, setSelectedSkillForDetail] = useState<SkillApiItem | null>(null)
-  const [clawhubSkills, setClawhubSkills] = useState<SkillApiItem[]>([])
+  const [clawhubDetailData, setClawhubDetailData] = useState<ClawhubSkillDetail | null>(null)
+  const [clawhubAllSkills, setClawhubAllSkills] = useState<SkillApiItem[]>([])
+  const [featuredGroupIndex, setFeaturedGroupIndex] = useState(0)
+  const [clawhubGroupIndex, setClawhubGroupIndex] = useState(0)
   const [clawhubSkillsLoading, setClawhubSkillsLoading] = useState(false)
   const [clawhubSkillsError, setClawhubSkillsError] = useState('')
-  const [clawhubTotal, setClawhubTotal] = useState(0)
-  const [clawhubOffset, setClawhubOffset] = useState(0)
+  const [clawhubDetailLoading, setClawhubDetailLoading] = useState(false)
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [uploadingSkill, setUploadingSkill] = useState(false)
   const [isUploadDragging, setIsUploadDragging] = useState(false)
@@ -623,6 +640,7 @@ export default function SkillsPage() {
 
         setFeaturedSkills(mergedFeaturedItems)
         setFeaturedSkillsError('')
+        setFeaturedGroupIndex(0)
       } catch {
         if (controller.signal.aborted) {
           return
@@ -645,25 +663,25 @@ export default function SkillsPage() {
   }, [skillApiConfig])
 
   const loadClawhubSkills = useCallback(
-    async (signal?: AbortSignal, resetOffset = true) => {
+    async (signal?: AbortSignal) => {
       if (!skillApiConfig) {
-        setClawhubSkills([])
+        setClawhubAllSkills([])
         setClawhubSkillsError('技能配置读取失败，请检查 config.yaml')
         setClawhubSkillsLoading(false)
         return
       }
 
-      const currentOffset = resetOffset ? 0 : clawhubOffset
       setClawhubSkillsLoading(true)
       setClawhubSkillsError('')
+      setClawhubGroupIndex(0)
 
       try {
         const baseUrl = skillApiConfig.featuredEndpoint.replace(/\/api\/v1\/skills.*$/, '')
         const result = await fetchClawhubSkills({
           baseUrl,
           userId: skillApiConfig.userId,
-          limit: 9,
-          offset: currentOffset,
+          limit: 45,
+          offset: 0,
           signal,
         })
 
@@ -671,18 +689,14 @@ export default function SkillsPage() {
           throw new Error(result.msg || 'Clawhub 技能加载失败')
         }
 
-        setClawhubSkills(result.skills)
-        setClawhubTotal(result.total)
-        if (resetOffset) {
-          setClawhubOffset(0)
-        }
+        setClawhubAllSkills(result.skills)
         setClawhubSkillsError('')
       } catch {
         if (signal?.aborted) {
           return
         }
 
-        setClawhubSkills([])
+        setClawhubAllSkills([])
         setClawhubSkillsError('Clawhub 技能加载失败，请检查接口配置或服务状态')
       } finally {
         if (!signal?.aborted) {
@@ -690,42 +704,73 @@ export default function SkillsPage() {
         }
       }
     },
-    [skillApiConfig, clawhubOffset],
+    [skillApiConfig],
   )
 
+  const handleRefreshFeatured = useCallback(() => {
+    const totalGroups = Math.ceil(featuredSkills.length / 9)
+    if (totalGroups > 1) {
+      setFeaturedGroupIndex((prev) => (prev + 1) % totalGroups)
+    }
+  }, [featuredSkills.length])
+
   const handleRefreshClawhub = useCallback(() => {
-    const controller = new AbortController()
-    void loadClawhubSkills(controller.signal, true)
-    return () => controller.abort()
-  }, [loadClawhubSkills])
+    if (clawhubAllSkills.length >= 45) {
+      setClawhubGroupIndex((prev) => (prev + 1) % 5)
+    } else {
+      const controller = new AbortController()
+      void loadClawhubSkills(controller.signal)
+      return () => controller.abort()
+    }
+  }, [clawhubAllSkills.length, loadClawhubSkills])
 
-  const handleClawhubPrevPage = useCallback(() => {
-    if (clawhubOffset <= 0 || !skillApiConfig) return
-    const newOffset = clawhubOffset - 9
-    setClawhubOffset(newOffset)
-    const controller = new AbortController()
-    void loadClawhubSkills(controller.signal, false)
-    return () => controller.abort()
-  }, [clawhubOffset, skillApiConfig, loadClawhubSkills])
+const handleOpenClawhubSkillDetail = useCallback(
+    async (skill: SkillApiItem) => {
+      if (!skillApiConfig) return
 
-  const handleClawhubNextPage = useCallback(() => {
-    if (clawhubOffset + 9 >= clawhubTotal || !skillApiConfig) return
-    const newOffset = clawhubOffset + 9
-    setClawhubOffset(newOffset)
-    const controller = new AbortController()
-    void loadClawhubSkills(controller.signal, false)
-    return () => controller.abort()
-  }, [clawhubOffset, clawhubTotal, skillApiConfig, loadClawhubSkills])
+      setClawhubDetailLoading(true)
+      setClawhubDetailData(null)
+      const controller = new AbortController()
+
+      try {
+        const baseUrl = skillApiConfig.featuredEndpoint.replace(/\/api\/v1\/skills.*$/, '')
+        const result = await fetchClawhubSkillDetail({
+          baseUrl,
+          slug: skill.skillName || skill.id,
+          signal: controller.signal,
+        })
+
+        if (result.success && result.skill) {
+          setClawhubDetailData(result.skill)
+          setSelectedSkillForDetail({
+            id: result.skill.id,
+            skillName: result.skill.skillName,
+            title: result.skill.title,
+            description: result.skill.description,
+            template: result.skill.template,
+            isSelected: false,
+          })
+        } else {
+          setSelectedSkillForDetail(skill)
+        }
+      } catch {
+        setSelectedSkillForDetail(skill)
+      } finally {
+        setClawhubDetailLoading(false)
+      }
+    },
+    [skillApiConfig],
+  )
 
   useEffect(() => {
     if (!skillApiConfig) {
-      setClawhubSkills([])
+      setClawhubAllSkills([])
       setClawhubSkillsError('技能配置读取失败，请检查 config.yaml')
       return
     }
 
     const controller = new AbortController()
-    void loadClawhubSkills(controller.signal, true)
+    void loadClawhubSkills(controller.signal)
 
     return () => {
       controller.abort()
@@ -944,7 +989,10 @@ export default function SkillsPage() {
   const manageLoading = manageTab === 'created' ? createdSkillsLoading : addedSkillsLoading
 
   const featuredList = useMemo(() => {
-    return featuredSkills.map((item, index) => {
+    const startIndex = featuredGroupIndex * 9
+    const currentSkills = featuredSkills.slice(startIndex, startIndex + 9)
+
+    return currentSkills.map((item, index) => {
       const toneClassName = getFeaturedCardTone(index)
 
       return {
@@ -960,10 +1008,13 @@ export default function SkillsPage() {
         count: '',
       }
     })
-  }, [featuredSkills])
+  }, [featuredSkills, featuredGroupIndex])
 
   const clawhubList = useMemo(() => {
-    return clawhubSkills.map((item, index) => {
+    const startIndex = clawhubGroupIndex * 9
+    const currentSkills = clawhubAllSkills.slice(startIndex, startIndex + 9)
+
+    return currentSkills.map((item: SkillApiItem, index: number) => {
       const toneClassName = getFeaturedCardTone(index)
 
       return {
@@ -979,7 +1030,7 @@ export default function SkillsPage() {
         count: '',
       }
     })
-  }, [clawhubSkills])
+  }, [clawhubAllSkills, clawhubGroupIndex])
 
   const manageEmptyText = useMemo(() => {
     if (manageTab === 'created') {
@@ -1021,6 +1072,7 @@ export default function SkillsPage() {
 
   const handleCloseSkillDetail = useCallback(() => {
     setSelectedSkillForDetail(null)
+    setClawhubDetailData(null)
   }, [])
 
   const handleLaunchSkill = useCallback(
@@ -1143,10 +1195,10 @@ export default function SkillsPage() {
                   <StarFilled className={styles.sectionIcon} />
                   <h2 className={styles.sectionTitle}>官方精选</h2>
                 </div>
-                <button type="button" className={styles.sectionAction}>
-                  <SwapOutlined />
-                  <span>换一换</span>
-                </button>
+<button type="button" className={styles.sectionAction} onClick={handleRefreshFeatured}>
+                   <SwapOutlined />
+                   <span>换一换</span>
+                 </button>
               </div>
 
               {featuredList.length > 0 ? (
@@ -1186,7 +1238,7 @@ export default function SkillsPage() {
               <div className={styles.sectionHead}>
                 <div className={styles.sectionTitleWrap}>
                   <StarFilled className={styles.sectionIcon} />
-                  <h2 className={styles.sectionTitle}>Claw Hub</h2>
+                  <h2 className={styles.sectionTitle}>Claw Hub 热门精选</h2>
                 </div>
                 <button type="button" className={styles.sectionAction} onClick={handleRefreshClawhub}>
                   <SwapOutlined />
@@ -1198,26 +1250,24 @@ export default function SkillsPage() {
                 <div className={styles.featuredGrid}>
                   {clawhubList.map((item) => (
                     <article key={item.id} className={styles.featuredCard}>
-                      <button type="button" className={styles.skillDetailCardTrigger} onClick={() => handleOpenSkillDetail(item)}>
+                      <button type="button" className={styles.skillDetailCardTrigger} onClick={() => handleOpenClawhubSkillDetail(item)}>
                         <div className={`${styles.featuredBadge} ${styles[item.toneClassName]}`}>
                           <span className={styles.badgeLetter}>{item.badgeLetter}</span>
                         </div>
                         <h3 className={styles.featuredTitle}>{item.title}</h3>
                         <p className={styles.featuredDesc}>{item.description}</p>
                       </button>
-                      {'isSelected' in item ? (
-                        <div className={styles.featuredActionBar}>
-                          <span className={styles.featuredActionSource}>Clawhub</span>
-                          <button
-                            type="button"
-                            className={styles.featuredActionButton}
-                            onClick={() => handleUseSkill(item)}
-                            disabled={skillActionLoadingId === item.id}
-                          >
-                            {skillActionLoadingId === item.id ? '处理中...' : item.isSelected ? '使用' : '添加'}
-                          </button>
-                        </div>
-                      ) : null}
+                      <div className={styles.featuredActionBar}>
+                        <span className={styles.featuredActionSource}>Clawhub</span>
+                        <button
+                          type="button"
+                          className={styles.featuredActionButton}
+                          onClick={() => handleUseSkill(item)}
+                          disabled={skillActionLoadingId === item.id}
+                        >
+                          {skillActionLoadingId === item.id ? '处理中...' : '使用'}
+                        </button>
+                      </div>
                     </article>
                   ))}
                 </div>
@@ -1225,29 +1275,6 @@ export default function SkillsPage() {
               {clawhubSkillsLoading ? <div className={styles.manageStatus}>技能加载中...</div> : null}
               {!clawhubSkillsLoading && clawhubSkillsError ? <div className={styles.manageStatus}>{clawhubSkillsError}</div> : null}
               {!clawhubSkillsLoading && !clawhubSkillsError && clawhubList.length === 0 ? <div className={styles.manageStatus}>暂无技能数据</div> : null}
-              {!clawhubSkillsLoading && !clawhubSkillsError && clawhubTotal > 9 ? (
-                <div className={styles.paginationWrap}>
-                  <button
-                    type="button"
-                    className={`${styles.paginationButton} ${clawhubOffset <= 0 ? styles.paginationButtonDisabled : ''}`}
-                    onClick={handleClawhubPrevPage}
-                    disabled={clawhubOffset <= 0}
-                  >
-                    <LeftOutlined />
-                  </button>
-                  <span className={styles.paginationInfo}>
-                    {Math.floor(clawhubOffset / 9) + 1} / {Math.ceil(clawhubTotal / 9)}
-                  </span>
-                  <button
-                    type="button"
-                    className={`${styles.paginationButton} ${clawhubOffset + 9 >= clawhubTotal ? styles.paginationButtonDisabled : ''}`}
-                    onClick={handleClawhubNextPage}
-                    disabled={clawhubOffset + 9 >= clawhubTotal}
-                  >
-                    <RightOutlined />
-                  </button>
-                </div>
-              ) : null}
             </section>
           </div>
         ) : (
@@ -1506,13 +1533,14 @@ export default function SkillsPage() {
         visible={Boolean(selectedSkillForDetail)}
         skillName={selectedSkillForDetail?.skillName || selectedSkillForDetail?.id || ''}
         isSelected={Boolean(selectedSkillForDetail?.isSelected)}
-        actionLoading={skillActionLoadingId === selectedSkillForDetail?.id}
+        actionLoading={skillActionLoadingId === selectedSkillForDetail?.id || clawhubDetailLoading}
         onAction={() => {
           if (selectedSkillForDetail) {
             void handleUseSkill(selectedSkillForDetail)
           }
         }}
         onCancel={handleCloseSkillDetail}
+        preloadedDetail={clawhubDetailData ? convertClawhubToSkillDetail(clawhubDetailData) : null}
       />
     </main>
   )

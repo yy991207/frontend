@@ -724,6 +724,7 @@
   position: relative;
   overflow: hidden;
   min-height: 238px;
+  height: 238px;
   border-radius: 20px;
   border: 1px solid rgba(226, 232, 240, 0.9);
   background: #ffffff;
@@ -835,6 +836,10 @@
   color: #6b7280;
   font-size: 15px;
   line-height: 1.75;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .featuredMeta {

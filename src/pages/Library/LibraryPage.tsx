@@ -1,23 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  CheckOutlined,
+  AudioOutlined,
   CloseCircleFilled,
   DownOutlined,
   DownloadOutlined,
   EyeOutlined,
   FileImageOutlined,
-  FileMarkdownOutlined,
-  FileOutlined,
-  FilePdfOutlined,
   FileTextOutlined,
   FileUnknownOutlined,
-  FileWordOutlined,
   LoadingOutlined,
   MenuOutlined,
   MoreOutlined,
   SearchOutlined,
   VideoCameraOutlined,
-  AudioOutlined,
 } from '@ant-design/icons'
 import styles from './library.module.less'
 
@@ -222,54 +217,8 @@ function formatDateTime(value: string) {
     .replace(/\//g, '-')
 }
 
-function inferFileExtension(fileName: string) {
-  const matched = fileName.match(/\.([a-zA-Z0-9]+)$/)
-  return matched?.[1]?.toLowerCase() ?? ''
-}
-
-function getFileBadge(extension: string) {
-  const upper = extension.toUpperCase()
-  if (!upper) return '文件'
-  if (upper.length <= 4) return upper
-  return upper.slice(0, 4)
-}
-
-function getFileIcon(item: LibraryFileItem) {
-  const extension = inferFileExtension(item.file_name)
-
-  if (item.file_type === 'image') {
-    return { icon: <FileImageOutlined />, accent: styles.iconImage, badge: 'IMG' }
-  }
-
-  if (item.file_type === 'video') {
-    return { icon: <VideoCameraOutlined />, accent: styles.iconVideo, badge: 'VID' }
-  }
-
-  if (item.file_type === 'audio') {
-    return { icon: <AudioOutlined />, accent: styles.iconAudio, badge: 'AUD' }
-  }
-
-  if (extension === 'doc' || extension === 'docx') {
-    return { icon: <FileWordOutlined />, accent: styles.iconWord, badge: 'DOC' }
-  }
-
-  if (extension === 'md') {
-    return { icon: <FileMarkdownOutlined />, accent: styles.iconMarkdown, badge: 'MD' }
-  }
-
-  if (extension === 'pdf') {
-    return { icon: <FilePdfOutlined />, accent: styles.iconPdf, badge: 'PDF' }
-  }
-
-  if (item.file_type === 'document') {
-    return { icon: <FileTextOutlined />, accent: styles.iconDocument, badge: getFileBadge(extension) }
-  }
-
-  return { icon: <FileOutlined />, accent: styles.iconOther, badge: getFileBadge(extension) }
-}
-
 function getAvatarLetter(name: string) {
-  return name.trim().charAt(0) || '库'
+  return name.trim().charAt(0).toUpperCase() || '库'
 }
 
 function getFileTypeText(fileType: LibraryFileType) {
@@ -316,12 +265,22 @@ export default function LibraryPage() {
   const [error, setError] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [primaryDropdownOpen, setPrimaryDropdownOpen] = useState(false)
+  const [secondaryDropdownOpen, setSecondaryDropdownOpen] = useState(false)
   const menuWrapRef = useRef<HTMLDivElement | null>(null)
+  const primaryDropdownRef = useRef<HTMLDivElement | null>(null)
+  const secondaryDropdownRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
       if (!menuWrapRef.current?.contains(event.target as Node)) {
         setOpenMenuId(null)
+      }
+      if (!primaryDropdownRef.current?.contains(event.target as Node)) {
+        setPrimaryDropdownOpen(false)
+      }
+      if (!secondaryDropdownRef.current?.contains(event.target as Node)) {
+        setSecondaryDropdownOpen(false)
       }
     }
 
@@ -401,7 +360,6 @@ export default function LibraryPage() {
     setCurrentPage(1)
   }, [activeFilter, keyword, selectedSource, primaryCategory, secondarySource, secondaryType])
 
-  const selectedFilter = FILE_TYPE_OPTIONS.find((item) => item.key === activeFilter) ?? FILE_TYPE_OPTIONS[0]
   const hasKeyword = keyword.trim().length > 0
   const total = visibleFiles.length
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
@@ -426,37 +384,85 @@ export default function LibraryPage() {
 
           <div className={styles.tools}>
             <div className={styles.cascadeFilterGroup}>
-              <select
-                value={primaryCategory}
-                onChange={(event) => setPrimaryCategory(event.target.value as FilterCategoryKey)}
-                className={styles.cascadeSelectPrimary}
-              >
-                {FILTER_CATEGORIES.map((category) => (
-                  <option key={category.key} value={category.key}>
-                    {category.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={primaryCategory === 'source' ? secondarySource : secondaryType}
-                onChange={(event) => {
-                  if (primaryCategory === 'source') {
-                    setSecondarySource(event.target.value)
-                  } else {
-                    setSecondaryType(event.target.value)
-                  }
+              <div ref={primaryDropdownRef} className={styles.filterDropdownWrap}>
+                <button
+                  type="button"
+                  className={`${styles.filterDropdownButton} ${primaryDropdownOpen ? styles.filterDropdownButtonOpen : ''}`}
+                  onClick={() => {
+                  setPrimaryDropdownOpen((v) => {
+                    if (!v) {
+                      setSecondaryDropdownOpen(false)
+                    }
+                    return !v
+                  })
                 }}
-                className={styles.cascadeSelectSecondary}
-              >
-                {(primaryCategory === 'source'
-                  ? sourceOptions
-                  : FILE_TYPE_OPTIONS.map((option) => ({ value: option.key, label: option.label }))
-                ).map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                >
+                  <span>{FILTER_CATEGORIES.find((c) => c.key === primaryCategory)?.label || '来源'}</span>
+                  <DownOutlined className={`${styles.filterDropdownArrow} ${primaryDropdownOpen ? styles.filterDropdownArrowOpen : ''}`} />
+                </button>
+                {primaryDropdownOpen && (
+                  <div className={styles.filterDropdownMenu}>
+                    {FILTER_CATEGORIES.map((category) => (
+                      <button
+                        key={category.key}
+                        type="button"
+                        className={`${styles.filterDropdownOption} ${primaryCategory === category.key ? styles.filterDropdownOptionActive : ''}`}
+                        onClick={() => {
+                          setPrimaryCategory(category.key)
+                          setPrimaryDropdownOpen(false)
+                        }}
+                      >
+                        {category.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div ref={secondaryDropdownRef} className={styles.filterDropdownWrap}>
+                <button
+                  type="button"
+                  className={`${styles.filterDropdownButton} ${secondaryDropdownOpen ? styles.filterDropdownButtonOpen : ''}`}
+                  onClick={() => {
+                  setSecondaryDropdownOpen((v) => {
+                    if (!v) {
+                      setPrimaryDropdownOpen(false)
+                    }
+                    return !v
+                  })
+                }}
+                >
+                  <span>
+                    {primaryCategory === 'source'
+                      ? sourceOptions.find((o) => o.value === secondarySource)?.label || '全部来源'
+                      : FILE_TYPE_OPTIONS.find((o) => o.key === secondaryType)?.label || '全部'}
+                  </span>
+                  <DownOutlined className={`${styles.filterDropdownArrow} ${secondaryDropdownOpen ? styles.filterDropdownArrowOpen : ''}`} />
+                </button>
+                {secondaryDropdownOpen && (
+                  <div className={styles.filterDropdownMenu}>
+                    {(primaryCategory === 'source'
+                      ? sourceOptions
+                      : FILE_TYPE_OPTIONS.map((option) => ({ value: option.key, label: option.label }))
+                    ).map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={`${styles.filterDropdownOption} ${(primaryCategory === 'source' ? secondarySource : secondaryType) === option.value ? styles.filterDropdownOptionActive : ''}`}
+                        onClick={() => {
+                          if (primaryCategory === 'source') {
+                            setSecondarySource(option.value)
+                          } else {
+                            setSecondaryType(option.value)
+                          }
+                          setSecondaryDropdownOpen(false)
+                        }}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <label className={styles.searchBox}>
@@ -548,15 +554,13 @@ export default function LibraryPage() {
                 <>
                   <div className={styles.tableBody}>
                     {pagedFiles.map((item) => {
-                      const fileMeta = getFileIcon(item)
                       const menuOpen = openMenuId === item.file_id
 
                       return (
                         <div key={item.file_id} className={styles.tableRow}>
                           <div className={styles.nameCol}>
-                            <div className={`${styles.fileIcon} ${fileMeta.accent}`}>
-                              <span className={styles.fileIconBadge}>{fileMeta.badge}</span>
-                              <span className={styles.fileIconGlyph}>{fileMeta.icon}</span>
+                            <div className={styles.fileIcon}>
+                              <span className={styles.fileIconLetter}>{getAvatarLetter(item.file_name)}</span>
                             </div>
                             <div className={styles.fileMeta}>
                               <div className={styles.fileName} title={item.file_name}>{item.file_name}</div>
@@ -564,10 +568,7 @@ export default function LibraryPage() {
                           </div>
 
                           <div className={styles.sourceCol}>
-                            <div className={styles.agentInfo}>
-                              <span className={styles.agentAvatar}>{getAvatarLetter(item.agent_name)}</span>
-                              <span className={styles.agentName}>{item.agent_name}</span>
-                            </div>
+                            <span className={styles.agentName}>{item.agent_name}</span>
                           </div>
 
                           <div className={styles.typeCol}>
