@@ -242,30 +242,36 @@
 // 标签容器
 .tagsContainer {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-// 标签行
-.tagRow {
-  display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
+}
+
+// 标签图标
+.tagIcon {
+  width: 20px;
+  height: 20px;
+  margin-right: 6px;
+  object-fit: contain;
+  vertical-align: middle;
 }
 
 // 标签按钮
 .tagButton {
-  padding: 8px 16px;
-  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: 24px;
   border: 1px solid #e5e7eb;
   background: #ffffff;
   color: #374151;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  line-height: 1.4;
 
   &:hover {
     border-color: #1677ff;
