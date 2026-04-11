@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   AudioOutlined,
   CloseCircleFilled,
@@ -14,7 +14,6 @@ import {
   SearchOutlined,
   VideoCameraOutlined,
 } from '@ant-design/icons'
-import LibraryFilePreview, { type LibraryFileDetail } from '../../components/common/LibraryFilePreview'
 import styles from './library.module.less'
 
 type LibraryConfig = {
@@ -198,32 +197,6 @@ async function fetchLibraryFiles(config: LibraryConfig, query: QueryState, signa
   }
 }
 
-async function fetchLibraryFileDetail(config: LibraryConfig, fileId: string, signal?: AbortSignal): Promise<LibraryFileDetail> {
-  const endpoint = buildAbsoluteUrl(config.baseUrl, `${config.libraryPath}/${fileId}`)
-  const requestUrl = new URL(endpoint)
-  requestUrl.searchParams.set('user_id', config.userId)
-
-  const response = await fetch(requestUrl.toString(), {
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
-    },
-    signal,
-  })
-
-  if (!response.ok) {
-    throw new Error(`获取文件详情失败: HTTP ${response.status}`)
-  }
-
-  const data = await response.json()
-
-  if (!data.success) {
-    throw new Error(data.msg || '获取文件详情失败')
-  }
-
-  return data.data as LibraryFileDetail
-}
-
 function formatDateTime(value: string) {
   const date = new Date(value)
 
@@ -294,9 +267,6 @@ export default function LibraryPage() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [primaryDropdownOpen, setPrimaryDropdownOpen] = useState(false)
   const [secondaryDropdownOpen, setSecondaryDropdownOpen] = useState(false)
-  const [previewVisible, setPreviewVisible] = useState(false)
-  const [previewFile, setPreviewFile] = useState<LibraryFileDetail | null>(null)
-  const [previewLoading, setPreviewLoading] = useState(false)
   const menuWrapRef = useRef<HTMLDivElement | null>(null)
   const primaryDropdownRef = useRef<HTMLDivElement | null>(null)
   const secondaryDropdownRef = useRef<HTMLDivElement | null>(null)
@@ -401,27 +371,6 @@ export default function LibraryPage() {
   }, [safeCurrentPage, visibleFiles])
   const emptyRows = Math.max(0, FIXED_ROW_COUNT - pagedFiles.length)
   const hasActiveFilters = activeFilter !== FILE_TYPE_ALL || selectedSource !== SOURCE_ALL || hasKeyword
-
-  const handleFileClick = useCallback(async (fileId: string) => {
-    setPreviewVisible(true)
-    setPreviewLoading(true)
-    setPreviewFile(null)
-
-    try {
-      const config = await loadLibraryConfig()
-      const detail = await fetchLibraryFileDetail(config, fileId)
-      setPreviewFile(detail)
-    } catch (err) {
-      setPreviewVisible(false)
-    } finally {
-      setPreviewLoading(false)
-    }
-  }, [])
-
-  const handleClosePreview = useCallback(() => {
-    setPreviewVisible(false)
-    setPreviewFile(null)
-  }, [])
 
   return (
     <main className={styles.page}>
@@ -609,7 +558,7 @@ export default function LibraryPage() {
 
                       return (
                         <div key={item.file_id} className={styles.tableRow}>
-                          <div className={styles.nameCol} onClick={(e) => { e.stopPropagation(); handleFileClick(item.file_id) }}>
+                          <div className={styles.nameCol}>
                             <div className={styles.fileIcon}>
                               <span className={styles.fileIconLetter}>{getAvatarLetter(item.file_name)}</span>
                             </div>
@@ -713,12 +662,6 @@ export default function LibraryPage() {
           </div>
         </div>
       </section>
-      <LibraryFilePreview
-        visible={previewVisible}
-        file={previewFile}
-        loading={previewLoading}
-        onClose={handleClosePreview}
-      />
     </main>
   )
 }
