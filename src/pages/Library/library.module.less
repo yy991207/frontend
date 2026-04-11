@@ -7,16 +7,16 @@
 
 .panel {
   height: 100%;
+  padding: 18px 18px 26px;
+  overflow: hidden auto;
   border-radius: 28px;
   background: #ffffff;
   border: 1px solid rgba(226, 232, 240, 0.9);
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
-  padding: 28px 26px 32px;
   display: flex;
   flex-direction: column;
 }
 
-// 内容区域 - 居中显示，参考 skills 页面
 .libraryPage {
   width: 100%;
   max-width: 1280px;
@@ -25,6 +25,7 @@
   flex-direction: column;
   gap: 18px;
   height: 100%;
+  min-height: 0;
 }
 
 .header {
@@ -37,40 +38,36 @@
 .headerMain {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 18px;
 }
 
 .title {
-  font-size: 32px;
-  line-height: 1.1;
-  font-weight: 600;
-  color: #111827;
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 500;
+  color: #1f2937;
 }
 
 .tabs {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 32px;
 }
 
 .tabButton {
   border: none;
   background: transparent;
   padding: 0;
-  color: #6b7280;
-  font-size: 16px;
+  color: #374151;
+  font-size: 18px;
+  line-height: 28px;
   font-weight: 500;
-  cursor: pointer;
-  transition: color 0.16s ease;
-
-  &:hover {
-    color: #111827;
-  }
+  cursor: default;
 }
 
 .tabButtonActive {
-  color: #111827;
-  font-weight: 600;
+  color: #374151;
 }
 
 .tools {
@@ -85,35 +82,35 @@
 }
 
 .filterButton {
-  min-width: 118px;
-  height: 42px;
-  padding: 0 14px;
-  border-radius: 14px;
-  border: 1px solid #d7dee8;
+  min-width: 122px;
+  height: 48px;
+  padding: 0 18px;
+  border-radius: 16px;
+  border: 1px solid #d9e0ea;
   background: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 12px;
   color: #4b5563;
-  font-size: 15px;
+  font-size: 16px;
   cursor: pointer;
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
 
   &:hover {
-    border-color: #c7d1df;
+    border-color: #cfd8e3;
   }
 }
 
 .filterButtonOpen {
-  border-color: #c7d1df;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  border-color: #cfd8e3;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
 }
 
 .filterMain {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .filterArrow {
@@ -140,7 +137,7 @@
   transform-origin: top right;
   pointer-events: none;
   transition: opacity 0.18s ease, transform 0.2s ease;
-  z-index: 10;
+  z-index: 20;
 }
 
 .filterMenuOpen {
@@ -162,10 +159,9 @@
   color: #4b5563;
   font-size: 15px;
   cursor: pointer;
-  transition: background-color 0.16s ease, color 0.16s ease;
 
   &:hover {
-    background: #f8fafc;
+    background: #f7f8fa;
     color: #111827;
   }
 }
@@ -192,26 +188,26 @@
 }
 
 .searchBox {
-  width: 272px;
-  height: 42px;
-  padding: 0 14px;
-  border-radius: 14px;
-  border: 1px solid #d7dee8;
+  width: 396px;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 1px solid #d9e0ea;
   background: #ffffff;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
 
   &:focus-within {
-    border-color: #7aa2ff;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+    border-color: #cfd8e3;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
   }
 }
 
 .searchIcon {
   color: #9ca3af;
-  font-size: 16px;
+  font-size: 20px;
 }
 
 .searchInput {
@@ -220,7 +216,7 @@
   border: none;
   outline: none;
   color: #111827;
-  font-size: 15px;
+  font-size: 16px;
   background: transparent;
 
   &::placeholder {
@@ -241,150 +237,423 @@
   padding: 0;
 }
 
+.queryBar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0;
+}
+
+.queryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.queryLabel {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.querySelect,
+.queryInput {
+  height: 40px;
+  min-width: 180px;
+  border-radius: 12px;
+  border: 1px solid #d9e0ea;
+  background: #ffffff;
+  padding: 0 14px;
+  font-size: 14px;
+  color: #111827;
+  outline: none;
+
+  &:focus {
+    border-color: #cfd8e3;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+  }
+}
+
 .content {
   flex: 1;
   min-height: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
-.emptyState {
+.feedbackState {
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
-  margin-top: -40px;
-}
-
-.illustration {
-  position: relative;
-  display: flex;
-  align-items: center;
   justify-content: center;
+  gap: 14px;
+  color: #6b7280;
 }
 
-.folderIllustration {
-  width: 146px;
-  height: 146px;
-}
-
-.folderHalo {
-  position: absolute;
-  inset: 12px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgba(226, 236, 255, 0.9), rgba(212, 225, 255, 0.74));
-}
-
-.folderBack {
-  position: absolute;
-  width: 72px;
-  height: 58px;
-  border-radius: 14px 14px 18px 18px;
-  background: linear-gradient(180deg, #ffdc84 0%, #ffc957 100%);
-  top: 52px;
-  left: 38px;
-}
-
-.folderTop {
-  position: absolute;
-  width: 46px;
-  height: 34px;
-  border-radius: 10px 10px 4px 4px;
-  background: linear-gradient(180deg, #60dbc4 0%, #46cbb6 100%);
-  transform: skew(-8deg);
-  top: 34px;
-  left: 40px;
-}
-
-.folderFront {
-  position: absolute;
-  width: 78px;
-  height: 44px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #6ca5ff 0%, #4f86f7 100%);
-  top: 76px;
-  left: 34px;
-}
-
-.folderLock {
-  position: absolute;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  background: #fff5e6;
-  box-shadow: inset 0 0 0 6px #ffc04b;
-  top: 66px;
-  left: 61px;
-}
-
-.searchIllustration {
-  width: 150px;
-  height: 150px;
-}
-
-.searchHalo {
-  position: absolute;
-  inset: 16px;
-  border-radius: 999px;
-  background:
-    conic-gradient(from 220deg, rgba(236, 240, 248, 0.92), rgba(220, 229, 244, 0.52), rgba(255, 255, 255, 0.95)),
-    #eef2f7;
-}
-
-.searchRing {
-  position: absolute;
-  width: 60px;
-  height: 60px;
-  border-radius: 999px;
-  border: 10px solid #4d8dff;
-  top: 38px;
-  left: 38px;
-}
-
-.searchHandle {
-  position: absolute;
-  width: 16px;
-  height: 48px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #4d8dff 0%, #2b72f7 100%);
-  transform: rotate(-42deg);
-  top: 78px;
-  left: 82px;
+.feedbackIcon {
+  font-size: 28px;
+  color: #4f86f7;
 }
 
 .emptyText {
-  color: #6b7280;
   font-size: 16px;
 }
 
-@media (max-width: 980px) {
+.tableWrap {
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+}
+
+.tableHeader,
+.tableRow {
+  display: grid;
+  grid-template-columns: minmax(360px, 1.8fr) minmax(220px, 1fr) minmax(220px, 0.9fr) 88px;
+  gap: 20px;
+  align-items: center;
+}
+
+.tableHeader {
+  padding: 10px 8px 18px;
+  color: #6b7280;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.tableBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.tableRow {
+  padding: 18px 8px;
+  border-top: 1px solid #edf0f3;
+  transition: background-color 0.16s ease;
+
+  &:hover {
+    background: #f5f5f5;
+  }
+}
+
+.nameCol,
+.sourceCol,
+.timeCol,
+.actionCol {
+  min-width: 0;
+}
+
+.nameCol {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.fileIcon {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+}
+
+.fileIconBadge {
+  position: absolute;
+  left: 8px;
+  top: 7px;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.fileIconGlyph {
+  font-size: 18px;
+  transform: translateY(5px);
+}
+
+.iconDocument {
+  background: linear-gradient(180deg, #5b8cff 0%, #3c6df0 100%);
+}
+
+.iconWord {
+  background: linear-gradient(180deg, #4c7dff 0%, #2852d8 100%);
+}
+
+.iconMarkdown {
+  background: linear-gradient(180deg, #64748b 0%, #475569 100%);
+}
+
+.iconPdf {
+  background: linear-gradient(180deg, #ff7c6b 0%, #ef4444 100%);
+}
+
+.iconImage {
+  background: linear-gradient(180deg, #7c9cff 0%, #5b6dff 100%);
+}
+
+.iconVideo {
+  background: linear-gradient(180deg, #a855f7 0%, #7c3aed 100%);
+}
+
+.iconAudio {
+  background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+}
+
+.iconOther {
+  background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
+}
+
+.fileMeta {
+  min-width: 0;
+}
+
+.fileName {
+  font-size: 16px;
+  line-height: 24px;
+  color: #1f2937;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sourceCol {
+  display: flex;
+  align-items: center;
+}
+
+.agentInfo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.agentAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #3b82f6;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.agentName,
+.timeCol {
+  font-size: 16px;
+  color: #1f2937;
+}
+
+.agentName {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.actionCol {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.actionWrap {
+  position: relative;
+}
+
+.actionButton {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  &:hover {
+    background: #eceff3;
+    color: #111827;
+  }
+}
+
+.actionButtonActive {
+  background: #eceff3;
+  color: #111827;
+}
+
+.actionMenu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  min-width: 156px;
+  padding: 8px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #e5ebf3;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  opacity: 0;
+  transform: translateY(-8px) scale(0.98);
+  transform-origin: top right;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.2s ease;
+  z-index: 30;
+}
+
+.actionMenuOpen {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.actionMenuItem {
+  width: 100%;
+  height: 42px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  color: #374151;
+  font-size: 14px;
+  cursor: pointer;
+
+  &:hover {
+    background: #f5f5f5;
+    color: #111827;
+  }
+}
+
+.pagination {
+  padding: 20px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.paginationSummary {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pageButton {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid #d7dee8;
+  background: #ffffff;
+  color: #4b5563;
+  font-size: 14px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    border-color: #c7d1df;
+    color: #111827;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.pageButtonActive {
+  border-color: #3b82f6;
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.pageEllipsis {
+  color: #94a3b8;
+  font-size: 14px;
+  padding: 0 2px;
+}
+
+@media (max-width: 1100px) {
+  .searchBox {
+    width: 320px;
+  }
+
+  .tableHeader,
+  .tableRow {
+    grid-template-columns: minmax(300px, 1.8fr) minmax(200px, 1fr) minmax(180px, 0.9fr) 72px;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 920px) {
+  .page {
+    padding: 20px 20px 16px;
+  }
+
   .header {
     flex-direction: column;
     align-items: stretch;
   }
 
   .tools {
-    justify-content: flex-end;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .searchBox {
+    width: 100%;
+  }
+
+  .queryBar {
+    flex-wrap: wrap;
+  }
+
+  .tableWrap {
+    overflow: auto;
+  }
+
+  .tableHeader,
+  .tableBody {
+    min-width: 860px;
   }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 640px) {
   .page {
-    padding: 8px;
-  }
-
-  .panel {
-    padding: 20px 18px 24px;
-    border-radius: 22px;
+    padding: 16px;
   }
 
   .title {
-    font-size: 28px;
+    font-size: 24px;
   }
 
   .tabs {
     gap: 20px;
+  }
+
+  .tabButton {
+    font-size: 16px;
   }
 
   .tools {
@@ -397,7 +666,17 @@
     width: 100%;
   }
 
-  .filterMenu {
+  .queryItem {
     width: 100%;
+  }
+
+  .querySelect,
+  .queryInput {
+    width: 100%;
+  }
+
+  .pagination {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

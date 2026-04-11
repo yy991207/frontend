@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { CloseOutlined, CopyOutlined, ForwardOutlined, LoadingOutlined } from '@ant-design/icons'
+import { CloseOutlined, CopyOutlined, LoadingOutlined } from '@ant-design/icons'
 import { MarkdownContent } from '../chat/markdown-content'
 import styles from './SkillDetailModal.module.less'
 
@@ -247,10 +247,6 @@ export default function SkillDetailModal({ visible, skillName, isSelected, actio
             <h3 className={styles.headerTitle}>{displayName}</h3>
           </div>
           <div className={styles.headerActions}>
-            <button type="button" className={styles.secondaryAction} onClick={() => navigator.clipboard.writeText(displayName).catch(() => undefined)}>
-              <ForwardOutlined />
-              <span>分享</span>
-            </button>
             <button type="button" className={styles.primaryAction} onClick={onAction} disabled={actionLoading}>
               {actionLoading ? '处理中...' : actionLabel}
             </button>
@@ -396,31 +392,25 @@ export default function SkillDetailModal({ visible, skillName, isSelected, actio
                     {parsedDoc.triggers.length > 0 ? (
                       <div className={styles.noteBlock}>
                         <h5 className={styles.noteTitle}>触发条件</h5>
-                        <ul className={styles.noteList}>
-                          {parsedDoc.triggers.map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
-                        </ul>
+                        <div className={styles.noteContent}>
+                          <MarkdownContent content={parsedDoc.triggers.join('\n')} isStreaming={false} />
+                        </div>
                       </div>
                     ) : null}
                     {parsedDoc.workflow.length > 0 ? (
                       <div className={styles.noteBlock}>
                         <h5 className={styles.noteTitle}>工作流程</h5>
-                        <ul className={styles.noteList}>
-                          {parsedDoc.workflow.map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
-                        </ul>
+                        <div className={styles.noteContent}>
+                          <MarkdownContent content={parsedDoc.workflow.join('\n')} isStreaming={false} />
+                        </div>
                       </div>
                     ) : null}
                     {parsedDoc.notes.length > 0 ? (
                       <div className={styles.noteBlock}>
                         <h5 className={styles.noteTitle}>注意事项</h5>
-                        <ul className={styles.noteList}>
-                          {parsedDoc.notes.map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
-                        </ul>
+                        <div className={styles.noteContent}>
+                          <MarkdownContent content={parsedDoc.notes.join('\n')} isStreaming={false} />
+                        </div>
                       </div>
                     ) : null}
                   </div>
