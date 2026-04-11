@@ -233,8 +233,12 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
     }
   }, [expanded, hasLoadedOnce, loadSessions])
 
-  const handleSessionClick = (sessionId: string) => {
-    navigate(`/chat?sessionId=${sessionId}`)
+  const handleSessionClick = (session: ChatSession) => {
+    if (session.agent_id) {
+      navigate(`/agent/${session.agent_id}/chat?sessionId=${session.session_id}`)
+    } else {
+      navigate(`/chat?sessionId=${session.session_id}`)
+    }
   }
 
   const handleDeleteSession = async (session: ChatSession) => {
@@ -280,7 +284,7 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
       <div
         key={session.session_id}
         className={`${styles.sessionItem} ${isRemoving ? styles.sessionItemRemoving : ''}`}
-        onClick={() => handleSessionClick(session.session_id)}
+        onClick={() => handleSessionClick(session)}
         title={getSessionDisplayName(session)}
         style={{ cursor: 'pointer' }}
       >

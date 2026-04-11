@@ -4,6 +4,7 @@ export type ChatSession = {
   user_id: string
   created_at: string
   updated_at: string
+  agent_id?: string | null
 }
 
 export type ChatSessionMessageToolCall = {
@@ -39,6 +40,7 @@ export type ChatSessionDetail = ChatSession & {
   message_count: number
   messages: ChatSessionMessage[]
   agent_name?: string | null
+  agent_id?: string | null
 }
 
 export type ChatSessionsResponse = {

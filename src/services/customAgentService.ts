@@ -8,6 +8,8 @@ export type CustomAgentApiConfig = {
   viewAgentEndpoint: string
   updateAgentEndpoint: string
   chatAgentEndpoint: string
+  generateAgentTemplateEndpoint: string
+  getAgentTemplateTaskEndpoint: string
 }
 
 export type PresetQuestion = {
@@ -103,9 +105,11 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
   const viewAgentPath = parsedConfig.view_custom_agent_path
   const updateAgentPath = parsedConfig.update_custom_agent_path
   const chatAgentPath = parsedConfig.chat_custom_agent_path
+  const generateTemplatePath = parsedConfig.generate_agent_template_path
+  const getTemplateTaskPath = parsedConfig.get_agent_template_task_path
   const userId = parsedConfig.user_id
 
-  if (!baseUrl || !createAgentPath || !listAgentPath || !viewAgentPath || !updateAgentPath || !chatAgentPath || !userId) {
+  if (!baseUrl || !createAgentPath || !listAgentPath || !viewAgentPath || !updateAgentPath || !chatAgentPath || !generateTemplatePath || !getTemplateTaskPath || !userId) {
     throw new Error('config.yaml 缺少必要的接口配置')
   }
 
@@ -117,6 +121,8 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
     viewAgentEndpoint: buildAbsoluteUrl(baseUrl, viewAgentPath),
     updateAgentEndpoint: buildAbsoluteUrl(baseUrl, updateAgentPath),
     chatAgentEndpoint: buildAbsoluteUrl(baseUrl, chatAgentPath),
+    generateAgentTemplateEndpoint: buildAbsoluteUrl(baseUrl, generateTemplatePath),
+    getAgentTemplateTaskEndpoint: buildAbsoluteUrl(baseUrl, getTemplateTaskPath),
   }
 }
 
@@ -369,4 +375,99 @@ export async function chatCustomAgentStream(
     }
     callbacks.onError?.(error instanceof Error ? error : new Error(String(error)))
   }
+}
+
+export type GenerateAgentTemplateRequest = {
+  input_text: string
+}
+
+export type GenerateAgentTemplateResponse = {
+  success: boolean
+  code: string
+  msg: string
+  data: {
+    task_id: string
+    status: string
+  }
+}
+
+export type PresetQuestionGenerated = {
+  question: string
+  category: string
+}
+
+export type AgentTemplateTaskResult = {
+  agent_name: string
+  description: string
+  agent_prompt: string
+  preset_questions: PresetQuestionGenerated[]
+}
+
+export type AgentTemplateTaskResponse = {
+  success: boolean
+  code: string
+  msg: string
+  data: {
+    task_id: string
+    status: string
+    progress: {
+      agent_name: boolean
+      description: boolean
+      agent_prompt: boolean
+      preset_questions: boolean
+    }
+    is_completed: boolean
+    result: AgentTemplateTaskResult | null
+    error: string | null
+  }
+}
+
+export async function generateAgentTemplate(
+  config: CustomAgentApiConfig,
+  inputText: string,
+  signal?: AbortSignal,
+): Promise<GenerateAgentTemplateResponse> {
+  const requestUrl = new URL(config.generateAgentTemplateEndpoint)
+  requestUrl.searchParams.set('user_id', config.userId)
+
+  const response = await fetch(requestUrl.toString(), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ input_text: inputText }),
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(`生成智能体模板失败: HTTP ${response.status}`)
+  }
+
+  const data = (await response.json()) as GenerateAgentTemplateResponse
+  return data
+}
+
+export async function getAgentTemplateTask(
+  config: CustomAgentApiConfig,
+  taskId: string,
+  signal?: AbortSignal,
+): Promise<AgentTemplateTaskResponse> {
+  const requestUrl = new URL(config.getAgentTemplateTaskEndpoint.replace('{task_id}', taskId))
+  requestUrl.searchParams.set('user_id', config.userId)
+
+  const response = await fetch(requestUrl.toString(), {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(`获取模板任务状态失败: HTTP ${response.status}`)
+  }
+
+  const data = (await response.json()) as AgentTemplateTaskResponse
+  return data
 }

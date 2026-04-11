@@ -38,4 +38,8 @@ update_custom_agent_path: /api/v1/custom-agents/{agent_id}
 del_custom_agent_path: /api/v1/custom-agents/{agent_id}
 chat_custom_agent_path: /api/v1/custom-agents/debug/stream
 
+//agent模板生成相关
+generate_agent_template_path: /api/v1/custom-agents/templates/generate
+get_agent_template_task_path: /api/v1/custom-agents/templates/tasks/{task_id}
+
 

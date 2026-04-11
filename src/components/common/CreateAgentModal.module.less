@@ -161,6 +161,76 @@
   }
 }
 
+// 加载按钮
+.loadingButton {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+// 加载文字
+.loadingText {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+  color: #1677ff;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+// 错误容器
+.errorContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 0;
+  margin-bottom: 16px;
+}
+
+// 错误文字
+.errorText {
+  color: #ff4d4f;
+  font-size: 14px;
+  text-align: center;
+}
+
+// 重试按钮
+.retryButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 24px;
+  border-radius: 10px;
+  border: 1px solid #1677ff;
+  background: #fff;
+  color: #1677ff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #f0f7ff;
+    border-color: #4096ff;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
 // 提示文字
 .hint {
   font-size: 14px;
