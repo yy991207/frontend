@@ -1,7 +1,9 @@
 import { useLocation, useParams, useNavigate } from 'react-router-dom'
 import { Dropdown, Input } from 'antd'
 import { SettingOutlined, ArrowUpOutlined, AudioOutlined } from '@ant-design/icons'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
+import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts-context'
 import { MessageList } from '../../components/chat/message-list'
 import { viewCustomAgent, loadCustomAgentApiConfig, type AgentDetail } from '../../services/customAgentService'
 import { parseChatApiConfig, type ChatApiConfig } from '../../services/chatService'
@@ -9,14 +11,22 @@ import { useSharedChatRuntime } from '../../services/sharedChatRuntime'
 import styles from './agentConversation.module.less'
 
 export default function AgentConversationPage() {
+  return (
+    <ArtifactsProvider>
+      <AgentConversationPageContent />
+    </ArtifactsProvider>
+  )
+}
+
+function AgentConversationPageContent() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
+  const { addFile, selectFile, open: artifactOpen } = useArtifacts()
   const [agentData, setAgentData] = useState<AgentDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const [sessionLoading, setSessionLoading] = useState(false)
   const [chatApiConfig, setChatApiConfig] = useState<ChatApiConfig | null>(null)
 
   const {
@@ -29,6 +39,7 @@ export default function AgentConversationPage() {
     handleSend,
     isResponding,
     requestError,
+    sessionLoading,
     getToolDisplayTitle,
     getToolDisplaySummary,
   } = useSharedChatRuntime({
@@ -38,6 +49,28 @@ export default function AgentConversationPage() {
     setSessionId,
     enableWebSearch: true,
   })
+
+  const sessionBaseUrl = useMemo(() => {
+    if (!chatApiConfig) return null
+    try {
+      const url = new URL(chatApiConfig.streamEndpointBase)
+      return `${url.protocol}//${url.host}`
+    } catch {
+      return null
+    }
+  }, [chatApiConfig])
+
+  const currentSessionId = useMemo(() => {
+    const routeSessionId = new URLSearchParams(location.search).get('sessionId')
+    return routeSessionId || sessionId || null
+  }, [location.search, sessionId])
+
+  const handleOpenFile = useCallback((filepath: string, originalUrl?: string) => {
+    if (!currentSessionId || !sessionBaseUrl) return
+    const artifactFile = { filepath, sessionId: currentSessionId, baseUrl: sessionBaseUrl, originalUrl }
+    addFile(artifactFile)
+    selectFile(artifactFile)
+  }, [currentSessionId, sessionBaseUrl, addFile, selectFile])
 
   useEffect(() => {
     let cancelled = false
@@ -62,7 +95,6 @@ export default function AgentConversationPage() {
         if (!cancelled) {
           setAgentData(agent)
           setChatApiConfig(nextChatApiConfig)
-          setSessionLoading(false)
         }
       } catch (err) {
         if (!cancelled) {
@@ -71,7 +103,6 @@ export default function AgentConversationPage() {
       } finally {
         if (!cancelled) {
           setLoading(false)
-          setSessionLoading(false)
         }
       }
     }
@@ -130,130 +161,144 @@ export default function AgentConversationPage() {
 
   return (
     <main className={styles.page}>
-      <section className={styles.panel}>
-        <header className={styles.header}>
-          <div className={styles.headerLeft}>
-            <div className={styles.avatar}>
-              {agentData?.agent_name?.charAt(0).toUpperCase() || 'A'}
+      <div className={`${styles.splitContainer} ${artifactOpen ? styles.splitContainerOpen : ''}`}>
+        <section className={styles.panel}>
+          <header className={styles.header}>
+            <div className={styles.headerLeft}>
+              <div className={styles.avatar}>
+                {agentData?.agent_name?.charAt(0).toUpperCase() || 'A'}
+              </div>
+              <div className={styles.headerInfo}>
+                <h1 className={styles.agentName}>{agentData?.agent_name || '智能体'}</h1>
+                {agentData?.description ? <p className={styles.agentDesc}>{agentData.description}</p> : null}
+              </div>
             </div>
-            <div className={styles.headerInfo}>
-              <h1 className={styles.agentName}>{agentData?.agent_name || '智能体'}</h1>
-              {agentData?.description ? <p className={styles.agentDesc}>{agentData.description}</p> : null}
+            <div className={styles.headerRight}>
+              <Dropdown menu={dropdownMenu} trigger={['click']}>
+                <button type="button" className={styles.headerButton}>
+                  <SettingOutlined />
+                </button>
+              </Dropdown>
             </div>
-          </div>
-          <div className={styles.headerRight}>
-            <Dropdown menu={dropdownMenu} trigger={['click']}>
-              <button type="button" className={styles.headerButton}>
-                <SettingOutlined />
-              </button>
-            </Dropdown>
-          </div>
-        </header>
+          </header>
 
-        <div className={styles.messages}>
-          <div className={styles.messageColumn}>
-            {groupedMessages.length > 0 ? (
-              <MessageList
-                groups={groupedMessages}
-                threadLoading={sessionLoading}
-                copiedMessageId={copiedMessageId}
-                assistantCopyTargets={assistantCopyTargets}
-                onCopy={handleCopy}
-                getToolDisplayTitle={getToolDisplayTitle}
-                getToolDisplaySummary={getToolDisplaySummary}
-              />
-            ) : (
-              <div className={styles.welcomeArea}>
-                <div className={styles.welcomeIcon}>
-                  {agentData?.agent_name?.charAt(0).toUpperCase() || 'A'}
+          <div className={styles.messages}>
+            <div className={styles.messageColumn}>
+              {groupedMessages.length > 0 ? (
+                <MessageList
+                  groups={groupedMessages}
+                  threadLoading={sessionLoading}
+                  copiedMessageId={copiedMessageId}
+                  assistantCopyTargets={assistantCopyTargets}
+                  onCopy={handleCopy}
+                  getToolDisplayTitle={getToolDisplayTitle}
+                  getToolDisplaySummary={getToolDisplaySummary}
+                  onOpenFile={handleOpenFile}
+                />
+              ) : (
+                <div className={styles.welcomeArea}>
+                  <div className={styles.welcomeIcon}>
+                    {agentData?.agent_name?.charAt(0).toUpperCase() || 'A'}
+                  </div>
+                  <h2 className={styles.welcomeTitle}>你好，我是 {agentData?.agent_name || '智能体'}</h2>
+                  {agentData?.description ? <p className={styles.welcomeDesc}>{agentData.description}</p> : null}
+                  {agentData?.preset_questions && agentData.preset_questions.length > 0 ? (
+                    <div className={styles.suggestionsSection}>
+                      <h3 className={styles.suggestionsTitle}>你可以问我</h3>
+                      <div className={styles.suggestionsList}>
+                        {agentData.preset_questions.slice(0, 4).map((item, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            className={styles.suggestionItem}
+                            onClick={() => handleSuggestionClick(item.question)}
+                          >
+                            {item.question}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-                <h2 className={styles.welcomeTitle}>你好，我是 {agentData?.agent_name || '智能体'}</h2>
-                {agentData?.description ? <p className={styles.welcomeDesc}>{agentData.description}</p> : null}
-                {agentData?.preset_questions && agentData.preset_questions.length > 0 ? (
-                  <div className={styles.suggestionsSection}>
-                    <h3 className={styles.suggestionsTitle}>你可以问我</h3>
-                    <div className={styles.suggestionsList}>
-                      {agentData.preset_questions.slice(0, 4).map((item, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          className={styles.suggestionItem}
-                          onClick={() => handleSuggestionClick(item.question)}
-                        >
-                          {item.question}
-                        </button>
-                      ))}
+              )}
+            </div>
+          </div>
+
+          <div className={styles.composerArea}>
+            <div className={styles.composerWrap}>
+              <div className={styles.inputWrap}>
+                <div className={styles.inputTopArea}>
+                  <Input.TextArea
+                    value={draft}
+                    onChange={(event) => {
+                      setDraft(event.target.value)
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+                        return
+                      }
+                      if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault()
+                        handleSend()
+                      }
+                    }}
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      border: 'none',
+                      boxShadow: 'none',
+                      background: 'transparent',
+                      fontSize: 14,
+                      resize: 'none',
+                      minHeight: 24,
+                      maxHeight: 200,
+                      overflowY: 'auto',
+                      lineHeight: 1.5,
+                      padding: 0,
+                    }}
+                    variant="borderless"
+                    placeholder="输入你的问题..."
+                    autoSize={{ minRows: 1, maxRows: 8 }}
+                  />
+                </div>
+                <div className={styles.inputBottomArea}>
+                  <div className={styles.inputBottomLeft} />
+                  <div className={styles.inputBottomRight}>
+                    <span className={styles.tabHint}>Tab</span>
+                    <div className={styles.inputActions}>
+                      <button type="button" className={styles.iconBtn} aria-label="语音输入">
+                        <AudioOutlined />
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.iconBtn} ${styles.sendBtn} ${!draft.trim() ? styles.sendBtnDisabled : ''}`}
+                        onClick={handleSend}
+                        disabled={!draft.trim() || isResponding}
+                      >
+                        <ArrowUpOutlined />
+                      </button>
                     </div>
                   </div>
-                ) : null}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className={styles.composerArea}>
-          <div className={styles.composerWrap}>
-            <div className={styles.inputWrap}>
-              <div className={styles.inputTopArea}>
-                <Input.TextArea
-                  value={draft}
-                  onChange={(event) => {
-                    setDraft(event.target.value)
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
-                      return
-                    }
-                    if (event.key === 'Enter' && !event.shiftKey) {
-                      event.preventDefault()
-                      handleSend()
-                    }
-                  }}
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    border: 'none',
-                    boxShadow: 'none',
-                    background: 'transparent',
-                    fontSize: 14,
-                    resize: 'none',
-                    minHeight: 24,
-                    maxHeight: 200,
-                    overflowY: 'auto',
-                    lineHeight: 1.5,
-                    padding: 0,
-                  }}
-                  variant="borderless"
-                  placeholder="输入你的问题..."
-                  autoSize={{ minRows: 1, maxRows: 8 }}
-                />
-              </div>
-              <div className={styles.inputBottomArea}>
-                <div className={styles.inputBottomLeft} />
-                <div className={styles.inputBottomRight}>
-                  <span className={styles.tabHint}>Tab</span>
-                  <div className={styles.inputActions}>
-                    <button type="button" className={styles.iconBtn} aria-label="语音输入">
-                      <AudioOutlined />
-                    </button>
-                    <button
-                      type="button"
-                      className={`${styles.iconBtn} ${styles.sendBtn} ${!draft.trim() ? styles.sendBtnDisabled : ''}`}
-                      onClick={handleSend}
-                      disabled={!draft.trim() || isResponding}
-                    >
-                      <ArrowUpOutlined />
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
+            <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>
           </div>
-          <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>
-        </div>
-      </section>
+        </section>
+        <section className={`${styles.artifactPanel} ${artifactOpen ? styles.artifactPanelOpen : styles.artifactPanelClosed}`}>
+          <AgentConversationArtifactPanel />
+        </section>
+      </div>
     </main>
   )
+}
+
+function AgentConversationArtifactPanel() {
+  const { selectedFile, open } = useArtifacts()
+
+  if (!selectedFile || !open) return null
+
+  return <ArtifactFileDetail file={selectedFile} />
 }
 
 async function loadChatApiConfig(): Promise<ChatApiConfig> {
