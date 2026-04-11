@@ -315,29 +315,23 @@
   border-radius: 16px;
   border: 1px solid #e5e7eb;
   padding: 20px;
+  padding-bottom: 48px;
   display: flex;
   gap: 16px;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover {
     border-color: #d1d5db;
     box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
 
     .enterpriseCardTitle {
       color: #1677ff;
     }
 
-    .useButton {
+    .cardActions {
       opacity: 1;
-      transform: translateY(0);
     }
-  }
-
-  &:active {
-    transform: translateY(0);
   }
 }
 
@@ -496,6 +490,45 @@
   justify-content: center;
   margin-top: 24px;
   padding-top: 16px;
+}
+
+// 卡片操作按钮
+.cardActions {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.actionButton {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #1677ff;
+    color: #1677ff;
+    background: #eff6ff;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  :global(.anticon) {
+    font-size: 16px;
+  }
 }
 
 // 企业精选卡片的使用按钮位置调整
