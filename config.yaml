@@ -42,4 +42,8 @@ chat_custom_agent_path: /api/v1/custom-agents/debug/stream
 generate_agent_template_path: /api/v1/custom-agents/templates/generate
 get_agent_template_task_path: /api/v1/custom-agents/templates/tasks/{task_id}
 
+//智能体预设模版
+agent_templates_path: /api/v1/agent-templates
+agent_template_detail_path: /api/v1/agent-templates/{template_id}
+
 
