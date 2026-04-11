@@ -15,6 +15,7 @@ import {
   VideoCameraOutlined,
 } from '@ant-design/icons'
 import styles from './library.module.less'
+import { LibraryFilePreviewModal } from './LibraryFilePreviewModal'
 
 type LibraryConfig = {
   baseUrl: string
@@ -267,9 +268,22 @@ export default function LibraryPage() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [primaryDropdownOpen, setPrimaryDropdownOpen] = useState(false)
   const [secondaryDropdownOpen, setSecondaryDropdownOpen] = useState(false)
+  const [previewFileId, setPreviewFileId] = useState<string | null>(null)
+  const [previewVisible, setPreviewVisible] = useState(false)
+  const [config, setConfig] = useState<LibraryConfig | null>(null)
   const menuWrapRef = useRef<HTMLDivElement | null>(null)
   const primaryDropdownRef = useRef<HTMLDivElement | null>(null)
   const secondaryDropdownRef = useRef<HTMLDivElement | null>(null)
+
+  const handleFilePreview = (fileId: string) => {
+    setPreviewFileId(fileId)
+    setPreviewVisible(true)
+  }
+
+  const handlePreviewClose = () => {
+    setPreviewVisible(false)
+    setPreviewFileId(null)
+  }
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -305,8 +319,9 @@ export default function LibraryPage() {
       setError('')
 
       try {
-        const config = await loadLibraryConfig()
-        const response = await fetchLibraryFiles(config, queryState, controller.signal)
+        const loadedConfig = await loadLibraryConfig()
+        setConfig(loadedConfig)
+        const response = await fetchLibraryFiles(loadedConfig, queryState, controller.signal)
         setRawFiles(response.files ?? [])
       } catch (fetchError) {
         if (controller.signal.aborted) {
@@ -558,7 +573,11 @@ export default function LibraryPage() {
 
                       return (
                         <div key={item.file_id} className={styles.tableRow}>
-                          <div className={styles.nameCol}>
+                          <div
+                            className={styles.nameCol}
+                            onClick={() => handleFilePreview(item.file_id)}
+                            style={{ cursor: 'pointer' }}
+                          >
                             <div className={styles.fileIcon}>
                               <span className={styles.fileIconLetter}>{getAvatarLetter(item.file_name)}</span>
                             </div>
@@ -662,6 +681,13 @@ export default function LibraryPage() {
           </div>
         </div>
       </section>
+
+      <LibraryFilePreviewModal
+        visible={previewVisible}
+        fileId={previewFileId}
+        baseUrl={config?.baseUrl ?? ''}
+        onClose={handlePreviewClose}
+      />
     </main>
   )
 }
