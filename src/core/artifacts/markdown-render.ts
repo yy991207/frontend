@@ -7,12 +7,21 @@ export function renderMarkdownToHtml(markdownContent: string): string {
 export function buildMarkdownPreviewHtml(
   title: string,
   htmlContent: string,
+  fullWidth: boolean = false,
 ): string {
   const escapedTitle = title
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
+
+  const pageStyles = fullWidth
+    ? `width: 100%; height: 100%; padding: 20px 24px;`
+    : `max-width: 860px; margin: 0 auto; padding: 28px 20px 56px;`
+
+  const contentStyles = fullWidth
+    ? `padding: 0; border-radius: 0; background: transparent; border: none; box-shadow: none;`
+    : `padding: 24px 28px; border-radius: 18px; background: var(--panel); border: 1px solid var(--line); box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);`
 
   return `<!doctype html>
 <html lang="zh-CN">
@@ -33,24 +42,23 @@ export function buildMarkdownPreviewHtml(
       --code-bg: #f1f5f9;
     }
     * { box-sizing: border-box; }
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+    }
+    body {
       font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
       color: var(--text);
       background: var(--bg);
       line-height: 1.7;
     }
     .page {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 28px 20px 56px;
+      ${pageStyles}
     }
     .content {
-      padding: 24px 28px;
-      border-radius: 18px;
-      background: var(--panel);
-      border: 1px solid var(--line);
-      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+      ${contentStyles}
     }
     .content h1,
     .content h2,
@@ -157,17 +165,6 @@ export function buildMarkdownPreviewHtml(
       margin: 24px 0;
       border: none;
       border-top: 1px solid var(--line);
-    }
-    @media (max-width: 768px) {
-      .page {
-        padding: 18px 14px 36px;
-      }
-      .content {
-        padding: 18px 20px;
-      }
-      .content h1 { font-size: 24px; }
-      .content h2 { font-size: 20px; }
-      .content h3 { font-size: 18px; }
     }
   </style>
 </head>
