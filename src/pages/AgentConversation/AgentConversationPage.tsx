@@ -1,7 +1,7 @@
 import { useLocation, useParams, useNavigate } from 'react-router-dom'
 import { Dropdown, Input } from 'antd'
 import { SettingOutlined, ArrowUpOutlined, AudioOutlined, CloseOutlined } from '@ant-design/icons'
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
 import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts-context'
 import { MessageList } from '../../components/chat/message-list'
@@ -12,70 +12,10 @@ import { AttachmentMenu, type AttachmentSkillItem } from '../../components/commo
 import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
 import {
   buildSkillDisplayName,
-  extractSkillItemsFromResponse,
-  type SkillApiResponse,
 } from '../../services/skillPromptService'
-import chatConfigText from '../../../config.yaml?raw'
 import styles from './agentConversation.module.less'
 
 type SkillItemType = AttachmentSkillItem
-
-function parseSimpleYaml(rawText: string) {
-  return rawText.split(/\r?\n/).reduce<Record<string, string>>((result, line) => {
-    const trimmedLine = line.trim()
-
-    if (!trimmedLine || trimmedLine.startsWith('#')) {
-      return result
-    }
-
-    const separatorIndex = trimmedLine.indexOf(':')
-
-    if (separatorIndex === -1) {
-      return result
-    }
-
-    const key = trimmedLine.slice(0, separatorIndex).trim()
-    const value = trimmedLine.slice(separatorIndex + 1).trim().replace(/^['"]|['"]$/g, '')
-
-    if (key) {
-      result[key] = value
-    }
-
-    return result
-  }, {})
-}
-
-function buildAbsoluteUrl(baseUrl: string, path: string) {
-  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
-}
-
-function parseSkillApiConfig(rawText: string) {
-  const parsedConfig = parseSimpleYaml(rawText)
-  const baseUrl = parsedConfig.url
-  const managePath = parsedConfig.view_user_skills_path
-  const listPath = parsedConfig.list_user_skills_path
-  const userId = parsedConfig.user_id
-  const userIdParam = parsedConfig.skill_user_id_param
-
-  if (!baseUrl || !managePath || !userId || !userIdParam) {
-    throw new Error('config.yaml 缺少 url、view_user_skills_path、user_id 或 skill_user_id_param 配置')
-  }
-
-  const managePathWithUser = managePath.includes('{user_id}')
-    ? managePath.replace('{user_id}', encodeURIComponent(userId))
-    : managePath
-
-  const listEndpoint = listPath
-    ? buildAbsoluteUrl(baseUrl, listPath)
-    : null
-
-  return {
-    manageEndpoint: buildAbsoluteUrl(baseUrl, managePathWithUser),
-    listEndpoint,
-    userId,
-    userIdParam,
-  }
-}
 
 export default function AgentConversationPage() {
   return (
@@ -311,11 +251,7 @@ function AgentConversationPageContent() {
             </div>
           </header>
 
-          const routeSessionId = new URLSearchParams(location.search).get('sessionId')
-
-  const shouldShowHistoryLoading = routeSessionId && sessionLoading && groupedMessages.length === 0
-
-  <div className={styles.messages}>
+          <div className={styles.messages}>
             <div className={styles.messageColumn}>
               {shouldShowHistoryLoading ? (
                 <div className={styles.loadingState}>
@@ -500,8 +436,8 @@ function AgentConversationPageContent() {
                     <AttachmentMenu
                       placement="top"
                       skills={skills}
-                      skillsLoading={skillsLoading}
-                      loadSkills={fetchSkills}
+                      skillsLoading={false}
+                      loadSkills={() => Promise.resolve()}
                       onSelectSkill={handleSelectSkill}
                       onManageSkills={handleManageSkills}
                       showTools
