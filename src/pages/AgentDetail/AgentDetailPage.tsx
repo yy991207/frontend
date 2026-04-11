@@ -29,6 +29,7 @@ import {
   type AgentDetail,
   type EnabledSkill,
   type ChatMessageItem,
+  type PresetQuestion,
 } from '../../services/customAgentService'
 import type { ToolCall } from '../../core/messages/types'
 import {
@@ -103,7 +104,7 @@ export default function AgentDetailPage() {
   const [agentInstruction, setAgentInstruction] = useState('')
   const [agentSkills, setAgentSkills] = useState<EnabledSkill[]>([])
   const [hoveredSkillName, setHoveredSkillName] = useState<string | null>(null)
-  const [agentQuestions, setAgentQuestions] = useState<{ category: string; question: string }[]>([])
+  const [agentQuestions, setAgentQuestions] = useState<PresetQuestion[]>([])
   const [expandedQuestionIndex, setExpandedQuestionIndex] = useState<number | null>(null)
   const [chatInputValue, setChatInputValue] = useState('')
   const [isPublic, setIsPublic] = useState(false)
@@ -463,10 +464,10 @@ export default function AgentDetailPage() {
     if (!agentData) return
 
     // 验证推荐问题必填项
-    const emptyQuestions = agentQuestions.filter((q, i) => !q.question || !q.category)
+    const emptyQuestions = agentQuestions.filter((q) => !q.question || !q.instruction)
     if (emptyQuestions.length > 0) {
       const emptyIndexes = agentQuestions
-        .map((q, i) => (!q.question || !q.category) ? i + 1 : null)
+        .map((q, i) => (!q.question || !q.instruction) ? i + 1 : null)
         .filter((i): i is number => i !== null)
       message.error(`问题${emptyIndexes.join('、')}的名称或指令不能为空，请填写完整后再发布`)
       return
@@ -612,16 +613,16 @@ export default function AgentDetailPage() {
                   <div className={styles.suggestionSection}>
                     <h3 className={styles.suggestionTitle}>推荐问题</h3>
                     <div className={styles.suggestionList}>
-                      {agentQuestions.slice(0, 3).map((item) => (
-                        <button
-                          key={item.question}
-                          type="button"
-                          className={styles.suggestionChip}
-                          onClick={() => handleSuggestionClick(item.category)}
-                        >
-                          {item.question}
-                        </button>
-                      ))}
+{agentQuestions.slice(0, 3).map((item, idx) => (
+                         <button
+                           key={idx}
+                           type="button"
+                           className={styles.suggestionChip}
+                           onClick={() => handleSuggestionClick(item.instruction || item.question)}
+                         >
+                           {item.question}
+                         </button>
+                       ))}
                     </div>
                   </div>
                 </div>
@@ -894,7 +895,7 @@ export default function AgentDetailPage() {
                   type="button"
                   className={styles.linkAction}
                   onClick={() => {
-                    setAgentQuestions([...agentQuestions, { category: '默认', question: '' }])
+                    setAgentQuestions([...agentQuestions, { category: '默认', question: '', instruction: '' }])
                     setPublishStatus('idle')
                   }}
                 >
@@ -967,22 +968,22 @@ export default function AgentDetailPage() {
                             <label className={styles.fieldLabel}>
                               指令 <span className={styles.required}>*</span>
                             </label>
-                            <div className={styles.fieldWithCount}>
-                              <textarea
-                                className={styles.fieldTextarea}
-                                value={item.category}
-                                onChange={(e) => {
-                                  const newQuestions = [...agentQuestions]
-                                  newQuestions[index] = { ...newQuestions[index], category: e.target.value }
-                                  setAgentQuestions(newQuestions)
-                                  setPublishStatus('idle')
-                                }}
-                                maxLength={1000}
-                                placeholder="请输入指令内容"
-                                rows={4}
-                              />
-                              <span className={styles.charCount}>{(item.category || '').length}/1000</span>
-                            </div>
+<div className={styles.fieldWithCount}>
+                               <textarea
+                                 className={styles.fieldTextarea}
+                                 value={item.instruction}
+                                 onChange={(e) => {
+                                   const newQuestions = [...agentQuestions]
+                                   newQuestions[index] = { ...newQuestions[index], instruction: e.target.value }
+                                   setAgentQuestions(newQuestions)
+                                   setPublishStatus('idle')
+                                 }}
+                                 maxLength={1000}
+                                 placeholder="请输入指令内容"
+                                 rows={4}
+                               />
+                               <span className={styles.charCount}>{(item.instruction || '').length}/1000</span>
+                             </div>
                           </div>
                         </div>
                       )}

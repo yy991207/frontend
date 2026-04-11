@@ -23,6 +23,7 @@ import {
   loadCustomAgentApiConfig,
   createCustomAgent,
   type EnabledSkill,
+  type PresetQuestion,
 } from '../../services/customAgentService'
 import styles from '../AgentDetail/agentDetail.module.less'
 
@@ -31,7 +32,7 @@ type GeneratedTemplateState = {
     agentName: string
     description: string
     agentPrompt: string
-    presetQuestions: Array<{ question: string; category: string }>
+    presetQuestions: PresetQuestion[]
   }
 }
 
@@ -85,7 +86,7 @@ export default function AgentCreatePage() {
   const [agentInstruction, setAgentInstruction] = useState('')
   const [agentSkills, setAgentSkills] = useState<EnabledSkill[]>([])
   const [hoveredSkillName, setHoveredSkillName] = useState<string | null>(null)
-  const [agentQuestions, setAgentQuestions] = useState<{ category: string; question: string }[]>([])
+  const [agentQuestions, setAgentQuestions] = useState<PresetQuestion[]>([])
   const [expandedQuestionIndex, setExpandedQuestionIndex] = useState<number | null>(null)
   const [isPublic, setIsPublic] = useState(false)
   const [resourceIds, setResourceIds] = useState<string[]>([])
@@ -152,10 +153,10 @@ const handleModalSave = (data: { name: string; description: string }) => {
       return
     }
 
-    const emptyQuestions = agentQuestions.filter((q) => !q.question || !q.category)
+    const emptyQuestions = agentQuestions.filter((q) => !q.question || !q.instruction)
     if (emptyQuestions.length > 0) {
       const emptyIndexes = agentQuestions
-        .map((q, i) => (!q.question || !q.category) ? i + 1 : null)
+        .map((q, i) => (!q.question || !q.instruction) ? i + 1 : null)
         .filter((i): i is number => i !== null)
       message.error(`问题${emptyIndexes.join('、')}的名称或指令不能为空，请填写完整后再发布`)
       return
@@ -490,7 +491,7 @@ const handleModalSave = (data: { name: string; description: string }) => {
                   type="button"
                   className={styles.linkAction}
                   onClick={() => {
-                    setAgentQuestions([...agentQuestions, { category: '默认', question: '' }])
+                    setAgentQuestions([...agentQuestions, { category: '默认', question: '', instruction: '' }])
                     setPublishStatus('idle')
                   }}
                 >
@@ -563,22 +564,22 @@ const handleModalSave = (data: { name: string; description: string }) => {
                             <label className={styles.fieldLabel}>
                               指令 <span className={styles.required}>*</span>
                             </label>
-                            <div className={styles.fieldWithCount}>
-                              <textarea
-                                className={styles.fieldTextarea}
-                                value={item.category}
-                                onChange={(e) => {
-                                  const newQuestions = [...agentQuestions]
-                                  newQuestions[index] = { ...newQuestions[index], category: e.target.value }
-                                  setAgentQuestions(newQuestions)
-                                  setPublishStatus('idle')
-                                }}
-                                maxLength={1000}
-                                placeholder="请输入指令内容"
-                                rows={4}
-                              />
-                              <span className={styles.charCount}>{item.category.length}/1000</span>
-                            </div>
+<div className={styles.fieldWithCount}>
+                               <textarea
+                                 className={styles.fieldTextarea}
+                                 value={item.instruction || ''}
+                                 onChange={(e) => {
+                                   const newQuestions = [...agentQuestions]
+                                   newQuestions[index] = { ...newQuestions[index], instruction: e.target.value }
+                                   setAgentQuestions(newQuestions)
+                                   setPublishStatus('idle')
+                                 }}
+                                 maxLength={1000}
+                                 placeholder="请输入指令内容"
+                                 rows={4}
+                               />
+                               <span className={styles.charCount}>{(item.instruction || '').length}/1000</span>
+                             </div>
                           </div>
                         </div>
                       )}

@@ -802,44 +802,21 @@ const handleOpenClawhubSkillDetail = useCallback(
     setSkillActionLoadingId(skill.id)
 
     try {
-      const isClawhubSkill = clawhubAllSkills.some((item) => item.id === skill.id || item.skillName === skill.skillName)
+      const requestUrl = new URL(skillApiConfig.addSkillEndpoint)
+      requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
 
-      if (isClawhubSkill) {
-        const baseUrl = skillApiConfig.featuredEndpoint.replace(/\/api\/v1\/skills.*$/, '')
-        const slug = skill.skillName || skill.id
-        const installEndpoint = `${baseUrl.replace(/\/+$/, '')}/api/v1/skills/clawhub/${encodeURIComponent(slug)}/install`
-        const installUrl = new URL(installEndpoint)
-        installUrl.searchParams.set('user_id', skillApiConfig.userId)
+      const response = await fetch(requestUrl.toString(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          skill_name: skill.skillName || skill.id,
+        }),
+      })
 
-        const response = await fetch(installUrl.toString(), {
-          method: 'POST',
-        })
-
-        if (!response.ok) {
-          throw new Error('添加 Clawhub 技能失败')
-        }
-
-        const data = await response.json()
-        if (!data.success) {
-          throw new Error(data.msg || '添加 Clawhub 技能失败')
-        }
-      } else {
-        const requestUrl = new URL(skillApiConfig.addSkillEndpoint)
-        requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
-
-        const response = await fetch(requestUrl.toString(), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            skill_name: skill.skillName || skill.id,
-          }),
-        })
-
-        if (!response.ok) {
-          throw new Error('添加技能失败')
-        }
+      if (!response.ok) {
+        throw new Error('添加技能失败')
       }
 
       setFeaturedSkills((previous) =>
