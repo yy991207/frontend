@@ -144,15 +144,16 @@
 .artifactMarkdownWrap {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 24px 28px;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
 }
 
-.artifactMarkdownWrap iframe {
+.artifactMarkdownWrap > div {
   width: 100%;
-  height: 100%;
-  border: none;
+  max-width: 720px;
 }
 
 .artifactPreviewWrap {
@@ -516,14 +517,6 @@
   color: #a1a1aa;
   font-size: 12px;
   flex-shrink: 0;
-}
-
-/* Markdown 预览 iframe */
-.artifactMarkdownIframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-  border-radius: 12px;
 }
 
 /* Markdown 预览容器 - 参考 deer-flow 实现 */

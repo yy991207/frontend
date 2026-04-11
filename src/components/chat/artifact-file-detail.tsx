@@ -16,6 +16,7 @@ import { buildCourseTablePreviewHtml, parseCourseTableArtifact } from '../../cor
 import { buildMarkdownPreviewHtml, renderMarkdownToHtml } from '../../core/artifacts/markdown-render'
 import { buildArtifactDownloadUrl } from '../../core/artifacts/utils'
 import { checkCodeFile, getFileName } from '../../core/utils/files'
+import { MarkdownContent } from './markdown-content'
 
 /**
  * 文件预览组件
@@ -30,15 +31,12 @@ function ArtifactFilePreview({
   language: string
 }) {
   if (language === 'markdown') {
-    const htmlContent = renderMarkdownToHtml(content)
-    const fullHtml = buildMarkdownPreviewHtml('Preview', htmlContent)
     return (
-      <iframe
-        className={styles.artifactMarkdownIframe}
-        srcDoc={fullHtml}
-        sandbox="allow-same-origin"
-        title="Markdown preview"
-      />
+      <div className={styles.artifactMarkdownContainer}>
+        <div className={styles.artifactMarkdownContent}>
+          <MarkdownContent content={content} isStreaming={false} />
+        </div>
+      </div>
     )
   }
   return null
