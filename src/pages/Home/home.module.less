@@ -589,10 +589,25 @@
   width: 100%;
   max-width: 820px;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 18px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
+  }
 }
 
 .quickTag {
@@ -608,6 +623,7 @@
   cursor: pointer;
   white-space: nowrap;
   transition: border-color 0.15s, background-color 0.15s;
+  flex-shrink: 0;
 
   &:hover {
     border-color: #1677ff;

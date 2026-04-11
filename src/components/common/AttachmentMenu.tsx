@@ -37,6 +37,7 @@ type AttachmentMenuProps = {
   knowledgeEnabled?: boolean
   onToggleWebSearch?: () => void
   onToggleKnowledge?: () => void
+  hideManageSkills?: boolean
 }
 
 const ATTACHMENT_ACTIONS = [
@@ -59,6 +60,7 @@ export function AttachmentMenu({
   knowledgeEnabled = false,
   onToggleWebSearch,
   onToggleKnowledge,
+  hideManageSkills = false,
 }: AttachmentMenuProps) {
   const rootRef = useRef<HTMLDivElement | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -220,14 +222,16 @@ export function AttachmentMenu({
               ))
             )}
           </div>
-          <button type="button" className={styles.manageButton} onClick={onManageSkills}>
-            <span className={styles.menuMain}>
-              <span className={styles.toolItemMain}>
-                <SettingOutlined />
-                <span>管理技能</span>
+          {hideManageSkills ? null : (
+            <button type="button" className={styles.manageButton} onClick={onManageSkills}>
+              <span className={styles.menuMain}>
+                <span className={styles.toolItemMain}>
+                  <SettingOutlined />
+                  <span>管理技能</span>
+                </span>
               </span>
-            </span>
-          </button>
+            </button>
+          )}
         </div>
 
         {showTools ? (

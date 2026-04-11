@@ -450,6 +450,7 @@ function AgentConversationPageContent() {
                         }
                       }}
                       onToggleKnowledge={() => {}}
+                      hideManageSkills
                     />
                   </div>
                   <div className={styles.inputBottomRight}>
