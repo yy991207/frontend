@@ -10,6 +10,8 @@ export type CustomAgentApiConfig = {
   chatAgentEndpoint: string
   generateAgentTemplateEndpoint: string
   getAgentTemplateTaskEndpoint: string
+  agentTemplatesEndpoint: string
+  agentTemplateDetailEndpoint: string
 }
 
 export type PresetQuestion = {
@@ -108,9 +110,11 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
   const chatAgentPath = parsedConfig.chat_custom_agent_path
   const generateTemplatePath = parsedConfig.generate_agent_template_path
   const getTemplateTaskPath = parsedConfig.get_agent_template_task_path
+  const agentTemplatesPath = parsedConfig.agent_templates_path
+  const agentTemplateDetailPath = parsedConfig.agent_template_detail_path
   const userId = parsedConfig.user_id
 
-  if (!baseUrl || !createAgentPath || !listAgentPath || !viewAgentPath || !updateAgentPath || !chatAgentPath || !generateTemplatePath || !getTemplateTaskPath || !userId) {
+  if (!baseUrl || !createAgentPath || !listAgentPath || !viewAgentPath || !updateAgentPath || !chatAgentPath || !generateTemplatePath || !getTemplateTaskPath || !agentTemplatesPath || !agentTemplateDetailPath || !userId) {
     throw new Error('config.yaml 缺少必要的接口配置')
   }
 
@@ -124,6 +128,8 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
     chatAgentEndpoint: buildAbsoluteUrl(baseUrl, chatAgentPath),
     generateAgentTemplateEndpoint: buildAbsoluteUrl(baseUrl, generateTemplatePath),
     getAgentTemplateTaskEndpoint: buildAbsoluteUrl(baseUrl, getTemplateTaskPath),
+    agentTemplatesEndpoint: buildAbsoluteUrl(baseUrl, agentTemplatesPath),
+    agentTemplateDetailEndpoint: buildAbsoluteUrl(baseUrl, agentTemplateDetailPath),
   }
 }
 
@@ -471,4 +477,108 @@ export async function getAgentTemplateTask(
 
   const data = (await response.json()) as AgentTemplateTaskResponse
   return data
+}
+
+export type AgentTemplateItem = {
+  template_id: string
+  template_name: string
+  description: string
+  avatar_url: string | null
+  category: string
+  sort_order: number
+}
+
+type AgentTemplatesResponse = {
+  success: boolean
+  code: string
+  msg: string
+  data: {
+    templates: AgentTemplateItem[]
+    total: number
+  }
+}
+
+export async function getAgentTemplates(
+  config: CustomAgentApiConfig,
+  signal?: AbortSignal,
+): Promise<AgentTemplateItem[]> {
+  const response = await fetch(config.agentTemplatesEndpoint, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(`获取智能体模版列表失败: HTTP ${response.status}`)
+  }
+
+  const data = (await response.json()) as AgentTemplatesResponse
+
+  if (!data.success) {
+    throw new Error(data.msg || '获取智能体模版列表失败')
+  }
+
+  return data.data?.templates || []
+}
+
+export type PresetQuestionTemplate = {
+  question: string
+  instruction?: string
+}
+
+export type AgentTemplateDetail = {
+  template_id: string
+  template_name: string
+  description: string
+  avatar_url: string | null
+  agent_prompt: string
+  enabled_skills: EnabledSkill[]
+  resource_ids: string[]
+  preset_questions: PresetQuestionTemplate[]
+  enable_web_search: boolean
+  is_public: boolean
+  category: string
+  sort_order: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+type AgentTemplateDetailResponse = {
+  success: boolean
+  code: string
+  msg: string
+  data: {
+    template: AgentTemplateDetail
+  }
+}
+
+export async function getAgentTemplateDetail(
+  config: CustomAgentApiConfig,
+  templateId: string,
+  signal?: AbortSignal,
+): Promise<AgentTemplateDetail> {
+  const requestUrl = config.agentTemplateDetailEndpoint.replace('{template_id}', templateId)
+
+  const response = await fetch(requestUrl, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(`获取智能体模版详情失败: HTTP ${response.status}`)
+  }
+
+  const data = (await response.json()) as AgentTemplateDetailResponse
+
+  if (!data.success) {
+    throw new Error(data.msg || '获取智能体模版详情失败')
+  }
+
+  return data.data?.template
 }

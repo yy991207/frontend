@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Input, Spin } from 'antd'
+import { Input, Spin, Tooltip } from 'antd'
 import type { TextAreaRef } from 'antd/es/input/TextArea'
 import { ArrowUpOutlined, CloseOutlined, LoadingOutlined, ReloadOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
@@ -7,7 +7,10 @@ import {
   loadCustomAgentApiConfig,
   generateAgentTemplate,
   getAgentTemplateTask,
+  getAgentTemplates,
+  getAgentTemplateDetail,
   type AgentTemplateTaskResult,
+  type AgentTemplateItem,
 } from '../../services/customAgentService'
 import styles from './CreateAgentModal.module.less'
 
@@ -15,11 +18,6 @@ interface CreateAgentModalProps {
   visible: boolean
   onCancel: () => void
 }
-
-const templateTags = [
-  ['企业财报解读专家', '图片生成助手', '产品/市场调研专家', '帮助文档写作助手'],
-  ['任务日程助手', '数据分析专家', '会议总结助手', '飞书智能客服'],
-]
 
 const POLL_INTERVAL = 2000
 const MAX_POLL_TIME = 120000
@@ -30,10 +28,14 @@ export default function CreateAgentModal({ visible, onCancel }: CreateAgentModal
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasError, setHasError] = useState(false)
   const [errorText, setErrorText] = useState('')
+  const [templates, setTemplates] = useState<AgentTemplateItem[]>([])
+  const [templatesLoading, setTemplatesLoading] = useState(false)
+  const [templateClicking, setTemplateClicking] = useState<string | null>(null)
   const inputRef = useRef<TextAreaRef>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const pollingTimeoutRef = useRef<number | null>(null)
   const startTimeRef = useRef<number | null>(null)
+  const templatesAbortRef = useRef<AbortController | null>(null)
 
   const clearTimers = () => {
     if (abortControllerRef.current) {
@@ -44,7 +46,28 @@ export default function CreateAgentModal({ visible, onCancel }: CreateAgentModal
       clearTimeout(pollingTimeoutRef.current)
       pollingTimeoutRef.current = null
     }
+    if (templatesAbortRef.current) {
+      templatesAbortRef.current.abort()
+      templatesAbortRef.current = null
+    }
     startTimeRef.current = null
+  }
+
+  const loadTemplates = async () => {
+    setTemplatesLoading(true)
+    templatesAbortRef.current = new AbortController()
+
+    try {
+      const config = await loadCustomAgentApiConfig()
+      const data = await getAgentTemplates(config, templatesAbortRef.current.signal)
+      setTemplates(data)
+    } catch (err) {
+      if (!templatesAbortRef.current?.signal.aborted) {
+        console.error('加载模版列表失败:', err)
+      }
+    } finally {
+      setTemplatesLoading(false)
+    }
   }
 
   const handleSuccess = (result: AgentTemplateTaskResult) => {
@@ -147,10 +170,12 @@ export default function CreateAgentModal({ visible, onCancel }: CreateAgentModal
       setIsSubmitting(false)
       setHasError(false)
       setErrorText('')
+      setTemplateClicking(null)
       document.body.style.overflow = 'hidden'
       setTimeout(() => {
         inputRef.current?.focus()
       }, 100)
+      loadTemplates()
     } else {
       document.body.style.overflow = ''
       clearTimers()
@@ -172,9 +197,29 @@ export default function CreateAgentModal({ visible, onCancel }: CreateAgentModal
     }
   }
 
-  const handleTagClick = () => {
-    onCancel()
-    navigate('/agent/create')
+  const handleTagClick = async (template: AgentTemplateItem) => {
+    setTemplateClicking(template.template_id)
+
+    try {
+      const config = await loadCustomAgentApiConfig()
+      const detail = await getAgentTemplateDetail(config, template.template_id)
+
+      onCancel()
+      navigate('/agent/create', {
+        state: {
+          generatedTemplate: {
+            agentName: detail.template_name,
+            description: detail.description,
+            agentPrompt: detail.agent_prompt,
+            presetQuestions: detail.preset_questions,
+          },
+        },
+      })
+    } catch (err) {
+      console.error('获取模版详情失败:', err)
+    } finally {
+      setTemplateClicking(null)
+    }
   }
 
   const handleClose = () => {
@@ -246,19 +291,39 @@ export default function CreateAgentModal({ visible, onCancel }: CreateAgentModal
           <>
             <p className={styles.hint}>没有灵感？试试智能体模板~</p>
             <div className={styles.tagsContainer}>
-              {templateTags.map((row, rowIndex) => (
-                <div key={rowIndex} className={styles.tagRow}>
-                  {row.map((tag) => (
-                    <button
-                      key={tag}
-                      className={styles.tagButton}
-                      onClick={() => handleTagClick()}
-                    >
-                      {tag}
-                    </button>
-                  ))}
+              {templatesLoading ? (
+                <div style={{ textAlign: 'center', padding: '20px' }}>
+                  <Spin size="small" />
                 </div>
-              ))}
+              ) : (
+                templates.slice(0, 8).map((template) => (
+                  <Tooltip
+                    key={template.template_id}
+                    title={template.description}
+                    placement="top"
+                    overlayStyle={{
+                      background: '#333',
+                      color: '#fff',
+                      borderRadius: '6px',
+                    }}
+                    overlayInnerStyle={{
+                      background: '#333',
+                      color: '#fff',
+                    }}
+                  >
+                    <button
+                      className={`${styles.tagButton} ${templateClicking === template.template_id ? styles.tagButtonLoading : ''}`}
+                      onClick={() => handleTagClick(template)}
+                      disabled={templateClicking === template.template_id}
+                    >
+                      {templateClicking === template.template_id ? (
+                        <LoadingOutlined style={{ marginRight: 6 }} />
+                      ) : null}
+                      {template.template_name}
+                    </button>
+                  </Tooltip>
+                ))
+              )}
             </div>
           </>
         )}
