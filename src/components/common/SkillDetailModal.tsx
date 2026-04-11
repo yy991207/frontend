@@ -37,6 +37,7 @@ type SkillDetailModalProps = {
   actionLoading: boolean
   onAction: () => void
   onCancel: () => void
+  preloadedDetail?: SkillDetail | null
 }
 
 type ParsedSkillDoc = {
@@ -194,7 +195,7 @@ function formatConfigValue(value: string | number | undefined | null) {
   return String(value)
 }
 
-export default function SkillDetailModal({ visible, skillName, isSelected, actionLoading, onAction, onCancel }: SkillDetailModalProps) {
+export default function SkillDetailModal({ visible, skillName, isSelected, actionLoading, onAction, onCancel, preloadedDetail }: SkillDetailModalProps) {
   const [loading, setLoading] = useState(false)
   const [skillDetail, setSkillDetail] = useState<SkillDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -219,9 +220,15 @@ export default function SkillDetailModal({ visible, skillName, isSelected, actio
 
   useEffect(() => {
     if (visible && skillName) {
-      void loadSkillDetail()
+      if (preloadedDetail) {
+        setSkillDetail(normalizeSkillDetail(preloadedDetail, skillName))
+        setLoading(false)
+        setError(null)
+      } else {
+        void loadSkillDetail()
+      }
     }
-  }, [visible, skillName, loadSkillDetail])
+  }, [visible, skillName, loadSkillDetail, preloadedDetail])
 
   useEffect(() => {
     if (!visible) {
@@ -333,7 +340,9 @@ export default function SkillDetailModal({ visible, skillName, isSelected, actio
                           <span className={styles.exampleTitle}>示例 {index + 1}</span>
                           <CopyOutlined className={styles.exampleCopyIcon} />
                         </div>
-                        <p className={styles.exampleText}>{skillDetail.template.replace(`/${placeholder}`, `【${placeholder}】`)}</p>
+                        <div className={styles.exampleText}>
+                          <MarkdownContent content={skillDetail.template.replace(`/${placeholder}`, `【${placeholder}】`)} isStreaming={false} />
+                        </div>
                       </article>
                     ))
                   ) : (
@@ -342,7 +351,9 @@ export default function SkillDetailModal({ visible, skillName, isSelected, actio
                         <span className={styles.exampleTitle}>默认示例</span>
                         <CopyOutlined className={styles.exampleCopyIcon} />
                       </div>
-                      <p className={styles.exampleText}>{skillDetail.template || `基于 ${displayName} 帮我完成当前任务`}</p>
+                      <div className={styles.exampleText}>
+                        <MarkdownContent content={skillDetail.template || `基于 ${displayName} 帮我完成当前任务`} isStreaming={false} />
+                      </div>
                     </article>
                   )}
                 </div>
