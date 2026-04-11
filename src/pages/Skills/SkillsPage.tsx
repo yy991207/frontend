@@ -9,7 +9,6 @@ import {
   PlusOutlined,
   SearchOutlined,
   SettingOutlined,
-  StarFilled,
   SwapOutlined,
   ThunderboltOutlined,
   UploadOutlined,
@@ -214,6 +213,7 @@ export default function SkillsPage() {
   const [clawhubAllSkills, setClawhubAllSkills] = useState<SkillApiItem[]>([])
   const [featuredGroupIndex, setFeaturedGroupIndex] = useState(0)
   const [clawhubGroupIndex, setClawhubGroupIndex] = useState(0)
+  const [featuredSourceTab, setFeaturedSourceTab] = useState<'official' | 'clawhub'>('official')
   const [clawhubSkillsLoading, setClawhubSkillsLoading] = useState(false)
   const [clawhubSkillsError, setClawhubSkillsError] = useState('')
   const [clawhubDetailLoading, setClawhubDetailLoading] = useState(false)
@@ -1199,89 +1199,96 @@ const handleOpenClawhubSkillDetail = useCallback(
             <section className={styles.section}>
               <div className={styles.sectionHead}>
                 <div className={styles.sectionTitleWrap}>
-                  <StarFilled className={styles.sectionIcon} />
-                  <h2 className={styles.sectionTitle}>官方精选</h2>
+                  <div className={styles.sourceTabs}>
+                    <button
+                      type="button"
+                      className={`${styles.sourceTab} ${featuredSourceTab === 'official' ? styles.sourceTabActive : ''}`}
+                      onClick={() => setFeaturedSourceTab('official')}
+                    >
+                      官方精选
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.sourceTab} ${featuredSourceTab === 'clawhub' ? styles.sourceTabActive : ''}`}
+                      onClick={() => setFeaturedSourceTab('clawhub')}
+                    >
+                      Claw Hub
+                    </button>
+                  </div>
                 </div>
-<button type="button" className={styles.sectionAction} onClick={handleRefreshFeatured}>
-                   <SwapOutlined />
-                   <span>换一换</span>
-                 </button>
-              </div>
-
-              {featuredList.length > 0 ? (
-                <div className={styles.featuredGrid}>
-                  {featuredList.map((item) => (
-                    <article key={item.id} className={styles.featuredCard}>
-                      <button type="button" className={styles.skillDetailCardTrigger} onClick={() => handleOpenSkillDetail(item)}>
-                        <div className={`${styles.featuredBadge} ${styles[item.toneClassName]}`}>
-                          <span className={styles.badgeLetter}>{item.badgeLetter}</span>
-                        </div>
-                        <h3 className={styles.featuredTitle}>{item.title}</h3>
-                        <p className={styles.featuredDesc}>{item.description}</p>
-                      </button>
-                      {'isSelected' in item ? (
-                        <div className={styles.featuredActionBar}>
-                          <span className={styles.featuredActionSource}>果仁数据源</span>
-                          <button
-                            type="button"
-                            className={styles.featuredActionButton}
-                            onClick={() => handleUseSkill(item)}
-                            disabled={skillActionLoadingId === item.id}
-                          >
-                            {skillActionLoadingId === item.id ? '处理中...' : item.isSelected ? '使用' : '添加'}
-                          </button>
-                        </div>
-                      ) : null}
-                    </article>
-                  ))}
-                </div>
-              ) : null}
-              {featuredSkillsLoading ? <div className={styles.manageStatus}>技能加载中...</div> : null}
-              {!featuredSkillsLoading && featuredSkillsError ? <div className={styles.manageStatus}>{featuredSkillsError}</div> : null}
-              {!featuredSkillsLoading && !featuredSkillsError && featuredList.length === 0 ? <div className={styles.manageStatus}>暂无技能数据</div> : null}
-            </section>
-
-            <section className={styles.section}>
-              <div className={styles.sectionHead}>
-                <div className={styles.sectionTitleWrap}>
-                  <StarFilled className={styles.sectionIcon} />
-                  <h2 className={styles.sectionTitle}>Claw Hub 热门精选</h2>
-                </div>
-                <button type="button" className={styles.sectionAction} onClick={handleRefreshClawhub}>
+                <button type="button" className={styles.sectionAction} onClick={featuredSourceTab === 'official' ? handleRefreshFeatured : handleRefreshClawhub}>
                   <SwapOutlined />
                   <span>换一换</span>
                 </button>
               </div>
 
-              {clawhubList.length > 0 ? (
-                <div className={styles.featuredGrid}>
-                  {clawhubList.map((item) => (
-                    <article key={item.id} className={styles.featuredCard}>
-                      <button type="button" className={styles.skillDetailCardTrigger} onClick={() => handleOpenClawhubSkillDetail(item)}>
-                        <div className={`${styles.featuredBadge} ${styles[item.toneClassName]}`}>
-                          <span className={styles.badgeLetter}>{item.badgeLetter}</span>
-                        </div>
-                        <h3 className={styles.featuredTitle}>{item.title}</h3>
-                        <p className={styles.featuredDesc}>{item.description}</p>
-                      </button>
-                      <div className={styles.featuredActionBar}>
-                        <span className={styles.featuredActionSource}>Clawhub</span>
-                        <button
-                          type="button"
-                          className={styles.featuredActionButton}
-                          onClick={() => handleUseSkill(item)}
-                          disabled={skillActionLoadingId === item.id}
-                        >
-                          {skillActionLoadingId === item.id ? '处理中...' : item.isSelected ? '使用' : '添加'}
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              ) : null}
-              {clawhubSkillsLoading ? <div className={styles.manageStatus}>技能加载中...</div> : null}
-              {!clawhubSkillsLoading && clawhubSkillsError ? <div className={styles.manageStatus}>{clawhubSkillsError}</div> : null}
-              {!clawhubSkillsLoading && !clawhubSkillsError && clawhubList.length === 0 ? <div className={styles.manageStatus}>暂无技能数据</div> : null}
+              {featuredSourceTab === 'official' ? (
+                <>
+                  {featuredList.length > 0 ? (
+                    <div className={styles.featuredGrid}>
+                      {featuredList.map((item) => (
+                        <article key={item.id} className={styles.featuredCard}>
+                          <button type="button" className={styles.skillDetailCardTrigger} onClick={() => handleOpenSkillDetail(item)}>
+                            <div className={`${styles.featuredBadge} ${styles[item.toneClassName]}`}>
+                              <span className={styles.badgeLetter}>{item.badgeLetter}</span>
+                            </div>
+                            <h3 className={styles.featuredTitle}>{item.title}</h3>
+                            <p className={styles.featuredDesc}>{item.description}</p>
+                          </button>
+                          {'isSelected' in item ? (
+                            <div className={styles.featuredActionBar}>
+                              <span className={styles.featuredActionSource}>果仁数据源</span>
+                              <button
+                                type="button"
+                                className={styles.featuredActionButton}
+                                onClick={() => handleUseSkill(item)}
+                                disabled={skillActionLoadingId === item.id}
+                              >
+                                {skillActionLoadingId === item.id ? '处理中...' : item.isSelected ? '使用' : '添加'}
+                              </button>
+                            </div>
+                          ) : null}
+                        </article>
+                      ))}
+                    </div>
+                  ) : null}
+                  {featuredSkillsLoading ? <div className={styles.manageStatus}>技能加载中...</div> : null}
+                  {!featuredSkillsLoading && featuredSkillsError ? <div className={styles.manageStatus}>{featuredSkillsError}</div> : null}
+                  {!featuredSkillsLoading && !featuredSkillsError && featuredList.length === 0 ? <div className={styles.manageStatus}>暂无技能数据</div> : null}
+                </>
+              ) : (
+                <>
+                  {clawhubList.length > 0 ? (
+                    <div className={styles.featuredGrid}>
+                      {clawhubList.map((item) => (
+                        <article key={item.id} className={styles.featuredCard}>
+                          <button type="button" className={styles.skillDetailCardTrigger} onClick={() => handleOpenClawhubSkillDetail(item)}>
+                            <div className={`${styles.featuredBadge} ${styles[item.toneClassName]}`}>
+                              <span className={styles.badgeLetter}>{item.badgeLetter}</span>
+                            </div>
+                            <h3 className={styles.featuredTitle}>{item.title}</h3>
+                            <p className={styles.featuredDesc}>{item.description}</p>
+                          </button>
+                          <div className={styles.featuredActionBar}>
+                            <span className={styles.featuredActionSource}>Clawhub</span>
+                            <button
+                              type="button"
+                              className={styles.featuredActionButton}
+                              onClick={() => handleUseSkill(item)}
+                              disabled={skillActionLoadingId === item.id}
+                            >
+                              {skillActionLoadingId === item.id ? '处理中...' : item.isSelected ? '使用' : '添加'}
+                            </button>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  ) : null}
+                  {clawhubSkillsLoading ? <div className={styles.manageStatus}>技能加载中...</div> : null}
+                  {!clawhubSkillsLoading && clawhubSkillsError ? <div className={styles.manageStatus}>{clawhubSkillsError}</div> : null}
+                  {!clawhubSkillsLoading && !clawhubSkillsError && clawhubList.length === 0 ? <div className={styles.manageStatus}>暂无技能数据</div> : null}
+                </>
+              )}
             </section>
           </div>
         ) : (
