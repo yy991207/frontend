@@ -611,18 +611,18 @@ export default function AgentDetailPage() {
                   </div>
 
                   <div className={styles.suggestionSection}>
-                    <h3 className={styles.suggestionTitle}>推荐问题</h3>
+                    <h3 className={styles.suggestionTitle}>你可以问我</h3>
                     <div className={styles.suggestionList}>
-{agentQuestions.slice(0, 3).map((item, idx) => (
-                         <button
-                           key={idx}
-                           type="button"
-                           className={styles.suggestionChip}
-                           onClick={() => handleSuggestionClick(item.instruction || item.question)}
-                         >
-                           {item.question}
-                         </button>
-                       ))}
+                      {agentQuestions.filter(q => q.question).slice(0, 4).map((item, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          className={styles.suggestionItem}
+                          onClick={() => handleSuggestionClick(item.instruction || item.question)}
+                        >
+                          {item.question}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>

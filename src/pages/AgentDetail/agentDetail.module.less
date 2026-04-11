@@ -334,32 +334,46 @@
 .suggestionSection {
   width: 100%;
   max-width: 620px;
+  margin-top: 16px;
 }
 
 .suggestionTitle {
   margin: 0 0 12px;
-  font-size: 16px;
-  line-height: 24px;
-  color: #1f2329;
+  font-size: 14px;
   font-weight: 600;
+  color: #71717a;
 }
 
 .suggestionList {
   display: flex;
-  align-items: center;
-  gap: 12px;
   flex-wrap: wrap;
+  gap: 10px;
 }
 
-.suggestionChip {
-  height: 36px;
-  padding: 0 16px;
-  border-radius: 999px;
-  border: 1px solid #e5e6eb;
+.suggestionItem {
+  padding: 10px 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
   background: #ffffff;
-  color: #646a73;
+  color: #374151;
   font-size: 14px;
   cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  max-width: 100%;
+  line-height: 1.4;
+
+  &:hover {
+    border-color: rgba(22, 119, 255, 0.3);
+    color: #1677ff;
+    background: rgba(22, 119, 255, 0.04);
+    box-shadow: 0 4px 12px rgba(22, 119, 255, 0.08);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
 }
 
 // 输入区域样式 - 参考 ChatPage
@@ -575,6 +589,84 @@
   padding: 16px 24px;
   display: flex;
   flex-direction: column;
+}
+
+.messagesList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 780px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.userMessage {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.assistantMessage {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.userBubble {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 18px 18px 4px 18px;
+  background: #f1f1ec;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.assistantBubble {
+  max-width: 90%;
+  padding: 12px 16px;
+  border-radius: 18px 18px 18px 4px;
+  background: transparent;
+  color: #1f2329;
+  font-size: 14px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.reasoningBlock {
+  margin-bottom: 8px;
+
+  details {
+    summary {
+      cursor: pointer;
+      color: #8f959e;
+      font-size: 13px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: #f7f8fa;
+
+      &:hover {
+        background: #eef1f5;
+      }
+    }
+
+    &[open] summary {
+      margin-bottom: 8px;
+    }
+  }
+}
+
+.chatInput {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  background: transparent;
+
+  :global(.ant-input) {
+    padding: 0 !important;
+    line-height: 1.5 !important;
+    background: transparent !important;
+  }
 }
 
 .messageList {
