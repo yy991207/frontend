@@ -680,7 +680,7 @@ export default function SkillsPage() {
         const result = await fetchClawhubSkills({
           baseUrl,
           userId: skillApiConfig.userId,
-          limit: 45,
+          limit: 30,
           offset: 0,
           signal,
         })
@@ -715,14 +715,11 @@ export default function SkillsPage() {
   }, [featuredSkills.length])
 
   const handleRefreshClawhub = useCallback(() => {
-    if (clawhubAllSkills.length >= 45) {
-      setClawhubGroupIndex((prev) => (prev + 1) % 5)
-    } else {
-      const controller = new AbortController()
-      void loadClawhubSkills(controller.signal)
-      return () => controller.abort()
+    const totalGroups = Math.ceil(clawhubAllSkills.length / 9)
+    if (totalGroups > 1) {
+      setClawhubGroupIndex((prev) => (prev + 1) % totalGroups)
     }
-  }, [clawhubAllSkills.length, loadClawhubSkills])
+  }, [clawhubAllSkills.length])
 
 const handleOpenClawhubSkillDetail = useCallback(
     async (skill: SkillApiItem) => {

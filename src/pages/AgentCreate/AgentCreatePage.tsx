@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   AppstoreAddOutlined,
@@ -14,7 +14,7 @@ import {
   CloseCircleOutlined,
   DeleteOutlined,
 } from '@ant-design/icons'
-import { message } from 'antd'
+import { message, Input } from 'antd'
 import EditAgentModal from '../../components/common/EditAgentModal'
 import SkillConfigModal from '../../components/common/SkillConfigModal'
 import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
@@ -22,9 +22,12 @@ import SkillDetailPanel from '../../components/common/SkillDetailPanel'
 import {
   loadCustomAgentApiConfig,
   createCustomAgent,
+  chatCustomAgentStream,
   type EnabledSkill,
   type PresetQuestion,
+  type CustomAgentApiConfig,
 } from '../../services/customAgentService'
+import { MarkdownContent } from '../../components/chat/markdown-content'
 import styles from '../AgentDetail/agentDetail.module.less'
 
 type GeneratedTemplateState = {
@@ -98,9 +101,18 @@ export default function AgentCreatePage() {
   const [publishStatus, setPublishStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [webSearchEnabled, setWebSearchEnabled] = useState(false)
   const [knowledgeSpaceEnabled, setKnowledgeSpaceEnabled] = useState(false)
+  const messageShownRef = useRef(false)
+
+  const [agentConfig, setAgentConfig] = useState<CustomAgentApiConfig | null>(null)
+  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string; reasoning?: string }[]>([])
+  const [draft, setDraft] = useState('')
+  const [isResponding, setIsResponding] = useState(false)
+  const [requestError, setRequestError] = useState('')
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
-    if (state?.generatedTemplate) {
+    if (state?.generatedTemplate && !messageShownRef.current) {
+      messageShownRef.current = true
       const template = state.generatedTemplate
       setAgentName(template.agentName || '未命名智能体')
       setAgentSubtitle(template.description || '')
@@ -109,6 +121,10 @@ export default function AgentCreatePage() {
       message.success('智能体配置已自动生成，请检查并完善后发布')
     }
   }, [state])
+
+  useEffect(() => {
+    loadCustomAgentApiConfig().then(setAgentConfig).catch(console.error)
+  }, [])
 
   const getAvatarLetter = (name: string) => {
     return name?.trim().charAt(0).toUpperCase() || 'A'
@@ -141,6 +157,71 @@ const handleModalSave = (data: { name: string; description: string }) => {
     setAgentSkills(skills)
     setPublishStatus('idle')
   }
+
+  const handleSuggestionClick = useCallback((question: string) => {
+    setDraft(question)
+  }, [])
+
+  const handleSend = useCallback(async () => {
+    const prompt = draft.trim()
+    if (!prompt || isResponding || !agentConfig) return
+
+    setDraft('')
+    setMessages((prev) => [...prev, { role: 'user', content: prompt }])
+    setIsResponding(true)
+    setRequestError('')
+    abortControllerRef.current = new AbortController()
+
+    let assistantContent = ''
+    let reasoningContent = ''
+
+    try {
+      await chatCustomAgentStream(agentConfig, {
+        agent_name: agentName,
+        agent_prompt: agentInstruction,
+        description: agentSubtitle,
+        message: prompt,
+        history: messages.map((m) => ({ role: m.role, content: m.content })),
+        enabled_skills: agentSkills,
+        resource_ids: resourceIds,
+        enable_web_search: webSearchEnabled,
+      }, abortControllerRef.current.signal, {
+        onTextDelta: (text) => {
+          assistantContent += text
+          setMessages((prev) => {
+            const last = prev[prev.length - 1]
+            if (last?.role === 'assistant') {
+              return [...prev.slice(0, -1), { ...last, content: assistantContent, reasoning: reasoningContent }]
+            }
+            return [...prev, { role: 'assistant', content: assistantContent, reasoning: reasoningContent }]
+          })
+        },
+        onReasoningDelta: (text) => {
+          reasoningContent += text
+        },
+        onComplete: () => {
+          setIsResponding(false)
+        },
+        onError: (error) => {
+          setIsResponding(false)
+          setRequestError(error.message)
+        },
+      })
+    } catch (error) {
+      if (!abortControllerRef.current?.signal.aborted) {
+        setIsResponding(false)
+        setRequestError(error instanceof Error ? error.message : '请求失败')
+      }
+    }
+  }, [draft, isResponding, agentConfig, agentName, agentInstruction, agentSubtitle, messages, agentSkills, resourceIds, webSearchEnabled])
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return
+    if (e.key === 'Enter' && !e.shiftKey && !isResponding) {
+      e.preventDefault()
+      handleSend()
+    }
+  }, [isResponding, handleSend])
 
   const handlePublish = async () => {
     if (!agentName.trim()) {
@@ -244,49 +325,80 @@ const handleModalSave = (data: { name: string; description: string }) => {
             </div>
 
             <div className={styles.messagesArea}>
-              <div className={styles.heroSection}>
-                <div className={styles.heroCard}>
-                  <div className={styles.heroAvatar}>
-                    <span className={styles.avatarLetter}>{getAvatarLetter(agentName)}</span>
-                  </div>
-                  <div className={styles.heroContent}>
-                    <h1 className={styles.heroTitle}>{agentName}</h1>
-                    <p className={styles.heroSubtitle}>{agentSubtitle || '请在右侧配置智能体信息'}</p>
-                  </div>
-                </div>
-
-                <div className={styles.suggestionSection}>
-                  <h3 className={styles.suggestionTitle}>提示</h3>
-                  <div className={styles.suggestionList}>
-                    <div style={{ 
-                      color: '#666', 
-                      fontSize: '14px', 
-                      padding: '12px', 
-                      background: '#f5f5f5', 
-                      borderRadius: '8px',
-                      textAlign: 'center'
-                    }}>
-                      创建智能体后可在此测试对话效果
+              {messages.length === 0 ? (
+                <div className={styles.heroSection}>
+                  <div className={styles.heroCard}>
+                    <div className={styles.heroAvatar}>
+                      <span className={styles.avatarLetter}>{getAvatarLetter(agentName)}</span>
+                    </div>
+                    <div className={styles.heroContent}>
+                      <h1 className={styles.heroTitle}>{agentName}</h1>
+                      <p className={styles.heroSubtitle}>{agentSubtitle || '请在右侧配置智能体信息'}</p>
                     </div>
                   </div>
+
+                  {agentQuestions.filter(q => q.question).length > 0 && (
+                    <div className={styles.suggestionSection}>
+                      <h3 className={styles.suggestionTitle}>你可以问我</h3>
+                      <div className={styles.suggestionList}>
+                        {agentQuestions.filter(q => q.question).slice(0, 4).map((item, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            className={styles.suggestionItem}
+                            onClick={() => handleSuggestionClick(item.instruction || item.question)}
+                          >
+                            {item.question}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
+              ) : (
+                <div className={styles.messagesList}>
+                  {messages.map((msg, idx) => (
+                    <div key={idx} className={msg.role === 'user' ? styles.userMessage : styles.assistantMessage}>
+                      {msg.role === 'user' ? (
+                        <div className={styles.userBubble}>{msg.content}</div>
+                      ) : (
+                        <div className={styles.assistantBubble}>
+                          {msg.reasoning && (
+                            <div className={styles.reasoningBlock}>
+                              <details>
+                                <summary>思考过程</summary>
+                                <MarkdownContent content={msg.reasoning} isStreaming={false} />
+                              </details>
+                            </div>
+                          )}
+                          <MarkdownContent content={msg.content || '...'} isStreaming={isResponding && idx === messages.length - 1 && !msg.content} />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {isResponding && messages[messages.length - 1]?.role === 'assistant' && !messages[messages.length - 1]?.content && (
+                    <div className={styles.assistantMessage}>
+                      <div className={styles.assistantBubble}>思考中...</div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className={styles.composerArea}>
               <div className={styles.composerWrap}>
                 <div className={styles.inputWrap}>
                   <div className={styles.inputTopArea}>
-                    <div style={{
-                      flex: 1,
-                      minWidth: 0,
-                      fontSize: 14,
-                      color: '#999',
-                      padding: '8px 12px',
-                      background: 'transparent',
-                    }}>
-                      请先完成智能体配置并创建后再测试对话
-                    </div>
+                    <Input.TextArea
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="输入问题进行测试..."
+                      className={styles.chatInput}
+                      autoSize={{ minRows: 1, maxRows: 6 }}
+                      disabled={isResponding}
+                      variant="borderless"
+                    />
                   </div>
                   <div className={styles.inputBottomArea}>
                     <div className={styles.inputBottomLeft}>
@@ -294,7 +406,7 @@ const handleModalSave = (data: { name: string; description: string }) => {
                         <SoundOutlined />
                         深度规划
                       </button>
-                      <button type="button" className={`${styles.toolPill} ${webSearchEnabled ? styles.toolPillActive : ''}`} disabled style={{ opacity: 0.5 }}>
+                      <button type="button" className={`${styles.toolPill} ${webSearchEnabled ? styles.toolPillActive : ''}`}>
                         <GlobalOutlined />
                         联网
                       </button>
@@ -314,8 +426,9 @@ const handleModalSave = (data: { name: string; description: string }) => {
                         </button>
                         <button
                           type="button"
-                          className={`${styles.iconBtn} ${styles.sendBtn} ${styles.sendBtnDisabled}`}
-                          disabled
+                          className={`${styles.iconBtn} ${styles.sendBtn} ${!draft.trim() ? styles.sendBtnDisabled : ''}`}
+                          onClick={handleSend}
+                          disabled={!draft.trim() || isResponding}
                         >
                           <ArrowUpOutlined />
                         </button>
@@ -324,7 +437,7 @@ const handleModalSave = (data: { name: string; description: string }) => {
                   </div>
                 </div>
               </div>
-              <div className={styles.footerHint}>AI 生成内容可能有误，请核实重要信息</div>
+              <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>
             </div>
           </div>
         </main>
