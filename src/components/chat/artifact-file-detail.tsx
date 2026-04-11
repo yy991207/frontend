@@ -13,9 +13,9 @@ import { useArtifacts, type ArtifactFile } from './artifacts-context'
 import styles from './artifacts.module.less'
 import { loadArtifactContent, loadPreviewContent } from '../../core/artifacts/loader'
 import { buildCourseTablePreviewHtml, parseCourseTableArtifact } from '../../core/artifacts/course-table'
+import { buildMarkdownPreviewHtml, renderMarkdownToHtml } from '../../core/artifacts/markdown-render'
 import { buildArtifactDownloadUrl } from '../../core/artifacts/utils'
 import { checkCodeFile, getFileName } from '../../core/utils/files'
-import { MarkdownContent } from './markdown-content'
 
 /**
  * 文件预览组件
@@ -30,12 +30,15 @@ function ArtifactFilePreview({
   language: string
 }) {
   if (language === 'markdown') {
+    const htmlContent = renderMarkdownToHtml(content)
+    const fullHtml = buildMarkdownPreviewHtml('Preview', htmlContent)
     return (
-      <div className={styles.artifactMarkdownContainer}>
-        <div className={styles.artifactMarkdownContent}>
-          <MarkdownContent content={content} isStreaming={false} />
-        </div>
-      </div>
+      <iframe
+        className={styles.artifactMarkdownIframe}
+        srcDoc={fullHtml}
+        sandbox="allow-same-origin"
+        title="Markdown preview"
+      />
     )
   }
   return null
@@ -246,6 +249,17 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
       return
     }
 
+    if (language === 'markdown' && content) {
+      const htmlContent = renderMarkdownToHtml(content)
+      const newWindow = window.open('', '_blank')
+      if (newWindow) {
+        newWindow.document.open()
+        newWindow.document.write(buildMarkdownPreviewHtml(displayFilename, htmlContent))
+        newWindow.document.close()
+      }
+      return
+    }
+
     if (isExternalUrl && content && language === 'html') {
       const newWindow = window.open('', '_blank')
       if (newWindow) {
@@ -262,7 +276,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
       filepath: file.filepath,
     })
     window.open(url, '_blank')
-  }, [file, isExternalUrl, content, language, courseTableArtifact])
+  }, [file, isExternalUrl, content, language, courseTableArtifact, displayFilename])
 
   const handleDownload = useCallback(() => {
     const url = isExternalUrl ? file.filepath : buildArtifactDownloadUrl({
