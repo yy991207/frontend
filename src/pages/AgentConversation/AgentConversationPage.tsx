@@ -442,6 +442,7 @@ function AgentConversationPageContent() {
                       onManageSkills={handleManageSkills}
                       showTools
                       webSearchEnabled={webSearchEnabled}
+                      webSearchLocked={webSearchLocked}
                       knowledgeEnabled={false}
                       onToggleWebSearch={() => {
                         if (!webSearchLocked) {

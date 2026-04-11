@@ -33,6 +33,7 @@ type AttachmentMenuProps = {
   onManageSkills: () => void
   showTools?: boolean
   webSearchEnabled?: boolean
+  webSearchLocked?: boolean
   knowledgeEnabled?: boolean
   onToggleWebSearch?: () => void
   onToggleKnowledge?: () => void
@@ -54,6 +55,7 @@ export function AttachmentMenu({
   onManageSkills,
   showTools = false,
   webSearchEnabled = false,
+  webSearchLocked = false,
   knowledgeEnabled = false,
   onToggleWebSearch,
   onToggleKnowledge,
@@ -254,10 +256,16 @@ export function AttachmentMenu({
               </span>
               <button
                 type="button"
-                className={`${styles.switchButton} ${webSearchEnabled ? styles.switchButtonOn : ''}`}
-                onClick={onToggleWebSearch}
+                className={`${styles.switchButton} ${webSearchEnabled ? styles.switchButtonOn : ''} ${webSearchLocked ? styles.switchButtonLocked : ''}`}
+                onClick={webSearchLocked ? undefined : onToggleWebSearch}
+                disabled={webSearchLocked}
               >
                 <span className={styles.switchThumb} />
+                {webSearchLocked ? (
+                  <svg className={styles.lockIcon} viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M4 7V5a4 4 0 1 1 8 0v2h.5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1V8a1 1 0 0 1-1-1H4zm1.5-2v2h5V5a2.5 2.5 0 0 0-5 0z" />
+                  </svg>
+                ) : null}
               </button>
             </div>
 
