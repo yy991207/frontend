@@ -16,13 +16,7 @@ import { buildCourseTablePreviewHtml, parseCourseTableArtifact } from '../../cor
 import { buildMarkdownPreviewHtml, renderMarkdownToHtml } from '../../core/artifacts/markdown-render'
 import { buildArtifactDownloadUrl } from '../../core/artifacts/utils'
 import { checkCodeFile, getFileName } from '../../core/utils/files'
-import { MarkdownContent } from './markdown-content'
 
-/**
- * 文件预览组件
- * 参考 deer-flow 的 ArtifactFilePreview 实现
- * 提供固定宽度的 Markdown 渲染，避免内容随容器宽度变化
- */
 function ArtifactFilePreview({
   content,
   language,
@@ -31,12 +25,15 @@ function ArtifactFilePreview({
   language: string
 }) {
   if (language === 'markdown') {
+    const htmlContent = renderMarkdownToHtml(content)
+    const fullHtml = buildMarkdownPreviewHtml('Preview', htmlContent, true)
     return (
-      <div className={styles.artifactMarkdownContainer}>
-        <div className={styles.artifactMarkdownContent}>
-          <MarkdownContent content={content} isStreaming={false} />
-        </div>
-      </div>
+      <iframe
+        className={styles.artifactMarkdownIframe}
+        srcDoc={fullHtml}
+        sandbox="allow-same-origin"
+        title="Markdown preview"
+      />
     )
   }
   return null
