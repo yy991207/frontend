@@ -316,6 +316,13 @@ export default function CreateAgentModal({ visible, onCancel }: CreateAgentModal
                       onClick={() => handleTagClick(template)}
                       disabled={templateClicking === template.template_id}
                     >
+                      {template.avatar_url && (
+                        <img
+                          src={template.avatar_url}
+                          alt=""
+                          className={styles.tagIcon}
+                        />
+                      )}
                       {templateClicking === template.template_id ? (
                         <LoadingOutlined style={{ marginRight: 6 }} />
                       ) : null}
