@@ -7,7 +7,10 @@ import {
   RightOutlined,
   LoadingOutlined,
   FireOutlined,
+  MessageOutlined,
+  SettingOutlined,
 } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
 import CreateAgentModal from '../../components/common/CreateAgentModal'
 import styles from './discover.module.less'
 
@@ -87,6 +90,7 @@ const featuredAgents = [
 
 
 export default function DiscoverPage() {
+  const navigate = useNavigate()
   const [searchValue, setSearchValue] = useState('')
   const [currentFeaturedPage, setCurrentFeaturedPage] = useState(0)
   const [isModalVisible, setIsModalVisible] = useState(false)
@@ -267,6 +271,24 @@ export default function DiscoverPage() {
                       <div className={styles.enterpriseCardRight}>
                         <h3 className={styles.enterpriseCardTitle}>{agent.agent_name}</h3>
                         <p className={styles.enterpriseCardDesc}>{agent.description}</p>
+                      </div>
+                      <div className={styles.cardActions}>
+                        <button
+                          type="button"
+                          className={styles.actionButton}
+                          onClick={() => navigate(`/agent/${agent.agent_id}/chat`)}
+                          aria-label="对话"
+                        >
+                          <MessageOutlined />
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.actionButton}
+                          onClick={() => navigate(`/agent/${agent.agent_id}`)}
+                          aria-label="设置"
+                        >
+                          <SettingOutlined />
+                        </button>
                       </div>
                     </div>
                   ))
