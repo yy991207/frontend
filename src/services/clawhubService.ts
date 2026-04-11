@@ -89,6 +89,60 @@ export async function fetchClawhubSkills(params: ClawhubBrowseParams): Promise<C
   }
 }
 
+export type ClawhubInstallParams = {
+  baseUrl: string
+  userId: string
+  slug: string
+  signal?: AbortSignal
+}
+
+export type ClawhubInstallResult = {
+  success: boolean
+  msg?: string
+}
+
+export async function installClawhubSkill(params: ClawhubInstallParams): Promise<ClawhubInstallResult> {
+  const { baseUrl, userId, slug, signal } = params
+
+  const endpoint = `${baseUrl.replace(/\/+$/, '')}/api/v1/skills/clawhub/${encodeURIComponent(slug)}/install`
+  const requestUrl = new URL(endpoint)
+
+  requestUrl.searchParams.set('user_id', userId)
+
+  try {
+    const response = await fetch(requestUrl.toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      signal,
+    })
+
+    if (!response.ok) {
+      throw new Error('Clawhub 安装接口请求失败')
+    }
+
+    const data = (await response.json()) as {
+      success: boolean
+      msg?: string
+    }
+
+    return {
+      success: data.success,
+      msg: data.msg,
+    }
+  } catch (error) {
+    if (signal?.aborted) {
+      return { success: false }
+    }
+
+    return {
+      success: false,
+      msg: error instanceof Error ? error.message : 'Clawhub 技能安装失败',
+    }
+  }
+}
+
 export async function fetchClawhubSkillDetail(params: ClawhubDetailParams): Promise<ClawhubDetailResult> {
   const { baseUrl, slug, signal } = params
 

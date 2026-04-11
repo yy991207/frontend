@@ -18,7 +18,7 @@ import skillConfigText from '../../../config.yaml?raw'
 import { deleteCreatedSkill as deleteCreatedSkillFromApi, fetchCreatedSkills as fetchCreatedSkillsFromApi, parseCustomSkillListApiConfig } from '../../services/customSkillListService'
 import { buildSkillInitialPrompt, extractSkillItemsFromResponse, type SkillApiResponse, type SkillItem as SkillApiItem } from '../../services/skillPromptService'
 import { parseSkillUploadApiConfig, uploadCustomSkill, type UploadedSkillSummary } from '../../services/skillUploadService'
-import { fetchClawhubSkills, fetchClawhubSkillDetail, type ClawhubSkillDetail } from '../../services/clawhubService'
+import { fetchClawhubSkills, fetchClawhubSkillDetail, installClawhubSkill, type ClawhubSkillDetail } from '../../services/clawhubService'
 import styles from './skills.module.less'
 
 type SkillsMode = 'discover' | 'manage'
@@ -860,6 +860,82 @@ const handleOpenClawhubSkillDetail = useCallback(
     }
   }
 
+  const handleUseClawhubSkill = async (skill: SkillApiItem) => {
+    if (skillActionLoadingId === skill.id) {
+      return
+    }
+
+    if (skill.isSelected) {
+      navigate('/', {
+        state: {
+          initialPrompt: buildSkillInitialPrompt(skill),
+          toolType: skill.skillName || skill.id,
+          skillName: skill.skillName || skill.id,
+          skillDescription: skill.description,
+          template: skill.template,
+        },
+      })
+      return
+    }
+
+    if (!skillApiConfig) {
+      return
+    }
+
+    const slug = skill.skillName || skill.id
+
+    if (!slug) {
+      return
+    }
+
+    setSkillActionLoadingId(skill.id)
+
+    try {
+      const baseUrl = skillApiConfig.featuredEndpoint.replace(/\/api\/v1\/skills.*$/, '')
+      const result = await installClawhubSkill({
+        baseUrl,
+        userId: skillApiConfig.userId,
+        slug,
+      })
+
+      if (!result.success) {
+        throw new Error(result.msg || 'Clawhub 技能安装失败')
+      }
+
+      setClawhubAllSkills((previous) =>
+        previous.map((item) =>
+          item.id === skill.id
+            ? {
+                ...item,
+                isSelected: true,
+              }
+            : item,
+        ),
+      )
+      setSelectedSkillForDetail((previous) =>
+        previous?.id === skill.id
+          ? {
+              ...previous,
+              isSelected: true,
+            }
+          : previous,
+      )
+
+      setAddSkillSuccessMessage('添加成功，快到管理技能中查看吧')
+      if (successToastTimerRef.current !== null) {
+        window.clearTimeout(successToastTimerRef.current)
+      }
+      successToastTimerRef.current = window.setTimeout(() => {
+        setAddSkillSuccessMessage('')
+      }, 2600)
+
+      await fetchAddedSkills()
+    } catch {
+    } finally {
+      setSkillActionLoadingId(null)
+    }
+  }
+
   useEffect(() => {
     if (mode !== 'manage' || manageTab !== 'added') {
       return
@@ -1231,7 +1307,7 @@ const handleOpenClawhubSkillDetail = useCallback(
                             <button
                               type="button"
                               className={styles.featuredActionButton}
-                              onClick={() => handleUseSkill(item)}
+                              onClick={() => handleUseClawhubSkill(item)}
                               disabled={skillActionLoadingId === item.id}
                             >
                               {skillActionLoadingId === item.id ? '处理中...' : item.isSelected ? '使用' : '添加'}
