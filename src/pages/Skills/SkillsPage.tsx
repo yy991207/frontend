@@ -15,7 +15,6 @@ import {
 } from '@ant-design/icons'
 import SkillDetailModal, { type SkillDetail } from '../../components/common/SkillDetailModal'
 import skillConfigText from '../../../config.yaml?raw'
-import homeAvatar from '../../assets/home-avatar.png'
 import { deleteCreatedSkill as deleteCreatedSkillFromApi, fetchCreatedSkills as fetchCreatedSkillsFromApi, parseCustomSkillListApiConfig } from '../../services/customSkillListService'
 import { buildSkillInitialPrompt, extractSkillItemsFromResponse, type SkillApiResponse, type SkillItem as SkillApiItem } from '../../services/skillPromptService'
 import { parseSkillUploadApiConfig, uploadCustomSkill, type UploadedSkillSummary } from '../../services/skillUploadService'
@@ -680,7 +679,7 @@ export default function SkillsPage() {
         const result = await fetchClawhubSkills({
           baseUrl,
           userId: skillApiConfig.userId,
-          limit: 30,
+          limit: 100,
           offset: 0,
           signal,
         })
@@ -708,14 +707,14 @@ export default function SkillsPage() {
   )
 
   const handleRefreshFeatured = useCallback(() => {
-    const totalGroups = Math.ceil(featuredSkills.length / 9)
+    const totalGroups = Math.ceil(featuredSkills.length / 20)
     if (totalGroups > 1) {
       setFeaturedGroupIndex((prev) => (prev + 1) % totalGroups)
     }
   }, [featuredSkills.length])
 
   const handleRefreshClawhub = useCallback(() => {
-    const totalGroups = Math.ceil(clawhubAllSkills.length / 9)
+    const totalGroups = Math.ceil(clawhubAllSkills.length / 20)
     if (totalGroups > 1) {
       setClawhubGroupIndex((prev) => (prev + 1) % totalGroups)
     }
@@ -772,7 +771,7 @@ const handleOpenClawhubSkillDetail = useCallback(
     return () => {
       controller.abort()
     }
-  }, [skillApiConfig])
+  }, [skillApiConfig, loadClawhubSkills])
 
   const handleUseSkill = async (skill: SkillApiItem) => {
     if (skillActionLoadingId === skill.id) {
@@ -997,7 +996,7 @@ const handleOpenClawhubSkillDetail = useCallback(
 
   const featuredList = useMemo(() => {
     const startIndex = featuredGroupIndex * 9
-    const currentSkills = featuredSkills.slice(startIndex, startIndex + 9)
+    const currentSkills = featuredSkills.slice(startIndex, startIndex + 20)
 
     return currentSkills.map((item, index) => {
       const toneClassName = getFeaturedCardTone(index)
@@ -1019,7 +1018,7 @@ const handleOpenClawhubSkillDetail = useCallback(
 
   const clawhubList = useMemo(() => {
     const startIndex = clawhubGroupIndex * 9
-    const currentSkills = clawhubAllSkills.slice(startIndex, startIndex + 9)
+    const currentSkills = clawhubAllSkills.slice(startIndex, startIndex + 20)
 
     return currentSkills.map((item: SkillApiItem, index: number) => {
       const toneClassName = getFeaturedCardTone(index)
@@ -1152,48 +1151,6 @@ const handleOpenClawhubSkillDetail = useCallback(
                 <SearchOutlined className={styles.searchIcon} />
                 <input className={styles.searchInput} placeholder="搜索技能名称、描述或标签" />
               </label>
-            </div>
-
-            <div className={styles.bannerRow}>
-              <article className={`${styles.bannerCard} ${styles.bannerCardDark}`}>
-                <div className={styles.bannerContent}>
-                  <h2 className={styles.bannerTitle}>办公版龙虾🦞 必备技能包</h2>
-                  <p className={styles.bannerDesc}>与果仁生态打通，解锁 OpenClaw 办公版龙虾执行力，自动搞定琐碎事务</p>
-                  <button type="button" className={styles.bannerLink}>
-                    查看技能包
-                  </button>
-                </div>
-                <div className={styles.bannerArtworkDark}>
-                  <span className={styles.floatingChip}>26</span>
-                  <span className={`${styles.floatingDot} ${styles.dotBlue}`} />
-                  <span className={`${styles.floatingDot} ${styles.dotCyan}`} />
-                  <div className={styles.lobsterBody} />
-                  <div className={styles.lobsterEyeLeft} />
-                  <div className={styles.lobsterEyeRight} />
-                  <div className={styles.lobsterClaw} />
-                </div>
-              </article>
-
-              <article className={`${styles.bannerCard} ${styles.bannerCardLight}`}>
-                <div className={styles.bannerContent}>
-                  <h2 className={styles.bannerTitleLight}>「技能」挑战赛 只等你来！</h2>
-                  <p className={styles.bannerDescLight}>参与大赛投稿和实践分享，有机会获得安克 AI 录音豆和京东京卡的大奖！</p>
-                  <button type="button" className={styles.bannerLinkLight}>
-                    立即参赛
-                  </button>
-                </div>
-                <div className={styles.bannerArtworkLight}>
-                  <span className={styles.ribbon} />
-                  <div className={styles.deskBoard}>
-                    <img src={homeAvatar} alt="技能挑战赛" className={styles.bannerAvatar} />
-                    <div className={styles.boardCard}>
-                      <span>早上好～ 今天的</span>
-                      <strong>汇报 PPT</strong>
-                      <span>已经完成啦！</span>
-                    </div>
-                  </div>
-                </div>
-              </article>
             </div>
 
             <section className={styles.section}>
