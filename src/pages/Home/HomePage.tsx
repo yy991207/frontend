@@ -4,19 +4,12 @@ import {
   AudioOutlined,
   ArrowUpOutlined,
   BarChartOutlined,
-  BgColorsOutlined,
   BookOutlined,
   CloseOutlined,
-  DashboardOutlined,
   EyeOutlined,
-  FileExcelOutlined,
-  FileTextOutlined,
-  GlobalOutlined,
-  MessageOutlined,
   NodeIndexOutlined,
   PictureOutlined,
   SnippetsOutlined,
-  TableOutlined,
 } from '@ant-design/icons'
 import { useLocation, useNavigate } from 'react-router-dom'
 import homeTabsUrl from '../../../mock_json/home-tabs.json?url'
@@ -99,19 +92,6 @@ function parseSkillApiConfig(rawText: string) {
   }
 }
 
-const QUICK_ACTIONS = [
-  { icon: <BarChartOutlined />, label: '生成 PPT' },
-  { icon: <BgColorsOutlined />, label: '生成创意 PPT' },
-  { icon: <FileTextOutlined />, label: '写云文档' },
-  { icon: <SnippetsOutlined />, label: '写报告' },
-  { icon: <GlobalOutlined />, label: '搭建网页' },
-  { icon: <DashboardOutlined />, label: '搭建仪表盘' },
-  { icon: <TableOutlined />, label: '创建多维表格' },
-  { icon: <PictureOutlined />, label: '生成图片' },
-  { icon: <FileExcelOutlined />, label: 'Excel' },
-  { icon: <MessageOutlined />, label: '对话模式' },
-]
-
 const DEFAULT_EMPTY_PROMPT_TEXT = '暂无指令，请在对话运行后创建指令'
 
 type PracticeItem = {
@@ -181,9 +161,9 @@ const DEFAULT_HOME_TABS: HomeTab[] = [
 
 function getContentTypeIcon(type: string) {
   if (type === '图片') return <PictureOutlined />
-  if (type === '云文档') return <FileTextOutlined />
+  if (type === '云文档') return <BookOutlined />
   if (type === '报告') return <SnippetsOutlined />
-  if (type === '仪表盘') return <DashboardOutlined />
+  if (type === '仪表盘') return <BarChartOutlined />
   if (type === 'PPT') return <BarChartOutlined />
   return <BookOutlined />
 }
@@ -228,6 +208,7 @@ export default function HomePage() {
   const [homeTabs, setHomeTabs] = useState<HomeTab[]>(DEFAULT_HOME_TABS)
   const [tabsLoading, setTabsLoading] = useState(true)
   const [tabsError, setTabsError] = useState('')
+  const [quickActionSkills, setQuickActionSkills] = useState<SkillItem[]>([])
   
   // 斜杠指令相关状态
   const [slashCommandOpen, setSlashCommandOpen] = useState(false)
@@ -317,6 +298,52 @@ export default function HomePage() {
     }
   }, [skillApiConfig])
 
+  // 获取快捷指令技能列表（我添加的 + 我创建的）
+  const fetchQuickActionSkills = useCallback(async (signal?: AbortSignal) => {
+    if (!skillApiConfig) {
+      setQuickActionSkills([])
+      return
+    }
+
+    try {
+      const fetchAdded = async (): Promise<SkillItem[]> => {
+        const requestUrl = new URL(skillApiConfig.manageEndpoint)
+        requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
+        const response = await fetch(requestUrl.toString(), { signal })
+        if (!response.ok) throw new Error('技能接口请求失败')
+        const data = (await response.json()) as SkillApiResponse
+        if (!data.success) throw new Error(data.msg || '技能接口返回失败')
+        return extractSkillItemsFromResponse(data)
+      }
+
+      const fetchCreated = async (): Promise<SkillItem[]> => {
+        if (!skillApiConfig.listEndpoint) return []
+        const requestUrl = new URL(skillApiConfig.listEndpoint)
+        requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
+        const response = await fetch(requestUrl.toString(), { signal })
+        if (!response.ok) throw new Error('我创建的技能接口请求失败')
+        const data = (await response.json()) as SkillApiResponse
+        if (!data.success) throw new Error(data.msg || '我创建的技能接口返回失败')
+        return extractSkillItemsFromResponse(data)
+      }
+
+      const [addedSkills, createdSkills] = await Promise.all([fetchAdded(), fetchCreated()])
+      const seen = new Set<string>()
+      const merged: SkillItem[] = []
+      for (const skill of [...addedSkills, ...createdSkills]) {
+        if (!seen.has(skill.id)) {
+          seen.add(skill.id)
+          merged.push(skill)
+        }
+      }
+      setQuickActionSkills(merged)
+    } catch {
+      if (!signal?.aborted) {
+        setQuickActionSkills([])
+      }
+    }
+  }, [skillApiConfig])
+
   // 跳转到技能管理页面
   const handleManageSkills = () => {
     navigate('/skills', {
@@ -344,6 +371,15 @@ export default function HomePage() {
       })
     }
   }, [slashCommandOpen, skills.length, skillsLoading, fetchSkills])
+
+  // 页面加载时获取快捷指令技能列表
+  useEffect(() => {
+    const controller = new AbortController()
+    void fetchQuickActionSkills(controller.signal)
+    return () => {
+      controller.abort()
+    }
+  }, [fetchQuickActionSkills])
 
   useEffect(() => {
     const routeState = location.state as HomeRouteState
@@ -759,11 +795,25 @@ export default function HomePage() {
                 </div>
 
                 <div className={styles.quickActions}>
-                  {QUICK_ACTIONS.map((action) => (
-                    <div key={action.label} className={styles.quickTag}>
-                      <span className={styles.quickTagIcon}>{action.icon}</span>
-                      <span>{action.label}</span>
-                    </div>
+                  {quickActionSkills.map((skill) => (
+                    <button
+                      key={skill.id}
+                      type="button"
+                      className={styles.quickTag}
+                      onClick={() => {
+                        navigate('/', {
+                          state: {
+                            initialPrompt: buildSkillInitialPrompt(skill),
+                            toolType: skill.skillName || skill.id,
+                            skillName: skill.skillName || skill.id,
+                            skillDescription: skill.description,
+                            template: skill.template,
+                          },
+                        })
+                      }}
+                    >
+                      <span>{skill.title}</span>
+                    </button>
                   ))}
                 </div>
               </div>
