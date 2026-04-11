@@ -65,6 +65,8 @@ import {
 import {
   loadCustomAgentApiConfig,
   viewCustomAgent,
+  type AgentDetail,
+  type EnabledSkill,
 } from '../../services/customAgentService'
 import {
   buildSkillDisplayName,
@@ -341,6 +343,10 @@ function ChatPageContent() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [agentName, setAgentName] = useState<string | null>(null)
+  const [agentDetail, setAgentDetail] = useState<AgentDetail | null>(null)
+  const [agentDetailLoading, setAgentDetailLoading] = useState(false)
+  const [agentWebSearchEnabled, setAgentWebSearchEnabled] = useState(true)
+  const [agentWebSearchLocked, setAgentWebSearchLocked] = useState(false)
   
   // 斜杠指令相关状态
   const [slashCommandOpen, setSlashCommandOpen] = useState(false)
@@ -558,6 +564,38 @@ function ChatPageContent() {
       }
     }
   }, [skillApiConfig])
+
+  const fetchAgentDetail = useCallback(async (agentId: string, signal?: AbortSignal) => {
+    try {
+      setAgentDetailLoading(true)
+      const agentConfig = await loadCustomAgentApiConfig()
+      const agent = await viewCustomAgent(agentConfig, agentId, signal)
+      
+      setAgentDetail(agent)
+      setAgentName(agent.agent_name)
+      setAgentWebSearchEnabled(agent.enable_web_search)
+      setAgentWebSearchLocked(!agent.enable_web_search)
+
+      const agentSkills: SkillItem[] = (agent.enabled_skills || []).map((skill: EnabledSkill) => ({
+        id: skill.skill_name,
+        skillName: skill.skill_name,
+        title: skill.chinese_name || skill.skill_name,
+        description: skill.description || '',
+        template: skill.template || '',
+        isSelected: false,
+      }))
+      setSkills(agentSkills)
+    } catch {
+      if (!signal?.aborted) {
+        setAgentDetail(null)
+        setSkills([])
+      }
+    } finally {
+      if (!signal?.aborted) {
+        setAgentDetailLoading(false)
+      }
+    }
+  }, [])
 
   const runAssistantReply = async (
     prompt: string,

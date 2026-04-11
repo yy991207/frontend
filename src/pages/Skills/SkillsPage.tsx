@@ -2,15 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   ArrowLeftOutlined,
-  CheckCircleFilled,
   CloseOutlined,
   DownOutlined,
   EllipsisOutlined,
   FileZipOutlined,
+  LeftOutlined,
   PlusOutlined,
+  RightOutlined,
   SearchOutlined,
   SettingOutlined,
-  ShareAltOutlined,
   StarFilled,
   SwapOutlined,
   ThunderboltOutlined,
@@ -22,6 +22,7 @@ import homeAvatar from '../../assets/home-avatar.png'
 import { deleteCreatedSkill as deleteCreatedSkillFromApi, fetchCreatedSkills as fetchCreatedSkillsFromApi, parseCustomSkillListApiConfig } from '../../services/customSkillListService'
 import { buildSkillInitialPrompt, extractSkillItemsFromResponse, type SkillApiResponse, type SkillItem as SkillApiItem } from '../../services/skillPromptService'
 import { parseSkillUploadApiConfig, uploadCustomSkill, type UploadedSkillSummary } from '../../services/skillUploadService'
+import { fetchClawhubSkills } from '../../services/clawhubService'
 import styles from './skills.module.less'
 
 type SkillsMode = 'discover' | 'manage'
@@ -194,6 +195,11 @@ export default function SkillsPage() {
   const [removeSkillLoadingId, setRemoveSkillLoadingId] = useState<string | null>(null)
   const [openManageMenuId, setOpenManageMenuId] = useState<string | null>(null)
   const [selectedSkillForDetail, setSelectedSkillForDetail] = useState<SkillApiItem | null>(null)
+  const [clawhubSkills, setClawhubSkills] = useState<SkillApiItem[]>([])
+  const [clawhubSkillsLoading, setClawhubSkillsLoading] = useState(false)
+  const [clawhubSkillsError, setClawhubSkillsError] = useState('')
+  const [clawhubTotal, setClawhubTotal] = useState(0)
+  const [clawhubOffset, setClawhubOffset] = useState(0)
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [uploadingSkill, setUploadingSkill] = useState(false)
   const [isUploadDragging, setIsUploadDragging] = useState(false)
@@ -638,6 +644,94 @@ export default function SkillsPage() {
     }
   }, [skillApiConfig])
 
+  const loadClawhubSkills = useCallback(
+    async (signal?: AbortSignal, resetOffset = true) => {
+      if (!skillApiConfig) {
+        setClawhubSkills([])
+        setClawhubSkillsError('技能配置读取失败，请检查 config.yaml')
+        setClawhubSkillsLoading(false)
+        return
+      }
+
+      const currentOffset = resetOffset ? 0 : clawhubOffset
+      setClawhubSkillsLoading(true)
+      setClawhubSkillsError('')
+
+      try {
+        const baseUrl = skillApiConfig.featuredEndpoint.replace(/\/api\/v1\/skills.*$/, '')
+        const result = await fetchClawhubSkills({
+          baseUrl,
+          userId: skillApiConfig.userId,
+          limit: 9,
+          offset: currentOffset,
+          signal,
+        })
+
+        if (!result.success) {
+          throw new Error(result.msg || 'Clawhub 技能加载失败')
+        }
+
+        setClawhubSkills(result.skills)
+        setClawhubTotal(result.total)
+        if (resetOffset) {
+          setClawhubOffset(0)
+        }
+        setClawhubSkillsError('')
+      } catch {
+        if (signal?.aborted) {
+          return
+        }
+
+        setClawhubSkills([])
+        setClawhubSkillsError('Clawhub 技能加载失败，请检查接口配置或服务状态')
+      } finally {
+        if (!signal?.aborted) {
+          setClawhubSkillsLoading(false)
+        }
+      }
+    },
+    [skillApiConfig, clawhubOffset],
+  )
+
+  const handleRefreshClawhub = useCallback(() => {
+    const controller = new AbortController()
+    void loadClawhubSkills(controller.signal, true)
+    return () => controller.abort()
+  }, [loadClawhubSkills])
+
+  const handleClawhubPrevPage = useCallback(() => {
+    if (clawhubOffset <= 0 || !skillApiConfig) return
+    const newOffset = clawhubOffset - 9
+    setClawhubOffset(newOffset)
+    const controller = new AbortController()
+    void loadClawhubSkills(controller.signal, false)
+    return () => controller.abort()
+  }, [clawhubOffset, skillApiConfig, loadClawhubSkills])
+
+  const handleClawhubNextPage = useCallback(() => {
+    if (clawhubOffset + 9 >= clawhubTotal || !skillApiConfig) return
+    const newOffset = clawhubOffset + 9
+    setClawhubOffset(newOffset)
+    const controller = new AbortController()
+    void loadClawhubSkills(controller.signal, false)
+    return () => controller.abort()
+  }, [clawhubOffset, clawhubTotal, skillApiConfig, loadClawhubSkills])
+
+  useEffect(() => {
+    if (!skillApiConfig) {
+      setClawhubSkills([])
+      setClawhubSkillsError('技能配置读取失败，请检查 config.yaml')
+      return
+    }
+
+    const controller = new AbortController()
+    void loadClawhubSkills(controller.signal, true)
+
+    return () => {
+      controller.abort()
+    }
+  }, [skillApiConfig])
+
   const handleUseSkill = async (skill: SkillApiItem) => {
     if (skillActionLoadingId === skill.id) {
       return
@@ -868,6 +962,25 @@ export default function SkillsPage() {
     })
   }, [featuredSkills])
 
+  const clawhubList = useMemo(() => {
+    return clawhubSkills.map((item, index) => {
+      const toneClassName = getFeaturedCardTone(index)
+
+      return {
+        id: item.id,
+        skillName: item.skillName,
+        title: item.title,
+        description: item.description,
+        template: item.template,
+        isSelected: item.isSelected,
+        toneClassName,
+        badgeLetter: getSkillBadgeLetter(item.skillName, item.title),
+        tags: ['Clawhub'],
+        count: '',
+      }
+    })
+  }, [clawhubSkills])
+
   const manageEmptyText = useMemo(() => {
     if (manageTab === 'created') {
       return createdSkillsError || '还没有创建任何技能'
@@ -1067,6 +1180,74 @@ export default function SkillsPage() {
               {featuredSkillsLoading ? <div className={styles.manageStatus}>技能加载中...</div> : null}
               {!featuredSkillsLoading && featuredSkillsError ? <div className={styles.manageStatus}>{featuredSkillsError}</div> : null}
               {!featuredSkillsLoading && !featuredSkillsError && featuredList.length === 0 ? <div className={styles.manageStatus}>暂无技能数据</div> : null}
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionHead}>
+                <div className={styles.sectionTitleWrap}>
+                  <StarFilled className={styles.sectionIcon} />
+                  <h2 className={styles.sectionTitle}>Claw Hub</h2>
+                </div>
+                <button type="button" className={styles.sectionAction} onClick={handleRefreshClawhub}>
+                  <SwapOutlined />
+                  <span>换一换</span>
+                </button>
+              </div>
+
+              {clawhubList.length > 0 ? (
+                <div className={styles.featuredGrid}>
+                  {clawhubList.map((item) => (
+                    <article key={item.id} className={styles.featuredCard}>
+                      <button type="button" className={styles.skillDetailCardTrigger} onClick={() => handleOpenSkillDetail(item)}>
+                        <div className={`${styles.featuredBadge} ${styles[item.toneClassName]}`}>
+                          <span className={styles.badgeLetter}>{item.badgeLetter}</span>
+                        </div>
+                        <h3 className={styles.featuredTitle}>{item.title}</h3>
+                        <p className={styles.featuredDesc}>{item.description}</p>
+                      </button>
+                      {'isSelected' in item ? (
+                        <div className={styles.featuredActionBar}>
+                          <span className={styles.featuredActionSource}>Clawhub</span>
+                          <button
+                            type="button"
+                            className={styles.featuredActionButton}
+                            onClick={() => handleUseSkill(item)}
+                            disabled={skillActionLoadingId === item.id}
+                          >
+                            {skillActionLoadingId === item.id ? '处理中...' : item.isSelected ? '使用' : '添加'}
+                          </button>
+                        </div>
+                      ) : null}
+                    </article>
+                  ))}
+                </div>
+              ) : null}
+              {clawhubSkillsLoading ? <div className={styles.manageStatus}>技能加载中...</div> : null}
+              {!clawhubSkillsLoading && clawhubSkillsError ? <div className={styles.manageStatus}>{clawhubSkillsError}</div> : null}
+              {!clawhubSkillsLoading && !clawhubSkillsError && clawhubList.length === 0 ? <div className={styles.manageStatus}>暂无技能数据</div> : null}
+              {!clawhubSkillsLoading && !clawhubSkillsError && clawhubTotal > 9 ? (
+                <div className={styles.paginationWrap}>
+                  <button
+                    type="button"
+                    className={`${styles.paginationButton} ${clawhubOffset <= 0 ? styles.paginationButtonDisabled : ''}`}
+                    onClick={handleClawhubPrevPage}
+                    disabled={clawhubOffset <= 0}
+                  >
+                    <LeftOutlined />
+                  </button>
+                  <span className={styles.paginationInfo}>
+                    {Math.floor(clawhubOffset / 9) + 1} / {Math.ceil(clawhubTotal / 9)}
+                  </span>
+                  <button
+                    type="button"
+                    className={`${styles.paginationButton} ${clawhubOffset + 9 >= clawhubTotal ? styles.paginationButtonDisabled : ''}`}
+                    onClick={handleClawhubNextPage}
+                    disabled={clawhubOffset + 9 >= clawhubTotal}
+                  >
+                    <RightOutlined />
+                  </button>
+                </div>
+              ) : null}
             </section>
           </div>
         ) : (

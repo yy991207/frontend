@@ -981,7 +981,7 @@ export default function AgentDetailPage() {
                                 placeholder="请输入指令内容"
                                 rows={4}
                               />
-                              <span className={styles.charCount}>{item.category.length}/1000</span>
+                              <span className={styles.charCount}>{(item.category || '').length}/1000</span>
                             </div>
                           </div>
                         </div>
