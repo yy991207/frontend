@@ -38,6 +38,7 @@ export type ChatSessionDetail = ChatSession & {
   tool_config: unknown
   message_count: number
   messages: ChatSessionMessage[]
+  agent_name?: string | null
 }
 
 export type ChatSessionsResponse = {

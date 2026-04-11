@@ -63,6 +63,10 @@ import {
   type ChatSessionMessageToolCall,
 } from '../../services/chatSessionService'
 import {
+  loadCustomAgentApiConfig,
+  viewCustomAgent,
+} from '../../services/customAgentService'
+import {
   buildSkillDisplayName,
   buildSkillInitialPrompt,
   extractSkillItemsFromResponse,
@@ -336,6 +340,7 @@ function ChatPageContent() {
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [agentName, setAgentName] = useState<string | null>(null)
   
   // 斜杠指令相关状态
   const [slashCommandOpen, setSlashCommandOpen] = useState(false)
@@ -1162,6 +1167,22 @@ function ChatPageContent() {
         setRequestError('')
         clearChatStreamSnapshot(routeSessionId)
         setSessionLoading(false)
+        
+        // 如果session有agent_name字段，直接使用
+        if (session.agent_name) {
+          setAgentName(session.agent_name)
+        } else if (session.theme_id) {
+          // 如果没有agent_name但有theme_id（可能是agent_id），则获取agent详情
+          try {
+            const agentConfig = await loadCustomAgentApiConfig()
+            const agent = await viewCustomAgent(agentConfig, session.theme_id, controller.signal)
+            if (!cancelled && agent.agent_name) {
+              setAgentName(agent.agent_name)
+            }
+          } catch {
+            // 获取agent详情失败时，保持默认显示
+          }
+        }
       } catch (error) {
         if (!controller.signal.aborted && !cancelled) {
           setRequestError(error instanceof Error ? error.message : '获取会话详情失败')
@@ -1317,7 +1338,7 @@ function ChatPageContent() {
       <div className={`${styles.splitContainer} ${artifactOpen ? styles.splitContainerOpen : ''}`}>
         <section className={styles.panel}>
           <header className={styles.header}>
-            <h1 className={styles.title}>问候</h1>
+            <h1 className={styles.title}>{agentName ?? '问候'}</h1>
             <div className={styles.headerActions}>
               <button type="button" className={styles.headerButton} aria-label="分享">
                 <ExportOutlined />

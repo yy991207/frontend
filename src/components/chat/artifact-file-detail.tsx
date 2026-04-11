@@ -15,7 +15,7 @@ import { loadArtifactContent, loadPreviewContent } from '../../core/artifacts/lo
 import { buildCourseTablePreviewHtml, parseCourseTableArtifact } from '../../core/artifacts/course-table'
 import { buildMarkdownPreviewHtml, renderMarkdownToHtml } from '../../core/artifacts/markdown-render'
 import { buildArtifactDownloadUrl } from '../../core/artifacts/utils'
-import { checkCodeFile, getFileName } from '../../core/utils/files'
+import { checkCodeFile, getFileName, isImageFile } from '../../core/utils/files'
 
 function ArtifactFilePreview({
   content,
@@ -116,6 +116,13 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
       return checkCodeFile(displayFilename)
     }
     return checkCodeFile(file.filepath)
+  }, [file.filepath, isExternalUrl, displayFilename])
+
+  const isImage = useMemo(() => {
+    if (isExternalUrl) {
+      return isImageFile(displayFilename)
+    }
+    return isImageFile(file.filepath)
   }, [file.filepath, isExternalUrl, displayFilename])
 
   const previewable = useMemo(() => {
@@ -266,13 +273,55 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
       return
     }
 
+    if (isImage) {
+      const imgUrl = isExternalUrl ? file.filepath : buildArtifactDownloadUrl({
+        baseUrl: file.baseUrl ?? '',
+        sessionId: file.sessionId ?? '',
+        filepath: file.filepath,
+      })
+      const newWindow = window.open('', '_blank')
+      if (newWindow) {
+        newWindow.document.open()
+        newWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>${displayFilename}</title>
+            <style>
+              body {
+                margin: 0;
+                padding: 0;
+                background: #f8fafc;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+              }
+              img {
+                max-width: 90vw;
+                max-height: 90vh;
+                object-fit: contain;
+              }
+            </style>
+          </head>
+          <body>
+            <img src="${imgUrl}" alt="${displayFilename}">
+          </body>
+          </html>
+        `)
+        newWindow.document.close()
+      }
+      return
+    }
+
     const url = isExternalUrl ? file.filepath : buildArtifactDownloadUrl({
       baseUrl: file.baseUrl ?? '',
       sessionId: file.sessionId ?? '',
       filepath: file.filepath,
     })
     window.open(url, '_blank')
-  }, [file, isExternalUrl, content, language, courseTableArtifact, displayFilename])
+  }, [file, isExternalUrl, content, language, courseTableArtifact, displayFilename, isImage])
 
   const handleDownload = useCallback(() => {
     const url = isExternalUrl ? file.filepath : buildArtifactDownloadUrl({
@@ -432,11 +481,22 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
         )}
 
         {/* External URL: non-code fallback - iframe direct */}
-        {isExternalUrl && !isCodeFile && (
+        {isExternalUrl && !isCodeFile && !isImage && (
           <div className={styles.artifactPreviewWrap}>
             <iframe
               className={styles.artifactIframe}
               src={file.filepath}
+            />
+          </div>
+        )}
+
+        {/* Image preview */}
+        {isImage && (
+          <div className={styles.artifactImageWrap}>
+            <img
+              className={styles.artifactImage}
+              src={isExternalUrl ? file.filepath : previewUrl}
+              alt={displayFilename}
             />
           </div>
         )}
@@ -477,7 +537,7 @@ export function ArtifactFileDetail({ file, onOpenChange }: ArtifactFileDetailPro
         )}
 
         {/* Internal URL: non-code fallback */}
-        {!isCodeFile && !isExternalUrl && (
+        {!isCodeFile && !isExternalUrl && !isImage && (
           <div className={styles.artifactPreviewWrap}>
             <iframe
               className={styles.artifactIframe}

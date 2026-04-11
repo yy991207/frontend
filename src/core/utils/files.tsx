@@ -171,6 +171,12 @@ export function checkCodeFile(
   }
 }
 
+export function isImageFile(filepath: string): boolean {
+  const extension = getFileExtension(filepath)
+  const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico', 'heic', 'tiff']
+  return imageExtensions.includes(extension)
+}
+
 export function getFileExtensionDisplayName(filepath: string): string {
   const fileName = getFileName(filepath)
   const extension = fileName.split('.').pop()!.toLocaleLowerCase()
