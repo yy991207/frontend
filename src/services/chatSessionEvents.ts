@@ -11,3 +11,13 @@ export function notifyChatSessionHistoryRefresh(sessionId?: string) {
     },
   }))
 }
+
+export const AGENT_USAGE_LOG_REFRESH_EVENT = 'agent-usage-log-refresh'
+
+export function notifyAgentUsageLogRefresh() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.dispatchEvent(new CustomEvent(AGENT_USAGE_LOG_REFRESH_EVENT))
+}

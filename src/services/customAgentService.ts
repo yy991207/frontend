@@ -631,3 +631,56 @@ export async function getAgentUsageLogs(
   const logs = data.data?.logs || []
   return logs.sort((a, b) => new Date(b.used_at).getTime() - new Date(a.used_at).getTime())
 }
+
+export async function addAgentUsageLog(
+  config: CustomAgentApiConfig,
+  agentId: string,
+): Promise<void> {
+  const endpoint = `${config.baseUrl.replace(/\/+$/, '')}/api/v1/custom-agents/usage-logs`
+  const requestUrl = new URL(endpoint)
+  requestUrl.searchParams.set('user_id', config.userId)
+
+  const response = await fetch(requestUrl.toString(), {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ agent_id: agentId }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`添加智能体使用记录失败: HTTP ${response.status}`)
+  }
+
+  const data = await response.json()
+  if (!data.success) {
+    throw new Error(data.msg || '添加智能体使用记录失败')
+  }
+}
+
+export async function deleteAgentUsageLog(
+  config: CustomAgentApiConfig,
+  agentId: string,
+): Promise<void> {
+  const endpoint = `${config.baseUrl.replace(/\/+$/, '')}/api/v1/custom-agents/usage-logs/${encodeURIComponent(agentId)}`
+  const requestUrl = new URL(endpoint)
+  requestUrl.searchParams.set('user_id', config.userId)
+  requestUrl.searchParams.set('agent_id', agentId)
+
+  const response = await fetch(requestUrl.toString(), {
+    method: 'DELETE',
+    headers: {
+      Accept: 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`删除智能体使用记录失败: HTTP ${response.status}`)
+  }
+
+  const data = await response.json()
+  if (!data.success) {
+    throw new Error(data.msg || '删除智能体使用记录失败')
+  }
+}

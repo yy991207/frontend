@@ -12,6 +12,8 @@ import {
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import CreateAgentModal from '../../components/common/CreateAgentModal'
+import { loadCustomAgentApiConfig, getAgentUsageLogs, addAgentUsageLog } from '../../services/customAgentService'
+import { notifyAgentUsageLogRefresh } from '../../services/chatSessionEvents'
 import styles from './discover.module.less'
 
 function getAvatarLetter(name: string) {
@@ -170,6 +172,23 @@ export default function DiscoverPage() {
     setIsModalVisible(false)
   }
 
+  const handleAgentChat = async (agentId: string) => {
+    try {
+      const config = await loadCustomAgentApiConfig()
+      const existingLogs = await getAgentUsageLogs(config)
+      const alreadyExists = existingLogs.some((log) => log.agent_id === agentId)
+
+      if (!alreadyExists) {
+        await addAgentUsageLog(config, agentId)
+        notifyAgentUsageLogRefresh()
+      }
+    } catch (error) {
+      console.error('添加智能体使用记录失败:', error)
+    }
+
+    navigate(`/agent/${agentId}/chat`)
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.panel}>
@@ -276,7 +295,7 @@ export default function DiscoverPage() {
                         <button
                           type="button"
                           className={styles.actionButton}
-                          onClick={() => navigate(`/agent/${agent.agent_id}/chat`)}
+                          onClick={() => handleAgentChat(agent.agent_id)}
                           aria-label="对话"
                         >
                           <MessageOutlined />
