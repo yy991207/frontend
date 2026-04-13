@@ -305,7 +305,8 @@ export default function LibraryPage() {
     if (!config || !item.file_path) return
 
     try {
-      const requestUrl = new URL(buildAbsoluteUrl(config.baseUrl, 'api/v1/chat/files/download-url'))
+      const endpoint = buildAbsoluteUrl(config.baseUrl, '/api/v1/chat/files/download-url')
+      const requestUrl = new URL(endpoint)
       requestUrl.searchParams.set('url', item.file_path)
       requestUrl.searchParams.set('expires', '3600')
 
