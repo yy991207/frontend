@@ -46,4 +46,7 @@ get_agent_template_task_path: /api/v1/custom-agents/templates/tasks/{task_id}
 agent_templates_path: /api/v1/agent-templates
 agent_template_detail_path: /api/v1/agent-templates/{template_id}
 
+//智能体使用日志
+agent_usage_logs_path: /api/v1/custom-agents/usage-logs
+
 

@@ -18,7 +18,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import chatConfigText from '../../../config.yaml?raw'
 import homeAvatar from '../../assets/home-avatar.png'
 import { createNewChatPagePath } from '../../services/chatService'
-import { loadCustomAgentApiConfig, listCustomAgents, type CustomAgentItem } from '../../services/customAgentService'
+import { loadCustomAgentApiConfig, getAgentUsageLogs, type AgentUsageLogItem } from '../../services/customAgentService'
 import { parseChatSessionConfig, findLatestEmptySession } from '../../services/chatSessionService'
 import ChatSessionHistory from '../ChatSessionHistory/ChatSessionHistory'
 import styles from './sidebar.module.less'
@@ -48,7 +48,7 @@ export default function Sidebar() {
   const location = useLocation()
   const [expanded, setExpanded] = useState(false)
   const [creatingSession, setCreatingSession] = useState(false)
-  const [agentList, setAgentList] = useState<CustomAgentItem[]>([])
+  const [agentList, setAgentList] = useState<AgentUsageLogItem[]>([])
   const [agentLoading, setAgentLoading] = useState(false)
   const [hoveredAgentId, setHoveredAgentId] = useState<string | null>(null)
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 })
@@ -64,12 +64,12 @@ export default function Sidebar() {
       setAgentLoading(true)
       try {
         const config = await loadCustomAgentApiConfig()
-        const agents = await listCustomAgents(config)
+        const logs = await getAgentUsageLogs(config)
         if (!cancelled) {
-          setAgentList(agents)
+          setAgentList(logs)
         }
       } catch (error) {
-        console.error('获取智能体列表失败:', error)
+        console.error('获取智能体使用日志失败:', error)
       } finally {
         if (!cancelled) {
           setAgentLoading(false)
@@ -269,7 +269,7 @@ export default function Sidebar() {
             left: tooltipPosition.left,
           }}
         >
-          {agentList.find((a) => a.agent_id === hoveredAgentId)?.description || ''}
+          {agentList.find((a) => a.agent_id === hoveredAgentId)?.agent_name || ''}
         </div>
       )}
 

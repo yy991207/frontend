@@ -12,6 +12,7 @@ export type CustomAgentApiConfig = {
   getAgentTemplateTaskEndpoint: string
   agentTemplatesEndpoint: string
   agentTemplateDetailEndpoint: string
+  agentUsageLogsEndpoint: string
 }
 
 export type PresetQuestion = {
@@ -112,9 +113,10 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
   const getTemplateTaskPath = parsedConfig.get_agent_template_task_path
   const agentTemplatesPath = parsedConfig.agent_templates_path
   const agentTemplateDetailPath = parsedConfig.agent_template_detail_path
+  const agentUsageLogsPath = parsedConfig.agent_usage_logs_path
   const userId = parsedConfig.user_id
 
-  if (!baseUrl || !createAgentPath || !listAgentPath || !viewAgentPath || !updateAgentPath || !chatAgentPath || !generateTemplatePath || !getTemplateTaskPath || !agentTemplatesPath || !agentTemplateDetailPath || !userId) {
+  if (!baseUrl || !createAgentPath || !listAgentPath || !viewAgentPath || !updateAgentPath || !chatAgentPath || !generateTemplatePath || !getTemplateTaskPath || !agentTemplatesPath || !agentTemplateDetailPath || !agentUsageLogsPath || !userId) {
     throw new Error('config.yaml 缺少必要的接口配置')
   }
 
@@ -130,6 +132,7 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
     getAgentTemplateTaskEndpoint: buildAbsoluteUrl(baseUrl, getTemplateTaskPath),
     agentTemplatesEndpoint: buildAbsoluteUrl(baseUrl, agentTemplatesPath),
     agentTemplateDetailEndpoint: buildAbsoluteUrl(baseUrl, agentTemplateDetailPath),
+    agentUsageLogsEndpoint: buildAbsoluteUrl(baseUrl, agentUsageLogsPath),
   }
 }
 
@@ -581,4 +584,50 @@ export async function getAgentTemplateDetail(
   }
 
   return data.data?.template
+}
+
+export type AgentUsageLogItem = {
+  agent_id: string
+  user_id: string
+  agent_name: string
+  avatar_url: string
+  used_at: string
+}
+
+type AgentUsageLogsResponse = {
+  success: boolean
+  code: string
+  msg: string
+  data: {
+    logs: AgentUsageLogItem[]
+  }
+}
+
+export async function getAgentUsageLogs(
+  config: CustomAgentApiConfig,
+  signal?: AbortSignal,
+): Promise<AgentUsageLogItem[]> {
+  const requestUrl = new URL(config.agentUsageLogsEndpoint)
+  requestUrl.searchParams.set('user_id', config.userId)
+
+  const response = await fetch(requestUrl.toString(), {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(`获取智能体使用日志失败: HTTP ${response.status}`)
+  }
+
+  const data = (await response.json()) as AgentUsageLogsResponse
+
+  if (!data.success) {
+    throw new Error(data.msg || '获取智能体使用日志失败')
+  }
+
+  const logs = data.data?.logs || []
+  return logs.sort((a, b) => new Date(b.used_at).getTime() - new Date(a.used_at).getTime())
 }
