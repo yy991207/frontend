@@ -22,6 +22,7 @@ doc/images/*
 !doc/工作记录 - 2026 年 0404.md
 !doc/工作记录 - 2026 年 0410.md
 config.yaml
+.npmrc
 node_modules
 dist
 dist-ssr
