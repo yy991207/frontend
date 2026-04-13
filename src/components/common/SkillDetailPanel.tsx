@@ -32,6 +32,7 @@ export type SkillDetail = {
 type SkillDetailPanelProps = {
   visible: boolean
   skillName: string
+  source?: string
 }
 
 async function loadApiConfig(): Promise<{ baseUrl: string; userId: string }> {
@@ -56,7 +57,7 @@ async function loadApiConfig(): Promise<{ baseUrl: string; userId: string }> {
   }
 }
 
-async function fetchSkillDetail(baseUrl: string, userId: string, skillName: string): Promise<SkillDetail> {
+async function fetchRegularSkillDetail(baseUrl: string, userId: string, skillName: string): Promise<SkillDetail> {
   const url = `${baseUrl.replace(/\/+$/, '')}/api/v1/skills/${skillName}?user_id=${userId}`
   const response = await fetch(url, {
     method: 'GET',
@@ -78,7 +79,47 @@ async function fetchSkillDetail(baseUrl: string, userId: string, skillName: stri
   return data.data as SkillDetail
 }
 
-export default function SkillDetailPanel({ visible, skillName }: SkillDetailPanelProps) {
+async function fetchClawhubSkillDetail(baseUrl: string, userId: string, slug: string): Promise<SkillDetail> {
+  const url = `${baseUrl.replace(/\/+$/, '')}/api/v1/skills/clawhub/${encodeURIComponent(slug)}?user_id=${userId}`
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`获取技能详情失败: HTTP ${response.status}`)
+  }
+
+  const jsonData = await response.json()
+
+  if (!jsonData.success) {
+    throw new Error(jsonData.msg || '获取技能详情失败')
+  }
+
+  const payload = jsonData.data
+  const skill = payload?.skill || {}
+  const metaContent = payload?.metaContent || {}
+
+  const skillMd = metaContent.skillMd || ''
+  return {
+    skill_name: skill.slug || slug,
+    chinese_name: skill.displayName || metaContent.displayName || slug,
+    description: metaContent.DisplayDescription || skill.summary || '',
+    source: 'clawhub',
+    skill_type: 'clawhub',
+    skill_md: skillMd,
+    template: skillMd,
+    placeholders: [],
+    config_fields: [],
+    scripts: null,
+    references: null,
+    assets: null,
+  }
+}
+
+export default function SkillDetailPanel({ visible, skillName, source }: SkillDetailPanelProps) {
   const [loading, setLoading] = useState(false)
   const [skillDetail, setSkillDetail] = useState<SkillDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -91,14 +132,16 @@ export default function SkillDetailPanel({ visible, skillName }: SkillDetailPane
 
     try {
       const { baseUrl, userId } = await loadApiConfig()
-      const detail = await fetchSkillDetail(baseUrl, userId, skillName)
+      const detail = source === 'clawhub'
+        ? await fetchClawhubSkillDetail(baseUrl, userId, skillName)
+        : await fetchRegularSkillDetail(baseUrl, userId, skillName)
       setSkillDetail(detail)
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载失败')
     } finally {
       setLoading(false)
     }
-  }, [skillName])
+  }, [skillName, source])
 
   useEffect(() => {
     if (visible && skillName) {

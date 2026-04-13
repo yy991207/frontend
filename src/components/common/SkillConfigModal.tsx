@@ -242,6 +242,7 @@ export default function SkillConfigModal({
       chinese_name: skill.title,
       description: skill.description,
       ...(skill.template ? { template: skill.template } : {}),
+      ...(skill.source ? { source: skill.source } : {}),
     }
 
     onSkillChange([...currentSkills, newSkill])
@@ -260,6 +261,7 @@ export default function SkillConfigModal({
       chinese_name: skill.chinese_name,
       description: skill.description,
       ...(skill.template ? { template: skill.template } : {}),
+      ...(skill.source ? { source: skill.source } : {}),
     }
 
     onSkillChange([...currentSkills, newSkill])

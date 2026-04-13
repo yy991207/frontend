@@ -722,11 +722,12 @@ const handleModalSave = (data: { name: string; description: string }) => {
                           </button>
                         </div>
                       </div>
-                      {isExpanded && (
+                       {isExpanded && (
                         <div className={styles.serviceBody}>
                           <SkillDetailPanel
                             visible={true}
                             skillName={skill.skill_name}
+                            source={skill.source}
                           />
                         </div>
                       )}

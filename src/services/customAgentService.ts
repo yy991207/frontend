@@ -196,6 +196,7 @@ export type EnabledSkill = {
   chinese_name: string
   description: string
   template?: string
+  source?: string
 }
 
 export type AgentDetail = {

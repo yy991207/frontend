@@ -838,11 +838,12 @@ export default function AgentDetailPage() {
                           </button>
                         </div>
                       </div>
-                      {isExpanded && (
+                       {isExpanded && (
                         <div className={styles.serviceBody}>
                           <SkillDetailPanel
                             visible={true}
                             skillName={skill.skill_name}
+                            source={skill.source}
                           />
                         </div>
                       )}
