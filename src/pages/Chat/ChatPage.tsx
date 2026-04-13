@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Input } from 'antd'
 import {
   ArrowUpOutlined,
-  CloseOutlined,
   DeleteOutlined,
   EllipsisOutlined,
   ExportOutlined,
@@ -17,11 +15,12 @@ import { useStickToBottom } from '../../components/chat/use-stick-to-bottom'
 import { AttachmentMenu, type AttachmentSkillItem } from '../../components/common/AttachmentMenu'
 import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
 import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
+import SkillTemplateInput from '../../components/common/SkillTemplateInput'
 import {
   createPendingUploadedFile,
   type UploadedFile,
-  uploadPendingFileToOss,
 } from '../../services/ossUploadService'
+import { uploadPendingFileToOssWithDocumentParse } from '../../services/agentFileUploadService'
 import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal'
 import { adaptChatMessages } from '../../core/messages/adapters'
 import {
@@ -74,7 +73,6 @@ import {
   type EnabledSkill,
 } from '../../services/customAgentService'
 import {
-  buildSkillDisplayName,
   buildSkillInitialPrompt,
   extractSkillItemsFromResponse,
   type SkillApiResponse,
@@ -357,6 +355,7 @@ function ChatPageContent() {
   const [slashCommandOpen, setSlashCommandOpen] = useState(false)
   const [slashQuery, setSlashQuery] = useState('')
   const [selectedSkillIndex, setSelectedSkillIndex] = useState(0)
+  const skipSlashSelectRef = useRef(false)
   
   // 上传文件相关状态
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
@@ -385,12 +384,19 @@ function ChatPageContent() {
       const pendingFile = createPendingUploadedFile(file)
       setUploadedFiles((prev) => [...prev, pendingFile])
 
-      const uploadedFile = await uploadPendingFileToOss(pendingFile, file, (progress) => {
-        setUploadedFiles((prev) =>
-          prev.map((f) =>
-            f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
-          ),
-        )
+      const uploadedFile = await uploadPendingFileToOssWithDocumentParse(pendingFile, file, {
+        onProgress: (progress) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
+            ),
+          )
+        },
+        onStatusChange: (nextFile) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) => (f.id === pendingFile.id ? nextFile : f)),
+          )
+        },
       })
 
       setUploadedFiles((prev) =>
@@ -1336,13 +1342,15 @@ function ChatPageContent() {
     })
   }
 
-  // 选择技能后先进入输入态，和技能管理页“使用”保持一致。
+  // 选择技能后先进入输入态，和技能管理页”使用”保持一致。
   const handleSelectSkill = (skill: SkillItem) => {
     // 加号选择技能后先进入输入态，用户还能继续补充模板参数，再统一发送。
     setSelectedSkillName(skill.skillName || skill.id)
     setSelectedSkillDescription(skill.description)
     setPreferredToolType(skill.skillName || skill.id)
-    setDraft(skill.template)
+    skipSlashSelectRef.current = true
+    setDraft(buildSkillInitialPrompt(skill))
+    requestAnimationFrame(() => { skipSlashSelectRef.current = false })
   }
 
   const handleStop = () => {
@@ -1496,7 +1504,7 @@ function ChatPageContent() {
                   onSelectSkill={(skill) => {
                     handleSelectSkill(skill)
                     setSlashCommandOpen(false)
-                    setDraft('')
+                    setSlashQuery('')
                   }}
                     onClose={() => setSlashCommandOpen(false)}
                     onManageSkills={handleManageSkills}
@@ -1507,30 +1515,13 @@ function ChatPageContent() {
                   />
                   {/* 上方输入区域 */}
                   <div className={styles.inputTopArea}>
-                  {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
-                  {selectedSkillName ? (
-                    <span className={styles.skillTagWrap}>
-                      <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
-                      <button
-                        type="button"
-                        className={styles.skillRemoveButton}
-                        aria-label="移除已选技能"
-                        onClick={clearSelectedSkill}
-                      >
-                        <CloseOutlined />
-                      </button>
-                      {selectedSkillDescription ? (
-                        <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
-                      ) : null}
-                    </span>
-                  ) : null}
-                  <Input.TextArea
+                  <SkillTemplateInput
                     value={draft}
-                    onChange={(event) => {
-                      const value = event.target.value
+                    onChange={(value) => {
                       setDraft(value)
-                      
+
                       // 检测斜杠指令触发
+                      if (skipSlashSelectRef.current) return
                       if (value === '/' && !slashCommandOpen) {
                         setSlashCommandOpen(true)
                         setSlashQuery('')
@@ -1561,6 +1552,7 @@ function ChatPageContent() {
                             return
                           case 'Enter':
                             event.preventDefault()
+                            event.stopPropagation()
                             const filteredSkills = skills.filter((skill) => {
                               if (!slashQuery) return true
                               const q = slashQuery.toLowerCase()
@@ -1573,7 +1565,7 @@ function ChatPageContent() {
                             if (filteredSkills[selectedSkillIndex]) {
                               handleSelectSkill(filteredSkills[selectedSkillIndex])
                               setSlashCommandOpen(false)
-                              setDraft('')
+                              setSlashQuery('')
                             }
                             return
                           case 'Escape':
@@ -1595,23 +1587,8 @@ function ChatPageContent() {
                         handleSend()
                       }
                     }}
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                      border: 'none',
-                      boxShadow: 'none',
-                      background: 'transparent',
-                      fontSize: 14,
-                      resize: 'none',
-                      minHeight: 24,
-                      maxHeight: 200,
-                      overflowY: 'auto',
-                      lineHeight: 1.5,
-                      padding: 0,
-                    }}
-                    variant="borderless"
+                    onSend={handleSend}
                     placeholder='输入你的想法或输入"/"选择想要使用技能'
-                    autoSize={{ minRows: 1, maxRows: 8 }}
                   />
                 </div>
                 {/* 下方按钮区域 */}

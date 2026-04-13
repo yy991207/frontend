@@ -1,9 +1,10 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
-import { message } from 'antd'
-import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom'
-import AgentCreatePage from './AgentCreatePage'
+import { act, fireEvent, render, waitFor } from '@testing-library/react'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import AgentDetailPage from './AgentDetailPage'
 import {
   loadCustomAgentApiConfig,
+  viewCustomAgent,
+  type AgentDetail,
   type CustomAgentApiConfig,
 } from '../../services/customAgentService'
 import {
@@ -36,18 +37,10 @@ vi.mock('../../components/common/FileAttachmentPreview', () => ({
   FileAttachmentPreview: () => null,
 }))
 
-vi.mock('../../components/chat/artifact-file-detail', () => ({
-  ArtifactFileDetail: () => null,
-}))
-
-vi.mock('../../components/chat/artifacts-context', () => ({
-  ArtifactsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useArtifacts: () => ({
-    addFile: vi.fn(),
-    selectFile: vi.fn(),
-    open: false,
-    selectedFile: null,
-  }),
+vi.mock('../../components/common/SkillTemplateInput', () => ({
+  default: ({ value, onChange }: { value: string; onChange: (value: string) => void }) => (
+    <textarea value={value} onChange={(event) => onChange(event.target.value)} />
+  ),
 }))
 
 vi.mock('../../services/ossUploadService', () => ({
@@ -64,15 +57,21 @@ vi.mock('../../services/customAgentService', async () => {
   return {
     ...actual,
     loadCustomAgentApiConfig: vi.fn(),
-    getAgentTemplateTask: vi.fn(),
-    createCustomAgent: vi.fn(),
+    updateCustomAgent: vi.fn(),
+    viewCustomAgent: vi.fn(),
     chatCustomAgentStream: vi.fn(),
   }
 })
 
+vi.mock('../../utils/agentStorage', () => ({
+  clearAgentStorage: vi.fn(),
+}))
+
 const mockedLoadCustomAgentApiConfig = vi.mocked(loadCustomAgentApiConfig)
+const mockedViewCustomAgent = vi.mocked(viewCustomAgent)
 const mockedCreatePendingUploadedFile = vi.mocked(createPendingUploadedFile)
 const mockedUploadPendingFileToOssWithDocumentParse = vi.mocked(uploadPendingFileToOssWithDocumentParse)
+
 const MOCK_CONFIG: CustomAgentApiConfig = {
   userId: '123456',
   baseUrl: 'http://localhost:8000',
@@ -88,11 +87,21 @@ const MOCK_CONFIG: CustomAgentApiConfig = {
   agentUsageLogsEndpoint: 'http://localhost:8000/logs',
 }
 
-const BASE_TEMPLATE = {
-  agentName: '西行智者',
-  description: '提供佛法知识',
-  agentPrompt: '你是一个智能体',
-  presetQuestions: [],
+const MOCK_AGENT: AgentDetail = {
+  agent_id: 'agent-1',
+  creator_user_id: '123456',
+  agent_name: '测试智能体',
+  description: '测试描述',
+  avatar_url: 'https://example.com/avatar.png',
+  agent_prompt: '你是测试智能体',
+  enabled_skills: [],
+  resource_ids: [],
+  preset_questions: [],
+  enable_web_search: false,
+  is_active: true,
+  is_public: false,
+  created_at: '2026-04-13T00:00:00Z',
+  updated_at: '2026-04-13T00:00:00Z',
 }
 
 const PENDING_FILE: UploadedFile = {
@@ -116,93 +125,37 @@ const COMPLETED_FILE: UploadedFile = {
   resourceId: 'resource-1',
 }
 
-function ReplaceStateButton() {
-  const navigate = useNavigate()
-
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        navigate('/agent/create', {
-          replace: true,
-          state: {
-            generatedTemplate: { ...BASE_TEMPLATE },
-            taskId: 'task-1',
-          },
-        })
-      }}
-    >
-      replace-state
-    </button>
-  )
-}
-
-function renderPage() {
-  return render(
-    <MemoryRouter
-      initialEntries={[
-        {
-          pathname: '/agent/create',
-          state: {
-            generatedTemplate: { ...BASE_TEMPLATE },
-            taskId: 'task-1',
-          },
-        },
-      ]}
-    >
-      <Routes>
-        <Route
-          path="/agent/create"
-          element={(
-            <>
-              <ReplaceStateButton />
-              <AgentCreatePage />
-            </>
-          )}
-        />
-      </Routes>
-    </MemoryRouter>,
-  )
-}
-
 async function flushAsyncTasks() {
   await Promise.resolve()
   await Promise.resolve()
 }
 
-describe('AgentCreatePage', () => {
+function renderPage() {
+  return render(
+    <MemoryRouter initialEntries={['/agent/agent-1']}>
+      <Routes>
+        <Route path="/agent/:id" element={<AgentDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  )
+}
+
+describe('AgentDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockedLoadCustomAgentApiConfig.mockResolvedValue(MOCK_CONFIG)
+    mockedViewCustomAgent.mockResolvedValue(MOCK_AGENT)
     mockedCreatePendingUploadedFile.mockReturnValue(PENDING_FILE)
     mockedUploadPendingFileToOssWithDocumentParse.mockResolvedValue(COMPLETED_FILE)
-    vi.spyOn(message, 'success').mockImplementation(() => (() => {}) as never)
   })
 
-  afterEach(() => {
-    vi.useRealTimers()
-  })
+  it('编辑页上传文件时会走文档解析上传服务', async () => {
+    const { container } = renderPage()
 
-  it('创建页即使收到旧的 taskId，也不再显示技能推荐 loading 或继续轮询', async () => {
-    vi.useFakeTimers()
-
-    renderPage()
-
-    expect(screen.queryByText('技能推荐中...')).not.toBeInTheDocument()
-
-    await act(async () => {
-      await flushAsyncTasks()
-      fireEvent.click(screen.getByText('replace-state'))
-      vi.advanceTimersByTime(4000)
-      await flushAsyncTasks()
+    await waitFor(() => {
+      expect(mockedViewCustomAgent).toHaveBeenCalled()
     })
 
-    const customAgentService = await import('../../services/customAgentService')
-    expect(vi.mocked(customAgentService.getAgentTemplateTask)).not.toHaveBeenCalled()
-  })
-
-  it('创建页上传文件时会走文档解析上传服务', async () => {
-    const { container } = renderPage()
     const input = container.querySelector('input[type="file"]') as HTMLInputElement
     const file = new File(['demo'], '年度报告.pdf', { type: 'application/pdf' })
 

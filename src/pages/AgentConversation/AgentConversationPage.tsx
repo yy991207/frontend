@@ -1,7 +1,8 @@
 import { useLocation, useParams, useNavigate } from 'react-router-dom'
-import { Dropdown, Input } from 'antd'
-import { SettingOutlined, ArrowUpOutlined, CloseOutlined } from '@ant-design/icons'
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { Dropdown } from 'antd'
+import SkillTemplateInput from '../../components/common/SkillTemplateInput'
+import { SettingOutlined, ArrowUpOutlined } from '@ant-design/icons'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
 import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts-context'
 import { MessageList } from '../../components/chat/message-list'
@@ -14,10 +15,10 @@ import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
 import {
   createPendingUploadedFile,
   type UploadedFile,
-  uploadPendingFileToOss,
 } from '../../services/ossUploadService'
+import { uploadPendingFileToOssWithDocumentParse } from '../../services/agentFileUploadService'
 import {
-  buildSkillDisplayName,
+  buildSkillInitialPrompt,
 } from '../../services/skillPromptService'
 import styles from './agentConversation.module.less'
 
@@ -52,6 +53,7 @@ function AgentConversationPageContent() {
   const [selectedSkillIndex, setSelectedSkillIndex] = useState(0)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const fileInputRef = useMemo(() => ({ current: null as HTMLInputElement | null }), [])
+  const skipSlashSelectRef = useRef(false)
 
   const clearSelectedSkill = () => {
     setPreferredToolType(null)
@@ -71,12 +73,19 @@ function AgentConversationPageContent() {
       const pendingFile = createPendingUploadedFile(file)
       setUploadedFiles((prev) => [...prev, pendingFile])
 
-      const uploadedFile = await uploadPendingFileToOss(pendingFile, file, (progress) => {
-        setUploadedFiles((prev) =>
-          prev.map((f) =>
-            f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
-          ),
-        )
+      const uploadedFile = await uploadPendingFileToOssWithDocumentParse(pendingFile, file, {
+        onProgress: (progress) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
+            ),
+          )
+        },
+        onStatusChange: (nextFile) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) => (f.id === pendingFile.id ? nextFile : f)),
+          )
+        },
       })
 
       setUploadedFiles((prev) =>
@@ -103,7 +112,9 @@ function AgentConversationPageContent() {
     setSelectedSkillName(skill.skillName || skill.id)
     setSelectedSkillDescription(skill.description)
     setPreferredToolType(skill.skillName || skill.id)
-    setDraft(skill.template)
+    skipSlashSelectRef.current = true
+    setDraft(buildSkillInitialPrompt(skill))
+    requestAnimationFrame(() => { skipSlashSelectRef.current = false })
   }
 
   const {
@@ -361,36 +372,19 @@ function AgentConversationPageContent() {
                   onSelectSkill={(skill) => {
                     handleSelectSkill(skill)
                     setSlashCommandOpen(false)
-                    setDraft('')
+                    setSlashQuery('')
                   }}
                   onClose={() => setSlashCommandOpen(false)}
                   onManageSkills={handleManageSkills}
                 />
                 <FileAttachmentPreview files={uploadedFiles} onRemove={handleRemoveFile} />
                 <div className={styles.inputTopArea}>
-                  {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
-                  {selectedSkillName ? (
-                    <span className={styles.skillTagWrap}>
-                      <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
-                      <button
-                        type="button"
-                        className={styles.skillRemoveButton}
-                        aria-label="移除已选技能"
-                        onClick={clearSelectedSkill}
-                      >
-                        <CloseOutlined />
-                      </button>
-                      {selectedSkillDescription ? (
-                        <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
-                      ) : null}
-                    </span>
-                  ) : null}
-                  <Input.TextArea
+                <SkillTemplateInput
                     value={draft}
-                    onChange={(event) => {
-                      const value = event.target.value
+                    onChange={(value) => {
                       setDraft(value)
-                      
+
+                      if (skipSlashSelectRef.current) return
                       if (value === '/' && !slashCommandOpen) {
                         setSlashCommandOpen(true)
                         setSlashQuery('')
@@ -430,9 +424,10 @@ function AgentConversationPageContent() {
                               )
                             })
                             if (filteredSkills[selectedSkillIndex]) {
+                              event.stopPropagation()
                               handleSelectSkill(filteredSkills[selectedSkillIndex])
                               setSlashCommandOpen(false)
-                              setDraft('')
+                              setSlashQuery('')
                             }
                             return
                           case 'Escape':
@@ -453,23 +448,8 @@ function AgentConversationPageContent() {
                         handleSend()
                       }
                     }}
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                      border: 'none',
-                      boxShadow: 'none',
-                      background: 'transparent',
-                      fontSize: 14,
-                      resize: 'none',
-                      minHeight: 24,
-                      maxHeight: 200,
-                      overflowY: 'auto',
-                      lineHeight: 1.5,
-                      padding: 0,
-                    }}
-                    variant="borderless"
-                    placeholder='输入你的问题或输入"/"选择想要使用技能'
-                    autoSize={{ minRows: 1, maxRows: 8 }}
+                    onSend={handleSend}
+                    placeholder='输入你的想法或输入"/"选择想要使用技能'
                   />
                 </div>
                 <div className={styles.inputBottomArea}>

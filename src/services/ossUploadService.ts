@@ -7,7 +7,9 @@ export type UploadedFile = {
   url: string
   objectKey: string
   uploadProgress: number
-  status: 'pending' | 'uploading' | 'completed' | 'error'
+  status: 'pending' | 'uploading' | 'parsing' | 'completed' | 'error'
+  parseTaskId?: string
+  resourceId?: string
   error?: string
 }
 

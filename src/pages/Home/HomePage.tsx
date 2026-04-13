@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Avatar, Input, Tabs } from 'antd'
+import { Avatar, Tabs } from 'antd'
 import {
   ArrowUpOutlined,
   BarChartOutlined,
   BookOutlined,
-  CloseOutlined,
   EyeOutlined,
   NodeIndexOutlined,
   PictureOutlined,
@@ -17,14 +16,14 @@ import chatConfigText from '../../../config.yaml?raw'
 import { AttachmentMenu } from '../../components/common/AttachmentMenu'
 import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
 import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
+import SkillTemplateInput from '../../components/common/SkillTemplateInput'
 import {
   createPendingUploadedFile,
   type UploadedFile,
-  uploadPendingFileToOss,
 } from '../../services/ossUploadService'
+import { uploadPendingFileToOssWithDocumentParse } from '../../services/agentFileUploadService'
 import { resolveQuickActionToolType } from '../../services/chatService'
 import {
-  buildSkillDisplayName,
   buildSkillInitialPrompt,
   extractSkillItemsFromResponse,
   type SkillApiResponse,
@@ -219,6 +218,7 @@ export default function HomePage() {
   const [slashCommandOpen, setSlashCommandOpen] = useState(false)
   const [slashQuery, setSlashQuery] = useState('')
   const [selectedSkillIndex, setSelectedSkillIndex] = useState(0)
+  const skipSlashSelectRef = useRef(false)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   
@@ -257,12 +257,19 @@ export default function HomePage() {
       const pendingFile = createPendingUploadedFile(file)
       setUploadedFiles((prev) => [...prev, pendingFile])
 
-      const uploadedFile = await uploadPendingFileToOss(pendingFile, file, (progress) => {
-        setUploadedFiles((prev) =>
-          prev.map((f) =>
-            f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
-          ),
-        )
+      const uploadedFile = await uploadPendingFileToOssWithDocumentParse(pendingFile, file, {
+        onProgress: (progress) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
+            ),
+          )
+        },
+        onStatusChange: (nextFile) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) => (f.id === pendingFile.id ? nextFile : f)),
+          )
+        },
       })
 
       setUploadedFiles((prev) =>
@@ -392,13 +399,15 @@ export default function HomePage() {
     })
   }
 
-  // 选择技能后先进入输入态，和技能管理页“使用”保持一致。
+  // 选择技能后先进入输入态，和技能管理页”使用”保持一致。
   const handleSelectSkill = (skill: SkillItem) => {
-    // 首页加号选技能后先进入输入态，和“使用/我创建的”保持一致，等用户确认内容后再发送。
+    // 首页加号选技能后先进入输入态，和”使用/我创建的”保持一致，等用户确认内容后再发送。
     setSelectedSkillName(skill.skillName || skill.id)
     setSelectedSkillDescription(skill.description)
     setPreferredToolType(skill.skillName || skill.id)
-    setPrompt(skill.template)
+    skipSlashSelectRef.current = true
+    setPrompt(buildSkillInitialPrompt(skill))
+    requestAnimationFrame(() => { skipSlashSelectRef.current = false })
   }
 
   // 当斜杠指令浮层打开时，自动加载技能列表
@@ -683,7 +692,7 @@ export default function HomePage() {
                       onSelectSkill={(skill) => {
                         handleSelectSkill(skill)
                         setSlashCommandOpen(false)
-                        setPrompt('')
+                        setSlashQuery('')
                       }}
                       onClose={() => setSlashCommandOpen(false)}
                       onManageSkills={handleManageSkills}
@@ -691,30 +700,13 @@ export default function HomePage() {
                     <FileAttachmentPreview files={uploadedFiles} onRemove={handleRemoveFile} />
                     {/* 上方输入区域 */}
                     <div className={styles.inputTopArea}>
-                      {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
-                      {selectedSkillName ? (
-                        <span className={styles.skillTagWrap}>
-                          <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
-                          <button
-                            type="button"
-                            className={styles.skillRemoveButton}
-                            aria-label="移除已选技能"
-                            onClick={clearSelectedSkill}
-                          >
-                            <CloseOutlined />
-                          </button>
-                          {selectedSkillDescription ? (
-                            <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
-                          ) : null}
-                        </span>
-                      ) : null}
-                      <Input.TextArea
+                    <SkillTemplateInput
                         value={prompt}
-                        onChange={(event) => {
-                          const value = event.target.value
+                        onChange={(value) => {
                           setPrompt(value)
-                          
+
                           // 检测斜杠指令触发
+                          if (skipSlashSelectRef.current) return
                           if (value === '/' && !slashCommandOpen) {
                             setSlashCommandOpen(true)
                             setSlashQuery('')
@@ -745,6 +737,7 @@ export default function HomePage() {
                                 return
                               case 'Enter':
                                 event.preventDefault()
+                                event.stopPropagation()
                                 const filteredSkills = skills.filter((skill) => {
                                   if (!slashQuery) return true
                                   const q = slashQuery.toLowerCase()
@@ -757,7 +750,7 @@ export default function HomePage() {
                                 if (filteredSkills[selectedSkillIndex]) {
                                   handleSelectSkill(filteredSkills[selectedSkillIndex])
                                   setSlashCommandOpen(false)
-                                  setPrompt('')
+                                  setSlashQuery('')
                                 }
                                 return
                               case 'Escape':
@@ -778,23 +771,8 @@ export default function HomePage() {
                             handleSend()
                           }
                         }}
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                          border: 'none',
-                          boxShadow: 'none',
-                          background: 'transparent',
-                          fontSize: 14,
-                          resize: 'none',
-                          minHeight: 24,
-                          maxHeight: 200,
-                          overflowY: 'auto',
-                          lineHeight: 1.5,
-                          padding: 0,
-                        }}
-                        variant="borderless"
+                        onSend={handleSend}
                         placeholder='输入你的想法或输入"/"选择想要使用技能'
-                        autoSize={{ minRows: 1, maxRows: 8 }}
                       />
                     </div>
                     {/* 下方按钮区域 */}

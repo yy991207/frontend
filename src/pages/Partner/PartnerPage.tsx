@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Input } from 'antd'
+import SkillTemplateInput from '../../components/common/SkillTemplateInput'
 import {
   ArrowUpOutlined,
   BarsOutlined,
@@ -21,8 +22,8 @@ import { FileAttachmentPreview } from '../../components/common/FileAttachmentPre
 import {
   createPendingUploadedFile,
   type UploadedFile,
-  uploadPendingFileToOss,
 } from '../../services/ossUploadService'
+import { uploadPendingFileToOssWithDocumentParse } from '../../services/agentFileUploadService'
 import chatConfigText from '../../../config.yaml?raw'
 import { useLocation, useNavigate } from 'react-router-dom'
 import homeAvatar from '../../assets/home-avatar.png'
@@ -73,7 +74,6 @@ import {
   type ChatSessionMessageToolCall,
 } from '../../services/chatSessionService'
 import {
-  buildSkillDisplayName,
   buildSkillInitialPrompt,
   extractSkillItemsFromResponse,
   type SkillApiResponse,
@@ -396,6 +396,7 @@ function PartnerPageContent() {
   const [slashCommandOpen, setSlashCommandOpen] = useState(false)
   const [slashQuery, setSlashQuery] = useState('')
   const [selectedSkillIndex, setSelectedSkillIndex] = useState(0)
+  const skipSlashSelectRef = useRef(false)
   
   // 上传文件相关状态
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
@@ -428,12 +429,19 @@ function PartnerPageContent() {
       const pendingFile = createPendingUploadedFile(file)
       setUploadedFiles((prev) => [...prev, pendingFile])
 
-      const uploadedFile = await uploadPendingFileToOss(pendingFile, file, (progress) => {
-        setUploadedFiles((prev) =>
-          prev.map((f) =>
-            f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
-          ),
-        )
+      const uploadedFile = await uploadPendingFileToOssWithDocumentParse(pendingFile, file, {
+        onProgress: (progress) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
+            ),
+          )
+        },
+        onStatusChange: (nextFile) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) => (f.id === pendingFile.id ? nextFile : f)),
+          )
+        },
       })
 
       setUploadedFiles((prev) =>
@@ -608,7 +616,9 @@ function PartnerPageContent() {
     setSelectedSkillName(skill.skillName || skill.id)
     setSelectedSkillDescription(skill.description)
     setPreferredToolType(skill.skillName || skill.id)
-    setDraft(skill.template)
+    skipSlashSelectRef.current = true
+    setDraft(buildSkillInitialPrompt(skill))
+    requestAnimationFrame(() => { skipSlashSelectRef.current = false })
   }
 
 
@@ -1893,7 +1903,7 @@ function PartnerPageContent() {
                       onSelectSkill={(skill) => {
                         handleSelectSkill(skill)
                         setSlashCommandOpen(false)
-                        setDraft('')
+                        setSlashQuery('')
                       }}
                         onClose={() => setSlashCommandOpen(false)}
                         onManageSkills={handleManageSkills}
@@ -1904,30 +1914,12 @@ function PartnerPageContent() {
                       />
                       {/* 上方输入区域 */}
                       <div className={styles.inputTopArea}>
-                      {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
-                      {selectedSkillName ? (
-                        <span className={styles.skillTagWrap}>
-                          <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
-                          <button
-                            type="button"
-                            className={styles.skillRemoveButton}
-                            aria-label="移除已选技能"
-                            onClick={clearSelectedSkill}
-                          >
-                            <CloseOutlined />
-                          </button>
-                          {selectedSkillDescription ? (
-                            <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
-                          ) : null}
-                        </span>
-                      ) : null}
-                      <Input.TextArea
+                      <SkillTemplateInput
                         value={draft}
-                        onChange={(event) => {
-                          const value = event.target.value
+                        onChange={(value) => {
                           setDraft(value)
-                          
-                          // 检测斜杠指令触发
+
+                          if (skipSlashSelectRef.current) return
                           if (value === '/' && !slashCommandOpen) {
                             setSlashCommandOpen(true)
                             setSlashQuery('')
@@ -1943,7 +1935,6 @@ function PartnerPageContent() {
                             return
                           }
 
-                          // 斜杠指令浮层打开时的键盘处理
                           if (slashCommandOpen) {
                             switch (event.key) {
                               case 'ArrowDown':
@@ -1968,9 +1959,10 @@ function PartnerPageContent() {
                                   )
                                 })
                                 if (filteredSkills[selectedSkillIndex]) {
+                                  event.stopPropagation()
                                   handleSelectSkill(filteredSkills[selectedSkillIndex])
                                   setSlashCommandOpen(false)
-                                  setDraft('')
+                                  setSlashQuery('')
                                 }
                                 return
                               case 'Escape':
@@ -1986,29 +1978,13 @@ function PartnerPageContent() {
                             return
                           }
 
-                          // 支持 Enter 发送，Shift+Enter 换行
                           if (event.key === 'Enter' && !event.shiftKey) {
                             event.preventDefault()
                             handleSend()
                           }
                         }}
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                          border: 'none',
-                          boxShadow: 'none',
-                          background: 'transparent',
-                          fontSize: 16,
-                          resize: 'none',
-                          minHeight: 24,
-                          maxHeight: 200,
-                          overflowY: 'auto',
-                          lineHeight: 1.5,
-                          padding: 0,
-                        }}
-                        variant="borderless"
+                        onSend={handleSend}
                         placeholder='输入你的想法或输入"/"选择想要使用技能'
-                        autoSize={{ minRows: 1, maxRows: 8 }}
                       />
                     </div>
                     {/* 下方按钮区域 */}

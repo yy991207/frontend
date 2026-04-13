@@ -26,8 +26,8 @@ import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
 import {
   createPendingUploadedFile,
   type UploadedFile,
-  uploadPendingFileToOss,
 } from '../../services/ossUploadService'
+import { uploadPendingFileToOssWithDocumentParse } from '../../services/agentFileUploadService'
 import {
   loadCustomAgentApiConfig,
   createCustomAgent,
@@ -199,12 +199,19 @@ function AgentCreatePageContent() {
       const pendingFile = createPendingUploadedFile(file)
       setUploadedFiles((prev) => [...prev, pendingFile])
 
-      const uploadedFile = await uploadPendingFileToOss(pendingFile, file, (progress) => {
-        setUploadedFiles((prev) =>
-          prev.map((f) =>
-            f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
-          ),
-        )
+      const uploadedFile = await uploadPendingFileToOssWithDocumentParse(pendingFile, file, {
+        onProgress: (progress) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
+            ),
+          )
+        },
+        onStatusChange: (nextFile) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) => (f.id === pendingFile.id ? nextFile : f)),
+          )
+        },
       })
 
       setUploadedFiles((prev) =>

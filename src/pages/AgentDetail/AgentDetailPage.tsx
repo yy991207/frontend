@@ -13,7 +13,7 @@ import {
   DeleteOutlined,
   ArrowUpOutlined,
 } from '@ant-design/icons'
-import { message, Spin, Input, Tooltip } from 'antd'
+import { message, Spin, Tooltip } from 'antd'
 import EditAgentModal from '../../components/common/EditAgentModal'
 import SkillConfigModal from '../../components/common/SkillConfigModal'
 import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
@@ -34,8 +34,8 @@ import {
 import {
   createPendingUploadedFile,
   type UploadedFile,
-  uploadPendingFileToOss,
 } from '../../services/ossUploadService'
+import { uploadPendingFileToOssWithDocumentParse } from '../../services/agentFileUploadService'
 import type { ToolCall } from '../../core/messages/types'
 import {
   clearAgentStorage,
@@ -154,12 +154,19 @@ export default function AgentDetailPage() {
       const pendingFile = createPendingUploadedFile(file)
       setUploadedFiles((prev) => [...prev, pendingFile])
 
-      const uploadedFile = await uploadPendingFileToOss(pendingFile, file, (progress) => {
-        setUploadedFiles((prev) =>
-          prev.map((f) =>
-            f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
-          ),
-        )
+      const uploadedFile = await uploadPendingFileToOssWithDocumentParse(pendingFile, file, {
+        onProgress: (progress) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
+            ),
+          )
+        },
+        onStatusChange: (nextFile) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) => (f.id === pendingFile.id ? nextFile : f)),
+          )
+        },
       })
 
       setUploadedFiles((prev) =>
