@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   AudioOutlined,
   CloseCircleFilled,
@@ -34,6 +35,8 @@ type LibraryFileItem = {
   file_type: LibraryFileType
   file_path: string
   created_at: string
+  session_id: string
+  agent_id?: string
 }
 
 type LibraryResponse = {
@@ -255,6 +258,7 @@ function buildPageNumbers(currentPage: number, totalPages: number) {
 }
 
 export default function LibraryPage() {
+  const navigate = useNavigate()
   const [activeFilter, setActiveFilter] = useState(FILE_TYPE_ALL)
   const [keyword, setKeyword] = useState('')
   const [selectedSource, setSelectedSource] = useState(SOURCE_ALL)
@@ -285,9 +289,46 @@ export default function LibraryPage() {
     setPreviewFileId(null)
   }
 
+  const handleViewSession = (item: LibraryFileItem) => {
+    setOpenMenuId(null)
+    if (item.session_id) {
+      if (item.agent_id) {
+        navigate(`/agent/${item.agent_id}/chat?sessionId=${item.session_id}`)
+      } else {
+        navigate(`/chat?sessionId=${item.session_id}`)
+      }
+    }
+  }
+
+  const handleDownloadFile = async (item: LibraryFileItem) => {
+    setOpenMenuId(null)
+    if (!config || !item.file_path) return
+
+    try {
+      const requestUrl = new URL(buildAbsoluteUrl(config.baseUrl, 'api/v1/chat/files/download-url'))
+      requestUrl.searchParams.set('url', item.file_path)
+      requestUrl.searchParams.set('expires', '3600')
+
+      const response = await fetch(requestUrl.toString())
+      if (!response.ok) throw new Error('获取下载链接失败')
+
+      const data = await response.json()
+      if (data.success && data.data?.url) {
+        const link = document.createElement('a')
+        link.href = data.data.url
+        link.download = item.file_name
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      }
+    } catch (error) {
+      console.error('下载失败:', error)
+    }
+  }
+
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
-      if (!menuWrapRef.current?.contains(event.target as Node)) {
+      if (event.target instanceof Element && !event.target.closest('[data-action-menu-root="true"]')) {
         setOpenMenuId(null)
       }
       if (!primaryDropdownRef.current?.contains(event.target as Node)) {
@@ -599,7 +640,7 @@ export default function LibraryPage() {
                           <div className={styles.timeCol}>{formatDateTime(item.created_at)}</div>
 
                           <div className={styles.actionCol}>
-                            <div ref={menuWrapRef} className={styles.actionWrap}>
+                            <div ref={menuWrapRef} className={styles.actionWrap} data-action-menu-root="true">
                               <button
                                 type="button"
                                 className={`${styles.actionButton} ${menuOpen ? styles.actionButtonActive : ''}`}
@@ -610,11 +651,18 @@ export default function LibraryPage() {
                               </button>
 
                               <div className={`${styles.actionMenu} ${menuOpen ? styles.actionMenuOpen : ''}`}>
-                                <button type="button" className={styles.actionMenuItem}>
+                                <button
+                                  type="button"
+                                  className={styles.actionMenuItem}
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    handleViewSession(item)
+                                  }}
+                                >
                                   <EyeOutlined />
                                   <span>查看对话</span>
                                 </button>
-                                <button type="button" className={styles.actionMenuItem}>
+                                <button type="button" className={styles.actionMenuItem} onClick={() => handleDownloadFile(item)}>
                                   <DownloadOutlined />
                                   <span>下载</span>
                                 </button>
