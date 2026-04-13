@@ -11,6 +11,7 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   DeleteOutlined,
+  LoadingOutlined,
 } from '@ant-design/icons'
 import { message, Input, Tooltip } from 'antd'
 import EditAgentModal from '../../components/common/EditAgentModal'
@@ -19,6 +20,9 @@ import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
 import SkillDetailPanel from '../../components/common/SkillDetailPanel'
 import { MessageList } from '../../components/chat/message-list'
 import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
+import SkillTemplateInput from '../../components/common/SkillTemplateInput'
+import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts-context'
+import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
 import {
   createPendingUploadedFile,
   type UploadedFile,
@@ -96,9 +100,18 @@ function ConfigCard({
 }
 
 export default function AgentCreatePage() {
+  return (
+    <ArtifactsProvider>
+      <AgentCreatePageContent />
+    </ArtifactsProvider>
+  )
+}
+
+function AgentCreatePageContent() {
   const navigate = useNavigate()
   const location = useLocation()
   const state = location.state as GeneratedTemplateState | null
+  const taskId = state?.taskId ?? null
   const [agentName, setAgentName] = useState('未命名智能体')
   const [agentSubtitle, setAgentSubtitle] = useState('')
   const [agentInstruction, setAgentInstruction] = useState('')
@@ -129,9 +142,23 @@ export default function AgentCreatePage() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [recommendedSkills, setRecommendedSkills] = useState<RecommendedSkill[] | null>(null)
-  const recommendPollingRef = useRef<number | null>(null)
-  const recommendAbortRef = useRef<AbortController | null>(null)
-  const pollingTaskIdRef = useRef<string | null>(null)
+  const { addFile, selectFile, open: artifactOpen, selectedFile } = useArtifacts()
+  const sessionBaseUrl = useMemo(() => {
+    if (!agentConfig) return null
+    try {
+      const url = new URL(agentConfig.chatAgentEndpoint)
+      return `${url.protocol}//${url.host}`
+    } catch {
+      return null
+    }
+  }, [agentConfig])
+
+  const handleOpenFile = useCallback((filepath: string, originalUrl?: string) => {
+    if (!sessionBaseUrl) return
+    const artifactFile = { filepath, sessionId: 'create-preview', baseUrl: sessionBaseUrl, originalUrl }
+    addFile(artifactFile)
+    selectFile(artifactFile)
+  }, [sessionBaseUrl, addFile, selectFile])
 
   useEffect(() => {
     messagesRef.current = messages
@@ -203,6 +230,7 @@ export default function AgentCreatePage() {
       setAgentSubtitle(template.description || '')
       setAgentInstruction(template.agentPrompt || '')
       setAgentQuestions(template.presetQuestions || [])
+      setRecommendedSkills(template.recommendedSkills ?? null)
       message.success('智能体配置已自动生成，请检查并完善后发布')
     }
   }, [state])
@@ -213,47 +241,41 @@ export default function AgentCreatePage() {
 
   // 当从 CreateAgentModal 进入 recommending 阶段时，继续轮询直到 completed
   useEffect(() => {
-    const taskId = state?.taskId
     if (!taskId) return
 
-    // 用 ref 持久化 taskId，防止 location.state 被 React Router 清理后丢失
-    if (pollingTaskIdRef.current === taskId) return
-    pollingTaskIdRef.current = taskId
-
-    recommendAbortRef.current = new AbortController()
+    let recommendPollingTimer: number | null = null
+    const recommendAbortController = new AbortController()
 
     const poll = async () => {
       try {
         const config = await loadCustomAgentApiConfig()
-        const taskResponse = await getAgentTemplateTask(config, taskId, recommendAbortRef.current?.signal)
+        const taskResponse = await getAgentTemplateTask(config, taskId, recommendAbortController.signal)
 
-        if (taskResponse.data.phase === 'completed' && taskResponse.data.result?.recommended_skills) {
-          setRecommendedSkills(taskResponse.data.result.recommended_skills)
-          if (recommendPollingRef.current) {
-            clearTimeout(recommendPollingRef.current)
-            recommendPollingRef.current = null
-          }
+        if (taskResponse.data.phase === 'completed') {
+          setRecommendedSkills(taskResponse.data.result?.recommended_skills ?? [])
           return
         }
 
-        recommendPollingRef.current = window.setTimeout(poll, 2000)
+        recommendPollingTimer = window.setTimeout(poll, 2000)
       } catch {
-        if (!recommendAbortRef.current?.signal.aborted) {
-          recommendPollingRef.current = window.setTimeout(poll, 2000)
+        if (!recommendAbortController.signal.aborted) {
+          recommendPollingTimer = window.setTimeout(poll, 2000)
         }
       }
     }
 
-    poll()
+    // 这里继续复用同一个 taskId 轮询，避免路由 replace 后因为 state 对象变化把轮询提前清掉
+    void poll()
 
     return () => {
-      if (recommendPollingRef.current) {
-        clearTimeout(recommendPollingRef.current)
-        recommendPollingRef.current = null
+      if (recommendPollingTimer) {
+        clearTimeout(recommendPollingTimer)
       }
-      recommendAbortRef.current?.abort()
+      recommendAbortController.abort()
     }
-  }, [state])
+  }, [taskId])
+
+  const isRecommendedSkillsLoading = taskId !== null && recommendedSkills === null
 
   const getAvatarLetter = (name: string) => {
     return name?.trim().charAt(0).toUpperCase() || 'A'
@@ -425,13 +447,14 @@ const handleModalSave = (data: { name: string; description: string }) => {
     }
   }, [draft, isResponding, agentConfig, agentName, agentInstruction, agentSubtitle, agentSkills, resourceIds, webSearchEnabled])
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return
-    if (e.key === 'Enter' && !e.shiftKey && !isResponding) {
-      e.preventDefault()
-      handleSend()
-    }
-  }, [isResponding, handleSend])
+  const handleStop = useCallback(() => {
+    abortControllerRef.current?.abort()
+    abortControllerRef.current = null
+    setMessages((prev) => prev.map((m) =>
+      m.loading ? { ...m, loading: false } : m,
+    ))
+    setIsResponding(false)
+  }, [])
 
   const handlePublish = async () => {
     if (!agentName.trim()) {
@@ -529,7 +552,7 @@ const handleModalSave = (data: { name: string; description: string }) => {
         </div>
       </div>
 
-      <div className={styles.layout}>
+      <div className={`${styles.layout} ${artifactOpen ? styles.layoutArtifactOpen : ''}`}>
         <main className={styles.chatPanel}>
           <div className={styles.chatPanelInner}>
             <div className={styles.chatHeader}>
@@ -579,6 +602,7 @@ const handleModalSave = (data: { name: string; description: string }) => {
                     onCopy={handleCopy}
                     getToolDisplayTitle={getToolDisplayTitle}
                     getToolDisplaySummary={getToolDisplaySummary}
+                    onOpenFile={handleOpenFile}
                   />
                   {isResponding && messages[messages.length - 1]?.role === 'assistant' && !messages[messages.length - 1]?.content && (
                     <div className={styles.assistantMessage}>
@@ -594,15 +618,15 @@ const handleModalSave = (data: { name: string; description: string }) => {
                 <div className={styles.inputWrap}>
                   <FileAttachmentPreview files={uploadedFiles} onRemove={handleRemoveFile} />
                   <div className={styles.inputTopArea}>
-                    <Input.TextArea
+                    <SkillTemplateInput
                       value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      onKeyDown={handleKeyDown}
+                      onChange={setDraft}
+                      onSend={handleSend}
                       placeholder="输入问题进行测试..."
                       className={styles.chatInput}
-                      autoSize={{ minRows: 1, maxRows: 6 }}
-                      disabled={isResponding}
-                      variant="borderless"
+                      maxRows={6}
+                      minRows={1}
+                      disabled={false}
                     />
                   </div>
                   <div className={styles.inputBottomArea}>
@@ -621,14 +645,20 @@ const handleModalSave = (data: { name: string; description: string }) => {
                     </div>
                     <div className={styles.inputBottomRight}>
                       <div className={styles.inputActions}>
-                        <button
-                          type="button"
-                          className={`${styles.iconBtn} ${styles.sendBtn} ${!draft.trim() ? styles.sendBtnDisabled : ''}`}
-                          onClick={handleSend}
-                          disabled={!draft.trim() || isResponding}
-                        >
-                          <ArrowUpOutlined />
-                        </button>
+                        {isResponding ? (
+                          <button type="button" className={`${styles.iconBtn} ${styles.stopBtn}`} onClick={handleStop}>
+                            <LoadingOutlined />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className={`${styles.iconBtn} ${styles.sendBtn} ${!draft.trim() ? styles.sendBtnDisabled : ''}`}
+                            onClick={handleSend}
+                            disabled={!draft.trim()}
+                          >
+                            <ArrowUpOutlined />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -665,6 +695,16 @@ const handleModalSave = (data: { name: string; description: string }) => {
               }
             >
               <p className={styles.cardHint}>添加 Skills 服务后，可见范围内的用户均可在对话中使用该 Skills 服务</p>
+              {isRecommendedSkillsLoading && (
+                <div className={styles.recommendingState} data-testid="agent-create-skill-recommend-loading">
+                  <div className={styles.loadingDots} aria-hidden="true">
+                    <span className={styles.loadingDot} />
+                    <span className={styles.loadingDot} />
+                    <span className={styles.loadingDot} />
+                  </div>
+                  <span className={styles.recommendingText}>技能推荐中...</span>
+                </div>
+              )}
               <div className={styles.serviceList}>
                 {agentSkills.map((skill) => {
                   const isExpanded = expandedSkillName === skill.skill_name
@@ -935,6 +975,11 @@ const handleModalSave = (data: { name: string; description: string }) => {
             </ConfigCard>
           </div>
         </aside>
+        {artifactOpen && selectedFile && (
+          <aside className={`${styles.artifactPanel} ${styles.artifactPanelOpen}`}>
+            <ArtifactFileDetail file={selectedFile} />
+          </aside>
+        )}
       </div>
 
       <EditAgentModal

@@ -20,6 +20,7 @@ import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
 import SkillDetailPanel from '../../components/common/SkillDetailPanel'
 import { MessageList } from '../../components/chat/message-list'
 import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
+import SkillTemplateInput from '../../components/common/SkillTemplateInput'
 import {
   loadCustomAgentApiConfig,
   updateCustomAgent,
@@ -694,37 +695,14 @@ export default function AgentDetailPage() {
                   <FileAttachmentPreview files={uploadedFiles} onRemove={handleRemoveFile} />
                   {/* 上方输入区域 */}
                   <div className={styles.inputTopArea}>
-                    <Input.TextArea
+                    <SkillTemplateInput
                       value={chatInputValue}
-                      onChange={(e) => setChatInputValue(e.target.value)}
-                      onKeyDown={(e) => {
-                        // 中文输入法composition期间不触发发送
-                        if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) {
-                          return
-                        }
-                        // 支持 Enter 发送，Shift+Enter 换行
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault()
-                          handleSendMessage()
-                        }
-                      }}
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        border: 'none',
-                        boxShadow: 'none',
-                        background: 'transparent',
-                        fontSize: 14,
-                        resize: 'none',
-                        minHeight: 24,
-                        maxHeight: 200,
-                        overflowY: 'auto',
-                        lineHeight: 1.5,
-                        padding: 0,
-                      }}
-                      variant="borderless"
+                      onChange={setChatInputValue}
+                      onSend={handleSendMessage}
                       placeholder="问我任何问题"
-                      autoSize={{ minRows: 1, maxRows: 8 }}
+                      className={styles.chatInput}
+                      maxRows={8}
+                      minRows={1}
                     />
                   </div>
                   {/* 下方按钮区域 */}
@@ -833,7 +811,7 @@ export default function AgentDetailPage() {
                             onClick={() => {
                               const normalizedSkillName = skill.skill_name.trim().replace(/^\/+/, '')
                               const skillPrefix = normalizedSkillName ? `/${normalizedSkillName}` : ''
-                              if (skill.template && skillPrefix) {
+                              if (skillPrefix && skill.template) {
                                 setChatInputValue(`基于 ${skillPrefix} ${skill.template}`)
                               } else if (skill.template) {
                                 setChatInputValue(skill.template)

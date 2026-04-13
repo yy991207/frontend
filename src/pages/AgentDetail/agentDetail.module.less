@@ -211,6 +211,10 @@
   padding: 0 6px 6px;
 }
 
+.layoutArtifactOpen {
+  grid-template-columns: minmax(0, 1fr) 456px 456px;
+}
+
 .chatPanel,
 .configPanel {
   min-height: 0;
@@ -959,6 +963,23 @@
   gap: 12px;
 }
 
+.recommendingState {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-top: 12px;
+  border: 1px solid #e5e6eb;
+  border-radius: 8px;
+  background: #fafbfc;
+}
+
+.recommendingText {
+  font-size: 13px;
+  line-height: 20px;
+  color: #646a73;
+}
+
 .serviceCard {
   display: flex;
   flex-direction: column;
@@ -1464,4 +1485,21 @@
   .configPanel {
     border-radius: 16px;
   }
+}
+
+// Artifact preview panel
+.artifactPanel {
+  height: 100%;
+  border-radius: 16px;
+  background: #ffffff;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease 0.1s;
+  pointer-events: none;
+  min-width: 0;
+}
+
+.artifactPanelOpen {
+  opacity: 1;
+  pointer-events: auto;
 }

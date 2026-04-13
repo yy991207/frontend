@@ -241,6 +241,7 @@ export default function SkillConfigModal({
       skill_name: skillName,
       chinese_name: skill.title,
       description: skill.description,
+      ...(skill.template ? { template: skill.template } : {}),
     }
 
     onSkillChange([...currentSkills, newSkill])
