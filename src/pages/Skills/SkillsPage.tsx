@@ -6,7 +6,9 @@ import {
   DownOutlined,
   EllipsisOutlined,
   FileZipOutlined,
+  LeftOutlined,
   PlusOutlined,
+  RightOutlined,
   SearchOutlined,
   SettingOutlined,
   SwapOutlined,
@@ -18,12 +20,13 @@ import skillConfigText from '../../../config.yaml?raw'
 import { deleteCreatedSkill as deleteCreatedSkillFromApi, fetchCreatedSkills as fetchCreatedSkillsFromApi, parseCustomSkillListApiConfig } from '../../services/customSkillListService'
 import { buildSkillInitialPrompt, extractSkillItemsFromResponse, type SkillApiResponse, type SkillItem as SkillApiItem } from '../../services/skillPromptService'
 import { parseSkillUploadApiConfig, uploadCustomSkill, type UploadedSkillSummary } from '../../services/skillUploadService'
-import { fetchClawhubSkills, fetchClawhubSkillDetail, installClawhubSkill, type ClawhubSkillDetail } from '../../services/clawhubService'
+import { fetchClawhubSkills, fetchClawhubSkillDetail, installClawhubSkill, searchClawhubSkills, type ClawhubSkillDetail } from '../../services/clawhubService'
 import styles from './skills.module.less'
 
 type SkillsMode = 'discover' | 'manage'
 type ManageTab = 'added' | 'created'
 type CreateOptionKey = 'chat' | 'upload'
+type DataSource = 'all' | 'official' | 'clawhub'
 
 type SkillApiConfig = {
   featuredEndpoint: string
@@ -216,6 +219,16 @@ export default function SkillsPage() {
   const [clawhubSkillsLoading, setClawhubSkillsLoading] = useState(false)
   const [clawhubSkillsError, setClawhubSkillsError] = useState('')
   const [clawhubDetailLoading, setClawhubDetailLoading] = useState(false)
+  const [dataSource, setDataSource] = useState<DataSource>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<SkillApiItem[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [searchError, setSearchError] = useState('')
+  const [showSearchResults, setShowSearchResults] = useState(false)
+  const [managePageIndex, setManagePageIndex] = useState(0)
+  const MANAGE_PAGE_SIZE = 20
+  const searchControllerRef = useRef<AbortController | null>(null)
+  const searchContainerRef = useRef<HTMLDivElement | null>(null)
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [uploadingSkill, setUploadingSkill] = useState(false)
   const [isUploadDragging, setIsUploadDragging] = useState(false)
@@ -260,6 +273,10 @@ export default function SkillsPage() {
 
       if (event.target instanceof Element && !event.target.closest('[data-manage-menu-root="true"]')) {
         setOpenManageMenuId(null)
+      }
+
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowSearchResults(false)
       }
     }
 
@@ -773,6 +790,89 @@ const handleOpenClawhubSkillDetail = useCallback(
     }
   }, [skillApiConfig, loadClawhubSkills])
 
+  const handleDataSourceChange = useCallback(
+    (newSource: DataSource) => {
+      setDataSource(newSource)
+      setSearchQuery('')
+      setSearchResults([])
+      setShowSearchResults(false)
+      setSearchError('')
+      searchControllerRef.current?.abort()
+      searchControllerRef.current = null
+
+      if (newSource === 'clawhub') {
+        setFeaturedSourceTab('clawhub')
+      } else if (newSource === 'official') {
+        setFeaturedSourceTab('official')
+      }
+    },
+    [],
+  )
+
+  const handleSearchInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+      setSearchQuery(value)
+
+      if (!value.trim()) {
+        setSearchResults([])
+        setShowSearchResults(false)
+        setSearchError('')
+        searchControllerRef.current?.abort()
+        searchControllerRef.current = null
+        return
+      }
+
+      if (dataSource === 'clawhub' && skillApiConfig) {
+        searchControllerRef.current?.abort()
+        const controller = new AbortController()
+        searchControllerRef.current = controller
+
+        setSearchLoading(true)
+        setSearchError('')
+        setShowSearchResults(true)
+
+        const baseUrl = skillApiConfig.featuredEndpoint.replace(/\/api\/v1\/skills.*$/, '')
+        void searchClawhubSkills({
+          baseUrl,
+          userId: skillApiConfig.userId,
+          q: value.trim(),
+          limit: 20,
+          signal: controller.signal,
+        }).then((result) => {
+          if (controller.signal.aborted) {
+            return
+          }
+
+          if (result.success) {
+            setSearchResults(result.skills)
+            setSearchError('')
+          } else {
+            setSearchResults([])
+            setSearchError(result.msg || '搜索失败')
+          }
+          setSearchLoading(false)
+        })
+      }
+    },
+    [dataSource, skillApiConfig],
+  )
+
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery('')
+    setSearchResults([])
+    setShowSearchResults(false)
+    setSearchError('')
+    searchControllerRef.current?.abort()
+    searchControllerRef.current = null
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      searchControllerRef.current?.abort()
+    }
+  }, [])
+
   const handleUseSkill = async (skill: SkillApiItem) => {
     if (skillActionLoadingId === skill.id) {
       return
@@ -1051,9 +1151,11 @@ const handleOpenClawhubSkillDetail = useCallback(
 
   const manageList = useMemo<ManageSkillCard[]>(() => {
     const sourceSkills = manageTab === 'created' ? createdSkills : addedSkills
+    const startIndex = managePageIndex * MANAGE_PAGE_SIZE
+    const currentSkills = sourceSkills.slice(startIndex, startIndex + MANAGE_PAGE_SIZE)
 
-    return sourceSkills.map((item, index) => {
-      const toneClassName = getManageCardTone(index)
+    return currentSkills.map((item, index) => {
+      const toneClassName = getManageCardTone(startIndex + index)
 
       return {
         id: item.id,
@@ -1066,7 +1168,10 @@ const handleOpenClawhubSkillDetail = useCallback(
         badgeLetter: getSkillBadgeLetter(item.skillName, item.title),
       }
     })
-  }, [addedSkills, createdSkills, manageTab])
+  }, [addedSkills, createdSkills, manageTab, managePageIndex, MANAGE_PAGE_SIZE])
+
+  const manageTotalCount = manageTab === 'created' ? createdSkills.length : addedSkills.length
+  const manageTotalPages = Math.ceil(manageTotalCount / MANAGE_PAGE_SIZE)
 
   const manageLoading = manageTab === 'created' ? createdSkillsLoading : addedSkillsLoading
 
@@ -1223,10 +1328,120 @@ const handleOpenClawhubSkillDetail = useCallback(
                 <h1 className={styles.heroTitle}>Hi～ 发现并管理你的技能</h1>
               </div>
 
-              <label className={styles.searchBox}>
-                <SearchOutlined className={styles.searchIcon} />
-                <input className={styles.searchInput} placeholder="搜索技能名称、描述或标签" />
-              </label>
+              <div ref={searchContainerRef} className={styles.searchContainer}>
+                <label className={styles.searchBox}>
+                  {!showSearchResults ? (
+                    <div className={styles.dataSourceSelector}>
+                      <button
+                        type="button"
+                        className={styles.dataSourceButton}
+                        aria-haspopup="listbox"
+                      >
+                        <span className={styles.dataSourceLabel}>
+                          {dataSource === 'all' ? '全部' : dataSource === 'official' ? '官方精选' : 'Claw Hub'}
+                        </span>
+                        <DownOutlined className={styles.dataSourceArrow} />
+                      </button>
+                      <div className={styles.dataSourceDropdown} role="listbox">
+                        <button
+                          type="button"
+                          className={`${styles.dataSourceOption} ${dataSource === 'all' ? styles.dataSourceOptionActive : ''}`}
+                          onClick={() => handleDataSourceChange('all')}
+                          role="option"
+                        >
+                          全部
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.dataSourceOption} ${dataSource === 'official' ? styles.dataSourceOptionActive : ''}`}
+                          onClick={() => handleDataSourceChange('official')}
+                          role="option"
+                        >
+                          官方精选
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.dataSourceOption} ${dataSource === 'clawhub' ? styles.dataSourceOptionActive : ''}`}
+                          onClick={() => handleDataSourceChange('clawhub')}
+                          role="option"
+                        >
+                          Claw Hub
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className={styles.backToListButton}
+                      onClick={handleClearSearch}
+                    >
+                      <ArrowLeftOutlined />
+                      <span>返回列表</span>
+                    </button>
+                  )}
+                  <SearchOutlined className={styles.searchIcon} />
+                  <input
+                    className={styles.searchInput}
+                    placeholder={dataSource === 'clawhub' ? '搜索 Claw Hub 技能...' : '搜索技能名称、描述或标签'}
+                    value={searchQuery}
+                    onChange={handleSearchInputChange}
+                  />
+                  {searchQuery ? (
+                    <button type="button" className={styles.searchClearButton} onClick={handleClearSearch}>
+                      <CloseOutlined />
+                    </button>
+                  ) : null}
+                </label>
+
+                {showSearchResults && dataSource === 'clawhub' ? (
+                  <div className={styles.searchResultsOverlay}>
+                    <div className={styles.searchResultsHeader}>
+                      <span className={styles.searchResultsTitle}>
+                        {searchLoading ? '搜索中...' : `找到 ${searchResults.length} 个结果`}
+                      </span>
+                    </div>
+                    {searchError ? (
+                      <div className={styles.searchResultsError}>{searchError}</div>
+                    ) : (
+                      <div className={styles.searchResultsList}>
+                        {searchResults.map((skill) => (
+                          <div key={skill.id} className={styles.searchResultItem}>
+                            <button
+                              type="button"
+                              className={styles.searchResultMain}
+                              onClick={() => {
+                                handleOpenClawhubSkillDetail(skill)
+                                setShowSearchResults(false)
+                              }}
+                            >
+                              <span className={styles.searchResultIcon}>
+                                <span className={styles.badgeLetter}>
+                                  {getSkillBadgeLetter(skill.skillName, skill.title)}
+                                </span>
+                              </span>
+                              <div className={styles.searchResultContent}>
+                                <span className={styles.searchResultName}>{skill.title}</span>
+                                <span className={styles.searchResultDesc}>{skill.description}</span>
+                              </div>
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.searchResultActionButton}
+                              onClick={() => handleUseClawhubSkill(skill)}
+                              disabled={skillActionLoadingId === skill.id}
+                            >
+                              {skillActionLoadingId === skill.id ? '处理中...' : skill.isSelected ? '使用' : '添加'}
+                            </button>
+                          </div>
+                        ))}
+                        {searchResults.length === 0 && !searchLoading ? (
+                          <div className={styles.searchResultsEmpty}>未找到相关技能</div>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
             </div>
 
             <section className={styles.section}>
@@ -1376,14 +1591,20 @@ const handleOpenClawhubSkillDetail = useCallback(
               <button
                 type="button"
                 className={`${styles.manageTab} ${manageTab === 'added' ? styles.manageTabActive : ''}`}
-                onClick={() => setManageTab('added')}
+                onClick={() => {
+                  setManageTab('added')
+                  setManagePageIndex(0)
+                }}
               >
                 我添加的
               </button>
               <button
                 type="button"
                 className={`${styles.manageTab} ${manageTab === 'created' ? styles.manageTabActive : ''}`}
-                onClick={() => setManageTab('created')}
+                onClick={() => {
+                  setManageTab('created')
+                  setManagePageIndex(0)
+                }}
               >
                 我创建的
               </button>
@@ -1392,7 +1613,8 @@ const handleOpenClawhubSkillDetail = useCallback(
             {manageLoading ? (
               <div className={styles.manageStatus}>技能加载中...</div>
             ) : manageList.length > 0 ? (
-              <div className={styles.manageGrid}>
+              <>
+                <div className={styles.manageGrid}>
                 {manageList.map((item) => (
                   <article
                     key={item.id}
@@ -1466,6 +1688,30 @@ const handleOpenClawhubSkillDetail = useCallback(
                   </article>
                 ))}
               </div>
+              {manageTotalPages > 1 ? (
+                <div className={styles.paginationWrap}>
+                  <button
+                    type="button"
+                    className={`${styles.paginationButton} ${managePageIndex === 0 ? styles.paginationButtonDisabled : ''}`}
+                    disabled={managePageIndex === 0}
+                    onClick={() => setManagePageIndex((prev) => Math.max(0, prev - 1))}
+                  >
+                    <LeftOutlined />
+                  </button>
+                  <span className={styles.paginationInfo}>
+                    {managePageIndex + 1} / {manageTotalPages}
+                  </span>
+                  <button
+                    type="button"
+                    className={`${styles.paginationButton} ${managePageIndex >= manageTotalPages - 1 ? styles.paginationButtonDisabled : ''}`}
+                    disabled={managePageIndex >= manageTotalPages - 1}
+                    onClick={() => setManagePageIndex((prev) => Math.min(manageTotalPages - 1, prev + 1))}
+                  >
+                    <RightOutlined />
+                  </button>
+                </div>
+              ) : null}
+              </>
             ) : (
               <div className={styles.manageEmpty}>
                 <div className={styles.balloonWrap}>
