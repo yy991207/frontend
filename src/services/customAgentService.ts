@@ -406,11 +406,23 @@ export type PresetQuestionGenerated = {
   category: string
 }
 
+export type RecommendedSkill = {
+  name: string
+  chinese_name: string
+  description: string
+  source: string
+  template: string | null
+  placeholders: unknown | null
+  config_fields: unknown | null
+  is_selected: boolean
+}
+
 export type AgentTemplateTaskResult = {
   agent_name: string
   description: string
   agent_prompt: string
   preset_questions: PresetQuestionGenerated[]
+  recommended_skills: RecommendedSkill[]
 }
 
 export type AgentTemplateTaskResponse = {
@@ -420,11 +432,13 @@ export type AgentTemplateTaskResponse = {
   data: {
     task_id: string
     status: string
+    phase: string
     progress: {
       agent_name: boolean
       description: boolean
       agent_prompt: boolean
       preset_questions: boolean
+      recommended_skills: boolean
     }
     is_completed: boolean
     result: AgentTemplateTaskResult | null

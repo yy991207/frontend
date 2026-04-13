@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   ArrowUpOutlined,
@@ -12,26 +12,35 @@ import {
   CloseCircleOutlined,
   DeleteOutlined,
 } from '@ant-design/icons'
-import { message, Input } from 'antd'
+import { message, Input, Tooltip } from 'antd'
 import EditAgentModal from '../../components/common/EditAgentModal'
 import SkillConfigModal from '../../components/common/SkillConfigModal'
 import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
 import SkillDetailPanel from '../../components/common/SkillDetailPanel'
-import {
-  loadCustomAgentApiConfig,
-  createCustomAgent,
-  chatCustomAgentStream,
-  type EnabledSkill,
-  type PresetQuestion,
-  type CustomAgentApiConfig,
-} from '../../services/customAgentService'
-import { MarkdownContent } from '../../components/chat/markdown-content'
+import { MessageList } from '../../components/chat/message-list'
 import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
 import {
   createPendingUploadedFile,
   type UploadedFile,
   uploadPendingFileToOss,
 } from '../../services/ossUploadService'
+import {
+  loadCustomAgentApiConfig,
+  createCustomAgent,
+  chatCustomAgentStream,
+  getAgentTemplateTask,
+  type EnabledSkill,
+  type PresetQuestion,
+  type CustomAgentApiConfig,
+  type RecommendedSkill,
+} from '../../services/customAgentService'
+import type { ToolCall, ChatReference, SkillOutputItem } from '../../core/messages/types'
+import {
+  adaptChatMessages,
+} from '../../core/messages/adapters'
+import { groupMessages, resolveAssistantCopyTargets } from '../../core/messages/utils'
+import type { LegacyChatMessage as ChatMessage } from '../../core/messages/types'
+import chatStyles from '../../pages/Chat/chat.module.less'
 import styles from '../AgentDetail/agentDetail.module.less'
 
 type GeneratedTemplateState = {
@@ -40,7 +49,9 @@ type GeneratedTemplateState = {
     description: string
     agentPrompt: string
     presetQuestions: PresetQuestion[]
+    recommendedSkills?: RecommendedSkill[]
   }
+  taskId?: string
 }
 
 function ConfigCard({
@@ -108,13 +119,49 @@ export default function AgentCreatePage() {
   const messageShownRef = useRef(false)
 
   const [agentConfig, setAgentConfig] = useState<CustomAgentApiConfig | null>(null)
-  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string; reasoning?: string }[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const messagesRef = useRef<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
   const [isResponding, setIsResponding] = useState(false)
   const [requestError, setRequestError] = useState('')
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [recommendedSkills, setRecommendedSkills] = useState<RecommendedSkill[] | null>(null)
+  const recommendPollingRef = useRef<number | null>(null)
+  const recommendAbortRef = useRef<AbortController | null>(null)
+  const pollingTaskIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
+
+  const adaptedMessages = useMemo(() => adaptChatMessages(messages), [messages])
+  const groupedMessages = useMemo(() => groupMessages(adaptedMessages), [adaptedMessages])
+  const assistantCopyTargets = useMemo(
+    () => resolveAssistantCopyTargets(adaptedMessages, { excludeLastTurn: isResponding }),
+    [adaptedMessages, isResponding],
+  )
+
+  const handleCopy = useCallback(async (messageId: string, content: string) => {
+    if (!content) return
+    await navigator.clipboard.writeText(content)
+    setCopiedMessageId(messageId)
+    window.setTimeout(() => setCopiedMessageId((current) => (current === messageId ? null : current)), 1200)
+  }, [])
+
+  function getToolDisplayTitle(toolCall: ToolCall) {
+    const label = typeof toolCall.toolDisplay?.tool_label === 'string' ? toolCall.toolDisplay.tool_label : ''
+    return label || toolCall.name
+  }
+
+  function getToolDisplaySummary(toolCall: ToolCall) {
+    const items = Array.isArray(toolCall.toolDisplay?.items) ? toolCall.toolDisplay.items : []
+    if (toolCall.status === 'running') return '工具执行中...'
+    if (items.length > 0) return `已返回 ${items.length} 条结果`
+    return '工具执行完成'
+  }
 
   const handleUploadFile = () => {
     fileInputRef.current?.click()
@@ -164,6 +211,50 @@ export default function AgentCreatePage() {
     loadCustomAgentApiConfig().then(setAgentConfig).catch(console.error)
   }, [])
 
+  // 当从 CreateAgentModal 进入 recommending 阶段时，继续轮询直到 completed
+  useEffect(() => {
+    const taskId = state?.taskId
+    if (!taskId) return
+
+    // 用 ref 持久化 taskId，防止 location.state 被 React Router 清理后丢失
+    if (pollingTaskIdRef.current === taskId) return
+    pollingTaskIdRef.current = taskId
+
+    recommendAbortRef.current = new AbortController()
+
+    const poll = async () => {
+      try {
+        const config = await loadCustomAgentApiConfig()
+        const taskResponse = await getAgentTemplateTask(config, taskId, recommendAbortRef.current?.signal)
+
+        if (taskResponse.data.phase === 'completed' && taskResponse.data.result?.recommended_skills) {
+          setRecommendedSkills(taskResponse.data.result.recommended_skills)
+          if (recommendPollingRef.current) {
+            clearTimeout(recommendPollingRef.current)
+            recommendPollingRef.current = null
+          }
+          return
+        }
+
+        recommendPollingRef.current = window.setTimeout(poll, 2000)
+      } catch {
+        if (!recommendAbortRef.current?.signal.aborted) {
+          recommendPollingRef.current = window.setTimeout(poll, 2000)
+        }
+      }
+    }
+
+    poll()
+
+    return () => {
+      if (recommendPollingRef.current) {
+        clearTimeout(recommendPollingRef.current)
+        recommendPollingRef.current = null
+      }
+      recommendAbortRef.current?.abort()
+    }
+  }, [state])
+
   const getAvatarLetter = (name: string) => {
     return name?.trim().charAt(0).toUpperCase() || 'A'
   }
@@ -205,13 +296,39 @@ const handleModalSave = (data: { name: string; description: string }) => {
     if (!prompt || isResponding || !agentConfig) return
 
     setDraft('')
-    setMessages((prev) => [...prev, { role: 'user', content: prompt }])
     setIsResponding(true)
     setRequestError('')
     abortControllerRef.current = new AbortController()
 
-    let assistantContent = ''
-    let reasoningContent = ''
+    const now = new Date()
+    const timestamp = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })
+    const userMessage: ChatMessage = {
+      id: `user-${now.getTime()}`,
+      role: 'user',
+      content: prompt,
+      timestamp,
+      toolCalls: [],
+      references: [],
+      courses: [],
+      skillOutput: [],
+      reasoningContent: null,
+    }
+    const assistantMessage: ChatMessage = {
+      id: `assistant-${now.getTime()}`,
+      role: 'assistant',
+      content: '',
+      timestamp,
+      loading: true,
+      toolCalls: [],
+      references: [],
+      courses: [],
+      skillOutput: [],
+      reasoningContent: null,
+    }
+
+    let nextMessages = [...messagesRef.current, userMessage, assistantMessage]
+    messagesRef.current = nextMessages
+    setMessages(nextMessages)
 
     try {
       await chatCustomAgentStream(agentConfig, {
@@ -219,39 +336,94 @@ const handleModalSave = (data: { name: string; description: string }) => {
         agent_prompt: agentInstruction,
         description: agentSubtitle,
         message: prompt,
-        history: messages.map((m) => ({ role: m.role, content: m.content })),
+        history: messagesRef.current
+          .filter((m) => m.role === 'user' || (m.role === 'assistant' && !m.loading))
+          .map((m) => ({ role: m.role, content: m.content })),
         enabled_skills: agentSkills,
         resource_ids: resourceIds,
         enable_web_search: webSearchEnabled,
       }, abortControllerRef.current.signal, {
-        onTextDelta: (text) => {
-          assistantContent += text
+        onChatModelStart: () => {
           setMessages((prev) => {
-            const last = prev[prev.length - 1]
-            if (last?.role === 'assistant') {
-              return [...prev.slice(0, -1), { ...last, content: assistantContent, reasoning: reasoningContent }]
-            }
-            return [...prev, { role: 'assistant', content: assistantContent, reasoning: reasoningContent }]
+            const replyTime = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })
+            return prev.map((m) => {
+              if (m.id !== assistantMessage.id) return m
+              return { ...m, timestamp: replyTime, content: m.content || '', loading: false }
+            })
           })
         },
+        onTextDelta: (text) => {
+          setMessages((prev) => prev.map((m) => {
+            if (m.id !== assistantMessage.id) return m
+            return { ...m, content: m.content + text }
+          }))
+        },
         onReasoningDelta: (text) => {
-          reasoningContent += text
+          setMessages((prev) => prev.map((m) => {
+            if (m.id !== assistantMessage.id) return m
+            return { ...m, reasoningContent: (m.reasoningContent ?? '') + text }
+          }))
+        },
+        onToolStart: (toolCall: ToolCall) => {
+          setMessages((prev) => prev.map((m) => {
+            if (m.id !== assistantMessage.id) return m
+            const toolCalls = m.toolCalls ?? []
+            return { ...m, toolCalls: [...toolCalls, { ...toolCall, status: 'running' as const }] }
+          }))
+        },
+        onToolEnd: (toolCall: ToolCall) => {
+          setMessages((prev) => prev.map((m) => {
+            if (m.id !== assistantMessage.id) return m
+            return {
+              ...m,
+              toolCalls: (m.toolCalls ?? []).map((tc) =>
+                tc.runId === toolCall.runId ? { ...tc, ...toolCall, status: 'completed' as const } : tc,
+              ),
+            }
+          }))
+        },
+        onReferences: (references: ChatReference[]) => {
+          setMessages((prev) => prev.map((m) => {
+            if (m.id !== assistantMessage.id) return m
+            return { ...m, references }
+          }))
+        },
+        onSkillOutput: (skillOutput: SkillOutputItem[]) => {
+          setMessages((prev) => prev.map((m) => {
+            if (m.id !== assistantMessage.id) return m
+            return { ...m, skillOutput }
+          }))
         },
         onComplete: () => {
+          setMessages((prev) => prev.map((m) => {
+            if (m.id !== assistantMessage.id) return m
+            const replyTime = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })
+            return { ...m, loading: false, timestamp: replyTime }
+          }))
           setIsResponding(false)
         },
         onError: (error) => {
+          setMessages((prev) => prev.map((m) => {
+            if (m.id !== assistantMessage.id) return m
+            const replyTime = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })
+            return { ...m, content: m.content || '请求失败，请稍后重试。', loading: false, timestamp: replyTime }
+          }))
           setIsResponding(false)
           setRequestError(error.message)
         },
       })
     } catch (error) {
       if (!abortControllerRef.current?.signal.aborted) {
+        setMessages((prev) => prev.map((m) => {
+          if (m.id !== assistantMessage.id) return m
+          const replyTime = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })
+          return { ...m, content: m.content || '请求失败，请稍后重试。', loading: false, timestamp: replyTime }
+        }))
         setIsResponding(false)
         setRequestError(error instanceof Error ? error.message : '请求失败')
       }
     }
-  }, [draft, isResponding, agentConfig, agentName, agentInstruction, agentSubtitle, messages, agentSkills, resourceIds, webSearchEnabled])
+  }, [draft, isResponding, agentConfig, agentName, agentInstruction, agentSubtitle, agentSkills, resourceIds, webSearchEnabled])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return
@@ -332,26 +504,28 @@ const handleModalSave = (data: { name: string; description: string }) => {
         </div>
 
         <div className={styles.topBarRight}>
-          <button
-            type="button"
-            className={`${styles.publishButton} ${publishStatus === 'success' ? styles.publishSuccess : ''} ${publishStatus === 'error' ? styles.publishError : ''}`}
-            onClick={handlePublish}
-            disabled={publishing}
-          >
-            {publishing ? (
-              '发布中...'
-            ) : publishStatus === 'success' ? (
-              <>
-                <CheckCircleOutlined /> 发布成功
-              </>
-            ) : publishStatus === 'error' ? (
-              <>
-                <CloseCircleOutlined /> 发布失败
-              </>
-            ) : (
-              '发布'
-            )}
-          </button>
+          <Tooltip title="只有点击发布后才会保存个人智能体配置" placement="bottom" overlayInnerStyle={{ backgroundColor: '#000', color: '#fff' }}>
+            <button
+              type="button"
+              className={`${styles.publishButton} ${publishStatus === 'success' ? styles.publishSuccess : ''} ${publishStatus === 'error' ? styles.publishError : ''}`}
+              onClick={handlePublish}
+              disabled={publishing}
+            >
+              {publishing ? (
+                '发布中...'
+              ) : publishStatus === 'success' ? (
+                <>
+                  <CheckCircleOutlined /> 发布成功
+                </>
+              ) : publishStatus === 'error' ? (
+                <>
+                  <CloseCircleOutlined /> 发布失败
+                </>
+              ) : (
+                '发布'
+              )}
+            </button>
+          </Tooltip>
         </div>
       </div>
 
@@ -362,7 +536,7 @@ const handleModalSave = (data: { name: string; description: string }) => {
               <h2 className={styles.chatHeading}>测试与预览</h2>
             </div>
 
-            <div className={styles.messagesArea}>
+            <div className={styles.messagesArea} style={{ padding: '16px 0' }}>
               {messages.length === 0 ? (
                 <div className={styles.heroSection}>
                   <div className={styles.heroCard}>
@@ -394,26 +568,18 @@ const handleModalSave = (data: { name: string; description: string }) => {
                   )}
                 </div>
               ) : (
-                <div className={styles.messagesList}>
-                  {messages.map((msg, idx) => (
-                    <div key={idx} className={msg.role === 'user' ? styles.userMessage : styles.assistantMessage}>
-                      {msg.role === 'user' ? (
-                        <div className={styles.userBubble}>{msg.content}</div>
-                      ) : (
-                        <div className={styles.assistantBubble}>
-                          {msg.reasoning && (
-                            <div className={styles.reasoningBlock}>
-                              <details>
-                                <summary>思考过程</summary>
-                                <MarkdownContent content={msg.reasoning} isStreaming={false} />
-                              </details>
-                            </div>
-                          )}
-                          <MarkdownContent content={msg.content || '...'} isStreaming={isResponding && idx === messages.length - 1 && !msg.content} />
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                <div
+                  className={chatStyles.messageColumn}
+                  style={{ maxWidth: 780, margin: '0 auto' }}
+                >
+                  <MessageList
+                    groups={groupedMessages}
+                    copiedMessageId={copiedMessageId}
+                    assistantCopyTargets={assistantCopyTargets}
+                    onCopy={handleCopy}
+                    getToolDisplayTitle={getToolDisplayTitle}
+                    getToolDisplaySummary={getToolDisplaySummary}
+                  />
                   {isResponding && messages[messages.length - 1]?.role === 'assistant' && !messages[messages.length - 1]?.content && (
                     <div className={styles.assistantMessage}>
                       <div className={styles.assistantBubble}>思考中...</div>
@@ -533,6 +699,23 @@ const handleModalSave = (data: { name: string; description: string }) => {
                           </div>
                         </div>
                         <div className={styles.serviceActions}>
+                          <button
+                            type="button"
+                            className={styles.useSkillBtn}
+                            onClick={() => {
+                              const normalizedSkillName = skill.skill_name.trim().replace(/^\/+/, '')
+                              const skillPrefix = normalizedSkillName ? `/${normalizedSkillName}` : ''
+                              if (skill.template && skillPrefix) {
+                                setDraft(`基于 ${skillPrefix} ${skill.template}`)
+                              } else if (skill.template) {
+                                setDraft(skill.template)
+                              } else if (skillPrefix) {
+                                setDraft(skillPrefix)
+                              }
+                            }}
+                          >
+                            使用
+                          </button>
                           <button
                             type="button"
                             className={styles.smallIconButton}
@@ -767,6 +950,7 @@ const handleModalSave = (data: { name: string; description: string }) => {
         onCancel={handleSkillModalCancel}
         onSkillChange={handleSkillChange}
         currentSkills={agentSkills}
+        recommendedSkills={recommendedSkills}
       />
 
       <KnowledgeSpaceModal

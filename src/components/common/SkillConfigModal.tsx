@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { CloseOutlined, SearchOutlined } from '@ant-design/icons'
+import { CloseOutlined, SearchOutlined, LoadingOutlined } from '@ant-design/icons'
 import { message } from 'antd'
 import skillConfigText from '../../../config.yaml?raw'
 import {
@@ -11,7 +11,7 @@ import {
   type SkillApiResponse,
   type SkillItem,
 } from '../../services/skillPromptService'
-import { type EnabledSkill } from '../../services/customAgentService'
+import { type EnabledSkill, type RecommendedSkill } from '../../services/customAgentService'
 import styles from './SkillConfigModal.module.less'
 
 type SkillConfigModalProps = {
@@ -19,9 +19,10 @@ type SkillConfigModalProps = {
   onCancel: () => void
   onSkillChange: (skills: EnabledSkill[]) => void
   currentSkills: EnabledSkill[]
+  recommendedSkills?: RecommendedSkill[] | null
 }
 
-type ManageTab = 'added' | 'created'
+type ManageTab = 'added' | 'created' | 'recommended'
 
 type SkillApiConfig = {
   featuredEndpoint: string
@@ -94,6 +95,7 @@ export default function SkillConfigModal({
   onCancel,
   onSkillChange,
   currentSkills,
+  recommendedSkills,
 }: SkillConfigModalProps) {
   const [manageTab, setManageTab] = useState<ManageTab>('added')
   const [searchQuery, setSearchQuery] = useState('')
@@ -245,6 +247,25 @@ export default function SkillConfigModal({
     message.success(`已添加技能: ${skill.title}`)
   }
 
+  const handleAddRecommendedSkill = (skill: RecommendedSkill) => {
+    if (currentSkills.some((s) => s.skill_name === skill.name)) {
+      return
+    }
+
+    setActionLoadingId(skill.name)
+
+    const newSkill: EnabledSkill = {
+      skill_name: skill.name,
+      chinese_name: skill.chinese_name,
+      description: skill.description,
+      ...(skill.template ? { template: skill.template } : {}),
+    }
+
+    onSkillChange([...currentSkills, newSkill])
+    message.success(`已添加技能: ${skill.chinese_name}`)
+    setActionLoadingId(null)
+  }
+
   const handleRemoveSkill = async (skill: SkillItem) => {
     if (!skillApiConfig || actionLoadingId) return
 
@@ -285,7 +306,7 @@ export default function SkillConfigModal({
     }
   }
 
-  const sourceSkills = manageTab === 'created' ? createdSkills : addedSkills
+  const sourceSkills = manageTab === 'created' ? createdSkills : manageTab === 'recommended' ? [] : addedSkills
 
   const filteredSkills = useMemo(() => {
     if (!searchQuery.trim()) return sourceSkills
@@ -298,8 +319,8 @@ export default function SkillConfigModal({
     )
   }, [sourceSkills, searchQuery])
 
-  const isLoading = manageTab === 'created' ? createdSkillsLoading : addedSkillsLoading
-  const errorText = manageTab === 'created' ? createdSkillsError : addedSkillsError
+  const isLoading = manageTab === 'created' ? createdSkillsLoading : manageTab === 'recommended' ? false : addedSkillsLoading
+  const errorText = manageTab === 'created' ? createdSkillsError : manageTab === 'recommended' ? '' : addedSkillsError
 
   const isSkillAdded = (skill: SkillItem) => {
     const skillName = skill.skillName || skill.id
@@ -334,6 +355,13 @@ export default function SkillConfigModal({
             >
               我创建的
             </button>
+            <button
+              type="button"
+              className={`${styles.tab} ${manageTab === 'recommended' ? styles.tabActive : ''}`}
+              onClick={() => setManageTab('recommended')}
+            >
+              技能推荐
+            </button>
           </div>
           <label className={styles.searchBox}>
             <SearchOutlined className={styles.searchIcon} />
@@ -347,7 +375,57 @@ export default function SkillConfigModal({
         </div>
 
         <div className={styles.modalBody}>
-          {isLoading ? (
+          {manageTab === 'recommended' ? (
+            recommendedSkills === null || recommendedSkills === undefined ? (
+              <div className={styles.loadingState}>
+                <LoadingOutlined style={{ marginRight: 8, fontSize: 16 }} spin />
+                技能推荐中...
+              </div>
+            ) : recommendedSkills.length > 0 ? (
+              <div className={styles.skillList}>
+                {recommendedSkills.map((skill) => {
+                  const added = currentSkills.some((s) => s.skill_name === skill.name)
+                  const loading = actionLoadingId === skill.name
+                  return (
+                    <div key={skill.name} className={styles.skillItem}>
+                      <div className={styles.skillIcon}>
+                        <span className={styles.skillIconInner} />
+                      </div>
+                      <div className={styles.skillInfo}>
+                        <div className={styles.skillNameRow}>
+                          <span className={styles.skillTitle}>{skill.chinese_name}</span>
+                          <span className={styles.skillBadge}>推荐</span>
+                        </div>
+                        <p className={styles.skillDesc}>{skill.description}</p>
+                      </div>
+                      <div className={styles.skillAction}>
+                        {added ? (
+                          <button
+                            type="button"
+                            className={`${styles.actionButton} ${styles.actionButtonAdded}`}
+                            disabled
+                          >
+                            已添加
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className={styles.actionButton}
+                            onClick={() => handleAddRecommendedSkill(skill)}
+                            disabled={loading}
+                          >
+                            {loading ? '添加中...' : '添加'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className={styles.emptyState}>暂无推荐技能</div>
+            )
+          ) : isLoading ? (
             <div className={styles.loadingState}>加载中...</div>
           ) : errorText ? (
             <div className={styles.errorState}>{errorText}</div>

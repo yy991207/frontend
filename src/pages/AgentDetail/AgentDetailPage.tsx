@@ -13,7 +13,7 @@ import {
   DeleteOutlined,
   ArrowUpOutlined,
 } from '@ant-design/icons'
-import { message, Spin, Input } from 'antd'
+import { message, Spin, Input, Tooltip } from 'antd'
 import EditAgentModal from '../../components/common/EditAgentModal'
 import SkillConfigModal from '../../components/common/SkillConfigModal'
 import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
@@ -594,28 +594,30 @@ export default function AgentDetailPage() {
         </div>
 
         <div className={styles.topBarRight}>
-          <button
-            type="button"
-            className={`${styles.publishButton} ${publishStatus === 'success' ? styles.publishSuccess : ''} ${publishStatus === 'error' ? styles.publishError : ''}`}
-            onClick={handlePublish}
-            disabled={publishing}
-          >
-            {publishing ? (
-              <>
-                <LoadingOutlined spin /> 发布中
-              </>
-            ) : publishStatus === 'success' ? (
-              <>
-                <CheckCircleOutlined /> 发布成功
-              </>
-            ) : publishStatus === 'error' ? (
-              <>
-                <CloseCircleOutlined /> 发布失败
-              </>
-            ) : (
-              '发布'
-            )}
-          </button>
+          <Tooltip title="只有点击发布后才会保存个人智能体配置" placement="bottom" overlayInnerStyle={{ backgroundColor: '#000', color: '#fff' }}>
+            <button
+              type="button"
+              className={`${styles.publishButton} ${publishStatus === 'success' ? styles.publishSuccess : ''} ${publishStatus === 'error' ? styles.publishError : ''}`}
+              onClick={handlePublish}
+              disabled={publishing}
+            >
+              {publishing ? (
+                <>
+                  <LoadingOutlined spin /> 发布中
+                </>
+              ) : publishStatus === 'success' ? (
+                <>
+                  <CheckCircleOutlined /> 发布成功
+                </>
+              ) : publishStatus === 'error' ? (
+                <>
+                  <CloseCircleOutlined /> 发布失败
+                </>
+              ) : (
+                '发布'
+              )}
+            </button>
+          </Tooltip>
         </div>
       </div>
 
@@ -825,6 +827,23 @@ export default function AgentDetailPage() {
                           </div>
                         </div>
                         <div className={styles.serviceActions}>
+                          <button
+                            type="button"
+                            className={styles.useSkillBtn}
+                            onClick={() => {
+                              const normalizedSkillName = skill.skill_name.trim().replace(/^\/+/, '')
+                              const skillPrefix = normalizedSkillName ? `/${normalizedSkillName}` : ''
+                              if (skill.template && skillPrefix) {
+                                setChatInputValue(`基于 ${skillPrefix} ${skill.template}`)
+                              } else if (skill.template) {
+                                setChatInputValue(skill.template)
+                              } else if (skillPrefix) {
+                                setChatInputValue(skillPrefix)
+                              }
+                            }}
+                          >
+                            使用
+                          </button>
                           <button
                             type="button"
                             className={styles.smallIconButton}

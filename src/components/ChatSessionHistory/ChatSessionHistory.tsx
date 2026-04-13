@@ -280,7 +280,7 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
   const renderSessionItem = (session: ChatSession, options?: { collapsed?: boolean }) => {
     const isRemoving = removingSessionIds.has(session.session_id)
     const collapsed = options?.collapsed ?? false
-    const agentLabel = session.agent_id ? '个人智能体' : '通用智能体'
+    const agentLabel = session.agent_id ? '个人' : '通用'
     const agentLabelClass = session.agent_id ? styles.agentLabel : `${styles.agentLabel} ${styles.agentLabelDefault}`
     return (
       <div
