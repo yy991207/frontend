@@ -36,7 +36,6 @@ export default function CreateAgentModal({ visible, onCancel }: CreateAgentModal
   const pollingTimeoutRef = useRef<number | null>(null)
   const startTimeRef = useRef<number | null>(null)
   const templatesAbortRef = useRef<AbortController | null>(null)
-  const taskIdRef = useRef<string | null>(null)
 
   const clearTimers = () => {
     if (abortControllerRef.current) {
@@ -52,7 +51,6 @@ export default function CreateAgentModal({ visible, onCancel }: CreateAgentModal
       templatesAbortRef.current = null
     }
     startTimeRef.current = null
-    taskIdRef.current = null
   }
 
   const loadTemplates = async () => {
@@ -91,22 +89,6 @@ export default function CreateAgentModal({ visible, onCancel }: CreateAgentModal
     })
   }
 
-  const handleRecommend = (result: AgentTemplateTaskResult) => {
-    clearTimers()
-    onCancel()
-    navigate('/agent/create', {
-      state: {
-        generatedTemplate: {
-          agentName: result.agent_name,
-          description: result.description,
-          agentPrompt: result.agent_prompt,
-          presetQuestions: result.preset_questions,
-        },
-        taskId: taskIdRef.current,
-      },
-    })
-  }
-
   const handleError = (msg: string) => {
     setIsSubmitting(false)
     setHasError(true)
@@ -115,8 +97,6 @@ export default function CreateAgentModal({ visible, onCancel }: CreateAgentModal
   }
 
   const pollTaskStatus = async (taskId: string) => {
-    taskIdRef.current = taskId
-
     if (!startTimeRef.current) {
       startTimeRef.current = Date.now()
     }
@@ -133,13 +113,9 @@ export default function CreateAgentModal({ visible, onCancel }: CreateAgentModal
 
       const phase = taskResponse.data.phase
 
+      // 这里只在推荐真正完成后才进入创建页，避免创建页再额外走推荐 loading 和轮询。
       if (phase === 'completed' && taskResponse.data.result) {
         handleSuccess(taskResponse.data.result)
-        return
-      }
-
-      if (phase === 'recommending' && taskResponse.data.result) {
-        handleRecommend(taskResponse.data.result)
         return
       }
 

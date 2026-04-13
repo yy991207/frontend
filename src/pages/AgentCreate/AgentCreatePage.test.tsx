@@ -3,11 +3,8 @@ import { message } from 'antd'
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom'
 import AgentCreatePage from './AgentCreatePage'
 import {
-  getAgentTemplateTask,
   loadCustomAgentApiConfig,
-  type AgentTemplateTaskResponse,
   type CustomAgentApiConfig,
-  type RecommendedSkill,
 } from '../../services/customAgentService'
 
 vi.mock('../../components/common/EditAgentModal', () => ({
@@ -65,8 +62,6 @@ vi.mock('../../services/customAgentService', async () => {
 })
 
 const mockedLoadCustomAgentApiConfig = vi.mocked(loadCustomAgentApiConfig)
-const mockedGetAgentTemplateTask = vi.mocked(getAgentTemplateTask)
-
 const MOCK_CONFIG: CustomAgentApiConfig = {
   userId: '123456',
   baseUrl: 'http://localhost:8000',
@@ -82,56 +77,11 @@ const MOCK_CONFIG: CustomAgentApiConfig = {
   agentUsageLogsEndpoint: 'http://localhost:8000/logs',
 }
 
-const MOCK_RECOMMENDED_SKILLS: RecommendedSkill[] = [
-  {
-    name: 'ai-drawing',
-    chinese_name: 'AI 绘图',
-    description: '生成图片',
-    source: 'guoren',
-    template: '画一张图',
-    placeholders: null,
-    config_fields: null,
-    is_selected: false,
-  },
-]
-
 const BASE_TEMPLATE = {
   agentName: '西行智者',
   description: '提供佛法知识',
   agentPrompt: '你是一个智能体',
   presetQuestions: [],
-}
-
-function createTaskResponse(
-  phase: 'recommending' | 'completed',
-  recommendedSkills: RecommendedSkill[] | null = null,
-): AgentTemplateTaskResponse {
-  return {
-    success: true,
-    code: '200',
-    msg: 'success',
-    data: {
-      task_id: 'task-1',
-      status: phase === 'completed' ? 'completed' : 'running',
-      phase,
-      progress: {
-        agent_name: true,
-        description: true,
-        agent_prompt: true,
-        preset_questions: true,
-        recommended_skills: phase === 'completed',
-      },
-      is_completed: phase === 'completed',
-      result: {
-        agent_name: BASE_TEMPLATE.agentName,
-        description: BASE_TEMPLATE.description,
-        agent_prompt: BASE_TEMPLATE.agentPrompt,
-        preset_questions: [],
-        recommended_skills: recommendedSkills ?? [],
-      },
-      error: null,
-    },
-  }
 }
 
 function ReplaceStateButton() {
@@ -199,34 +149,21 @@ describe('AgentCreatePage', () => {
     vi.useRealTimers()
   })
 
-  it('推荐技能还没完成时，右侧 Skills 服务区域显示技能推荐中的 loading 文案', async () => {
-    mockedGetAgentTemplateTask.mockResolvedValue(createTaskResponse('recommending'))
-
-    renderPage()
-
-    expect(await screen.findByText('技能推荐中...')).toBeInTheDocument()
-  })
-
-  it('同一个 taskId 做 replace 跳转后，推荐技能轮询不会中断', async () => {
+  it('创建页即使收到旧的 taskId，也不再显示技能推荐 loading 或继续轮询', async () => {
     vi.useFakeTimers()
-    mockedGetAgentTemplateTask
-      .mockResolvedValueOnce(createTaskResponse('recommending'))
-      .mockResolvedValueOnce(createTaskResponse('completed', MOCK_RECOMMENDED_SKILLS))
 
     renderPage()
 
+    expect(screen.queryByText('技能推荐中...')).not.toBeInTheDocument()
+
     await act(async () => {
       await flushAsyncTasks()
-    })
-    expect(mockedGetAgentTemplateTask).toHaveBeenCalledTimes(1)
-
-    fireEvent.click(screen.getByText('replace-state'))
-
-    await act(async () => {
-      vi.advanceTimersByTime(2000)
+      fireEvent.click(screen.getByText('replace-state'))
+      vi.advanceTimersByTime(4000)
       await flushAsyncTasks()
     })
 
-    expect(mockedGetAgentTemplateTask).toHaveBeenCalledTimes(2)
+    const customAgentService = await import('../../services/customAgentService')
+    expect(vi.mocked(customAgentService.getAgentTemplateTask)).not.toHaveBeenCalled()
   })
 })

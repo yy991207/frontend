@@ -13,7 +13,7 @@ import {
   DeleteOutlined,
   LoadingOutlined,
 } from '@ant-design/icons'
-import { message, Input, Tooltip } from 'antd'
+import { message, Tooltip } from 'antd'
 import EditAgentModal from '../../components/common/EditAgentModal'
 import SkillConfigModal from '../../components/common/SkillConfigModal'
 import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
@@ -32,7 +32,6 @@ import {
   loadCustomAgentApiConfig,
   createCustomAgent,
   chatCustomAgentStream,
-  getAgentTemplateTask,
   type EnabledSkill,
   type PresetQuestion,
   type CustomAgentApiConfig,
@@ -55,7 +54,6 @@ type GeneratedTemplateState = {
     presetQuestions: PresetQuestion[]
     recommendedSkills?: RecommendedSkill[]
   }
-  taskId?: string
 }
 
 function ConfigCard({
@@ -111,7 +109,6 @@ function AgentCreatePageContent() {
   const navigate = useNavigate()
   const location = useLocation()
   const state = location.state as GeneratedTemplateState | null
-  const taskId = state?.taskId ?? null
   const [agentName, setAgentName] = useState('未命名智能体')
   const [agentSubtitle, setAgentSubtitle] = useState('')
   const [agentInstruction, setAgentInstruction] = useState('')
@@ -141,7 +138,7 @@ function AgentCreatePageContent() {
   const abortControllerRef = useRef<AbortController | null>(null)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const fileInputRef = useRef<HTMLInputElement | null>(null)
-  const [recommendedSkills, setRecommendedSkills] = useState<RecommendedSkill[] | null>(null)
+  const [recommendedSkills, setRecommendedSkills] = useState<RecommendedSkill[]>([])
   const { addFile, selectFile, open: artifactOpen, selectedFile } = useArtifacts()
   const sessionBaseUrl = useMemo(() => {
     if (!agentConfig) return null
@@ -230,7 +227,8 @@ function AgentCreatePageContent() {
       setAgentSubtitle(template.description || '')
       setAgentInstruction(template.agentPrompt || '')
       setAgentQuestions(template.presetQuestions || [])
-      setRecommendedSkills(template.recommendedSkills ?? null)
+      // 创建页现在只在推荐完成后进入，这里直接落推荐结果，不再补推荐中态。
+      setRecommendedSkills(template.recommendedSkills ?? [])
       message.success('智能体配置已自动生成，请检查并完善后发布')
     }
   }, [state])
@@ -238,44 +236,6 @@ function AgentCreatePageContent() {
   useEffect(() => {
     loadCustomAgentApiConfig().then(setAgentConfig).catch(console.error)
   }, [])
-
-  // 当从 CreateAgentModal 进入 recommending 阶段时，继续轮询直到 completed
-  useEffect(() => {
-    if (!taskId) return
-
-    let recommendPollingTimer: number | null = null
-    const recommendAbortController = new AbortController()
-
-    const poll = async () => {
-      try {
-        const config = await loadCustomAgentApiConfig()
-        const taskResponse = await getAgentTemplateTask(config, taskId, recommendAbortController.signal)
-
-        if (taskResponse.data.phase === 'completed') {
-          setRecommendedSkills(taskResponse.data.result?.recommended_skills ?? [])
-          return
-        }
-
-        recommendPollingTimer = window.setTimeout(poll, 2000)
-      } catch {
-        if (!recommendAbortController.signal.aborted) {
-          recommendPollingTimer = window.setTimeout(poll, 2000)
-        }
-      }
-    }
-
-    // 这里继续复用同一个 taskId 轮询，避免路由 replace 后因为 state 对象变化把轮询提前清掉
-    void poll()
-
-    return () => {
-      if (recommendPollingTimer) {
-        clearTimeout(recommendPollingTimer)
-      }
-      recommendAbortController.abort()
-    }
-  }, [taskId])
-
-  const isRecommendedSkillsLoading = taskId !== null && recommendedSkills === null
 
   const getAvatarLetter = (name: string) => {
     return name?.trim().charAt(0).toUpperCase() || 'A'
@@ -348,7 +308,7 @@ const handleModalSave = (data: { name: string; description: string }) => {
       reasoningContent: null,
     }
 
-    let nextMessages = [...messagesRef.current, userMessage, assistantMessage]
+    const nextMessages = [...messagesRef.current, userMessage, assistantMessage]
     messagesRef.current = nextMessages
     setMessages(nextMessages)
 
@@ -695,16 +655,6 @@ const handleModalSave = (data: { name: string; description: string }) => {
               }
             >
               <p className={styles.cardHint}>添加 Skills 服务后，可见范围内的用户均可在对话中使用该 Skills 服务</p>
-              {isRecommendedSkillsLoading && (
-                <div className={styles.recommendingState} data-testid="agent-create-skill-recommend-loading">
-                  <div className={styles.loadingDots} aria-hidden="true">
-                    <span className={styles.loadingDot} />
-                    <span className={styles.loadingDot} />
-                    <span className={styles.loadingDot} />
-                  </div>
-                  <span className={styles.recommendingText}>技能推荐中...</span>
-                </div>
-              )}
               <div className={styles.serviceList}>
                 {agentSkills.map((skill) => {
                   const isExpanded = expandedSkillName === skill.skill_name

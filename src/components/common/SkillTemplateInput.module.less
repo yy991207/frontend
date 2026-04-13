@@ -1,56 +1,37 @@
-.container {
-  position: relative;
-  width: 100%;
-}
-
-.textarea {
+.editor {
   width: 100%;
   border: none;
   outline: none;
   background: transparent;
-  caret-color: #111827;
   font-size: 14px;
   font-family: inherit;
   line-height: 1.6;
   resize: none;
   padding: 0;
-  min-height: 24px;
-  overflow: hidden;
-  white-space: pre-wrap;
-  word-break: break-word;
-  overflow-wrap: break-word;
-
-  // 文本透明，仅显示光标
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-
-  &::placeholder {
-    -webkit-text-fill-color: #9ca3af;
-    color: #9ca3af;
-  }
-}
-
-.overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  font-size: 14px;
-  font-family: inherit;
-  line-height: 1.6;
+  overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: break-word;
   color: #1f2329;
-  overflow-y: auto;
   scrollbar-width: none;
-  border-radius: inherit;
 
   &::-webkit-scrollbar {
     display: none;
   }
+
+  &:empty::before {
+    content: attr(data-placeholder);
+    color: #9ca3af;
+    pointer-events: none;
+  }
+
+  &[contenteditable='false'] {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
-// ========== 技能标签 ==========
+// ========== 技能标签（深蓝） ==========
 .skillTag {
   display: inline-flex;
   align-items: center;
@@ -62,16 +43,11 @@
   color: #ffffff;
   font-weight: 500;
   font-size: 13px;
-  pointer-events: auto;
-  cursor: pointer;
-  transition: background 0.15s, box-shadow 0.15s;
   vertical-align: baseline;
   line-height: 1.5;
   box-shadow: 0 1px 2px rgba(36, 91, 219, 0.25);
-
-  &:hover {
-    background: #1a4ac4;
-  }
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .skillTagText {
@@ -90,7 +66,6 @@
   line-height: 1;
   color: #ffffff;
   cursor: pointer;
-  pointer-events: auto;
   transition: background 0.15s;
   margin-left: 2px;
 
@@ -99,35 +74,7 @@
   }
 }
 
-.skillTagEditing {
-  display: inline-block;
-  margin: 0 1px;
-  pointer-events: auto;
-  vertical-align: baseline;
-}
-
-.skillEditInput {
-  border: 1.5px solid #245bdb;
-  border-radius: 6px;
-  background: #ffffff;
-  color: #1f2329;
-  font-size: 13px;
-  font-weight: 500;
-  font-family: inherit;
-  outline: none;
-  padding: 2px 8px;
-  width: 150px;
-  max-width: 220px;
-  pointer-events: auto;
-  line-height: 1.5;
-  transition: border-color 0.15s;
-
-  &:focus {
-    border-color: #1a4ac4;
-  }
-}
-
-// ========== 占位符标签 ==========
+// ========== 占位符标签（浅蓝） ==========
 .placeholderTag {
   display: inline-block;
   padding: 1px 8px;
@@ -137,42 +84,28 @@
   color: #1a56db;
   font-weight: 500;
   font-size: 13px;
-  pointer-events: auto;
   cursor: pointer;
   transition: background 0.15s;
   vertical-align: baseline;
   line-height: 1.5;
+  user-select: none;
+  -webkit-user-select: none;
 
   &:hover {
     background: #d2e3fc;
   }
 }
 
+.placeholderTagText {
+  pointer-events: none;
+}
+
 .placeholderTagEditing {
   display: inline-block;
   margin: 0 1px;
-  pointer-events: auto;
   vertical-align: baseline;
-}
-
-.placeholderEditInput {
-  display: inline-block;
-  border: 1.5px solid #245bdb;
-  border-radius: 6px;
-  background: #ffffff;
-  color: #1f2329;
-  font-size: 13px;
-  font-weight: 500;
-  font-family: inherit;
-  outline: none;
-  padding: 2px 8px;
-  width: 100px;
-  max-width: 200px;
-  pointer-events: auto;
   line-height: 1.5;
-  transition: border-color 0.15s;
-
-  &:focus {
-    border-color: #1a4ac4;
-  }
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
 }

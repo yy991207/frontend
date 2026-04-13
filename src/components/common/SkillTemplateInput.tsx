@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useRef, useCallback, useEffect, useState } from 'react'
 import styles from './SkillTemplateInput.module.less'
 
 type SkillTemplateInputProps = {
@@ -26,25 +26,63 @@ function parseSegments(text: string): Segment[] {
   }
 
   let lastIndex = 0
-
   for (let i = 0; i < matches.length; i++) {
     const m = matches[i]
     if (m.index === undefined) continue
-
     if (m.index > lastIndex) {
       result.push({ type: 'text', text: text.slice(lastIndex, m.index) })
     }
-
-    const tagType: Segment['type'] = i === 0 ? 'skill' : 'placeholder'
-    result.push({ type: tagType, text: m[0] })
+    result.push({ type: i === 0 ? 'skill' : 'placeholder', text: m[0] })
     lastIndex = m.index + m[0].length
   }
-
   if (lastIndex < text.length) {
     result.push({ type: 'text', text: text.slice(lastIndex) })
   }
-
   return result
+}
+
+function getPlainText(el: HTMLElement): string {
+  let text = ''
+  for (const node of el.childNodes) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      text += node.textContent
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      const child = node as HTMLElement
+      const inner = child.querySelector('[data-plain]')
+      if (inner) text += inner.textContent || ''
+      else text += child.textContent || ''
+    }
+  }
+  return text
+}
+
+function buildHTML(segments: Segment[]): string {
+  if (segments.length === 0) return ''
+  return segments
+    .map((seg) => {
+      if (seg.type === 'text') {
+        return `<span data-plain="true">${escapeHTML(seg.text)}</span>`
+      }
+      if (seg.type === 'skill') {
+        return `<span class="${styles.skillTag}" contenteditable="false" data-plain="true"><span class="${styles.skillTagText}">${escapeHTML(seg.text)}</span><span class="${styles.skillDelete}" contenteditable="false" data-skill-delete>×</span></span>`
+      }
+      return `<span class="${styles.placeholderTag}" contenteditable="false" data-plain="true"><span class="${styles.placeholderTagText}">${escapeHTML(seg.text)}</span></span>`
+    })
+    .join('')
+}
+
+function escapeHTML(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function moveCaretToEnd(el: HTMLElement) {
+  el.focus()
+  const range = document.createRange()
+  range.selectNodeContents(el)
+  range.collapse(false)
+  const sel = window.getSelection()
+  sel?.removeAllRanges()
+  sel?.addRange(range)
 }
 
 export default function SkillTemplateInput({
@@ -57,158 +95,215 @@ export default function SkillTemplateInput({
   maxRows = 8,
   minRows = 1,
 }: SkillTemplateInputProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const overlayRef = useRef<HTMLDivElement>(null)
-  const [editingIndex, setEditingIndex] = useState<number | null>(null)
-  const [editValue, setEditValue] = useState('')
+  const editorRef = useRef<HTMLDivElement>(null)
+  const [isComposing, setIsComposing] = useState(false)
+  const skipSyncRef = useRef(false)
+  const externalValueRef = useRef(value)
 
-  const segments = parseSegments(value)
-
-  // Auto-resize textarea
+  // Sync external value changes into the editor
   useEffect(() => {
-    const ta = textareaRef.current
-    if (!ta) return
-    ta.style.height = 'auto'
-    const newHeight = Math.min(ta.scrollHeight, maxRows * 24 + 16)
-    ta.style.height = newHeight + 'px'
-  }, [value, maxRows])
+    if (skipSyncRef.current) return
+    const el = editorRef.current
+    if (!el) return
 
-  // Sync scroll
-  const handleTextareaScroll = useCallback(() => {
-    if (textareaRef.current && overlayRef.current) {
-      overlayRef.current.scrollTop = textareaRef.current.scrollTop
+    if (document.activeElement === el) {
+      const current = getPlainText(el)
+      if (current === value) return
     }
+
+    externalValueRef.current = value
+    el.innerHTML = buildHTML(parseSegments(value))
+    // Restore cursor to end after sync
+    requestAnimationFrame(() => moveCaretToEnd(el))
+  }, [value])
+
+  // Initial render
+  useEffect(() => {
+    const el = editorRef.current
+    if (!el || el.innerHTML.trim()) return
+    el.innerHTML = buildHTML(parseSegments(value))
+    externalValueRef.current = value
   }, [])
 
-  const handleEditStart = useCallback((index: number, text: string) => {
-    setEditingIndex(index)
-    setEditValue(text)
+  const emitChange = useCallback(() => {
+    const el = editorRef.current
+    if (!el) return
+    const text = getPlainText(el)
+    skipSyncRef.current = true
+    externalValueRef.current = text
+    onChange(text)
+    requestAnimationFrame(() => { skipSyncRef.current = false })
+  }, [onChange])
+
+  const handleInput = useCallback(() => {
+    if (isComposing) return
+    emitChange()
+  }, [isComposing, emitChange])
+
+  const handleCompositionStart = useCallback(() => setIsComposing(true), [])
+  const handleCompositionEnd = useCallback(() => {
+    setIsComposing(false)
+    emitChange()
+  }, [emitChange])
+
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    const text = e.clipboardData.getData('text/plain')
+    document.execCommand('insertText', false, text)
   }, [])
 
-  const handleEditCancel = useCallback(() => {
-    setEditingIndex(null)
-    setEditValue('')
-  }, [])
+  // Handle click to edit placeholder tags, and skill tag deletion
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const target = e.target as HTMLElement
 
-  const handleEditConfirm = useCallback(
-    (index: number, newValue: string) => {
-      const seg = segments[index]
-      if (!seg) return
-
-      // Preserve the / prefix for placeholders and skill names
-      const prefix = seg.text.startsWith('/') ? '/' : ''
-      const cleanValue = newValue.startsWith('/') ? newValue.slice(1) : newValue
-      const finalValue = prefix + cleanValue
-
-      // Build new value by replacing this segment
-      let newText = ''
-      for (let i = 0; i < segments.length; i++) {
-        newText += i === index ? finalValue : segments[i].text
+      // Skill tag delete button
+      const deleteBtn = target.closest('[data-skill-delete]')
+      if (deleteBtn) {
+        e.preventDefault()
+        e.stopPropagation()
+        const skillTag = deleteBtn.parentElement
+        if (skillTag) {
+          skillTag.remove()
+          emitChange()
+        }
+        return
       }
 
-      onChange(newText)
-      setEditingIndex(null)
-      setEditValue('')
+      // Placeholder tag editing
+      const tag = target.closest(`.${styles.placeholderTag}`) as HTMLSpanElement | null
+      if (!tag || tag.contentEditable === 'true' || disabled) return
 
-      // Refocus textarea
-      requestAnimationFrame(() => textareaRef.current?.focus())
+      const innerSpan = tag.querySelector(`.${styles.placeholderTagText}`) as HTMLSpanElement | null
+      if (!innerSpan) return
+
+      // Switch to edit mode
+      tag.classList.remove(styles.placeholderTag)
+      tag.classList.add(styles.placeholderTagEditing)
+      tag.contentEditable = 'true'
+      innerSpan.contentEditable = 'true'
+
+      innerSpan.style.cssText =
+        'outline:none;border:1.5px solid #245bdb;border-radius:4px;padding:0 4px;background:#fff;color:#1f2329;cursor:text;'
+      innerSpan.focus()
+
+      // Select all text
+      const range = document.createRange()
+      range.selectNodeContents(innerSpan)
+      const sel = window.getSelection()
+      sel?.removeAllRanges()
+      sel?.addRange(range)
+
+      tag.setAttribute('data-original-text', innerSpan.textContent || '')
+
+      const finish = () => {
+        const rawText = innerSpan.textContent || ''
+        const cleanText = rawText.replace(/^\/+/, '')
+        innerSpan.textContent = cleanText ? '/' + cleanText : rawText
+
+        innerSpan.style.cssText = ''
+        innerSpan.contentEditable = 'inherit'
+        tag.contentEditable = 'false'
+        tag.classList.remove(styles.placeholderTagEditing)
+        tag.classList.add(styles.placeholderTag)
+        tag.removeAttribute('data-original-text')
+
+        innerSpan.removeEventListener('blur', finish)
+        innerSpan.removeEventListener('keydown', onKey)
+
+        // Fire input to sync value
+        emitChange()
+
+        // Move cursor after the tag
+        requestAnimationFrame(() => {
+          if (tag.parentNode) {
+            const r = document.createRange()
+            r.setStartAfter(tag)
+            r.collapse(true)
+            const s = window.getSelection()
+            s?.removeAllRanges()
+            s?.addRange(r)
+          }
+        })
+      }
+
+      const onKey = (ev: KeyboardEvent) => {
+        if (ev.key === 'Enter') {
+          ev.preventDefault()
+          innerSpan.blur()
+        }
+        if (ev.key === 'Escape') {
+          ev.preventDefault()
+          innerSpan.textContent = tag.getAttribute('data-original-text') || ''
+          innerSpan.blur()
+        }
+      }
+
+      innerSpan.addEventListener('blur', finish)
+      innerSpan.addEventListener('keydown', onKey)
     },
-    [segments, onChange],
+    [disabled, emitChange],
   )
 
-  const handleDeleteSkill = useCallback(() => {
-    const newText = value.replace(PLACEHOLDER_RE, '').trimStart()
-    onChange(newText)
-  }, [value, onChange])
-
-  const handleTextareaKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault()
         onSend?.()
+        return
+      }
+
+      if (e.key === 'Backspace') {
+        const sel = window.getSelection()
+        if (!sel || sel.rangeCount === 0) return
+        const range = sel.getRangeAt(0)
+        if (!range.collapsed) return
+
+        const startNode = range.startContainer
+        const startOffset = range.startOffset
+        const el = editorRef.current
+        if (!el) return
+
+        // Cursor is at start of a text node — check if previous sibling is a skill tag
+        if (startNode.nodeType === Node.TEXT_NODE && startOffset === 0) {
+          const prev = startNode.previousSibling
+          if (prev?.nodeType === Node.ELEMENT_NODE) {
+            const prevEl = prev as HTMLElement
+            if (prevEl.contentEditable === 'false' && prevEl.classList.contains(styles.skillTag)) {
+              e.preventDefault()
+              el.removeChild(prevEl)
+              emitChange()
+              return
+            }
+          }
+        }
+
+        // Cursor is at position 0 of a text node and that text node IS the only child — check if the node itself is right after a tag
+        if (startNode.nodeType === Node.ELEMENT_NODE && startOffset === 0) {
+          // Cursor is at start of editor
+        }
       }
     },
-    [onSend],
+    [onSend, emitChange],
   )
 
-  const hasContent = value.trim().length > 0
-
   return (
-    <div className={`${styles.container} ${className || ''}`}>
-      <textarea
-        ref={textareaRef}
-        className={styles.textarea}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onScroll={handleTextareaScroll}
-        onKeyDown={handleTextareaKeyDown}
-        disabled={disabled}
-        placeholder={placeholder}
-        rows={minRows}
-      />
-      <div
-        ref={overlayRef}
-        className={styles.overlay}
-        style={{ display: hasContent ? 'block' : 'none' }}
-      >
-        {segments.map((seg, index) => {
-          // Skill tag — non-editable, only deletable
-          if (seg.type === 'skill' && !disabled) {
-            return (
-              <span
-                key={index}
-                className={styles.skillTag}
-              >
-                <span className={styles.skillTagText}>{seg.text}</span>
-                <span
-                  className={styles.skillDelete}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleDeleteSkill()
-                  }}
-                >
-                  ×
-                </span>
-              </span>
-            )
-          }
-
-          // Placeholder tag
-          if (seg.type === 'placeholder' && !disabled) {
-            if (editingIndex === index) {
-              return (
-                <span key={index} className={styles.placeholderTagEditing}>
-                  <input
-                    className={styles.placeholderEditInput}
-                    value={editValue}
-                    autoFocus
-                    onChange={(e) => setEditValue(e.target.value)}
-                    onBlur={() => handleEditConfirm(index, editValue)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        handleEditConfirm(index, editValue)
-                      }
-                      if (e.key === 'Escape') handleEditCancel()
-                    }}
-                  />
-                </span>
-              )
-            }
-            return (
-              <span
-                key={index}
-                className={styles.placeholderTag}
-                onClick={() => handleEditStart(index, seg.text)}
-              >
-                {seg.text}
-              </span>
-            )
-          }
-
-          return <span key={index}>{seg.text}</span>
-        })}
-      </div>
-    </div>
+    <div
+      ref={editorRef}
+      className={`${styles.editor} ${className || ''}`}
+      contentEditable={!disabled}
+      suppressContentEditableWarning
+      onInput={handleInput}
+      onCompositionStart={handleCompositionStart}
+      onCompositionEnd={handleCompositionEnd}
+      onKeyDown={handleKeyDown}
+      onPaste={handlePaste}
+      onClick={handleClick}
+      data-placeholder={placeholder}
+      style={{
+        minHeight: minRows * 24,
+        maxHeight: maxRows * 24 + 16,
+      }}
+    />
   )
 }
