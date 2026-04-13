@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
-  AppstoreAddOutlined,
   ArrowUpOutlined,
   CameraOutlined,
   EditOutlined,
@@ -9,7 +8,6 @@ import {
   PaperClipOutlined,
   PlusOutlined,
   SafetyCertificateOutlined,
-  SoundOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   DeleteOutlined,
@@ -28,6 +26,12 @@ import {
   type CustomAgentApiConfig,
 } from '../../services/customAgentService'
 import { MarkdownContent } from '../../components/chat/markdown-content'
+import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
+import {
+  createPendingUploadedFile,
+  type UploadedFile,
+  uploadPendingFileToOss,
+} from '../../services/ossUploadService'
 import styles from '../AgentDetail/agentDetail.module.less'
 
 type GeneratedTemplateState = {
@@ -109,6 +113,40 @@ export default function AgentCreatePage() {
   const [isResponding, setIsResponding] = useState(false)
   const [requestError, setRequestError] = useState('')
   const abortControllerRef = useRef<AbortController | null>(null)
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const handleUploadFile = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    for (const file of Array.from(files)) {
+      const pendingFile = createPendingUploadedFile(file)
+      setUploadedFiles((prev) => [...prev, pendingFile])
+
+      const uploadedFile = await uploadPendingFileToOss(pendingFile, file, (progress) => {
+        setUploadedFiles((prev) =>
+          prev.map((f) =>
+            f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
+          ),
+        )
+      })
+
+      setUploadedFiles((prev) =>
+        prev.map((f) => (f.id === pendingFile.id ? uploadedFile : f)),
+      )
+    }
+
+    event.target.value = ''
+  }
+
+  const handleRemoveFile = (fileId: string) => {
+    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId))
+  }
 
   useEffect(() => {
     if (state?.generatedTemplate && !messageShownRef.current) {
@@ -388,6 +426,7 @@ const handleModalSave = (data: { name: string; description: string }) => {
             <div className={styles.composerArea}>
               <div className={styles.composerWrap}>
                 <div className={styles.inputWrap}>
+                  <FileAttachmentPreview files={uploadedFiles} onRemove={handleRemoveFile} />
                   <div className={styles.inputTopArea}>
                     <Input.TextArea
                       value={draft}
@@ -401,26 +440,21 @@ const handleModalSave = (data: { name: string; description: string }) => {
                     />
                   </div>
                   <div className={styles.inputBottomArea}>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept="*/*"
+                      style={{ display: 'none' }}
+                      onChange={handleFileChange}
+                    />
                     <div className={styles.inputBottomLeft}>
-                      <button type="button" className={styles.toolPill} disabled style={{ opacity: 0.5 }}>
-                        <SoundOutlined />
-                        深度规划
-                      </button>
-                      <button type="button" className={`${styles.toolPill} ${webSearchEnabled ? styles.toolPillActive : ''}`}>
-                        <GlobalOutlined />
-                        联网
-                      </button>
-                      <button type="button" className={styles.toolPill} disabled style={{ opacity: 0.5 }}>
-                        <AppstoreAddOutlined />
-                        工具
-                        <span className={styles.toolCaret}>⌄</span>
+                      <button type="button" className={styles.iconBtn} aria-label="附件" onClick={handleUploadFile}>
+                        <PaperClipOutlined />
                       </button>
                     </div>
                     <div className={styles.inputBottomRight}>
                       <div className={styles.inputActions}>
-                        <button type="button" className={styles.iconBtn} disabled style={{ opacity: 0.5 }} aria-label="附件">
-                          <PaperClipOutlined />
-                        </button>
                         <button
                           type="button"
                           className={`${styles.iconBtn} ${styles.sendBtn} ${!draft.trim() ? styles.sendBtnDisabled : ''}`}

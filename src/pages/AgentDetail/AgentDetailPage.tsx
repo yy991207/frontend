@@ -1,14 +1,12 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import {
-  AppstoreAddOutlined,
   CameraOutlined,
   EditOutlined,
   GlobalOutlined,
   PaperClipOutlined,
   PlusOutlined,
   SafetyCertificateOutlined,
-  SoundOutlined,
   LoadingOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -738,25 +736,12 @@ export default function AgentDetailPage() {
                       onChange={handleFileChange}
                     />
                     <div className={styles.inputBottomLeft}>
-                      <button type="button" className={styles.toolPill}>
-                        <SoundOutlined />
-                        深度规划
-                      </button>
-                      <button type="button" className={`${styles.toolPill} ${webSearchEnabled ? styles.toolPillActive : ''}`} onClick={() => setWebSearchEnabled(v => !v)}>
-                        <GlobalOutlined />
-                        联网
-                      </button>
-                      <button type="button" className={styles.toolPill}>
-                        <AppstoreAddOutlined />
-                        工具
-                        <span className={styles.toolCaret}>⌄</span>
+                      <button type="button" className={styles.iconBtn} aria-label="附件" onClick={handleUploadFile}>
+                        <PaperClipOutlined />
                       </button>
                     </div>
                     <div className={styles.inputBottomRight}>
                       <div className={styles.inputActions}>
-                        <button type="button" className={styles.iconBtn} aria-label="附件" onClick={handleUploadFile}>
-                          <PaperClipOutlined />
-                        </button>
                         {isChatResponding ? (
                           <button type="button" className={`${styles.iconBtn} ${styles.stopBtn}`} onClick={handleStop}>
                             <span className={styles.stopInner} />
