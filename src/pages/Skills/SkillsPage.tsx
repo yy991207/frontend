@@ -210,7 +210,7 @@ export default function SkillsPage() {
   const [createdSkillsError, setCreatedSkillsError] = useState('')
   const [removeSkillLoadingId, setRemoveSkillLoadingId] = useState<string | null>(null)
   const [openManageMenuId, setOpenManageMenuId] = useState<string | null>(null)
-  const [selectedSkillForDetail, setSelectedSkillForDetail] = useState<SkillApiItem | null>(null)
+  const [selectedSkillForDetail, setSelectedSkillForDetail] = useState<(SkillApiItem & { source?: 'official' | 'clawhub' }) | null>(null)
   const [clawhubDetailData, setClawhubDetailData] = useState<ClawhubSkillDetail | null>(null)
   const [clawhubAllSkills, setClawhubAllSkills] = useState<SkillApiItem[]>([])
   const [featuredGroupIndex, setFeaturedGroupIndex] = useState(0)
@@ -737,12 +737,13 @@ const handleOpenClawhubSkillDetail = useCallback(
             description: result.skill.description,
             template: result.skill.template,
             isSelected: result.skill.isSelected,
+            source: 'clawhub',
           })
         } else {
-          setSelectedSkillForDetail(skill)
+          setSelectedSkillForDetail({ ...skill, source: 'clawhub' })
         }
       } catch {
-        setSelectedSkillForDetail(skill)
+        setSelectedSkillForDetail({ ...skill, source: 'clawhub' })
       } finally {
         setClawhubDetailLoading(false)
       }
@@ -1227,6 +1228,7 @@ const handleOpenClawhubSkillDetail = useCallback(
         description: skill.description,
         template: skill.template,
         isSelected: forceUseAction ? true : skill.isSelected,
+        source: 'official',
       })
     },
     [],
@@ -1804,7 +1806,11 @@ const handleOpenClawhubSkillDetail = useCallback(
         actionLoading={skillActionLoadingId === selectedSkillForDetail?.id || clawhubDetailLoading}
         onAction={() => {
           if (selectedSkillForDetail) {
-            void handleUseSkill(selectedSkillForDetail)
+            if (selectedSkillForDetail.source === 'clawhub') {
+              void handleUseClawhubSkill(selectedSkillForDetail)
+            } else {
+              void handleUseSkill(selectedSkillForDetail)
+            }
           }
         }}
         onCancel={handleCloseSkillDetail}
