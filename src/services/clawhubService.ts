@@ -237,13 +237,13 @@ export async function fetchClawhubSkillDetail(params: ClawhubDetailParams): Prom
           slug: string
           displayName: string
           summary: string
-          is_selected?: boolean
           tags?: string[]
           stats?: {
             downloads: number
             stars: number
           }
         }
+        is_selected?: boolean
         latestVersion?: {
           version: string
         }
@@ -280,7 +280,7 @@ export async function fetchClawhubSkillDetail(params: ClawhubDetailParams): Prom
         skillName: skill.slug,
         title: skill.displayName,
         description,
-        isSelected: Boolean(skill.is_selected),
+        isSelected: Boolean(payload.is_selected),
         template,
         tags: skill.tags || metaContent.Keywords || [],
         downloads: skill.stats?.downloads || 0,

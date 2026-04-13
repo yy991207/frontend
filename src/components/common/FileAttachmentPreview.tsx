@@ -1,6 +1,6 @@
-import { CloseOutlined, LoadingOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons'
+import { CloseOutlined, LoadingOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import type { UploadedFile } from '../../services/ossUploadService'
-import { getFileTypeIcon, getFileTypeName, formatFileSize } from '../../services/ossUploadService'
+import { getFileTypeIcon, formatFileSize } from '../../services/ossUploadService'
 import styles from './FileAttachmentPreview.module.less'
 
 type FileAttachmentPreviewProps = {
@@ -10,7 +10,7 @@ type FileAttachmentPreviewProps = {
 
 export function FileAttachmentPreview({ files, onRemove }: FileAttachmentPreviewProps) {
   if (files.length === 0) return null
-  
+
   return (
     <div className={styles.container}>
       {files.map((file) => (
@@ -18,8 +18,6 @@ export function FileAttachmentPreview({ files, onRemove }: FileAttachmentPreview
           <div className={styles.fileIcon}>
             {file.status === 'uploading' ? (
               <LoadingOutlined className={styles.loadingIcon} />
-            ) : file.status === 'completed' ? (
-              <span className={styles.iconText}>{getFileTypeIcon(file.ext)}</span>
             ) : file.status === 'error' ? (
               <CloseCircleOutlined className={styles.errorIcon} />
             ) : (
@@ -27,20 +25,19 @@ export function FileAttachmentPreview({ files, onRemove }: FileAttachmentPreview
             )}
           </div>
           <div className={styles.fileInfo}>
-            <div className={styles.fileName}>{file.name}</div>
+            <div className={styles.fileName} title={file.name}>{file.name}</div>
             <div className={styles.fileMeta}>
-              <span className={styles.fileType}>{getFileTypeName(file.ext)}</span>
-              <span className={styles.fileSize}>{formatFileSize(file.size)}</span>
               {file.status === 'uploading' && (
                 <span className={styles.fileProgress}>{file.uploadProgress}%</span>
               )}
-              {file.status === 'completed' && (
-                <span className={styles.fileStatusSuccess}>
-                  <CheckCircleOutlined /> 已添加
-                </span>
-              )}
               {file.status === 'error' && (
                 <span className={styles.fileStatusError}>{file.error || '上传失败'}</span>
+              )}
+              {file.status !== 'uploading' && file.status !== 'error' && (
+                <span className={styles.fileSize}>{formatFileSize(file.size)}</span>
+              )}
+              {file.status === 'uploading' && (
+                <span className={styles.fileSize}>{formatFileSize(file.size)}</span>
               )}
             </div>
           </div>

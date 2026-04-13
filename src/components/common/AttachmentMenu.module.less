@@ -189,6 +189,13 @@
   animation: submenuPaneFade 0.18s ease;
 }
 
+.skillPane {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
 .submenuHeader {
   padding: 14px 16px 10px;
   display: flex;
@@ -226,6 +233,15 @@
   color: #9ca3af;
 }
 
+.skillViewport {
+  // 技能列表视口固定高度，避免 loading、空态和内容态切换时菜单高度跳动。
+  height: 280px;
+  min-height: 280px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 .skillList {
   flex: 1;
   min-height: 0;
@@ -235,10 +251,15 @@
 
 .loading,
 .empty {
+  flex: 1;
+  min-height: 0;
   padding: 24px 16px;
   text-align: center;
   color: #9ca3af;
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .skillItem {

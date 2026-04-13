@@ -211,7 +211,7 @@ export function AttachmentMenu({
           {activeSubmenu ? (
             <div key={activeSubmenu} className={styles.submenuPane}>
               {activeSubmenu === 'skill' ? (
-                <>
+                <div className={styles.skillPane}>
                   <div className={styles.submenuHeader}>
                     <span>技能</span>
                   </div>
@@ -225,31 +225,35 @@ export function AttachmentMenu({
                       onChange={(event) => setSkillSearchQuery(event.target.value)}
                     />
                   </div>
-                  <div className={styles.skillList}>
+                  <div className={styles.skillViewport} data-testid="attachment-skill-viewport">
                     {skillsLoading ? (
-                      <div className={styles.loading}>加载中...</div>
+                      <div className={styles.loading} data-testid="attachment-skill-loading">
+                        加载中...
+                      </div>
                     ) : filteredSkills.length === 0 ? (
                       <div className={styles.empty}>{skillSearchQuery ? '未找到匹配的技能' : '暂无技能'}</div>
                     ) : (
-                      filteredSkills.map((skill) => (
-                        <button
-                          key={skill.id}
-                          type="button"
-                          className={styles.skillItem}
-                          onClick={() => {
-                            closeAllMenus()
-                            onSelectSkill(skill)
-                          }}
-                        >
-                          <div className={styles.skillItemIcon}>
-                            <ThunderboltOutlined />
-                          </div>
-                          <div className={styles.skillItemInfo}>
-                            <div className={styles.skillItemTitle}>{skill.title}</div>
-                            <div className={styles.skillItemDesc}>{skill.description}</div>
-                          </div>
-                        </button>
-                      ))
+                      <div className={styles.skillList}>
+                        {filteredSkills.map((skill) => (
+                          <button
+                            key={skill.id}
+                            type="button"
+                            className={styles.skillItem}
+                            onClick={() => {
+                              closeAllMenus()
+                              onSelectSkill(skill)
+                            }}
+                          >
+                            <div className={styles.skillItemIcon}>
+                              <ThunderboltOutlined />
+                            </div>
+                            <div className={styles.skillItemInfo}>
+                              <div className={styles.skillItemTitle}>{skill.title}</div>
+                              <div className={styles.skillItemDesc}>{skill.description}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
                   {hideManageSkills ? null : (
@@ -262,7 +266,7 @@ export function AttachmentMenu({
                       </span>
                     </button>
                   )}
-                </>
+                </div>
               ) : showTools ? (
                 <>
                   <div className={styles.submenuHeader}>

@@ -56,4 +56,50 @@ describe('AttachmentMenu', () => {
     expect(sharedSubmenu).toHaveTextContent('技能')
     expect(screen.getByPlaceholderText('搜索技能')).toBeInTheDocument()
   })
+
+  it('技能 loading 和内容列表共用固定尺寸的展示视口', () => {
+    const loadSkills = vi.fn().mockResolvedValue(undefined)
+    const { container, rerender } = render(
+      <AttachmentMenu
+        placement="top"
+        skills={MOCK_SKILLS}
+        skillsLoading
+        loadSkills={loadSkills}
+        onSelectSkill={vi.fn()}
+        onManageSkills={vi.fn()}
+        showTools
+      />,
+    )
+
+    const trigger = container.querySelector('button[aria-haspopup="menu"]')
+    expect(trigger).not.toBeNull()
+
+    fireEvent.click(trigger!)
+    const skillButton = screen
+      .getAllByText('技能')
+      .map((node) => node.closest('button'))
+      .find((button) => button?.textContent?.trim() === '技能')
+
+    expect(skillButton).not.toBeNull()
+
+    fireEvent.mouseEnter(skillButton!)
+
+    const skillViewport = screen.getByTestId('attachment-skill-viewport')
+    expect(skillViewport).toContainElement(screen.getByTestId('attachment-skill-loading'))
+
+    rerender(
+      <AttachmentMenu
+        placement="top"
+        skills={MOCK_SKILLS}
+        skillsLoading={false}
+        loadSkills={loadSkills}
+        onSelectSkill={vi.fn()}
+        onManageSkills={vi.fn()}
+        showTools
+      />,
+    )
+
+    expect(screen.getByTestId('attachment-skill-viewport')).toBe(skillViewport)
+    expect(skillViewport).toContainElement(screen.getByText('图片生成'))
+  })
 })

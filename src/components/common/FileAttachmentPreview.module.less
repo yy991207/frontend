@@ -1,7 +1,7 @@
 .container {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   align-self: flex-start;
   width: 100%;
   padding: 0 0 4px;
@@ -12,31 +12,29 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 6px 24px 6px 8px;
   background: rgba(0, 0, 0, 0.04);
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  max-width: 300px;
-  transition: all 0.2s ease;
+  border-radius: 10px;
+  max-width: 190px;
+  position: relative;
+  transition: background 0.2s ease;
 }
 
 .fileItem:hover {
   background: rgba(0, 0, 0, 0.06);
-  border-color: rgba(0, 0, 0, 0.12);
 }
 
 .fileItemError {
-  background: rgba(255, 77, 79, 0.08);
-  border-color: rgba(255, 77, 79, 0.2);
+  background: rgba(255, 77, 79, 0.06);
 }
 
 .fileIcon {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 18px;
   flex-shrink: 0;
 }
 
@@ -46,12 +44,12 @@
 
 .loadingIcon {
   color: #1890ff;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .errorIcon {
   color: #ff4d4f;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .fileInfo {
@@ -61,7 +59,7 @@
 }
 
 .fileName {
-  font-size: 14px;
+  font-size: 13px;
   color: rgba(0, 0, 0, 0.85);
   white-space: nowrap;
   overflow: hidden;
@@ -72,29 +70,18 @@
 .fileMeta {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
+  gap: 6px;
+  font-size: 11px;
   color: rgba(0, 0, 0, 0.45);
-  margin-top: 2px;
-}
-
-.fileType {
-  color: rgba(0, 0, 0, 0.65);
-}
-
-.fileSize {
-  color: rgba(0, 0, 0, 0.45);
+  margin-top: 1px;
 }
 
 .fileProgress {
   color: #1890ff;
 }
 
-.fileStatusSuccess {
-  color: #52c41a;
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.fileSize {
+  color: rgba(0, 0, 0, 0.45);
 }
 
 .fileStatusError {
@@ -102,22 +89,25 @@
 }
 
 .removeBtn {
-  width: 20px;
-  height: 20px;
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent;
   border: none;
-  color: rgba(0, 0, 0, 0.45);
+  color: rgba(0, 0, 0, 0.3);
   cursor: pointer;
-  flex-shrink: 0;
   padding: 0;
-  border-radius: 4px;
+  border-radius: 50%;
+  font-size: 10px;
   transition: all 0.2s ease;
 }
 
 .removeBtn:hover {
-  color: #ff4d4f;
-  background: rgba(255, 77, 79, 0.1);
+  color: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.08);
 }
