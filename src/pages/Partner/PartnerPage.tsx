@@ -17,6 +17,12 @@ import Workspace, { type FileNode } from '../../components/Partner/Workspace'
 import ModelManagement from '../../components/Partner/ModelManagement'
 import { AttachmentMenu } from '../../components/common/AttachmentMenu'
 import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
+import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
+import {
+  createPendingUploadedFile,
+  type UploadedFile,
+  uploadPendingFileToOss,
+} from '../../services/ossUploadService'
 import chatConfigText from '../../../config.yaml?raw'
 import { useLocation, useNavigate } from 'react-router-dom'
 import homeAvatar from '../../assets/home-avatar.png'
@@ -391,6 +397,10 @@ function PartnerPageContent() {
   const [slashQuery, setSlashQuery] = useState('')
   const [selectedSkillIndex, setSelectedSkillIndex] = useState(0)
   
+  // 上传文件相关状态
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  
   const stickToBottom = useStickToBottom()
   const { containerRef: messagesViewportRef, scrollToBottom } = stickToBottom
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -402,6 +412,42 @@ function PartnerPageContent() {
     setPreferredToolType(null)
     setSelectedSkillName('')
     setSelectedSkillDescription('')
+  }
+
+  // 处理上传文件
+  const handleUploadFile = () => {
+    fileInputRef.current?.click()
+  }
+
+  // 处理文件选择
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    for (const file of Array.from(files)) {
+      const pendingFile = createPendingUploadedFile(file)
+      setUploadedFiles((prev) => [...prev, pendingFile])
+
+      const uploadedFile = await uploadPendingFileToOss(pendingFile, file, (progress) => {
+        setUploadedFiles((prev) =>
+          prev.map((f) =>
+            f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
+          ),
+        )
+      })
+
+      setUploadedFiles((prev) =>
+        prev.map((f) => (f.id === pendingFile.id ? uploadedFile : f)),
+      )
+    }
+    
+    // 清空 input 以便再次选择相同文件
+    event.target.value = ''
+  }
+
+  // 删除已添加的文件
+  const handleRemoveFile = (fileId: string) => {
+    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId))
   }
 
   // 单独维护助手名称编辑态，避免影响其他设置区域的展示逻辑。
@@ -1823,9 +1869,9 @@ function PartnerPageContent() {
               </div>
 
               <div className={styles.composerArea}>
-                <div ref={composerRef} className={styles.composerWrap}>
-                  <div className={styles.inputWrap}>
-                    {/* 斜杠指令浮层 */}
+                  <div ref={composerRef} className={styles.composerWrap}>
+                    <div className={styles.inputWrap}>
+                      {/* 斜杠指令浮层 */}
                     <SkillSlashCommand
                       visible={slashCommandOpen}
                       query={slashQuery}
@@ -1849,11 +1895,15 @@ function PartnerPageContent() {
                         setSlashCommandOpen(false)
                         setDraft('')
                       }}
-                      onClose={() => setSlashCommandOpen(false)}
-                      onManageSkills={handleManageSkills}
-                    />
-                    {/* 上方输入区域 */}
-                    <div className={styles.inputTopArea}>
+                        onClose={() => setSlashCommandOpen(false)}
+                        onManageSkills={handleManageSkills}
+                      />
+                      <FileAttachmentPreview
+                        files={uploadedFiles}
+                        onRemove={handleRemoveFile}
+                      />
+                      {/* 上方输入区域 */}
+                      <div className={styles.inputTopArea}>
                       {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
                       {selectedSkillName ? (
                         <span className={styles.skillTagWrap}>
@@ -1963,6 +2013,15 @@ function PartnerPageContent() {
                     </div>
                     {/* 下方按钮区域 */}
                     <div className={styles.inputBottomArea}>
+                      {/* 隐藏的文件输入框 */}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept="*/*"
+                        style={{ display: 'none' }}
+                        onChange={handleFileChange}
+                      />
                       <div className={styles.inputBottomLeft}>
                         <AttachmentMenu
                           placement="top"
@@ -1971,6 +2030,7 @@ function PartnerPageContent() {
                           loadSkills={fetchSkills}
                           onSelectSkill={handleSelectSkill}
                           onManageSkills={handleManageSkills}
+                          onUploadFile={handleUploadFile}
                           showTools
                           webSearchEnabled={webSearchEnabled}
                           knowledgeEnabled={knowledgeEnabled}

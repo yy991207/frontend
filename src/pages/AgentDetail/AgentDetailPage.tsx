@@ -21,6 +21,7 @@ import SkillConfigModal from '../../components/common/SkillConfigModal'
 import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
 import SkillDetailPanel from '../../components/common/SkillDetailPanel'
 import { MessageList } from '../../components/chat/message-list'
+import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
 import {
   loadCustomAgentApiConfig,
   updateCustomAgent,
@@ -31,6 +32,11 @@ import {
   type ChatMessageItem,
   type PresetQuestion,
 } from '../../services/customAgentService'
+import {
+  createPendingUploadedFile,
+  type UploadedFile,
+  uploadPendingFileToOss,
+} from '../../services/ossUploadService'
 import type { ToolCall } from '../../core/messages/types'
 import {
   clearAgentStorage,
@@ -127,11 +133,47 @@ export default function AgentDetailPage() {
   const activeAssistantMessageIdRef = useRef<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatAbortControllerRef = useRef<AbortController | null>(null)
+  
+  // 上传文件相关状态
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const commitChatMessages = useCallback((nextMessages: AgentChatMessage[]) => {
     chatMessagesRef.current = nextMessages
     setChatMessages(nextMessages)
   }, [])
+
+  const handleUploadFile = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    for (const file of Array.from(files)) {
+      const pendingFile = createPendingUploadedFile(file)
+      setUploadedFiles((prev) => [...prev, pendingFile])
+
+      const uploadedFile = await uploadPendingFileToOss(pendingFile, file, (progress) => {
+        setUploadedFiles((prev) =>
+          prev.map((f) =>
+            f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
+          ),
+        )
+      })
+
+      setUploadedFiles((prev) =>
+        prev.map((f) => (f.id === pendingFile.id ? uploadedFile : f)),
+      )
+    }
+
+    event.target.value = ''
+  }
+
+  const handleRemoveFile = (fileId: string) => {
+    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId))
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -649,6 +691,7 @@ export default function AgentDetailPage() {
             <div className={styles.composerArea}>
               <div className={styles.composerWrap}>
                 <div className={styles.inputWrap}>
+                  <FileAttachmentPreview files={uploadedFiles} onRemove={handleRemoveFile} />
                   {/* 上方输入区域 */}
                   <div className={styles.inputTopArea}>
                     <Input.TextArea
@@ -686,6 +729,14 @@ export default function AgentDetailPage() {
                   </div>
                   {/* 下方按钮区域 */}
                   <div className={styles.inputBottomArea}>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept="*/*"
+                      style={{ display: 'none' }}
+                      onChange={handleFileChange}
+                    />
                     <div className={styles.inputBottomLeft}>
                       <button type="button" className={styles.toolPill}>
                         <SoundOutlined />
@@ -703,7 +754,7 @@ export default function AgentDetailPage() {
                     </div>
                     <div className={styles.inputBottomRight}>
                       <div className={styles.inputActions}>
-                        <button type="button" className={styles.iconBtn} aria-label="附件">
+                        <button type="button" className={styles.iconBtn} aria-label="附件" onClick={handleUploadFile}>
                           <PaperClipOutlined />
                         </button>
                         {isChatResponding ? (

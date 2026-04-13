@@ -628,33 +628,7 @@ export default function SkillsPage() {
 
         const featuredItems = extractSkillItemsFromResponse(data)
 
-        let mergedFeaturedItems = featuredItems
-        try {
-          const manageRequestUrl = new URL(skillApiConfig.manageEndpoint)
-          manageRequestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
-
-          const manageResponse = await fetch(manageRequestUrl.toString(), {
-            signal: controller.signal,
-          })
-
-          if (manageResponse.ok) {
-            const manageData = (await manageResponse.json()) as SkillApiResponse
-            if (manageData.success) {
-              const addedItems = extractSkillItemsFromResponse(manageData)
-              const addedSkillNames = buildSkillNameSet(addedItems)
-              mergedFeaturedItems = featuredItems.map((item) => ({
-                ...item,
-                isSelected: item.isSelected || addedSkillNames.has(item.skillName || item.id),
-              }))
-            }
-          }
-        } catch {
-          if (controller.signal.aborted) {
-            return
-          }
-        }
-
-        setFeaturedSkills(mergedFeaturedItems)
+        setFeaturedSkills(featuredItems)
         setFeaturedSkillsError('')
         setFeaturedGroupIndex(0)
       } catch {
@@ -749,6 +723,7 @@ const handleOpenClawhubSkillDetail = useCallback(
         const baseUrl = skillApiConfig.featuredEndpoint.replace(/\/api\/v1\/skills.*$/, '')
         const result = await fetchClawhubSkillDetail({
           baseUrl,
+          userId: skillApiConfig.userId,
           slug: skill.skillName || skill.id,
           signal: controller.signal,
         })
@@ -761,7 +736,7 @@ const handleOpenClawhubSkillDetail = useCallback(
             title: result.skill.title,
             description: result.skill.description,
             template: result.skill.template,
-            isSelected: false,
+            isSelected: result.skill.isSelected,
           })
         } else {
           setSelectedSkillForDetail(skill)

@@ -33,6 +33,7 @@ export type ClawhubSkillDetail = {
 
 export type ClawhubDetailParams = {
   baseUrl: string
+  userId: string
   slug: string
   signal?: AbortSignal
 }
@@ -214,12 +215,14 @@ export async function searchClawhubSkills(params: ClawhubSearchParams): Promise<
 }
 
 export async function fetchClawhubSkillDetail(params: ClawhubDetailParams): Promise<ClawhubDetailResult> {
-  const { baseUrl, slug, signal } = params
+  const { baseUrl, userId, slug, signal } = params
 
   const endpoint = `${baseUrl.replace(/\/+$/, '')}/api/v1/skills/clawhub/${encodeURIComponent(slug)}`
+  const requestUrl = new URL(endpoint)
+  requestUrl.searchParams.set('user_id', userId)
 
   try {
-    const response = await fetch(endpoint, { signal })
+    const response = await fetch(requestUrl.toString(), { signal })
 
     if (!response.ok) {
       throw new Error('Clawhub 详情接口请求失败')
@@ -234,6 +237,7 @@ export async function fetchClawhubSkillDetail(params: ClawhubDetailParams): Prom
           slug: string
           displayName: string
           summary: string
+          is_selected?: boolean
           tags?: string[]
           stats?: {
             downloads: number
@@ -276,8 +280,8 @@ export async function fetchClawhubSkillDetail(params: ClawhubDetailParams): Prom
         skillName: skill.slug,
         title: skill.displayName,
         description,
+        isSelected: Boolean(skill.is_selected),
         template,
-        isSelected: false,
         tags: skill.tags || metaContent.Keywords || [],
         downloads: skill.stats?.downloads || 0,
         stars: skill.stats?.stars || 0,

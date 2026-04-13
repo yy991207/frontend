@@ -172,12 +172,21 @@
   display: flex;
   flex-direction: column;
   z-index: 81;
+  will-change: opacity, transform;
 }
 
 .submenuOpen {
   opacity: 1;
   transform: translateX(0) scale(1);
   pointer-events: auto;
+}
+
+.submenuPane {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  animation: submenuPaneFade 0.18s ease;
 }
 
 .submenuHeader {
@@ -364,6 +373,18 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
+}
+
+@keyframes submenuPaneFade {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .switchButton {

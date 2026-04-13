@@ -245,6 +245,7 @@ export default function SkillDetailModal({ visible, skillName, isSelected, actio
   const displayName = skillDetail?.chinese_name || skillName
   const displayDescription = skillDetail?.description || '该技能用于完成特定任务，并按照技能配置要求生成结果。'
   const actionLabel = isSelected ? '使用' : '添加'
+  const actionClassName = isSelected ? styles.secondaryAction : styles.primaryAction
 
   return (
     <div className={styles.modalOverlay} onClick={onCancel}>
@@ -254,7 +255,7 @@ export default function SkillDetailModal({ visible, skillName, isSelected, actio
             <h3 className={styles.headerTitle}>{displayName}</h3>
           </div>
           <div className={styles.headerActions}>
-            <button type="button" className={styles.primaryAction} onClick={onAction} disabled={actionLoading}>
+            <button type="button" className={actionClassName} onClick={onAction} disabled={actionLoading}>
               {actionLoading ? '处理中...' : actionLabel}
             </button>
             <button type="button" className={styles.modalCloseBtn} onClick={onCancel} aria-label="关闭技能详情弹窗">

@@ -17,3 +17,15 @@ test('chat page uses shared attachment menu component', async () => {
   assert.match(content, /AttachmentMenu.*components\/common\/AttachmentMenu/)
   assert.match(content, /<AttachmentMenu/)
 })
+
+test('partner page uses shared attachment menu component', async () => {
+  const content = await readPage('Partner/PartnerPage.tsx')
+  assert.match(content, /AttachmentMenu.*components\/common\/AttachmentMenu/)
+  assert.match(content, /<AttachmentMenu/)
+})
+
+test('agent conversation page uses shared attachment menu component', async () => {
+  const content = await readPage('AgentConversation/AgentConversationPage.tsx')
+  assert.match(content, /AttachmentMenu.*components\/common\/AttachmentMenu/)
+  assert.match(content, /<AttachmentMenu/)
+})

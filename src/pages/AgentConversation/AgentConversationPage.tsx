@@ -9,7 +9,13 @@ import { viewCustomAgent, loadCustomAgentApiConfig, type AgentDetail, type Enabl
 import { parseChatApiConfig, type ChatApiConfig } from '../../services/chatService'
 import { useSharedChatRuntime } from '../../services/sharedChatRuntime'
 import { AttachmentMenu, type AttachmentSkillItem } from '../../components/common/AttachmentMenu'
+import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
 import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
+import {
+  createPendingUploadedFile,
+  type UploadedFile,
+  uploadPendingFileToOss,
+} from '../../services/ossUploadService'
 import {
   buildSkillDisplayName,
 } from '../../services/skillPromptService'
@@ -44,11 +50,45 @@ function AgentConversationPageContent() {
   const [slashCommandOpen, setSlashCommandOpen] = useState(false)
   const [slashQuery, setSlashQuery] = useState('')
   const [selectedSkillIndex, setSelectedSkillIndex] = useState(0)
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+  const fileInputRef = useMemo(() => ({ current: null as HTMLInputElement | null }), [])
 
   const clearSelectedSkill = () => {
     setPreferredToolType(null)
     setSelectedSkillName('')
     setSelectedSkillDescription('')
+  }
+
+  const handleUploadFile = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    for (const file of Array.from(files)) {
+      const pendingFile = createPendingUploadedFile(file)
+      setUploadedFiles((prev) => [...prev, pendingFile])
+
+      const uploadedFile = await uploadPendingFileToOss(pendingFile, file, (progress) => {
+        setUploadedFiles((prev) =>
+          prev.map((f) =>
+            f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
+          ),
+        )
+      })
+
+      setUploadedFiles((prev) =>
+        prev.map((f) => (f.id === pendingFile.id ? uploadedFile : f)),
+      )
+    }
+
+    event.target.value = ''
+  }
+
+  const handleRemoveFile = (fileId: string) => {
+    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId))
   }
 
   const handleManageSkills = () => {
@@ -326,6 +366,7 @@ function AgentConversationPageContent() {
                   onClose={() => setSlashCommandOpen(false)}
                   onManageSkills={handleManageSkills}
                 />
+                <FileAttachmentPreview files={uploadedFiles} onRemove={handleRemoveFile} />
                 <div className={styles.inputTopArea}>
                   {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
                   {selectedSkillName ? (
@@ -432,6 +473,16 @@ function AgentConversationPageContent() {
                   />
                 </div>
                 <div className={styles.inputBottomArea}>
+                  <input
+                    ref={(node) => {
+                      fileInputRef.current = node
+                    }}
+                    type="file"
+                    multiple
+                    accept="*/*"
+                    style={{ display: 'none' }}
+                    onChange={handleFileChange}
+                  />
                   <div className={styles.inputBottomLeft}>
                     <AttachmentMenu
                       placement="top"
@@ -440,6 +491,7 @@ function AgentConversationPageContent() {
                       loadSkills={() => Promise.resolve()}
                       onSelectSkill={handleSelectSkill}
                       onManageSkills={handleManageSkills}
+                      onUploadFile={handleUploadFile}
                       showTools
                       webSearchEnabled={webSearchEnabled}
                       webSearchLocked={webSearchLocked}

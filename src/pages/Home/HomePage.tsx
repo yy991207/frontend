@@ -15,7 +15,13 @@ import homeTabsUrl from '../../../mock_json/home-tabs.json?url'
 import homeAvatar from '../../assets/home-avatar.png'
 import chatConfigText from '../../../config.yaml?raw'
 import { AttachmentMenu } from '../../components/common/AttachmentMenu'
+import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
 import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
+import {
+  createPendingUploadedFile,
+  type UploadedFile,
+  uploadPendingFileToOss,
+} from '../../services/ossUploadService'
 import { resolveQuickActionToolType } from '../../services/chatService'
 import {
   buildSkillDisplayName,
@@ -213,6 +219,8 @@ export default function HomePage() {
   const [slashCommandOpen, setSlashCommandOpen] = useState(false)
   const [slashQuery, setSlashQuery] = useState('')
   const [selectedSkillIndex, setSelectedSkillIndex] = useState(0)
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   
   const [heroStageLayout, setHeroStageLayout] = useState<HeroStageLayout>(() => {
     if (typeof window === 'undefined') {
@@ -235,6 +243,38 @@ export default function HomePage() {
     setPreferredToolType(null)
     setSelectedSkillName('')
     setSelectedSkillDescription('')
+  }
+
+  const handleUploadFile = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    for (const file of Array.from(files)) {
+      const pendingFile = createPendingUploadedFile(file)
+      setUploadedFiles((prev) => [...prev, pendingFile])
+
+      const uploadedFile = await uploadPendingFileToOss(pendingFile, file, (progress) => {
+        setUploadedFiles((prev) =>
+          prev.map((f) =>
+            f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
+          ),
+        )
+      })
+
+      setUploadedFiles((prev) =>
+        prev.map((f) => (f.id === pendingFile.id ? uploadedFile : f)),
+      )
+    }
+
+    event.target.value = ''
+  }
+
+  const handleRemoveFile = (fileId: string) => {
+    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId))
   }
 
   const skillApiConfig = useMemo(() => {
@@ -648,6 +688,7 @@ export default function HomePage() {
                       onClose={() => setSlashCommandOpen(false)}
                       onManageSkills={handleManageSkills}
                     />
+                    <FileAttachmentPreview files={uploadedFiles} onRemove={handleRemoveFile} />
                     {/* 上方输入区域 */}
                     <div className={styles.inputTopArea}>
                       {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
@@ -758,6 +799,14 @@ export default function HomePage() {
                     </div>
                     {/* 下方按钮区域 */}
                     <div className={styles.inputBottomArea}>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept="*/*"
+                        style={{ display: 'none' }}
+                        onChange={handleFileChange}
+                      />
                       <div className={styles.inputBottomLeft}>
                         <AttachmentMenu
                           placement="top"
@@ -766,6 +815,7 @@ export default function HomePage() {
                           loadSkills={fetchSkills}
                           onSelectSkill={handleSelectSkill}
                           onManageSkills={handleManageSkills}
+                          onUploadFile={handleUploadFile}
                           showTools
                           webSearchEnabled={webSearchEnabled}
                           knowledgeEnabled={knowledgeEnabled}
