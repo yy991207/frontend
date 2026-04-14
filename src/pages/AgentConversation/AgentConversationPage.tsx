@@ -2,7 +2,7 @@ import { useLocation, useParams, useNavigate } from 'react-router-dom'
 import { message } from 'antd'
 import SkillTemplateInput from '../../components/common/SkillTemplateInput'
 import { AppPageShell, AppSurfacePanel } from '../../components/layout/AppPageShell'
-import { SettingOutlined, ArrowUpOutlined, GlobalOutlined } from '@ant-design/icons'
+import { SettingOutlined, ArrowUpOutlined, GlobalOutlined, PaperClipOutlined } from '@ant-design/icons'
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
 import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts-context'
@@ -10,7 +10,7 @@ import { MessageList } from '../../components/chat/message-list'
 import { viewCustomAgent, loadCustomAgentApiConfig, type AgentDetail, type EnabledSkill } from '../../services/customAgentService'
 import { parseChatApiConfig, type ChatApiConfig } from '../../services/chatService'
 import { useSharedChatRuntime } from '../../services/sharedChatRuntime'
-import { AttachmentMenu, type AttachmentSkillItem } from '../../components/common/AttachmentMenu'
+import type { AttachmentSkillItem } from '../../components/common/AttachmentMenu'
 import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
 import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
 import {
@@ -467,16 +467,15 @@ function AgentConversationPageContent() {
                     onChange={handleFileChange}
                   />
                   <div className={styles.inputBottomLeft}>
-                    <AttachmentMenu
-                      placement="bottom"
-                      skills={skills}
-                      skillsLoading={false}
-                      loadSkills={() => Promise.resolve()}
-                      onSelectSkill={handleSelectSkill}
-                      onManageSkills={handleManageSkills}
-                      onUploadFile={handleUploadFile}
-                      hideManageSkills
-                    />
+                    <button
+                      type="button"
+                      aria-label="上传附件"
+                      title="上传文档"
+                      className={styles.uploadAttachmentButton}
+                      onClick={handleUploadFile}
+                    >
+                      <PaperClipOutlined />
+                    </button>
                     <button
                       type="button"
                       role="switch"

@@ -10,10 +10,6 @@ import {
 import { parseChatApiConfig } from '../../services/chatService'
 import { useSharedChatRuntime } from '../../services/sharedChatRuntime'
 
-const { mockedAttachmentMenu } = vi.hoisted(() => ({
-  mockedAttachmentMenu: vi.fn(),
-}))
-
 const { mockedMessageInfo } = vi.hoisted(() => ({
   mockedMessageInfo: vi.fn(),
 }))
@@ -41,13 +37,6 @@ vi.mock('../../components/chat/artifacts-context', () => ({
     open: false,
     selectedFile: null,
   }),
-}))
-
-vi.mock('../../components/common/AttachmentMenu', () => ({
-  AttachmentMenu: (props: { showTools?: boolean }) => {
-    mockedAttachmentMenu(props)
-    return <div data-testid="attachment-menu" data-show-tools={String(Boolean(props.showTools))} />
-  },
 }))
 
 vi.mock('../../components/common/FileAttachmentPreview', () => ({
@@ -168,8 +157,11 @@ function renderPage() {
 }
 
 describe('AgentConversationPage', () => {
+  let inputClickSpy: ReturnType<typeof vi.spyOn>
+
   beforeEach(() => {
     vi.clearAllMocks()
+    inputClickSpy = vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(() => {})
     mockedLoadCustomAgentApiConfig.mockResolvedValue(MOCK_CONFIG)
     mockedViewCustomAgent.mockResolvedValue(MOCK_AGENT)
     mockedParseChatApiConfig.mockReturnValue({
@@ -202,6 +194,7 @@ describe('AgentConversationPage', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals()
+    inputClickSpy.mockRestore()
   })
 
   it('点击设置按钮后会直接跳到智能体详情页，并带有编辑智能体提示', async () => {
@@ -237,11 +230,16 @@ describe('AgentConversationPage', () => {
     })
 
     const webSearchSwitch = await screen.findByRole('switch', { name: '联网检索' })
+    const uploadButton = screen.getByRole('button', { name: '上传附件' })
 
     expect(screen.queryByText('联网检索')).not.toBeInTheDocument()
+    expect(uploadButton).toBeInTheDocument()
+    expect(screen.queryByTestId('attachment-menu')).not.toBeInTheDocument()
     expect(webSearchSwitch).toHaveAttribute('aria-checked', 'true')
     expect(webSearchSwitch).toHaveAttribute('data-state', 'enabled')
-    expect(screen.getByTestId('attachment-menu')).toHaveAttribute('data-show-tools', 'false')
+
+    fireEvent.click(uploadButton)
+    expect(inputClickSpy).toHaveBeenCalledTimes(1)
 
     fireEvent.click(webSearchSwitch)
     expect(webSearchSwitch).toHaveAttribute('aria-checked', 'false')
