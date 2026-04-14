@@ -1328,6 +1328,7 @@ function ChatPageContent() {
   const handleSend = () => {
     const value = draft.trim()
     if (!value || isResponding) return
+    if (uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')) return
 
     const outgoingPrompt = selectedSkillName
       ? buildSkillInitialPrompt({
@@ -1639,9 +1640,9 @@ function ChatPageContent() {
                       ) : (
                         <button
                           type="button"
-                          className={`${styles.iconBtn} ${styles.sendBtn} ${!draft.trim() ? styles.sendBtnDisabled : ''}`}
+                          className={`${styles.iconBtn} ${styles.sendBtn} ${(!draft.trim() || uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')) ? styles.sendBtnDisabled : ''}`}
                           onClick={handleSend}
-                          disabled={!draft.trim()}
+                          disabled={!draft.trim() || uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')}
                         >
                           <ArrowUpOutlined />
                         </button>

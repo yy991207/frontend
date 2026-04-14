@@ -697,10 +697,11 @@ export function useSharedChatRuntime({
   const handleSend = useCallback(() => {
     const value = draft.trim()
     if (!value || isResponding) return
+    if (uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')) return
     setDraft('')
     onFilesSent?.()
     void startAssistantReply(value)
-  }, [draft, isResponding, startAssistantReply, onFilesSent])
+  }, [draft, isResponding, startAssistantReply, onFilesSent, uploadedFiles])
 
   return {
     draft,

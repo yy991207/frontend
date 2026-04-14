@@ -491,9 +491,9 @@ function AgentConversationPageContent() {
                     <div className={styles.inputActions}>
                       <button
                         type="button"
-                        className={`${styles.iconBtn} ${styles.sendBtn} ${!draft.trim() ? styles.sendBtnDisabled : ''}`}
+                        className={`${styles.iconBtn} ${styles.sendBtn} ${(!draft.trim() || uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')) ? styles.sendBtnDisabled : ''}`}
                         onClick={handleSend}
-                        disabled={!draft.trim() || isResponding}
+                        disabled={!draft.trim() || isResponding || uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')}
                       >
                         <ArrowUpOutlined />
                       </button>
