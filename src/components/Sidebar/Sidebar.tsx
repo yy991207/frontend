@@ -2,10 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import {
   BookOutlined,
-  AppstoreOutlined,
-  ClockCircleOutlined,
   CompassOutlined,
-  ExportOutlined,
   LoadingOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -29,12 +26,10 @@ const NAV_ITEMS = [
   { key: 'library', label: '库', icon: <BookOutlined />, path: '/library' },
   { key: 'skills', label: '技能', icon: <ThunderboltOutlined />, path: '/skills' },
   { key: 'discover', label: '发现', icon: <CompassOutlined />, path: '/discover' },
-  { key: 'partner', label: '开发应用', icon: <AppstoreOutlined />, path: '/partner' },
 ]
 
 const AILY_LOGO_URL = 'https://aily.feishu.cn/play/api/v1/files/static/offcial-logo15.png'
 const PARTNER_AVATAR_URL = 'https://s3-imfile.feishucdn.com/static-resource/v1/v3_00vn_7af88321-f0ad-4b2d-9e0f-f1fc704abbag'
-const USER_AVATAR_URL = 'https://s3-imfile.feishucdn.com/static-resource/v1/v3_00v9_b45c986e-1d75-4394-87d1-8554b35e4e1g~?image_size=noop&cut_type=&quality=&format=image&sticker_format=.webp'
 
 function resolveAgentAvatar(agent: AgentUsageLogItem) {
   return agent.avatar_url?.trim() || AILY_LOGO_URL
@@ -370,28 +365,6 @@ export default function Sidebar() {
 
         <div className={styles.sessionHistoryWrapper}>
           <ChatSessionHistory expanded={expanded} />
-        </div>
-
-        <div className={styles.footerRow}>
-          <div className={styles.footerPanel}>
-            <div className={styles.userInfo}>
-              <span className={styles.avatarCell}>
-                <img src={USER_AVATAR_URL} alt="杨金玮" className={styles.avatarImage} />
-              </span>
-              <span className={styles.userName}>杨金玮</span>
-            </div>
-            <div className={styles.footerActions}>
-              <button type="button" className={styles.toolButton} aria-label="打开日程">
-                <ClockCircleOutlined />
-              </button>
-              <button type="button" className={styles.toolButton} aria-label="打开飞书">
-                <ExportOutlined />
-              </button>
-              <button type="button" className={styles.toolButton} aria-label="更多">
-                <MoreOutlined />
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </aside>

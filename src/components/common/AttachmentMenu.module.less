@@ -206,7 +206,6 @@
 .submenu {
   position: absolute;
   left: calc(280px + 6px);
-  bottom: 0;
   width: 320px;
   max-height: 420px;
   border-radius: 18px;
@@ -223,6 +222,15 @@
   flex-direction: column;
   z-index: 81;
   will-change: opacity, transform;
+}
+
+.submenuAlignBottom {
+  bottom: 0;
+}
+
+.submenuAlignTop {
+  top: 0;
+  transform-origin: left top;
 }
 
 .submenuOpen {

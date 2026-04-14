@@ -27,8 +27,7 @@
 
 .topRow,
 .navRow,
-.partnerRow,
-.footerPanel {
+.partnerRow {
   display: grid;
   grid-template-columns: 36px minmax(0, 1fr);
   align-items: center;
@@ -41,8 +40,7 @@
 
 .iconButton,
 .navRow,
-.partnerRow,
-.toolButton {
+.partnerRow {
   border: none;
   background: transparent;
   cursor: pointer;
@@ -114,7 +112,6 @@
 .labelCell,
 .brandName,
 .sectionTitle,
-.footerActions,
 .userName {
   transition: opacity 0.18s ease, transform 0.2s ease;
 }
@@ -123,7 +120,6 @@
 .sidebarCollapsed .labelCell,
 .sidebarCollapsed .brandName,
 .sidebarCollapsed .sectionTitle,
-.sidebarCollapsed .footerActions,
 .sidebarCollapsed .userName {
   opacity: 0;
   transform: translateX(-8px);
@@ -382,45 +378,4 @@
   flex-direction: column;
   margin-top: 4px;
   overflow: hidden;
-}
-
-.footerRow {
-  padding: 4px 8px 0 0;
-}
-
-.footerPanel {
-  min-height: 52px;
-  padding: 0 8px 0 0;
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-.userInfo {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.userName {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: #1f2329;
-  font-size: 14px;
-}
-
-.footerActions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.toolButton {
-  color: #646a73;
-}
-
-.sidebarCollapsed .footerPanel {
-  grid-template-columns: 1fr;
 }

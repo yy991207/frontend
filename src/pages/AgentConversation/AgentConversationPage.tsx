@@ -467,7 +467,7 @@ function AgentConversationPageContent() {
                   />
                   <div className={styles.inputBottomLeft}>
                     <AttachmentMenu
-                      placement="top"
+                      placement="bottom"
                       skills={skills}
                       skillsLoading={false}
                       loadSkills={() => Promise.resolve()}

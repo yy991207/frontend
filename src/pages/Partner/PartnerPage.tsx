@@ -2028,7 +2028,7 @@ function PartnerPageContent() {
                       />
                       <div className={styles.inputBottomLeft}>
                         <AttachmentMenu
-                          placement="top"
+                          placement="bottom"
                           skills={skills}
                           skillsLoading={skillsLoading}
                           loadSkills={fetchSkills}

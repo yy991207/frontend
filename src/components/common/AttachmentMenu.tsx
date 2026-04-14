@@ -72,6 +72,7 @@ export function AttachmentMenu({
   const [activeSubmenu, setActiveSubmenu] = useState<SubmenuKey>(null)
   const [toolInfoOpen, setToolInfoOpen] = useState(false)
   const [skillSearchQuery, setSkillSearchQuery] = useState('')
+  const [submenuAlignTop, setSubmenuAlignTop] = useState(false)
 
   const filteredSkills = useMemo(() => {
     if (!skillSearchQuery.trim()) {
@@ -128,6 +129,25 @@ export function AttachmentMenu({
       document.removeEventListener('pointerdown', handlePointerDown)
     }
   }, [closeAllMenus])
+
+  // 检测子菜单是否超出视口上边界，超出则改为向下对齐
+  useEffect(() => {
+    if (!activeSubmenu) return
+
+    const measure = () => {
+      const surface = rootRef.current?.querySelector(`.${styles.menuSurface}`)
+      const menuTop = surface?.getBoundingClientRect().top ?? 0
+      // 子菜单最大高度 420px，加上一点安全边距
+      setSubmenuAlignTop(menuTop < 440)
+    }
+
+    // 等 DOM 渲染后再测量
+    requestAnimationFrame(measure)
+    window.addEventListener('resize', measure)
+    return () => {
+      window.removeEventListener('resize', measure)
+    }
+  }, [activeSubmenu])
 
   const handleActionClick = (actionKey: string) => {
     if (actionKey === 'upload') {
@@ -226,7 +246,7 @@ export function AttachmentMenu({
 
         <div
           data-testid="attachment-submenu-surface"
-          className={`${styles.submenu} ${activeSubmenu ? styles.submenuOpen : ''}`}
+          className={`${styles.submenu} ${activeSubmenu ? styles.submenuOpen : ''} ${submenuAlignTop ? styles.submenuAlignTop : styles.submenuAlignBottom}`}
           aria-hidden={!activeSubmenu}
         >
           {activeSubmenu ? (
