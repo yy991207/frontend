@@ -102,4 +102,76 @@ describe('AttachmentMenu', () => {
     expect(screen.getByTestId('attachment-skill-viewport')).toBe(skillViewport)
     expect(skillViewport).toContainElement(screen.getByText('图片生成'))
   })
+
+  it('点击技能项时会真正触发选择，而不是先被外部点击逻辑关掉', () => {
+    const loadSkills = vi.fn().mockResolvedValue(undefined)
+    const onSelectSkill = vi.fn()
+    const { container } = render(
+      <AttachmentMenu
+        placement="top"
+        skills={MOCK_SKILLS}
+        skillsLoading={false}
+        loadSkills={loadSkills}
+        onSelectSkill={onSelectSkill}
+        onManageSkills={vi.fn()}
+        showTools
+      />,
+    )
+
+    const trigger = container.querySelector('button[aria-haspopup="menu"]')
+    expect(trigger).not.toBeNull()
+
+    fireEvent.click(trigger!)
+
+    const skillButton = screen
+      .getAllByText('技能')
+      .map((node) => node.closest('button'))
+      .find((button) => button?.textContent?.trim() === '技能')
+
+    expect(skillButton).not.toBeNull()
+
+    fireEvent.mouseEnter(skillButton!)
+
+    const skillItem = screen.getByText('图片生成').closest('button')
+    expect(skillItem).not.toBeNull()
+
+    fireEvent.pointerDown(skillItem!)
+    fireEvent.click(skillItem!)
+
+    expect(onSelectSkill).toHaveBeenCalledWith(MOCK_SKILLS[0])
+  })
+
+  it('关闭主菜单后会卸载技能子菜单，避免残留白卡闪现', () => {
+    const loadSkills = vi.fn().mockResolvedValue(undefined)
+    const { container } = render(
+      <AttachmentMenu
+        placement="top"
+        skills={MOCK_SKILLS}
+        skillsLoading={false}
+        loadSkills={loadSkills}
+        onSelectSkill={vi.fn()}
+        onManageSkills={vi.fn()}
+        showTools
+      />,
+    )
+
+    const trigger = container.querySelector('button[aria-haspopup="menu"]')
+    expect(trigger).not.toBeNull()
+
+    fireEvent.click(trigger!)
+
+    const skillButton = screen
+      .getAllByText('技能')
+      .map((node) => node.closest('button'))
+      .find((button) => button?.textContent?.trim() === '技能')
+
+    expect(skillButton).not.toBeNull()
+
+    fireEvent.mouseEnter(skillButton!)
+    expect(screen.getByTestId('attachment-submenu-surface')).toBeInTheDocument()
+
+    fireEvent.click(trigger!)
+
+    expect(screen.queryByTestId('attachment-submenu-surface')).not.toBeInTheDocument()
+  })
 })

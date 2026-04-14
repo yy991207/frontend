@@ -122,7 +122,10 @@ export function AttachmentMenu({
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
+      const targetNode = event.target as Node
+
+      // 子菜单挂在 portal 里，点击它也属于菜单内部交互。
+      if (!rootRef.current?.contains(targetNode) && !submenuRef.current?.contains(targetNode)) {
         closeAllMenus()
       }
     }
@@ -135,8 +138,7 @@ export function AttachmentMenu({
 
   // 计算子菜单位置
   useEffect(() => {
-    if (!activeSubmenu || !rootRef.current) {
-      setSubmenuPosition({ top: 0, left: 0 })
+    if (!menuOpen || !activeSubmenu || !rootRef.current) {
       return
     }
 
@@ -144,7 +146,6 @@ export function AttachmentMenu({
       const rootEl = rootRef.current
       if (!rootEl) return
 
-      const rootRect = rootEl.getBoundingClientRect()
       const viewportHeight = window.innerHeight
       const viewportWidth = window.innerWidth
       
@@ -295,21 +296,21 @@ export function AttachmentMenu({
           ),
         )}
 
-        {createPortal(
-          <div
-            ref={submenuRef}
-            data-testid="attachment-submenu-surface"
-            className={`${styles.submenu} ${activeSubmenu ? styles.submenuOpen : ''} ${submenuAlignTop ? styles.submenuAlignTop : styles.submenuAlignBottom}`}
-            style={{
-              position: 'fixed',
-              top: submenuPosition.top,
-              left: submenuPosition.left,
-              zIndex: 1000,
-            }}
-            aria-hidden={!activeSubmenu}
-          >
-            {activeSubmenu ? (
-              <div key={activeSubmenu} className={styles.submenuPane}>
+        {menuOpen && activeSubmenu
+          ? createPortal(
+              <div
+                ref={submenuRef}
+                data-testid="attachment-submenu-surface"
+                className={`${styles.submenu} ${styles.submenuOpen} ${submenuAlignTop ? styles.submenuAlignTop : styles.submenuAlignBottom}`}
+                style={{
+                  position: 'fixed',
+                  top: submenuPosition.top,
+                  left: submenuPosition.left,
+                  zIndex: 1000,
+                }}
+                aria-hidden={false}
+              >
+                <div key={activeSubmenu} className={styles.submenuPane}>
                 {activeSubmenu === 'skill' ? (
                   <div className={styles.skillPane}>
                     <div className={styles.submenuHeader}>
@@ -430,11 +431,11 @@ export function AttachmentMenu({
                     </button>
                   </>
                 ) : null}
-              </div>
-            ) : null}
-          </div>,
-          document.body,
-        )}
+                </div>
+              </div>,
+              document.body,
+            )
+          : null}
       </div>
     </div>
   )
