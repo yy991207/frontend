@@ -83,7 +83,7 @@ export function ChatComposer({
   const showStopButton = isResponding && typeof onStop === 'function'
 
   return (
-    <div data-testid={testId} data-layout={layout} className={styles.inputWrap}>
+    <div data-testid={testId} data-layout={layout} data-attachment-anchor="true" className={styles.inputWrap}>
       <SkillSlashCommand
         visible={slashCommandOpen}
         query={slashQuery}

@@ -353,7 +353,7 @@ function AgentConversationPageContent() {
 
           <div className={styles.composerArea}>
             <div className={styles.composerWrap}>
-              <div className={styles.inputWrap}>
+              <div className={styles.inputWrap} data-attachment-anchor="true">
                 <SkillSlashCommand
                   visible={slashCommandOpen}
                   query={slashQuery}
@@ -382,7 +382,7 @@ function AgentConversationPageContent() {
                 />
                 <FileAttachmentPreview files={uploadedFiles} onRemove={handleRemoveFile} />
                 <div className={styles.inputTopArea}>
-                <SkillTemplateInput
+                  <SkillTemplateInput
                     value={draft}
                     onChange={(value) => {
                       setDraft(value)

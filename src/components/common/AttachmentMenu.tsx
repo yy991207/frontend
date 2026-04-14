@@ -69,12 +69,15 @@ export function AttachmentMenu({
   hideManageSkills = false,
 }: AttachmentMenuProps) {
   const rootRef = useRef<HTMLDivElement | null>(null)
+  const menuSurfaceRef = useRef<HTMLDivElement | null>(null)
   const submenuRef = useRef<HTMLDivElement | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeSubmenu, setActiveSubmenu] = useState<SubmenuKey>(null)
   const [toolInfoOpen, setToolInfoOpen] = useState(false)
   const [skillSearchQuery, setSkillSearchQuery] = useState('')
   const [submenuAlignTop, setSubmenuAlignTop] = useState(false)
+  const [menuReady, setMenuReady] = useState(false)
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 })
   const [submenuPosition, setSubmenuPosition] = useState({ top: 0, left: 0 })
 
   const filteredSkills = useMemo(() => {
@@ -103,6 +106,17 @@ export function AttachmentMenu({
       controller.abort()
     }
   }, [activeSubmenu, loadSkills])
+
+  const resolveAnchorRect = useCallback(() => {
+    const rootEl = rootRef.current
+    if (!rootEl) {
+      return null
+    }
+
+    // 菜单需要贴着输入框外壳展开，优先使用外层壳子的定位框，避免被内部按钮位置带偏。
+    const anchorElement = rootEl.closest('[data-attachment-anchor="true"]') as HTMLElement | null
+    return (anchorElement ?? rootEl).getBoundingClientRect()
+  }, [])
 
   const closeAllMenus = useCallback(() => {
     setMenuOpen(false)
@@ -136,22 +150,78 @@ export function AttachmentMenu({
     }
   }, [closeAllMenus])
 
-  // 计算子菜单位置
   useEffect(() => {
-    if (!menuOpen || !activeSubmenu || !rootRef.current) {
+    if (!menuOpen) {
+      setMenuReady(false)
       return
     }
 
     const measure = () => {
       const rootEl = rootRef.current
-      if (!rootEl) return
+      const menuEl = menuSurfaceRef.current
+      const anchorRect = resolveAnchorRect()
+      if (!rootEl || !menuEl || !anchorRect) {
+        return
+      }
+
+      const triggerRect = rootEl.getBoundingClientRect()
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
+      const menuRect = menuEl.getBoundingClientRect()
+      const horizontalPadding = 8
+
+      let left = triggerRect.left + 6
+      if (left + menuRect.width > viewportWidth - horizontalPadding) {
+        left = viewportWidth - menuRect.width - horizontalPadding
+      }
+      if (left < horizontalPadding) {
+        left = horizontalPadding
+      }
+
+      let top =
+        placement === 'bottom'
+          ? anchorRect.top - menuRect.height - 1
+          : anchorRect.bottom + 1
+
+      if (top < 8) {
+        top = 8
+      }
+      if (top + menuRect.height > viewportHeight - 8) {
+        top = Math.max(8, viewportHeight - menuRect.height - 8)
+      }
+
+      setMenuPosition({ top, left })
+      setMenuReady(true)
+    }
+
+    const frameId = requestAnimationFrame(() => {
+      requestAnimationFrame(measure)
+    })
+
+    window.addEventListener('resize', measure)
+    window.addEventListener('scroll', measure, true)
+    return () => {
+      cancelAnimationFrame(frameId)
+      window.removeEventListener('resize', measure)
+      window.removeEventListener('scroll', measure, true)
+    }
+  }, [menuOpen, placement, resolveAnchorRect])
+
+  // 计算子菜单位置
+  useEffect(() => {
+    if (!menuOpen || !activeSubmenu || !menuSurfaceRef.current || !menuReady) {
+      return
+    }
+
+    const measure = () => {
+      const menuEl = menuSurfaceRef.current
+      if (!menuEl) return
 
       const viewportHeight = window.innerHeight
       const viewportWidth = window.innerWidth
       
       // 主菜单位置
-      const menuSurface = rootEl.querySelector(`.${styles.menuSurface}`)
-      const menuRect = menuSurface?.getBoundingClientRect()
+      const menuRect = menuEl.getBoundingClientRect()
       
       if (!menuRect) return
       
@@ -193,16 +263,17 @@ export function AttachmentMenu({
     }
 
     // 等 DOM 渲染后再测量
-    requestAnimationFrame(() => {
+    const frameId = requestAnimationFrame(() => {
       requestAnimationFrame(measure)
     })
     window.addEventListener('resize', measure)
     window.addEventListener('scroll', measure, true)
     return () => {
+      cancelAnimationFrame(frameId)
       window.removeEventListener('resize', measure)
       window.removeEventListener('scroll', measure, true)
     }
-  }, [activeSubmenu, menuOpen])
+  }, [activeSubmenu, menuOpen, menuReady])
 
   const handleActionClick = (actionKey: string) => {
     if (actionKey === 'upload') {
@@ -232,72 +303,88 @@ export function AttachmentMenu({
 
       {!menuOpen ? <div className={styles.tooltip}>上传附件/技能等</div> : null}
 
-      <div className={`${styles.menuSurface} ${menuOpen ? styles.menuSurfaceOpen : ''}`} role="menu">
-        {ATTACHMENT_ACTIONS.filter((action) => showTools || action.key !== 'tool').map((action) =>
-          action.key === 'upload' ? (
-            <div key={action.key} className={styles.menuItemWrapper}>
-              <button
-                type="button"
-                className={styles.menuItem}
-                onMouseEnter={() => {
-                  setActiveSubmenu(null)
-                  setToolInfoOpen(false)
-                }}
-                onClick={() => handleActionClick(action.key)}
-              >
-                <span className={styles.menuMain}>
-                  <span className={styles.menuIcon}>{action.icon}</span>
-                  <span>{action.label}</span>
-                </span>
-              </button>
-            </div>
-          ) : action.key === 'tool' ? (
-            <button
-              key={action.key}
-              type="button"
-              className={`${styles.menuItem} ${activeSubmenu === 'tool' ? styles.menuItemActive : ''}`}
-              onMouseEnter={() => handleSubmenuChange('tool')}
-            >
-              <span className={styles.menuMain}>
-                <span className={styles.menuIcon}>{action.icon}</span>
-                <span>{action.label}</span>
-              </span>
-              <RightOutlined className={styles.menuArrow} />
-            </button>
-          ) : action.key === 'skill' ? (
-            <button
-              key={action.key}
-              type="button"
-              className={`${styles.menuItem} ${activeSubmenu === 'skill' ? styles.menuItemActive : ''}`}
-              onMouseEnter={() => handleSubmenuChange('skill')}
-            >
-              <span className={styles.menuMain}>
-                <span className={styles.menuIcon}>{action.icon}</span>
-                <span>{action.label}</span>
-              </span>
-              <RightOutlined className={styles.menuArrow} />
-            </button>
-          ) : (
-            <button
-              key={action.key}
-              type="button"
-              className={styles.menuItem}
-              onMouseEnter={() => {
-                setActiveSubmenu(null)
-                setToolInfoOpen(false)
+      {menuOpen
+        ? createPortal(
+            <div
+              ref={menuSurfaceRef}
+              className={`${styles.menuSurface} ${styles.menuSurfaceOpen}`}
+              style={{
+                position: 'fixed',
+                top: menuPosition.top,
+                left: menuPosition.left,
+                zIndex: 999,
+                visibility: menuReady ? 'visible' : 'hidden',
               }}
-              onClick={() => handleActionClick(action.key)}
+              role="menu"
             >
-              <span className={styles.menuMain}>
-                <span className={styles.menuIcon}>{action.icon}</span>
-                <span>{action.label}</span>
-              </span>
-            </button>
-          ),
-        )}
-
-        {menuOpen && activeSubmenu
-          ? createPortal(
+              {ATTACHMENT_ACTIONS.filter((action) => showTools || action.key !== 'tool').map((action) =>
+                action.key === 'upload' ? (
+                  <div key={action.key} className={styles.menuItemWrapper}>
+                    <button
+                      type="button"
+                      className={styles.menuItem}
+                      onMouseEnter={() => {
+                        setActiveSubmenu(null)
+                        setToolInfoOpen(false)
+                      }}
+                      onClick={() => handleActionClick(action.key)}
+                    >
+                      <span className={styles.menuMain}>
+                        <span className={styles.menuIcon}>{action.icon}</span>
+                        <span>{action.label}</span>
+                      </span>
+                    </button>
+                  </div>
+                ) : action.key === 'tool' ? (
+                  <button
+                    key={action.key}
+                    type="button"
+                    className={`${styles.menuItem} ${activeSubmenu === 'tool' ? styles.menuItemActive : ''}`}
+                    onMouseEnter={() => handleSubmenuChange('tool')}
+                  >
+                    <span className={styles.menuMain}>
+                      <span className={styles.menuIcon}>{action.icon}</span>
+                      <span>{action.label}</span>
+                    </span>
+                    <RightOutlined className={styles.menuArrow} />
+                  </button>
+                ) : action.key === 'skill' ? (
+                  <button
+                    key={action.key}
+                    type="button"
+                    className={`${styles.menuItem} ${activeSubmenu === 'skill' ? styles.menuItemActive : ''}`}
+                    onMouseEnter={() => handleSubmenuChange('skill')}
+                  >
+                    <span className={styles.menuMain}>
+                      <span className={styles.menuIcon}>{action.icon}</span>
+                      <span>{action.label}</span>
+                    </span>
+                    <RightOutlined className={styles.menuArrow} />
+                  </button>
+                ) : (
+                  <button
+                    key={action.key}
+                    type="button"
+                    className={styles.menuItem}
+                    onMouseEnter={() => {
+                      setActiveSubmenu(null)
+                      setToolInfoOpen(false)
+                    }}
+                    onClick={() => handleActionClick(action.key)}
+                  >
+                    <span className={styles.menuMain}>
+                      <span className={styles.menuIcon}>{action.icon}</span>
+                      <span>{action.label}</span>
+                    </span>
+                  </button>
+                ),
+              )}
+            </div>,
+            document.body,
+          )
+        : null}
+      {menuOpen && activeSubmenu && menuReady
+        ? createPortal(
               <div
                 ref={submenuRef}
                 data-testid="attachment-submenu-surface"
@@ -435,8 +522,7 @@ export function AttachmentMenu({
               </div>,
               document.body,
             )
-          : null}
-      </div>
+        : null}
     </div>
   )
 }

@@ -1908,9 +1908,9 @@ function PartnerPageContent() {
               </div>
 
               <div className={styles.composerArea}>
-                  <div ref={composerRef} className={styles.composerWrap}>
-                    <div className={styles.inputWrap}>
-                      {/* 斜杠指令浮层 */}
+                <div ref={composerRef} className={styles.composerWrap}>
+                  <div className={styles.inputWrap} data-attachment-anchor="true">
+                    {/* 斜杠指令浮层 */}
                     <SkillSlashCommand
                       visible={slashCommandOpen}
                       query={slashQuery}
@@ -1934,15 +1934,15 @@ function PartnerPageContent() {
                         setSlashCommandOpen(false)
                         setSlashQuery('')
                       }}
-                        onClose={() => setSlashCommandOpen(false)}
-                        onManageSkills={handleManageSkills}
-                      />
-                      <FileAttachmentPreview
-                        files={uploadedFiles}
-                        onRemove={handleRemoveFile}
-                      />
-                      {/* 上方输入区域 */}
-                      <div className={styles.inputTopArea}>
+                      onClose={() => setSlashCommandOpen(false)}
+                      onManageSkills={handleManageSkills}
+                    />
+                    <FileAttachmentPreview
+                      files={uploadedFiles}
+                      onRemove={handleRemoveFile}
+                    />
+                    {/* 上方输入区域 */}
+                    <div className={styles.inputTopArea}>
                       <SkillTemplateInput
                         value={draft}
                         onChange={(value) => {
