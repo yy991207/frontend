@@ -13,6 +13,7 @@ import {
   ThunderboltOutlined,
   ToolOutlined,
 } from '@ant-design/icons'
+import { ALLOWED_FILE_EXTENSIONS } from '../../services/ossUploadService'
 import styles from './AttachmentMenu.module.less'
 
 type SubmenuKey = 'skill' | 'tool' | null
@@ -44,7 +45,7 @@ type AttachmentMenuProps = {
 }
 
 const ATTACHMENT_ACTIONS = [
-  { key: 'upload', label: '上传文件或图片', icon: <PaperClipOutlined /> },
+  { key: 'upload', label: '上传文档', icon: <PaperClipOutlined /> },
   { key: 'doc', label: '添加飞书云文档', icon: <FileAddOutlined /> },
   { key: 'skill', label: '技能', icon: <ThunderboltOutlined />, hasArrow: true },
   { key: 'tool', label: '工具', icon: <ToolOutlined />, hasArrow: true },
@@ -158,7 +159,27 @@ export function AttachmentMenu({
 
       <div className={`${styles.menuSurface} ${menuOpen ? styles.menuSurfaceOpen : ''}`} role="menu">
         {ATTACHMENT_ACTIONS.filter((action) => showTools || action.key !== 'tool').map((action) =>
-          action.key === 'tool' ? (
+          action.key === 'upload' ? (
+            <div key={action.key} className={styles.menuItemWrapper}>
+              <button
+                type="button"
+                className={styles.menuItem}
+                onMouseEnter={() => {
+                  setActiveSubmenu(null)
+                  setToolInfoOpen(false)
+                }}
+                onClick={() => handleActionClick(action.key)}
+              >
+                <span className={styles.menuMain}>
+                  <span className={styles.menuIcon}>{action.icon}</span>
+                  <span>{action.label}</span>
+                </span>
+              </button>
+              <div className={styles.formatTooltip}>
+                支持格式：{ALLOWED_FILE_EXTENSIONS.join('、')}
+              </div>
+            </div>
+          ) : action.key === 'tool' ? (
             <button
               key={action.key}
               type="button"

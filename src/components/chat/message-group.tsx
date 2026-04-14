@@ -9,7 +9,7 @@ import {
 } from '@ant-design/icons'
 import { useMemo, useState } from 'react'
 
-import type { CourseItem, Message, MessageGroup, SkillOutputItem, ToolCall } from '../../core/messages/types'
+import type { CourseItem, Message, MessageGroup, SkillOutputItem, ToolCall, UploadedFileRef } from '../../core/messages/types'
 import {
   extractAssistantOutputText,
   extractReasoningContentFromMessage,
@@ -26,6 +26,47 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function getFileTypeEmoji(ext: string): string {
+  const iconMap: Record<string, string> = {
+    pdf: '📄',
+    doc: '📝',
+    docx: '📝',
+    xls: '📊',
+    xlsx: '📊',
+    ppt: '📽️',
+    pptx: '📽️',
+    txt: '📃',
+    json: '📋',
+    csv: '📈',
+    jpg: '🖼️',
+    jpeg: '🖼️',
+    png: '🖼️',
+    gif: '🖼️',
+    bmp: '🖼️',
+    zip: '📦',
+    rar: '📦',
+  }
+  return iconMap[ext] || '📎'
+}
+
+function UserUploadedFileChip({ file }: { file: UploadedFileRef }) {
+  const ext = file.ext || file.name.split('.').pop()?.toLowerCase() || ''
+
+  return (
+    <div className={styles.userFileItem}>
+      <div className={styles.userFileIcon}>
+        <span className={styles.userFileIconText}>{getFileTypeEmoji(ext)}</span>
+      </div>
+      <div className={styles.userFileInfo}>
+        <div className={styles.userFileName} title={file.name}>{file.name}</div>
+        <div className={styles.userFileMeta}>
+          <span>{formatFileSize(file.size)}</span>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function SkillOutputCard({
@@ -341,6 +382,13 @@ export function MessageGroupSection({
           {group.messages.map((message) => (
             <div key={message.id} className={styles.userRow}>
               <div className={styles.userMessageWrap}>
+                {message.uploadedFiles && message.uploadedFiles.length > 0 ? (
+                  <div className={styles.userFileList}>
+                    {message.uploadedFiles.map((file) => (
+                      <UserUploadedFileChip key={file.id} file={file} />
+                    ))}
+                  </div>
+                ) : null}
                 <div className={styles.userBubble}>{extractTextFromMessage(message)}</div>
                 <div className={styles.userActions}>
                   <span>{message.timestamp}</span>

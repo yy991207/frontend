@@ -26,6 +26,8 @@ import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
 import {
   createPendingUploadedFile,
   type UploadedFile,
+  isAllowedFileType,
+  ALLOWED_FILE_EXTENSIONS,
 } from '../../services/ossUploadService'
 import { uploadPendingFileToOssWithDocumentParse } from '../../services/agentFileUploadService'
 import {
@@ -196,6 +198,11 @@ function AgentCreatePageContent() {
     if (!files || files.length === 0) return
 
     for (const file of Array.from(files)) {
+      if (!isAllowedFileType(file.name)) {
+        message.warning(`不支持的文件类型: ${file.name}，仅支持 ${ALLOWED_FILE_EXTENSIONS.join('、')} 格式`)
+        continue
+      }
+
       const pendingFile = createPendingUploadedFile(file)
       setUploadedFiles((prev) => [...prev, pendingFile])
 

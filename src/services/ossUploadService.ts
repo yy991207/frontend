@@ -1,3 +1,10 @@
+export const ALLOWED_FILE_EXTENSIONS = ['pdf', 'docx', 'txt', 'md', 'json', 'html']
+
+export function isAllowedFileType(fileName: string): boolean {
+  const ext = fileName.split('.').pop()?.toLowerCase() || ''
+  return ALLOWED_FILE_EXTENSIONS.includes(ext)
+}
+
 export type UploadedFile = {
   id: string
   name: string

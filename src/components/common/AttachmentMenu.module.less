@@ -109,6 +109,52 @@
   pointer-events: auto;
 }
 
+.menuItemWrapper {
+  position: relative;
+}
+
+.menuItemWrapper:hover .formatTooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.formatTooltip {
+  position: absolute;
+  left: -18px;
+  bottom: calc(100% + 10px);
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(17, 24, 39, 0.96);
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.18);
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 90;
+}
+
+.formatTooltip::after {
+  content: '';
+  position: absolute;
+  left: 28px;
+  top: 100%;
+  width: 12px;
+  height: 7px;
+  background: rgba(17, 24, 39, 0.96);
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+}
+
+.formatHint {
+  padding: 8px 12px 6px;
+  color: #9ca3af;
+  font-size: 12px;
+  line-height: 1;
+}
+
 .menuItem {
   width: 100%;
   min-height: 48px;

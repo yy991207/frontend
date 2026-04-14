@@ -220,7 +220,7 @@ type UseSharedChatRuntimeOptions = {
   setSessionId: (sessionId: string) => void
   enableWebSearch?: boolean
   agentId?: string | null
-  uploadedFiles?: { id: string; status: string; name: string; url: string; resourceId?: string; objectKey: string }[]
+  uploadedFiles?: { id: string; status: string; name: string; url: string; resourceId?: string; objectKey: string; size?: number; ext?: string }[]
   onFilesSent?: () => void
 }
 
@@ -503,6 +503,13 @@ export function useSharedChatRuntime({
       role: 'user',
       content: prompt,
       timestamp: formatTime(now),
+      uploadedFiles: completedFiles.map((f) => ({
+        id: f.id,
+        name: f.name,
+        size: f.size ?? 0,
+        ext: f.ext ?? '',
+        url: f.url,
+      })),
     }
     const loadingMessage: ChatMessage = {
       id: `assistant-${now.getTime()}`,

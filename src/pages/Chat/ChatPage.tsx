@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { message } from 'antd'
 import {
   ArrowUpOutlined,
   DeleteOutlined,
@@ -19,6 +20,8 @@ import SkillTemplateInput from '../../components/common/SkillTemplateInput'
 import {
   createPendingUploadedFile,
   type UploadedFile,
+  isAllowedFileType,
+  ALLOWED_FILE_EXTENSIONS,
 } from '../../services/ossUploadService'
 import { uploadPendingFileToOssWithDocumentParse } from '../../services/agentFileUploadService'
 import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal'
@@ -381,6 +384,11 @@ function ChatPageContent() {
     if (!files || files.length === 0) return
 
     for (const file of Array.from(files)) {
+      if (!isAllowedFileType(file.name)) {
+        message.warning(`不支持的文件类型: ${file.name}，仅支持 ${ALLOWED_FILE_EXTENSIONS.join('、')} 格式`)
+        continue
+      }
+
       const pendingFile = createPendingUploadedFile(file)
       setUploadedFiles((prev) => [...prev, pendingFile])
 
@@ -951,11 +959,19 @@ function ChatPageContent() {
 
   const startAssistantReply = async (prompt: string, toolType: string | null = null, uploadedFiles: UploadedFile[] = []) => {
     const now = new Date()
+    const completedFiles = uploadedFiles.filter((f) => f.status === 'completed')
     const userMessage: ChatMessage = {
       id: `user-${now.getTime()}`,
       role: 'user',
       content: prompt,
       timestamp: formatTime(now),
+      uploadedFiles: completedFiles.map((f) => ({
+        id: f.id,
+        name: f.name,
+        size: f.size,
+        ext: f.ext,
+        url: f.url,
+      })),
     }
     const loadingMessage: ChatMessage = {
       id: `assistant-${now.getTime()}`,

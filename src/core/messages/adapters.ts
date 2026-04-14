@@ -32,6 +32,7 @@ export function adaptChatMessage(message: LegacyChatMessage): Message {
     courses: [...(message.courses ?? [])],
     skillOutput: [...(message.skillOutput ?? [])],
     additional_kwargs: buildAdditionalKwargs(message),
+    uploadedFiles: message.uploadedFiles,
   }
 }
 
