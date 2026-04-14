@@ -2,7 +2,7 @@ import { useLocation, useParams, useNavigate } from 'react-router-dom'
 import { message } from 'antd'
 import SkillTemplateInput from '../../components/common/SkillTemplateInput'
 import { AppPageShell, AppSurfacePanel } from '../../components/layout/AppPageShell'
-import { SettingOutlined, ArrowUpOutlined } from '@ant-design/icons'
+import { SettingOutlined, ArrowUpOutlined, GlobalOutlined } from '@ant-design/icons'
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
 import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts-context'
@@ -475,18 +475,28 @@ function AgentConversationPageContent() {
                       onSelectSkill={handleSelectSkill}
                       onManageSkills={handleManageSkills}
                       onUploadFile={handleUploadFile}
-                      showTools
-                      webSearchEnabled={webSearchEnabled}
-                      webSearchLocked={webSearchLocked}
-                      knowledgeEnabled={false}
-                      onToggleWebSearch={() => {
-                        if (!webSearchLocked) {
-                          setWebSearchEnabled((value) => !value)
-                        }
-                      }}
-                      onToggleKnowledge={() => {}}
                       hideManageSkills
                     />
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={webSearchEnabled}
+                      aria-disabled={webSearchLocked}
+                      aria-label="联网检索"
+                      data-state={webSearchLocked ? 'locked' : webSearchEnabled ? 'enabled' : 'disabled'}
+                      title={webSearchLocked ? '当前智能体未开启联网检索' : '联网检索'}
+                      className={`${styles.inlineToolToggle} ${webSearchEnabled ? styles.inlineToolToggleOn : styles.inlineToolToggleOff} ${webSearchLocked ? styles.inlineToolToggleLocked : ''}`}
+                      onClick={() => {
+                        if (webSearchLocked) {
+                          void message.info('当前智能体未开启联网检索，暂不可配置')
+                          return
+                        }
+
+                        setWebSearchEnabled((value) => !value)
+                      }}
+                    >
+                      <GlobalOutlined />
+                    </button>
                   </div>
                   <div className={styles.inputBottomRight}>
                     <div className={styles.inputActions}>

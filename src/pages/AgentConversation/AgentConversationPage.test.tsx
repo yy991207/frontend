@@ -10,6 +10,21 @@ import {
 import { parseChatApiConfig } from '../../services/chatService'
 import { useSharedChatRuntime } from '../../services/sharedChatRuntime'
 
+const { mockedAttachmentMenu } = vi.hoisted(() => ({
+  mockedAttachmentMenu: vi.fn(),
+}))
+
+const { mockedMessageInfo } = vi.hoisted(() => ({
+  mockedMessageInfo: vi.fn(),
+}))
+
+vi.mock('antd', () => ({
+  message: {
+    info: mockedMessageInfo,
+    warning: vi.fn(),
+  },
+}))
+
 vi.mock('../../components/chat/artifact-file-detail', () => ({
   ArtifactFileDetail: () => null,
 }))
@@ -29,7 +44,10 @@ vi.mock('../../components/chat/artifacts-context', () => ({
 }))
 
 vi.mock('../../components/common/AttachmentMenu', () => ({
-  AttachmentMenu: () => null,
+  AttachmentMenu: (props: { showTools?: boolean }) => {
+    mockedAttachmentMenu(props)
+    return <div data-testid="attachment-menu" data-show-tools={String(Boolean(props.showTools))} />
+  },
 }))
 
 vi.mock('../../components/common/FileAttachmentPreview', () => ({
@@ -204,5 +222,49 @@ describe('AgentConversationPage', () => {
 
     expect(screen.getByTestId('location')).toHaveTextContent('/agent/agent-1')
     expect(screen.getByText('详情页')).toBeInTheDocument()
+  })
+
+  it('输入框底栏直接提供联网检索配置，并且附件菜单不再展示工具入口', async () => {
+    mockedViewCustomAgent.mockResolvedValueOnce({
+      ...MOCK_AGENT,
+      enable_web_search: true,
+    })
+
+    renderPage()
+
+    await waitFor(() => {
+      expect(mockedViewCustomAgent).toHaveBeenCalledWith(MOCK_CONFIG, 'agent-1')
+    })
+
+    const webSearchSwitch = await screen.findByRole('switch', { name: '联网检索' })
+
+    expect(screen.queryByText('联网检索')).not.toBeInTheDocument()
+    expect(webSearchSwitch).toHaveAttribute('aria-checked', 'true')
+    expect(webSearchSwitch).toHaveAttribute('data-state', 'enabled')
+    expect(screen.getByTestId('attachment-menu')).toHaveAttribute('data-show-tools', 'false')
+
+    fireEvent.click(webSearchSwitch)
+    expect(webSearchSwitch).toHaveAttribute('aria-checked', 'false')
+    expect(webSearchSwitch).toHaveAttribute('data-state', 'disabled')
+
+    fireEvent.click(webSearchSwitch)
+    expect(webSearchSwitch).toHaveAttribute('aria-checked', 'true')
+    expect(webSearchSwitch).toHaveAttribute('data-state', 'enabled')
+  })
+
+  it('联网检索不可配置时点击会提示当前状态', async () => {
+    renderPage()
+
+    await waitFor(() => {
+      expect(mockedViewCustomAgent).toHaveBeenCalledWith(MOCK_CONFIG, 'agent-1')
+    })
+
+    const webSearchSwitch = await screen.findByRole('switch', { name: '联网检索' })
+    expect(webSearchSwitch).toHaveAttribute('data-state', 'locked')
+    expect(webSearchSwitch).toHaveAttribute('aria-disabled', 'true')
+
+    fireEvent.click(webSearchSwitch)
+
+    expect(mockedMessageInfo).toHaveBeenCalledWith('当前智能体未开启联网检索，暂不可配置')
   })
 })
