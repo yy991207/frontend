@@ -41,6 +41,7 @@ type HomeRouteState = {
   skillName?: string
   skillDescription?: string
   template?: string
+  uploadedFiles?: UploadedFile[]
 } | null
 
 function parseSimpleYaml(rawText: string) {
@@ -582,12 +583,17 @@ export default function HomePage() {
         })
       : value
 
+    const completedFiles = uploadedFiles.filter((f) => f.status === 'completed')
+    const pendingFiles = [...completedFiles]
+
     setPrompt('')
     clearSelectedSkill()
+    setUploadedFiles([])
     navigate('/chat', {
       state: {
         initialPrompt: outgoingPrompt,
         toolType: preferredToolType || resolveQuickActionToolType(value),
+        uploadedFiles: pendingFiles,
       },
     })
   }

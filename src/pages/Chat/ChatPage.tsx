@@ -455,13 +455,18 @@ function ChatPageContent() {
   }, [location.search])
 
   const initialPrompt = useMemo(() => {
-    const value = location.state as { initialPrompt?: string; toolType?: string | null } | null
+    const value = location.state as { initialPrompt?: string; toolType?: string | null; uploadedFiles?: UploadedFile[] } | null
     return value?.initialPrompt?.trim() ?? ''
   }, [location.state])
 
   const initialToolType = useMemo(() => {
-    const value = location.state as { initialPrompt?: string; toolType?: string | null } | null
+    const value = location.state as { initialPrompt?: string; toolType?: string | null; uploadedFiles?: UploadedFile[] } | null
     return value?.toolType ?? null
+  }, [location.state])
+
+  const initialUploadedFiles = useMemo(() => {
+    const value = location.state as { uploadedFiles?: UploadedFile[] } | null
+    return value?.uploadedFiles ?? []
   }, [location.state])
 
   const initialConversation = useMemo(() => {
@@ -470,12 +475,20 @@ function ChatPageContent() {
     }
 
     const now = new Date()
+    const completedFiles = initialUploadedFiles.filter((f) => f.status === 'completed')
     return {
       userMessage: {
         id: `user-${now.getTime()}`,
         role: 'user' as const,
         content: initialPrompt,
         timestamp: formatTime(now),
+        uploadedFiles: completedFiles.map((f) => ({
+          id: f.id,
+          name: f.name,
+          size: f.size,
+          ext: f.ext,
+          url: f.url,
+        })),
       },
       loadingMessage: {
         id: `assistant-${now.getTime()}`,
@@ -485,7 +498,7 @@ function ChatPageContent() {
         loading: true,
       },
     }
-  }, [initialPrompt, routeSessionId])
+  }, [initialPrompt, initialUploadedFiles, routeSessionId])
 
   const [messages, setMessages] = useState<ChatMessage[]>(() =>
     initialConversation ? [initialConversation.userMessage, initialConversation.loadingMessage] : [],
@@ -1001,13 +1014,14 @@ function ChatPageContent() {
         initialConversation.loadingMessage,
         [initialConversation.userMessage, initialConversation.loadingMessage],
         initialToolType,
+        initialUploadedFiles,
       )
     }, 0)
 
     return () => {
       window.clearTimeout(initialPromptTimer)
     }
-  }, [initialConversation, initialPrompt, initialToolType, routeSessionId])
+  }, [initialConversation, initialPrompt, initialToolType, initialUploadedFiles, routeSessionId])
 
   useEffect(() => {
     if (!routeSessionId) {
