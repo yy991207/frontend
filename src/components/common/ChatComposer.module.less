@@ -48,6 +48,7 @@
 .inputBottomLeft {
   display: flex;
   align-items: center;
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -62,6 +63,63 @@
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.uploadAttachmentButton {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.16s ease, color 0.16s ease;
+
+  &:hover {
+    background: #f3f4f6;
+    color: #111827;
+  }
+}
+
+.inlineToolToggle {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+
+  &:hover {
+    background: #f3f4f6;
+  }
+}
+
+.inlineToolToggleOn {
+  color: #111827;
+  background: rgba(17, 24, 39, 0.08);
+}
+
+.inlineToolToggleOff {
+  color: #6b7280;
+}
+
+.inlineToolToggleLocked {
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.08);
+
+  &:hover {
+    background: rgba(148, 163, 184, 0.12);
+  }
 }
 
 .iconBtn {

@@ -172,6 +172,7 @@ describe('AgentConversationPage', () => {
     mockedLoadCustomAgentApiConfig.mockResolvedValue(MOCK_CONFIG)
     mockedViewCustomAgent.mockResolvedValue(MOCK_AGENT)
     mockedParseChatApiConfig.mockReturnValue({
+      userId: '123456',
       createSessionEndpoint: 'http://localhost:8000/api/v1/chat/sessions',
       streamEndpointBase: 'http://localhost:8000/api/v1/chat/sessions',
     })

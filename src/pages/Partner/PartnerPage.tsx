@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Input, message } from 'antd'
-import SkillTemplateInput from '../../components/common/SkillTemplateInput'
+import { message } from 'antd'
 import { AppPageShell, AppSurfacePanel } from '../../components/layout/AppPageShell'
 import {
-  ArrowUpOutlined,
   BarsOutlined,
   CameraFilled,
   CloseOutlined,
@@ -17,9 +15,7 @@ import {
 import PartnerSkillManagement from '../../components/Partner/PartnerSkillManagement'
 import Workspace, { type FileNode } from '../../components/Partner/Workspace'
 import ModelManagement from '../../components/Partner/ModelManagement'
-import { AttachmentMenu } from '../../components/common/AttachmentMenu'
-import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
-import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
+import { ChatComposer } from '../../components/common/ChatComposer'
 import {
   createPendingUploadedFile,
   type UploadedFile,
@@ -43,7 +39,6 @@ import {
   parseCourseTableContent,
   readSseStream,
   resumeChatMessageStream,
-  stopChatMessageStream,
   streamChatMessage,
   type ChatApiConfig,
   type CourseItem,
@@ -386,11 +381,9 @@ function PartnerPageContent() {
   const [skillsLoading, setSkillsLoading] = useState(false)
   const skillsFetchingRef = useRef(false)
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
-  const [knowledgeEnabled, setKnowledgeEnabled] = useState(false)
   const [draft, setDraft] = useState('')
   const [preferredToolType, setPreferredToolType] = useState<string | null>(null)
   const [selectedSkillName, setSelectedSkillName] = useState('')
-  const [selectedSkillDescription, setSelectedSkillDescription] = useState('')
   const [requestError, setRequestError] = useState('')
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [sessionLoading, setSessionLoading] = useState(false)
@@ -404,6 +397,19 @@ function PartnerPageContent() {
   // 上传文件相关状态
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const filteredSkills = useMemo(() => {
+    if (!slashQuery) {
+      return skills
+    }
+
+    const query = slashQuery.toLowerCase()
+    return skills.filter((skill) =>
+      skill.title.toLowerCase().includes(query) ||
+      skill.description.toLowerCase().includes(query) ||
+      skill.skillName.toLowerCase().includes(query),
+    )
+  }, [skills, slashQuery])
   
   const stickToBottom = useStickToBottom()
   const { containerRef: messagesViewportRef, scrollToBottom } = stickToBottom
@@ -415,7 +421,6 @@ function PartnerPageContent() {
   const clearSelectedSkill = () => {
     setPreferredToolType(null)
     setSelectedSkillName('')
-    setSelectedSkillDescription('')
   }
 
   // 处理上传文件
@@ -622,7 +627,6 @@ function PartnerPageContent() {
   const handleSelectSkill = (skill: SkillItem) => {
     // 加号选择技能后先进入输入态，用户还能继续补充模板参数，再统一发送。
     setSelectedSkillName(skill.skillName || skill.id)
-    setSelectedSkillDescription(skill.description)
     setPreferredToolType(skill.skillName || skill.id)
     skipSlashSelectRef.current = true
     setDraft(buildSkillInitialPrompt(skill))
@@ -1402,8 +1406,6 @@ function PartnerPageContent() {
     }
   }, [slashCommandOpen, skills.length, skillsLoading, fetchSkills])
 
-  // AttachmentMenu组件内部已处理点击外部关闭菜单的逻辑
-
   useEffect(() => {
     if (!isNameModalOpen) {
       return
@@ -1441,44 +1443,6 @@ function PartnerPageContent() {
     clearSelectedSkill()
     setUploadedFiles([])
     void startAssistantReply(outgoingPrompt, outgoingToolType, pendingFiles)
-  }
-
-  const handleStop = () => {
-    if (currentSessionId && streamBridgeRef.current?.stopStream(currentSessionId)) {
-      setMessages((prev) =>
-        prev.map((item) =>
-          item.loading
-            ? {
-                ...item,
-                loading: false,
-              }
-            : item,
-        ),
-      )
-      setIsResponding(false)
-      return
-    }
-
-    if (currentSessionId && chatApiConfig) {
-      void stopChatMessageStream(chatApiConfig, currentSessionId).catch(() => {
-        // 直连流的停止请求失败时，至少先中断当前页面读取，避免界面继续卡在 loading。
-      })
-      clearChatStreamSnapshot(currentSessionId)
-    }
-
-    abortControllerRef.current?.abort()
-    abortControllerRef.current = null
-    setMessages((prev) =>
-      prev.map((item) =>
-        item.loading
-          ? {
-              ...item,
-              loading: false,
-            }
-          : item,
-      ),
-    )
-    setIsResponding(false)
   }
 
   const handleCopy = async (messageId: string, content: string) => {
@@ -1717,7 +1681,6 @@ function PartnerPageContent() {
                 setIsSettingsOpen(false)
                 // 设置选中的技能状态（与加号选择技能一致）
                 setSelectedSkillName(skill.skillName || skill.id)
-                setSelectedSkillDescription(skill.description)
                 setPreferredToolType(skill.skillName || skill.id)
                 setDraft(skill.template)
               }}
@@ -1909,160 +1872,97 @@ function PartnerPageContent() {
 
               <div className={styles.composerArea}>
                 <div ref={composerRef} className={styles.composerWrap}>
-                  <div className={styles.inputWrap} data-attachment-anchor="true">
-                    {/* 斜杠指令浮层 */}
-                    <SkillSlashCommand
-                      visible={slashCommandOpen}
-                      query={slashQuery}
-                      setQuery={(query) => {
-                        setSlashQuery(query)
-                        setDraft('/' + query)
-                      }}
-                      skills={skills.filter((skill) => {
-                        if (!slashQuery) return true
-                        const q = slashQuery.toLowerCase()
-                        return (
-                          skill.title.toLowerCase().includes(q) ||
-                          skill.description.toLowerCase().includes(q) ||
-                          skill.skillName.toLowerCase().includes(q)
-                        )
-                      })}
-                      loading={skillsLoading}
-                      selectedIndex={selectedSkillIndex}
-                      onSelectSkill={(skill) => {
-                        handleSelectSkill(skill)
-                        setSlashCommandOpen(false)
+                  <ChatComposer
+                    variant="agentConversation"
+                    value={draft}
+                    onChange={(value) => {
+                      setDraft(value)
+
+                      if (skipSlashSelectRef.current) return
+                      if (value === '/' && !slashCommandOpen) {
+                        setSlashCommandOpen(true)
                         setSlashQuery('')
-                      }}
-                      onClose={() => setSlashCommandOpen(false)}
-                      onManageSkills={handleManageSkills}
-                    />
-                    <FileAttachmentPreview
-                      files={uploadedFiles}
-                      onRemove={handleRemoveFile}
-                    />
-                    {/* 上方输入区域 */}
-                    <div className={styles.inputTopArea}>
-                      <SkillTemplateInput
-                        value={draft}
-                        onChange={(value) => {
-                          setDraft(value)
+                        setSelectedSkillIndex(0)
+                      } else if (!value.startsWith('/')) {
+                        setSlashCommandOpen(false)
+                      } else if (value.startsWith('/')) {
+                        setSlashQuery(value.slice(1))
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+                        return
+                      }
 
-                          if (skipSlashSelectRef.current) return
-                          if (value === '/' && !slashCommandOpen) {
-                            setSlashCommandOpen(true)
-                            setSlashQuery('')
-                            setSelectedSkillIndex(0)
-                          } else if (!value.startsWith('/')) {
-                            setSlashCommandOpen(false)
-                          } else if (value.startsWith('/')) {
-                            setSlashQuery(value.slice(1))
-                          }
-                        }}
-                        onKeyDown={(event) => {
-                          if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+                      if (slashCommandOpen) {
+                        switch (event.key) {
+                          case 'ArrowDown':
+                            event.preventDefault()
+                            setSelectedSkillIndex((prev) =>
+                              prev < filteredSkills.length - 1 ? prev + 1 : prev,
+                            )
                             return
-                          }
-
-                          if (slashCommandOpen) {
-                            switch (event.key) {
-                              case 'ArrowDown':
-                                event.preventDefault()
-                                setSelectedSkillIndex((prev) =>
-                                  prev < skills.length - 1 ? prev + 1 : prev
-                                )
-                                return
-                              case 'ArrowUp':
-                                event.preventDefault()
-                                setSelectedSkillIndex((prev) => (prev > 0 ? prev - 1 : 0))
-                                return
-                              case 'Enter':
-                                event.preventDefault()
-                                const filteredSkills = skills.filter((skill) => {
-                                  if (!slashQuery) return true
-                                  const q = slashQuery.toLowerCase()
-                                  return (
-                                    skill.title.toLowerCase().includes(q) ||
-                                    skill.description.toLowerCase().includes(q) ||
-                                    skill.skillName.toLowerCase().includes(q)
-                                  )
-                                })
-                                if (filteredSkills[selectedSkillIndex]) {
-                                  event.stopPropagation()
-                                  handleSelectSkill(filteredSkills[selectedSkillIndex])
-                                  setSlashCommandOpen(false)
-                                  setSlashQuery('')
-                                }
-                                return
-                              case 'Escape':
-                                event.preventDefault()
-                                setSlashCommandOpen(false)
-                                return
+                          case 'ArrowUp':
+                            event.preventDefault()
+                            setSelectedSkillIndex((prev) => (prev > 0 ? prev - 1 : 0))
+                            return
+                          case 'Enter':
+                            event.preventDefault()
+                            if (filteredSkills[selectedSkillIndex]) {
+                              event.stopPropagation()
+                              handleSelectSkill(filteredSkills[selectedSkillIndex])
+                              setSlashCommandOpen(false)
+                              setSlashQuery('')
                             }
-                          }
-
-                          if (event.key === 'Backspace' && !draft.trim() && selectedSkillName) {
-                            event.preventDefault()
-                            clearSelectedSkill()
                             return
-                          }
-
-                          if (event.key === 'Enter' && !event.shiftKey) {
+                          case 'Escape':
                             event.preventDefault()
-                            handleSend()
-                          }
-                        }}
-                        onSend={handleSend}
-                        placeholder='输入你的想法或输入"/"选择想要使用技能'
-                      />
-                    </div>
-                    {/* 下方按钮区域 */}
-                    <div className={styles.inputBottomArea}>
-                      {/* 隐藏的文件输入框 */}
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        accept="*/*"
-                        style={{ display: 'none' }}
-                        onChange={handleFileChange}
-                      />
-                      <div className={styles.inputBottomLeft}>
-                        <AttachmentMenu
-                          placement="bottom"
-                          skills={skills}
-                          skillsLoading={skillsLoading}
-                          loadSkills={fetchSkills}
-                          onSelectSkill={handleSelectSkill}
-                          onManageSkills={handleManageSkills}
-                          onUploadFile={handleUploadFile}
-                          showTools
-                          webSearchEnabled={webSearchEnabled}
-                          knowledgeEnabled={knowledgeEnabled}
-                          onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
-                          onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
-                        />
-                      </div>
-                      <div className={styles.inputBottomRight}>
-                        <div className={styles.inputActions}>
-                          {isResponding ? (
-                            <button type="button" className={`${styles.iconBtn} ${styles.stopBtn}`} onClick={handleStop}>
-                              <span className={styles.stopInner} />
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              className={`${styles.iconBtn} ${styles.sendBtn} ${(!draft.trim() || uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')) ? styles.sendBtnDisabled : ''}`}
-                              onClick={handleSend}
-                              disabled={!draft.trim() || uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')}
-                            >
-                              <ArrowUpOutlined />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                            setSlashCommandOpen(false)
+                            return
+                        }
+                      }
+
+                      if (event.key === 'Backspace' && !draft.trim() && selectedSkillName) {
+                        event.preventDefault()
+                        clearSelectedSkill()
+                        return
+                      }
+
+                      if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault()
+                        handleSend()
+                      }
+                    }}
+                    onSend={handleSend}
+                    placeholder='输入你的想法或输入"/"选择想要使用技能'
+                    slashCommandOpen={slashCommandOpen}
+                    slashQuery={slashQuery}
+                    onSlashQueryChange={setSlashQuery}
+                    skills={skills}
+                    filteredSkills={filteredSkills}
+                    skillsLoading={skillsLoading}
+                    loadSkills={fetchSkills}
+                    selectedSkillIndex={selectedSkillIndex}
+                    onSelectSkill={(skill) => {
+                      handleSelectSkill(skill)
+                      setSlashCommandOpen(false)
+                      setSlashQuery('')
+                    }}
+                    onCloseSlashCommand={() => setSlashCommandOpen(false)}
+                    onManageSkills={handleManageSkills}
+                    uploadedFiles={uploadedFiles}
+                    onRemoveFile={handleRemoveFile}
+                    fileInputRef={fileInputRef}
+                    onFileChange={handleFileChange}
+                    onUploadFile={handleUploadFile}
+                    webSearchEnabled={webSearchEnabled}
+                    webSearchLocked={false}
+                    knowledgeEnabled={false}
+                    onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
+                    onToggleKnowledge={() => {}}
+                    sendDisabled={!draft.trim() || uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')}
+                    isResponding={isResponding}
+                  />
                 </div>
                 <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>
               </div>

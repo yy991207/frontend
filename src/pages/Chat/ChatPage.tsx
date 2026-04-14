@@ -37,7 +37,6 @@ import {
   parseCourseTableContent,
   readSseStream,
   resumeChatMessageStream,
-  stopChatMessageStream,
   streamChatMessage,
   type ChatApiConfig,
   type CourseItem,
@@ -69,7 +68,6 @@ import {
 import {
   loadCustomAgentApiConfig,
   viewCustomAgent,
-  type AgentDetail,
   type EnabledSkill,
 } from '../../services/customAgentService'
 import {
@@ -334,7 +332,6 @@ function ChatPageContent() {
   const [skillsLoading, setSkillsLoading] = useState(false)
   const skillsFetchingRef = useRef(false)
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
-  const [knowledgeEnabled, setKnowledgeEnabled] = useState(false)
   const [draft, setDraft] = useState('')
   const [preferredToolType, setPreferredToolType] = useState<string | null>(null)
   const [selectedSkillName, setSelectedSkillName] = useState('')
@@ -345,9 +342,6 @@ function ChatPageContent() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [agentName, setAgentName] = useState<string | null>(null)
-  const [agentDetail, setAgentDetail] = useState<AgentDetail | null>(null)
-  const [agentDetailLoading, setAgentDetailLoading] = useState(false)
-  const [agentWebSearchEnabled, setAgentWebSearchEnabled] = useState(true)
   const [agentWebSearchLocked, setAgentWebSearchLocked] = useState(false)
   
   // 斜杠指令相关状态
@@ -634,13 +628,11 @@ function ChatPageContent() {
 
   const fetchAgentDetail = useCallback(async (agentId: string, signal?: AbortSignal) => {
     try {
-      setAgentDetailLoading(true)
       const agentConfig = await loadCustomAgentApiConfig()
       const agent = await viewCustomAgent(agentConfig, agentId, signal)
       
-      setAgentDetail(agent)
       setAgentName(agent.agent_name)
-      setAgentWebSearchEnabled(agent.enable_web_search)
+      setWebSearchEnabled(agent.enable_web_search)
       setAgentWebSearchLocked(!agent.enable_web_search)
 
       const agentSkills: SkillItem[] = (agent.enabled_skills || []).map((skill: EnabledSkill) => ({
@@ -654,12 +646,8 @@ function ChatPageContent() {
       setSkills(agentSkills)
     } catch {
       if (!signal?.aborted) {
-        setAgentDetail(null)
         setSkills([])
-      }
-    } finally {
-      if (!signal?.aborted) {
-        setAgentDetailLoading(false)
+        setAgentWebSearchLocked(false)
       }
     }
   }, [])
@@ -1291,20 +1279,14 @@ function ChatPageContent() {
         clearChatStreamSnapshot(routeSessionId)
         setSessionLoading(false)
         
+        setAgentWebSearchLocked(false)
+
         // 如果session有agent_name字段，直接使用
         if (session.agent_name) {
           setAgentName(session.agent_name)
         } else if (session.theme_id) {
-          // 如果没有agent_name但有theme_id（可能是agent_id），则获取agent详情
-          try {
-            const agentConfig = await loadCustomAgentApiConfig()
-            const agent = await viewCustomAgent(agentConfig, session.theme_id, controller.signal)
-            if (!cancelled && agent.agent_name) {
-              setAgentName(agent.agent_name)
-            }
-          } catch {
-            // 获取agent详情失败时，保持默认显示
-          }
+          // 主题智能体存在时，把联网锁定状态和技能列表一并同步到输入框。
+          await fetchAgentDetail(session.theme_id, controller.signal)
         }
       } catch (error) {
         if (!controller.signal.aborted && !cancelled) {
@@ -1322,7 +1304,7 @@ function ChatPageContent() {
       streamBridgeRef.current?.unsubscribe(routeSessionId)
       controller?.abort()
     }
-  }, [chatApiConfig, routeSessionId])
+  }, [chatApiConfig, fetchAgentDetail, routeSessionId])
 
   // 当斜杠指令浮层打开时，自动加载技能列表
   useEffect(() => {
@@ -1388,44 +1370,6 @@ function ChatPageContent() {
     skipSlashSelectRef.current = true
     setDraft(buildSkillInitialPrompt(skill))
     requestAnimationFrame(() => { skipSlashSelectRef.current = false })
-  }
-
-  const handleStop = () => {
-    if (currentSessionId && streamBridgeRef.current?.stopStream(currentSessionId)) {
-      setMessages((prev) =>
-        prev.map((item) =>
-          item.loading
-            ? {
-                ...item,
-                loading: false,
-              }
-            : item,
-        ),
-      )
-      setIsResponding(false)
-      return
-    }
-
-    if (currentSessionId && chatApiConfig) {
-      void stopChatMessageStream(chatApiConfig, currentSessionId).catch(() => {
-        // 直连流的停止请求失败时，至少先中断当前页面读取，避免界面继续卡在 loading。
-      })
-      clearChatStreamSnapshot(currentSessionId)
-    }
-
-    abortControllerRef.current?.abort()
-    abortControllerRef.current = null
-    setMessages((prev) =>
-      prev.map((item) =>
-        item.loading
-          ? {
-              ...item,
-              loading: false,
-            }
-          : item,
-      ),
-    )
-    setIsResponding(false)
   }
 
   const handleCopy = async (messageId: string, content: string) => {
@@ -1519,6 +1463,7 @@ function ChatPageContent() {
           <div className={styles.composerArea}>
             <div className={styles.composerWrap}>
               <ChatComposer
+                variant="agentConversation"
                 value={draft}
                 onChange={(value) => {
                   setDraft(value)
@@ -1604,12 +1549,15 @@ function ChatPageContent() {
                 onFileChange={handleFileChange}
                 onUploadFile={handleUploadFile}
                 webSearchEnabled={webSearchEnabled}
-                knowledgeEnabled={knowledgeEnabled}
+                webSearchLocked={agentWebSearchLocked}
+                knowledgeEnabled={false}
                 onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
-                onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
+                onLockedWebSearchClick={() => {
+                  void message.info('当前主题智能体未开启联网检索，暂不可配置')
+                }}
+                onToggleKnowledge={() => {}}
                 sendDisabled={!draft.trim() || uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')}
                 isResponding={isResponding}
-                onStop={handleStop}
               />
             </div>
             <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>

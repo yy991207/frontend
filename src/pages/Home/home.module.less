@@ -452,7 +452,15 @@
   border-radius: 20px;
   border: 1px solid #eceef2;
   background: #ffffff;
-  padding: 18px;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+
+  &:hover {
+    border-color: #c3c7cf;
+    box-shadow: 0 2px 8px rgba(31, 35, 41, 0.06);
+    transform: translateY(-1px);
+  }
 }
 
 .promptTitle {
@@ -461,14 +469,23 @@
   gap: 8px;
   color: #1f2329;
   font-size: 16px;
-  margin-bottom: 10px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  line-height: 1.4;
 }
 
 .promptSummary {
   margin: 0;
   color: #646a73;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.7;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .emptyCommands {

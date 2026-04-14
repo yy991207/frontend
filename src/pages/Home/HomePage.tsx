@@ -27,6 +27,9 @@ import {
   type SkillApiResponse,
   type SkillItem,
 } from '../../services/skillPromptService'
+import {
+  fetchCommands,
+} from '../../services/commandsService'
 import styles from './home.module.less'
 
 const AILY_LOGO_URL = 'https://aily.feishu.cn/play/api/v1/files/static/offcial-logo15.png'
@@ -115,6 +118,7 @@ type PromptItem = {
   icon: string
   title: string
   summary: string
+  template?: string
 }
 
 type PracticeTab = {
@@ -433,22 +437,63 @@ export default function HomePage() {
   useEffect(() => {
     let disposed = false
 
-    // 首页三块内容统一从 mock_json 里读取，后面替换成真实接口时结构也能直接复用。
+    // 首页"最佳实践"从 mock_json 读取，"推荐指令"和"我的指令"从 /api/v1/commands 获取
     const loadHomeTabs = async () => {
       try {
-        const response = await fetch(homeTabsUrl)
-
-        if (!response.ok) {
-          throw new Error('mock json 请求失败')
-        }
-
-        const data = (await response.json()) as HomeTabsMockData
+        const [mockResponse, commandsResponse] = await Promise.all([
+          fetch(homeTabsUrl),
+          fetchCommands().catch(() => null),
+        ])
 
         if (disposed) {
           return
         }
 
-        setHomeTabs(data.tabs)
+        if (!mockResponse.ok) {
+          throw new Error('mock json 请求失败')
+        }
+
+        const mockData = (await mockResponse.json()) as HomeTabsMockData
+        const officialCommands = commandsResponse?.data?.official_commands ?? []
+        const myCommands = commandsResponse?.data?.my_commands ?? []
+
+        const recommendedTab = mockData.tabs.find((t) => t.key === 'recommended-prompts')
+        const myPromptsTab = mockData.tabs.find((t) => t.key === 'my-prompts')
+        const bestPracticeTab = mockData.tabs.find((t) => t.key === 'best-practice')
+
+        const mappedTabs: HomeTab[] = []
+
+        if (bestPracticeTab) {
+          mappedTabs.push(bestPracticeTab)
+        }
+
+        if (recommendedTab) {
+          mappedTabs.push({
+            ...recommendedTab,
+            items: officialCommands.map((cmd, index) => ({
+              id: index + 1,
+              icon: cmd.icon ?? '📝',
+              title: cmd.name,
+              summary: cmd.description,
+              template: cmd.template,
+            })),
+          })
+        }
+
+        if (myPromptsTab) {
+          mappedTabs.push({
+            ...myPromptsTab,
+            items: myCommands.map((cmd, index) => ({
+              id: index + 1,
+              icon: cmd.icon ?? '📝',
+              title: cmd.name,
+              summary: cmd.description,
+              template: cmd.template,
+            })),
+          })
+        }
+
+        setHomeTabs(mappedTabs)
         setTabsError('')
       } catch {
         if (disposed) {
@@ -456,7 +501,7 @@ export default function HomePage() {
         }
 
         setHomeTabs(DEFAULT_HOME_TABS)
-        setTabsError('首页内容加载失败，请检查 mock_json/home-tabs.json')
+        setTabsError('首页内容加载失败，请检查数据源')
       } finally {
         if (!disposed) {
           setTabsLoading(false)
@@ -633,7 +678,15 @@ export default function HomePage() {
     return (
       <div className={styles.promptGrid}>
         {items.map((item) => (
-          <article key={item.id} className={styles.promptCard}>
+          <article
+            key={item.id}
+            className={styles.promptCard}
+            onClick={() => {
+              if (item.template) {
+                setPrompt(item.template)
+              }
+            }}
+          >
             <div className={styles.promptTitle}>
               <span>{item.icon}</span>
               <span>{item.title}</span>
