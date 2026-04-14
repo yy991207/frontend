@@ -337,46 +337,58 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
     return sessions.beyond7Days[0] ?? null
   }, [sessions.beyond7Days, sessions.today, sessions.within7Days])
   const contentClassName = useMemo(
-    () => `${styles.content} ${expanded ? styles.contentExpanded : styles.contentCollapsed} ${contentScrolling ? styles.scrolling : ''}`,
-    [expanded, contentScrolling],
+    () => `${styles.content} ${styles.contentExpanded} ${contentScrolling ? styles.scrolling : ''}`,
+    [contentScrolling],
   )
-  const listClassName = useMemo(
-    () => `${styles.sessionList} ${expanded ? styles.sessionListExpanded : styles.sessionListCollapsed}`,
+  const expandedPanelClassName = useMemo(
+    () => `${styles.expandedPanel} ${expanded ? styles.panelVisible : styles.panelHidden}`,
+    [expanded],
+  )
+  const collapsedPanelClassName = useMemo(
+    () => `${styles.collapsedPanel} ${expanded ? styles.panelHidden : styles.panelVisible}`,
     [expanded],
   )
 
   return (
     <>
-      <div className={styles.container}>
+      <div className={styles.container} data-expanded={expanded ? 'true' : 'false'}>
         {expanded && <div className={styles.sectionTitle}>会话历史</div>}
 
-        <div className={listClassName}>
-          {shouldShowBlockingState && <div className={styles.loading}>加载中...</div>}
+        <div className={styles.sessionPanels}>
+          <div className={expandedPanelClassName}>
+            <div className={`${styles.sessionList} ${styles.sessionListExpanded}`}>
+              {shouldShowBlockingState && <div className={styles.loading}>加载中...</div>}
 
-          {!shouldShowBlockingState && error && !hasAnySessions && (
-            <div className={styles.error}>
-              <div>{error}</div>
-              <button onClick={() => void loadSessions()} className={styles.retryButton}>
-                重试
-              </button>
-            </div>
-          )}
+              {!shouldShowBlockingState && error && !hasAnySessions && (
+                <div className={styles.error}>
+                  <div>{error}</div>
+                  <button onClick={() => void loadSessions()} className={styles.retryButton}>
+                    重试
+                  </button>
+                </div>
+              )}
 
-          {!shouldShowBlockingState && shouldShowEmptyState && <div className={styles.empty}>暂无会话记录</div>}
+              {!shouldShowBlockingState && shouldShowEmptyState && <div className={styles.empty}>暂无会话记录</div>}
 
-          {!error && shouldShowList && (
-            <div ref={contentRef} className={contentClassName}>
-              {expanded ? (
-                <>
-                  {renderSection('今天', sessions.today)}
-                  {renderSection('7天内', sessions.within7Days, sessions.today.length > 0)}
-                  {renderSection('7天外', sessions.beyond7Days, sessions.today.length > 0 || sessions.within7Days.length > 0)}
-                </>
-              ) : (
-                collapsedLatestSession ? renderSessionItem(collapsedLatestSession, { collapsed: true }) : null
+              {!error && shouldShowList && (
+                <div ref={contentRef} className={contentClassName}>
+                  <>
+                    {renderSection('今天', sessions.today)}
+                    {renderSection('7天内', sessions.within7Days, sessions.today.length > 0)}
+                    {renderSection('7天外', sessions.beyond7Days, sessions.today.length > 0 || sessions.within7Days.length > 0)}
+                  </>
+                </div>
               )}
             </div>
-          )}
+          </div>
+
+          <div className={collapsedPanelClassName}>
+            <div className={`${styles.sessionList} ${styles.sessionListCollapsed}`}>
+              {!error && shouldShowList && collapsedLatestSession
+                ? renderSessionItem(collapsedLatestSession, { collapsed: true })
+                : null}
+            </div>
+          </div>
         </div>
       </div>
 

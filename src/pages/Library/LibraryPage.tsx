@@ -15,6 +15,7 @@ import {
   SearchOutlined,
   VideoCameraOutlined,
 } from '@ant-design/icons'
+import { AppPageShell, AppSurfacePanel } from '../../components/layout/AppPageShell'
 import styles from './library.module.less'
 import { LibraryFilePreviewModal } from './LibraryFilePreviewModal'
 
@@ -430,8 +431,8 @@ export default function LibraryPage() {
   const hasActiveFilters = activeFilter !== FILE_TYPE_ALL || selectedSource !== SOURCE_ALL || hasKeyword
 
   return (
-    <main className={styles.page}>
-      <section className={styles.panel}>
+    <AppPageShell>
+      <AppSurfacePanel className={styles.panel}>
         <div className={styles.libraryPage}>
           <header className={styles.header}>
             <div className={styles.headerMain}>
@@ -729,7 +730,7 @@ export default function LibraryPage() {
             </div>
           </div>
         </div>
-      </section>
+      </AppSurfacePanel>
 
       <LibraryFilePreviewModal
         visible={previewVisible}
@@ -737,6 +738,6 @@ export default function LibraryPage() {
         baseUrl={config?.baseUrl ?? ''}
         onClose={handlePreviewClose}
       />
-    </main>
+    </AppPageShell>
   )
 }

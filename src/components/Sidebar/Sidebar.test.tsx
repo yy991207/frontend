@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import {
@@ -9,8 +9,8 @@ import {
 } from '../../services/customAgentService'
 
 vi.mock('../ChatSessionHistory/ChatSessionHistory', () => ({
-  default: () => (
-    <div>
+  default: ({ expanded }: { expanded: boolean }) => (
+    <div data-testid="session-history" data-expanded={expanded ? 'true' : 'false'}>
       <span>今天</span>
       <span>7 天内</span>
       <span>30 天内</span>
@@ -71,11 +71,27 @@ describe('Sidebar', () => {
     )
 
     expect(await screen.findByText('飞书 aily')).toBeVisible()
-    expect(screen.getByText('开发应用')).toBeVisible()
+    expect(screen.getByText('发现')).toBeVisible()
     expect(screen.getByText('杨金玮的智能伙伴')).toBeVisible()
     expect(screen.getByText('产品和市场调研专家')).toBeVisible()
     expect(screen.getByText('今天')).toBeVisible()
     expect(screen.getByText('7 天内')).toBeVisible()
     expect(screen.getByText('30 天内')).toBeVisible()
+  })
+
+  it('收起侧边栏时会把收起状态传给会话列表和智能体列表', async () => {
+    render(
+      <MemoryRouter>
+        <Sidebar />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('飞书 aily')).toBeVisible()
+
+    fireEvent.click(screen.getByRole('button', { name: '收起侧边栏' }))
+
+    expect(screen.getByRole('button', { name: '展开侧边栏' })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByTestId('session-history')).toHaveAttribute('data-expanded', 'false')
+    expect(screen.getByTestId('sidebar-agent-list')).toHaveAttribute('data-sidebar-mode', 'collapsed')
   })
 })

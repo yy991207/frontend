@@ -36,6 +36,7 @@
 
 .topRow {
   margin-bottom: 4px;
+  transition: grid-template-columns 0.28s ease, gap 0.2s ease;
 }
 
 .iconButton,
@@ -108,21 +109,33 @@
   z-index: 31;
 }
 
-.panelHead,
 .labelCell,
 .brandName,
-.sectionTitle,
 .userName {
-  transition: opacity 0.18s ease, transform 0.2s ease;
+  transition: opacity 0.18s ease, max-width 0.28s ease;
 }
 
-.sidebarCollapsed .panelHead,
+.sectionTitle {
+  transition:
+    opacity 0.18s ease,
+    max-height 0.28s ease,
+    margin 0.28s ease;
+}
+
 .sidebarCollapsed .labelCell,
 .sidebarCollapsed .brandName,
-.sidebarCollapsed .sectionTitle,
 .sidebarCollapsed .userName {
+  max-width: 0;
   opacity: 0;
-  transform: translateX(-8px);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sidebarCollapsed .sectionTitle {
+  max-height: 0;
+  margin: 0;
+  opacity: 0;
+  overflow: hidden;
   pointer-events: none;
 }
 
@@ -178,23 +191,34 @@
   font-size: 16px;
   font-weight: 400;
   white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
 }
 
 .nav {
   display: flex;
   flex-direction: column;
+  width: 100%;
   gap: 4px;
   margin-top: 8px;
+  transition: width 0.28s ease, align-items 0.28s ease;
 }
 
 .navRow,
 .partnerRow {
+  width: 100%;
   min-height: 40px;
   border-radius: 12px;
   padding: 0 8px 0 0;
   text-align: left;
   color: #2b2f36;
-  transition: background-color 0.18s ease, color 0.18s ease;
+  transition:
+    width 0.28s ease,
+    min-height 0.28s ease,
+    padding 0.28s ease,
+    gap 0.2s ease,
+    background-color 0.18s ease,
+    color 0.18s ease;
 
   &:hover {
     background: #ececec;
@@ -223,6 +247,7 @@
 
 .labelCell {
   min-width: 0;
+  max-width: 220px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -233,6 +258,7 @@
 
 .sectionTitle {
   margin: 12px 0 2px 10px;
+  max-height: 20px;
   color: #8f959e;
   font-size: 12px;
   line-height: 20px;
@@ -245,10 +271,17 @@
 .agentList {
   display: flex;
   flex-direction: column;
+  width: 100%;
   gap: 4px;
   max-height: 140px;
   overflow-y: auto;
   padding-right: 4px;
+  transition:
+    width 0.28s ease,
+    gap 0.2s ease,
+    padding-right 0.28s ease,
+    opacity 0.18s ease,
+    transform 0.2s ease;
 
   &::-webkit-scrollbar {
     width: 4px;
@@ -268,11 +301,6 @@
   }
 }
 
-.sidebarCollapsed .agentList {
-  max-height: 0;
-  overflow: hidden;
-}
-
 .agentLoading,
 .agentEmpty {
   min-height: 40px;
@@ -284,6 +312,7 @@
 }
 
 .agentRow {
+  width: 100%;
   min-height: 40px;
   display: flex;
   align-items: center;
@@ -292,7 +321,13 @@
   padding: 0 8px 0 0;
   border-radius: 12px;
   cursor: pointer;
-  transition: background-color 0.18s ease, opacity 0.18s ease;
+  transition:
+    width 0.28s ease,
+    min-height 0.28s ease,
+    padding 0.28s ease,
+    gap 0.2s ease,
+    background-color 0.18s ease,
+    opacity 0.18s ease;
 
   &:hover {
     background: #ececec;
@@ -309,6 +344,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: gap 0.2s ease;
 }
 
 .agentNameText {
@@ -318,11 +354,13 @@
   white-space: nowrap;
   font-size: 14px;
   color: #1f2329;
+  transition: opacity 0.18s ease, transform 0.2s ease;
 }
 
 .agentMenuContainer {
   position: relative;
   flex-shrink: 0;
+  transition: opacity 0.18s ease, transform 0.2s ease;
 }
 
 .agentMoreButton {
@@ -386,9 +424,85 @@
 
 .sessionHistoryWrapper {
   flex: 1;
+  width: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
   margin-top: 4px;
   overflow: hidden;
+  transition:
+    width 0.28s ease,
+    opacity 0.18s ease,
+    transform 0.2s ease;
+}
+
+.sidebarCollapsed .topRow {
+  grid-template-columns: 36px 0fr;
+  gap: 0;
+}
+
+.sidebarCollapsed .nav {
+  width: 100%;
+  align-items: flex-start;
+}
+
+.sidebarCollapsed .panelHead {
+  max-width: 0;
+  max-height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sidebarCollapsed .brandAvatarWrap {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.sidebarCollapsed .navRow,
+.sidebarCollapsed .partnerRow {
+  width: 36px;
+  min-height: 36px;
+  padding: 0;
+  grid-template-columns: 36px 0fr;
+  gap: 0;
+}
+
+.sidebarCollapsed .agentList {
+  width: 100%;
+  align-items: flex-start;
+  gap: 8px;
+  padding-right: 0;
+}
+
+.sidebarCollapsed .agentLoading,
+.sidebarCollapsed .agentEmpty {
+  display: none;
+}
+
+.sidebarCollapsed .agentRow {
+  width: 36px;
+  min-height: 36px;
+  padding: 0;
+  justify-content: flex-start;
+  gap: 0;
+}
+
+.sidebarCollapsed .agentRowMain {
+  width: 36px;
+  justify-content: flex-start;
+  gap: 0;
+}
+
+.sidebarCollapsed .agentNameText,
+.sidebarCollapsed .agentMenuContainer {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform: none;
+}
+
+.sidebarCollapsed .sessionHistoryWrapper {
+  width: 100%;
 }

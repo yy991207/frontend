@@ -138,11 +138,14 @@ export function SkillSlashCommand(props: SkillSlashCommandProps) {
                 // 鼠标悬停时更新选中索引
                 // 这里通过父组件的 setSelectedIndex 实现
               }}
+              title={skill.description || ''}
             >
               <div className={styles.skillItemIcon}>
                 <ThunderboltOutlined />
               </div>
-              <div className={styles.skillItemTitle}>{skill.title}</div>
+              <div className={styles.skillItemContent}>
+                <div className={styles.skillItemTitle}>{skill.title}</div>
+              </div>
             </button>
           ))
         )}

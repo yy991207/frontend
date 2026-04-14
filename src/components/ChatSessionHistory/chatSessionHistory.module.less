@@ -17,9 +17,56 @@
   min-height: 0;
 }
 
+.sessionPanels {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.expandedPanel,
+.collapsedPanel {
+  min-height: 0;
+  transition:
+    opacity 0.18s ease,
+    transform 0.2s ease,
+    max-height 0.28s ease;
+}
+
+.panelVisible {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.panelHidden {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateX(-8px);
+}
+
+.expandedPanel.panelVisible {
+  display: flex;
+  flex: 1;
+  max-height: 999px;
+}
+
+.collapsedPanel.panelVisible {
+  max-height: 52px;
+}
+
 .sessionListExpanded,
 .contentExpanded {
   flex: 1;
+}
+
+.sessionListCollapsed,
+.collapsedPanel {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
 }
 
 .contentExpanded {
@@ -89,6 +136,7 @@
   color: #8f959e;
   font-size: 12px;
   line-height: 20px;
+  transition: opacity 0.18s ease, transform 0.2s ease;
 }
 
 .sectionContent {
@@ -101,6 +149,7 @@
   display: grid;
   grid-template-columns: 36px minmax(0, 1fr);
   align-items: center;
+  width: 100%;
   min-height: 38px;
   border: none;
   border-radius: 12px;
@@ -108,7 +157,13 @@
   background: transparent;
   color: #1f2329;
   cursor: pointer;
-  transition: background-color 0.18s ease, opacity 0.18s ease;
+  transition:
+    width 0.28s ease,
+    min-height 0.28s ease,
+    padding 0.28s ease,
+    gap 0.2s ease,
+    background-color 0.18s ease,
+    opacity 0.18s ease;
 
   &:hover {
     background: #ececec;
@@ -143,6 +198,7 @@
   align-items: center;
   gap: 8px;
   overflow: hidden;
+  transition: opacity 0.18s ease, transform 0.2s ease;
 }
 
 .agentLabel {
@@ -156,6 +212,7 @@
   font-size: 11px;
   line-height: 18px;
   flex-shrink: 0;
+  transition: opacity 0.18s ease, transform 0.2s ease;
 }
 
 .agentLabelDefault {
@@ -171,11 +228,13 @@
   white-space: nowrap;
   color: inherit;
   font-size: 14px;
+  transition: opacity 0.18s ease, transform 0.2s ease;
 }
 
 .menuContainer {
   margin-left: auto;
   flex-shrink: 0;
+  transition: opacity 0.18s ease, transform 0.2s ease;
 }
 
 .moreButton {
@@ -242,6 +301,7 @@
 
 .sectionCollapsed .sectionContent {
   gap: 8px;
+  align-items: flex-start;
 }
 
 .sectionCollapsed .sessionItem {
@@ -249,7 +309,6 @@
   width: 36px;
   min-height: 36px;
   padding: 0;
-  margin: 0 auto;
 }
 
 .sectionCollapsed .iconCell {

@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import CreateAgentModal from '../../components/common/CreateAgentModal'
+import { AppPageShell, AppSurfacePanel } from '../../components/layout/AppPageShell'
 import { loadCustomAgentApiConfig, getAgentUsageLogs, addAgentUsageLog } from '../../services/customAgentService'
 import { notifyAgentUsageLogRefresh } from '../../services/chatSessionEvents'
 import styles from './discover.module.less'
@@ -188,8 +189,8 @@ export default function DiscoverPage() {
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.pageInner}>
+    <AppPageShell>
+      <AppSurfacePanel as="div" className={styles.pageInner}>
         {/* 粘性头部 */}
         <div className={styles.stickyHeader}>
           <div className={styles.headerContent}>
@@ -331,13 +332,13 @@ export default function DiscoverPage() {
             )}
           </section>
         </div>
-      </div>
+      </AppSurfacePanel>
 
       {/* 创建智能体弹窗 */}
       <CreateAgentModal
         visible={isModalVisible}
         onCancel={handleCloseModal}
       />
-    </div>
+    </AppPageShell>
   )
 }

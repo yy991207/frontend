@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Input, message } from 'antd'
 import SkillTemplateInput from '../../components/common/SkillTemplateInput'
+import { AppPageShell, AppSurfacePanel } from '../../components/layout/AppPageShell'
 import {
   ArrowUpOutlined,
   BarsOutlined,
@@ -1803,9 +1804,9 @@ function PartnerPageContent() {
   }
 
   return (
-    <main className={styles.page}>
+    <AppPageShell className={styles.page}>
       <div className={`${styles.splitContainer} ${artifactOpen ? styles.splitContainerOpen : ''}`}>
-        <section className={styles.panel}>
+        <AppSurfacePanel className={styles.panel}>
         {isSettingsOpen ? (
           <>
             <div className={styles.settingsTopBar}>
@@ -2068,10 +2069,10 @@ function PartnerPageContent() {
             </div>
           </>
         )}
-      </section>
-        <section className={`${styles.artifactPanel} ${artifactOpen ? styles.artifactPanelOpen : styles.artifactPanelClosed}`}>
+      </AppSurfacePanel>
+        <AppSurfacePanel className={`${styles.artifactPanel} ${artifactOpen ? styles.artifactPanelOpen : styles.artifactPanelClosed}`}>
           <PartnerArtifactPanel />
-        </section>
+        </AppSurfacePanel>
       </div>
       {isNameModalOpen ? (
         <div className={styles.nameModalMask} onClick={handleCloseNameModal}>
@@ -2114,7 +2115,7 @@ function PartnerPageContent() {
           </div>
         </div>
       ) : null}
-    </main>
+    </AppPageShell>
   )
 }
 

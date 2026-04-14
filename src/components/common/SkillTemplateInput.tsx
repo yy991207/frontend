@@ -14,7 +14,7 @@ type SkillTemplateInputProps = {
   minRows?: number
 }
 
-type Segment = { type: 'text' | 'skill' | 'placeholder'; text: string }
+type Segment = { type: 'text' | 'placeholder'; text: string }
 
 const PLACEHOLDER_RE = /\/[\w\u4e00-\u9fa5-]+/g
 
@@ -34,7 +34,8 @@ function parseSegments(text: string): Segment[] {
     if (m.index > lastIndex) {
       result.push({ type: 'text', text: text.slice(lastIndex, m.index) })
     }
-    result.push({ type: i === 0 ? 'skill' : 'placeholder', text: m[0] })
+    // 所有 /xxx 都渲染为 placeholder，技能名称由外部的 selectedSkillBadge 显示
+    result.push({ type: 'placeholder', text: m[0] })
     lastIndex = m.index + m[0].length
   }
   if (lastIndex < text.length) {
@@ -65,9 +66,7 @@ function buildHTML(segments: Segment[]): string {
       if (seg.type === 'text') {
         return `<span data-plain="true">${escapeHTML(seg.text)}</span>`
       }
-      if (seg.type === 'skill') {
-        return `<span class="${styles.skillTag}" contenteditable="false" data-plain="true"><span class="${styles.skillTagText}">${escapeHTML(seg.text)}</span><span class="${styles.skillDelete}" contenteditable="false" data-skill-delete>×</span></span>`
-      }
+      // 所有 /xxx 都渲染为 placeholder 标签
       return `<span class="${styles.placeholderTag}" contenteditable="false" data-plain="true"><span class="${styles.placeholderTagText}">${escapeHTML(seg.text)}</span></span>`
     })
     .join('')

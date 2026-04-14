@@ -17,6 +17,7 @@ import { AttachmentMenu } from '../../components/common/AttachmentMenu'
 import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
 import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
 import SkillTemplateInput from '../../components/common/SkillTemplateInput'
+import { AppPageShell, AppSurfacePanel } from '../../components/layout/AppPageShell'
 import {
   createPendingUploadedFile,
   type UploadedFile,
@@ -645,8 +646,8 @@ export default function HomePage() {
   }))
 
   return (
-    <main className={styles.page}>
-      <section className={styles.panel}>
+    <AppPageShell>
+      <AppSurfacePanel className={styles.panel}>
         <div className={styles.panelContent}>
           <div className={styles.centerStage}>
             <div
@@ -717,13 +718,15 @@ export default function HomePage() {
                       />
                     </div>
                     <div className={styles.inputCenterArea}>
-                      {selectedSkillName ? (
-                        <div className={styles.selectedSkillRow}>
-                          <span className={styles.selectedSkillBadge}>/{selectedSkillName}</span>
-                          {selectedSkillDescription ? <span className={styles.selectedSkillDesc}>{selectedSkillDescription}</span> : null}
-                        </div>
-                      ) : null}
                       <div className={styles.inputTopArea}>
+                        {selectedSkillName ? (
+                          <span
+                            className={styles.selectedSkillBadge}
+                            title={selectedSkillDescription || ''}
+                          >
+                            /{selectedSkillName}
+                          </span>
+                        ) : null}
                         <SkillTemplateInput
                           value={prompt}
                           onChange={(value) => {
@@ -846,7 +849,7 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </section>
-    </main>
+      </AppSurfacePanel>
+    </AppPageShell>
   )
 }

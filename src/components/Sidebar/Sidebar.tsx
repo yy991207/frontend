@@ -350,7 +350,12 @@ export default function Sidebar() {
         </button>
 
         <div className={styles.sectionTitle}>智能体</div>
-        <div ref={agentListRef} className={`${styles.agentList} ${agentListScrolling ? styles.scrolling : ''}`}>
+        <div
+          ref={agentListRef}
+          data-testid="sidebar-agent-list"
+          data-sidebar-mode={expanded ? 'expanded' : 'collapsed'}
+          className={`${styles.agentList} ${agentListScrolling ? styles.scrolling : ''}`}
+        >
           {agentLoading ? (
             <div className={styles.agentLoading}>
               <LoadingOutlined />
@@ -392,7 +397,11 @@ export default function Sidebar() {
           }}
         />
 
-        <div className={styles.sessionHistoryWrapper}>
+        <div
+          data-testid="sidebar-session-history-wrapper"
+          data-sidebar-mode={expanded ? 'expanded' : 'collapsed'}
+          className={styles.sessionHistoryWrapper}
+        >
           <ChatSessionHistory expanded={expanded} />
         </div>
       </div>

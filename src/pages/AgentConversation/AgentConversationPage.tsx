@@ -1,6 +1,7 @@
 import { useLocation, useParams, useNavigate } from 'react-router-dom'
 import { message } from 'antd'
 import SkillTemplateInput from '../../components/common/SkillTemplateInput'
+import { AppPageShell, AppSurfacePanel } from '../../components/layout/AppPageShell'
 import { SettingOutlined, ArrowUpOutlined } from '@ant-design/icons'
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
@@ -255,32 +256,32 @@ function AgentConversationPageContent() {
 
   if (loading) {
     return (
-      <main className={styles.page}>
-        <section className={styles.panel}>
+      <AppPageShell className={styles.page}>
+        <AppSurfacePanel className={styles.panel}>
           <div className={styles.loadingState}>
             <span>加载中...</span>
           </div>
-        </section>
-      </main>
+        </AppSurfacePanel>
+      </AppPageShell>
     )
   }
 
   if (error) {
     return (
-      <main className={styles.page}>
-        <section className={styles.panel}>
+      <AppPageShell className={styles.page}>
+        <AppSurfacePanel className={styles.panel}>
           <div className={styles.errorState}>
             <span>{error}</span>
           </div>
-        </section>
-      </main>
+        </AppSurfacePanel>
+      </AppPageShell>
     )
   }
 
   return (
-    <main className={styles.page}>
+    <AppPageShell className={styles.page}>
       <div className={`${styles.splitContainer} ${artifactOpen ? styles.splitContainerOpen : ''}`}>
-        <section className={styles.panel}>
+        <AppSurfacePanel className={styles.panel}>
           <header className={styles.header}>
             <div className={styles.headerLeft}>
               <div className={styles.avatar}>
@@ -504,12 +505,12 @@ function AgentConversationPageContent() {
             </div>
             <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>
           </div>
-        </section>
-        <section className={`${styles.artifactPanel} ${artifactOpen ? styles.artifactPanelOpen : styles.artifactPanelClosed}`}>
+        </AppSurfacePanel>
+        <AppSurfacePanel className={`${styles.artifactPanel} ${artifactOpen ? styles.artifactPanelOpen : styles.artifactPanelClosed}`}>
           <AgentConversationArtifactPanel />
-        </section>
+        </AppSurfacePanel>
       </div>
-    </main>
+    </AppPageShell>
   )
 }
 
