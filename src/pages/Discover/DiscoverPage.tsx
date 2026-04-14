@@ -1,14 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
-import { Input, Button, Pagination } from 'antd'
+import { Pagination } from 'antd'
 import {
   SearchOutlined,
   PlusOutlined,
   LeftOutlined,
   RightOutlined,
   LoadingOutlined,
-  FireOutlined,
   MessageOutlined,
-  SettingOutlined,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import CreateAgentModal from '../../components/common/CreateAgentModal'
@@ -191,49 +189,55 @@ export default function DiscoverPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.panel}>
-        <div className={styles.discoverPage}>
-          {/* 页面头部 */}
-          <div className={styles.header}>
-            <div className={styles.headerLeft}>
-              <h1 className={styles.title}>发现</h1>
-            </div>
+      <div className={styles.pageInner}>
+        {/* 粘性头部 */}
+        <div className={styles.stickyHeader}>
+          <div className={styles.headerContent}>
+            <h1 className={styles.title}>发现</h1>
             <div className={styles.headerRight}>
               <div className={styles.searchBox}>
                 <SearchOutlined className={styles.searchIcon} />
-                <Input
+                <input
+                  type="text"
+                  className={styles.searchInputEl}
                   placeholder="搜索智能体"
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}
-                  className={styles.searchInput}
-                  variant="borderless"
                 />
               </div>
-              <Button
-                icon={<PlusOutlined />}
+              <button
+                type="button"
                 className={styles.createButton}
                 onClick={handleOpenModal}
               >
+                <PlusOutlined />
                 创建智能体
-              </Button>
+              </button>
             </div>
           </div>
+        </div>
 
+        {/* 内容区 */}
+        <div className={styles.contentArea}>
           {/* 企业精选区域 */}
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
               <h2 className={styles.sectionTitle}>企业精选</h2>
               <div className={styles.sectionNav}>
                 <button
+                  type="button"
                   className={styles.navButton}
                   onClick={handlePrevPage}
+                  disabled={currentFeaturedPage === 0}
                   aria-label="上一页"
                 >
                   <LeftOutlined />
                 </button>
                 <button
+                  type="button"
                   className={styles.navButton}
                   onClick={handleNextPage}
+                  disabled={currentFeaturedPage >= totalFeaturedPages - 1}
                   aria-label="下一页"
                 >
                   <RightOutlined />
@@ -242,22 +246,26 @@ export default function DiscoverPage() {
             </div>
             <div className={styles.featuredGrid} ref={featuredContainerRef}>
               {getCurrentFeaturedAgents().map((agent) => (
-                <div key={agent.id} className={styles.featuredCard}>
-                  <div className={styles.featuredCardHeader}>
-                    <div className={styles.featuredAvatar}>
-                      <span className={styles.avatarLetter}>{getAvatarLetter(agent.name)}</span>
+                <div
+                  key={agent.id}
+                  className={styles.featuredCard}
+                  onClick={() => handleAgentChat(String(agent.id))}
+                >
+                  <div className={styles.featuredCardIcon}>
+                    <span>{getAvatarLetter(agent.name)}</span>
+                    <div className={styles.featuredCardBadge}>
+                      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFUAAABUCAYAAADzqXv/AAAACXBIWXMAACE4AAAhOAFFljFgAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAovSURBVHgB7VtbaBRXGP7OmdAo" alt="" />
                     </div>
                   </div>
-                  <div className={styles.featuredCardBody}>
-                    <h3 className={styles.featuredCardTitle}>{agent.name}</h3>
-                    <p className={styles.featuredCardDesc}>{agent.description}</p>
-                  </div>
-                  <div className={styles.featuredCardFooter}>
-                    <div className={styles.authorInfo}>
-                      <span className={styles.authorName}>{agent.author.name}</span>
+                  <h3 className={styles.featuredCardTitle}>{agent.name}</h3>
+                  <p className={styles.featuredCardDesc}>{agent.description}</p>
+                  <div className={styles.featuredCardMeta}>
+                    <div className={styles.metaAuthor}>
+                      <span>{agent.author.name}</span>
                     </div>
-                    <div className={styles.usageInfo}>
-                      <FireOutlined className={styles.usageIcon} />
+                    <div className={styles.metaDivider} />
+                    <div className={styles.metaUsage}>
+                      <MessageOutlined />
                       <span>{formatUsage(agent.author.usage)}</span>
                     </div>
                   </div>
@@ -269,7 +277,7 @@ export default function DiscoverPage() {
           {/* 我创建的智能体区域 */}
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>我创建的</h2>
+              <h2 className={styles.sectionTitle}>自建智能体</h2>
             </div>
             <div className={styles.enterpriseGrid}>
               {myCreatedLoading ? (
@@ -281,33 +289,27 @@ export default function DiscoverPage() {
                 myCreatedAgents
                   .slice((myCreatedPage - 1) * myCreatedPageSize, myCreatedPage * myCreatedPageSize)
                   .map((agent) => (
-                    <div key={agent.agent_id} className={styles.enterpriseCard}>
-                      <div className={styles.enterpriseCardLeft}>
-                        <div className={styles.enterpriseAvatar}>
-                          <span className={styles.avatarLetter}>{getAvatarLetter(agent.agent_name)}</span>
-                        </div>
+                    <div
+                      key={agent.agent_id}
+                      className={styles.enterpriseCard}
+                      onClick={() => handleAgentChat(agent.agent_id)}
+                    >
+                      <div className={styles.enterpriseAvatar}>
+                        <span>{getAvatarLetter(agent.agent_name)}</span>
                       </div>
-                      <div className={styles.enterpriseCardRight}>
+                      <div className={styles.enterpriseCardInfo}>
                         <h3 className={styles.enterpriseCardTitle}>{agent.agent_name}</h3>
                         <p className={styles.enterpriseCardDesc}>{agent.description}</p>
-                      </div>
-                      <div className={styles.cardActions}>
-                        <button
-                          type="button"
-                          className={styles.actionButton}
-                          onClick={() => handleAgentChat(agent.agent_id)}
-                          aria-label="对话"
-                        >
-                          <MessageOutlined />
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.actionButton}
-                          onClick={() => navigate(`/agent/${agent.agent_id}`)}
-                          aria-label="设置"
-                        >
-                          <SettingOutlined />
-                        </button>
+                        <div className={styles.enterpriseCardMeta}>
+                          <div className={styles.metaAuthor}>
+                            <span>我创建的</span>
+                          </div>
+                          <div className={styles.metaDivider} />
+                          <div className={styles.metaUsage}>
+                            <MessageOutlined />
+                            <span>0</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))

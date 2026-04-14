@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import HomePage from './HomePage'
@@ -15,14 +16,30 @@ vi.mock('../../components/common/SkillSlashCommand', () => ({
 }))
 
 vi.mock('../../components/common/SkillTemplateInput', () => ({
-  default: ({ value, onChange, placeholder }: { value: string; onChange: (value: string) => void; placeholder: string }) => (
-    <textarea
-      aria-label="主页输入框"
-      value={value}
-      placeholder={placeholder}
-      onChange={(event) => onChange(event.target.value)}
-    />
-  ),
+  default: ({
+    value,
+    onChange,
+    placeholder,
+    onMultilineChange,
+  }: {
+    value: string
+    onChange: (value: string) => void
+    placeholder: string
+    onMultilineChange?: (isMultiline: boolean) => void
+  }) => {
+    useEffect(() => {
+      onMultilineChange?.(value.includes('\n'))
+    }, [onMultilineChange, value])
+
+    return (
+      <textarea
+        aria-label="主页输入框"
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    )
+  },
 }))
 
 describe('HomePage', () => {
@@ -88,5 +105,24 @@ describe('HomePage', () => {
     expect(screen.getByText('生成 PPT')).toBeVisible()
     expect(screen.getByText('搭建网页')).toBeVisible()
     expect(await screen.findByText('个人工作画像生成')).toBeVisible()
+  })
+
+  it('多行内容时首页输入框会切换成上下分区布局', async () => {
+    render(
+      <MemoryRouter
+        initialEntries={[
+          {
+            pathname: '/homepage',
+            state: {
+              initialPrompt: '第一行内容\n第二行内容',
+            },
+          },
+        ]}
+      >
+        <HomePage />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByTestId('home-composer')).toHaveAttribute('data-layout', 'stacked')
   })
 })

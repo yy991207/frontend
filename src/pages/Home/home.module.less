@@ -66,16 +66,19 @@
 .inputWrap {
   position: relative;
   width: 100%;
-  min-height: 108px;
-  display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) auto;
-  align-items: stretch;
-  gap: 12px;
-  padding: 14px 12px;
-  border: 1px solid #d8dce3;
+  min-height: 78px;
+  display: block;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #d0d3d6;
   border-radius: 28px;
   background: #ffffff;
-  box-shadow: 0 8px 24px rgba(31, 35, 41, 0.06);
+  box-shadow: 0 1px 2px rgba(31, 35, 41, 0.04);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+
+  &:hover {
+    border-color: #c3c7cf;
+  }
 
   &:focus-within {
     border-color: #1456f0;
@@ -84,16 +87,23 @@
 }
 
 .inputAccessoryLeft {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  z-index: 2;
   display: flex;
-  align-items: flex-start;
-  padding-top: 4px;
+  align-items: center;
+  transform: translateY(-50%);
 }
 
 .inputCenterArea {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
+  min-height: 56px;
+  padding: 0 88px 0 42px;
+  justify-content: center;
 }
 
 .selectedSkillRow {
@@ -109,9 +119,10 @@
   padding: 0 10px;
   height: 24px;
   border-radius: 999px;
-  background: #eff4ff;
+  border: 1px solid #dbe6ff;
+  background: #f3f7ff;
   color: #1456f0;
-  font-size: 13px;
+  font-size: 12px;
   white-space: nowrap;
 }
 
@@ -126,6 +137,8 @@
 
 .inputTopArea {
   min-width: 0;
+  min-height: 26px;
+  padding-top: 1px;
 
   :global(textarea),
   :global(.ant-input),
@@ -147,11 +160,49 @@
   }
 }
 
+.inputWrapExpanded {
+  min-height: 124px;
+  padding-bottom: 50px;
+}
+
+.inputWrapExpanded .inputAccessoryLeft {
+  top: auto;
+  bottom: 10px;
+  transform: none;
+}
+
+.inputWrapExpanded .inputBottomRight {
+  top: auto;
+  bottom: 10px;
+  transform: none;
+}
+
+.inputWrapExpanded .inputCenterArea {
+  min-height: 72px;
+  padding: 0 0 34px;
+  justify-content: flex-start;
+}
+
+.inputWrapExpanded .inputTopArea {
+  min-height: 72px;
+  padding-top: 0;
+}
+
+.inputWrapExpanded .inputTopArea :global(textarea),
+.inputWrapExpanded .inputTopArea :global(.ant-input),
+.inputWrapExpanded .inputTopArea :global(.ant-input-textarea textarea) {
+  min-height: 72px !important;
+}
+
 .inputBottomRight {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  z-index: 2;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 10px;
-  padding-bottom: 2px;
+  transform: translateY(-50%);
 }
 
 .iconBtn {
@@ -169,7 +220,7 @@
   transition: background-color 0.18s ease, color 0.18s ease;
 
   &:hover {
-    background: #f3f4f6;
+    background: #f2f3f5;
     color: #1f2329;
   }
 }
@@ -177,6 +228,7 @@
 .sendBtn {
   background: #1456f0;
   color: #ffffff;
+  box-shadow: none;
 
   &:hover {
     background: #0442d2;
@@ -186,8 +238,8 @@
 
 .sendBtnDisabled,
 .sendBtnDisabled:hover {
-  background: #e5e7eb;
-  color: #b0b5bd;
+  background: #eceef2;
+  color: #a7adb6;
   cursor: not-allowed;
 }
 
@@ -395,13 +447,15 @@
   }
 
   .inputWrap {
-    grid-template-columns: 1fr;
-    gap: 10px;
+    min-height: 76px;
   }
 
-  .inputAccessoryLeft,
-  .inputBottomRight {
-    justify-content: flex-start;
+  .inputCenterArea {
+    padding-right: 82px;
+  }
+
+  .inputWrapExpanded {
+    min-height: 116px;
   }
 
   .quickActions {

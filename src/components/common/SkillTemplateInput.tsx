@@ -6,6 +6,7 @@ type SkillTemplateInputProps = {
   onChange: (value: string) => void
   onSend?: () => void
   onKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => void
+  onMultilineChange?: (isMultiline: boolean) => void
   disabled?: boolean
   placeholder?: string
   className?: string
@@ -91,6 +92,7 @@ export default function SkillTemplateInput({
   onChange,
   onSend,
   onKeyDown,
+  onMultilineChange,
   disabled,
   placeholder,
   className,
@@ -101,6 +103,27 @@ export default function SkillTemplateInput({
   const [isComposing, setIsComposing] = useState(false)
   const skipSyncRef = useRef(false)
   const externalValueRef = useRef(value)
+
+  const reportMultiline = useCallback(() => {
+    const el = editorRef.current
+
+    if (!el) {
+      onMultilineChange?.(false)
+      return
+    }
+
+    const text = getPlainText(el)
+
+    if (!text.trim()) {
+      onMultilineChange?.(false)
+      return
+    }
+
+    const lineHeight = Number.parseFloat(window.getComputedStyle(el).lineHeight) || 26
+    const isMultiline = text.includes('\n') || el.scrollHeight > lineHeight * 1.5
+
+    onMultilineChange?.(isMultiline)
+  }, [onMultilineChange])
 
   // Sync external value changes into the editor
   useEffect(() => {
@@ -115,9 +138,12 @@ export default function SkillTemplateInput({
 
     externalValueRef.current = value
     el.innerHTML = buildHTML(parseSegments(value))
-    // Restore cursor to end after sync
-    requestAnimationFrame(() => moveCaretToEnd(el))
-  }, [value])
+    // 同步完内容后，下一帧再测量真实高度，避免拿到旧的滚动高度。
+    requestAnimationFrame(() => {
+      moveCaretToEnd(el)
+      reportMultiline()
+    })
+  }, [reportMultiline, value])
 
   // Initial render
   useEffect(() => {
@@ -125,7 +151,27 @@ export default function SkillTemplateInput({
     if (!el || el.innerHTML.trim()) return
     el.innerHTML = buildHTML(parseSegments(value))
     externalValueRef.current = value
-  }, [])
+    requestAnimationFrame(() => {
+      reportMultiline()
+    })
+  }, [reportMultiline, value])
+
+  useEffect(() => {
+    if (!onMultilineChange) {
+      return
+    }
+
+    const handleResize = () => {
+      requestAnimationFrame(() => {
+        reportMultiline()
+      })
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [onMultilineChange, reportMultiline])
 
   const emitChange = useCallback(() => {
     const el = editorRef.current
@@ -134,8 +180,11 @@ export default function SkillTemplateInput({
     skipSyncRef.current = true
     externalValueRef.current = text
     onChange(text)
-    requestAnimationFrame(() => { skipSyncRef.current = false })
-  }, [onChange])
+    requestAnimationFrame(() => {
+      skipSyncRef.current = false
+      reportMultiline()
+    })
+  }, [onChange, reportMultiline])
 
   const handleInput = useCallback(() => {
     if (isComposing) return

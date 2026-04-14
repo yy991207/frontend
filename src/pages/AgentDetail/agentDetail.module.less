@@ -1,9 +1,8 @@
 .page {
   flex: 1;
   min-width: 0;
-  height: 100%;
-  padding: 0;
-  background: #f5f5f5;
+  padding: 12px;
+  background: var(--app-shell-background);
   display: flex;
   flex-direction: column;
 }
@@ -88,8 +87,7 @@
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 456px;
-  gap: 4px;
-  padding: 0 6px 6px;
+  gap: 12px;
 }
 
 .layoutArtifactOpen {
@@ -98,28 +96,41 @@
 
 .chatPanel,
 .configPanel {
+  height: 100%;
   min-height: 0;
   background: #ffffff;
   border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
   overflow: hidden;
-}
-
-.chatPanelInner,
-.configPanelInner {
-  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .chatPanelInner {
   display: flex;
   flex-direction: column;
-  padding: 14px 16px 0;
+  height: 100%;
+}
+
+.configPanelInner {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 18px 24px;
 }
 
 .chatHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  padding: 12px 22px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .chatHeading,
@@ -165,21 +176,21 @@
 }
 
 .heroSection {
-  flex: 1;
-  min-height: 0;
+  width: 100%;
+  max-width: 780px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  gap: 48px;
-  padding: 0 24px;
+  justify-content: center;
+  padding: 60px 24px;
+  gap: 24px;
 }
 
 .heroCard {
   display: flex;
   align-items: center;
   gap: 18px;
-  max-width: 620px;
+  max-width: 780px;
 }
 
 .heroAvatar {
@@ -187,8 +198,8 @@
   height: 64px;
   border-radius: 50%;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #5b5ff8 0%, #4f46e5 100%);
-  box-shadow: 0 14px 28px rgba(79, 70, 229, 0.24);
+  background: #3370ff;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -197,8 +208,8 @@
 
 .avatarLetter {
   color: #ffffff;
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 600;
   line-height: 1;
 }
 
@@ -210,17 +221,16 @@
 
 .heroTitle {
   margin: 0;
-  font-size: 19px;
-  line-height: 28px;
-  color: #1f2329;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 600;
+  color: #27272a;
+  letter-spacing: -0.01em;
 }
 
 .heroSubtitle {
   margin: 0;
   font-size: 14px;
-  line-height: 22px;
-  color: #8f959e;
+  color: #71717a;
 }
 
 .heroTitleWrap {
@@ -243,7 +253,7 @@
 
 .suggestionSection {
   width: 100%;
-  max-width: 620px;
+  max-width: 780px;
   margin-top: 16px;
 }
 
@@ -294,7 +304,8 @@
   align-items: center;
   justify-content: center;
   padding: 0 28px 16px;
-  background: #f7f8fa;
+  background: var(--app-shell-background);
+  flex-shrink: 0;
 }
 
 .composerArea::before {
@@ -304,7 +315,12 @@
   bottom: 100%;
   left: 0;
   height: 72px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(247, 248, 250, 0.8), rgba(247, 248, 250, 0.96));
+  background: linear-gradient(
+    180deg,
+    rgba(var(--app-shell-background-rgb), 0),
+    rgba(var(--app-shell-background-rgb), 0.8),
+    rgba(var(--app-shell-background-rgb), 0.96)
+  );
   pointer-events: none;
 }
 
@@ -484,7 +500,7 @@
 
 // 底部提示文字
 .footerHint {
-  margin-top: 8px;
+  margin-top: 10px;
   text-align: center;
   font-size: 12px;
   line-height: 20px;
@@ -496,9 +512,11 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 16px 24px;
+  padding: 12px 28px 24px;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 22px;
 }
 
 .messagesList {
@@ -576,7 +594,6 @@
 .messageList {
   display: flex;
   flex-direction: column;
-  gap: 16px;
 }
 
 .messageRow {
@@ -624,7 +641,6 @@
 .messageColumn {
   width: 100%;
   max-width: 780px;
-  margin: 0 auto;
 }
 
 // 思考过程样式
@@ -760,10 +776,6 @@
   }
 }
 
-.configPanelInner {
-  overflow: auto;
-  padding: 14px 18px 24px;
-}
 
 .configCard {
   padding: 14px 0 18px;
