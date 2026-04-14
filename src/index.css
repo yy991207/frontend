@@ -6,13 +6,18 @@
   padding: 0;
 }
 
+:root {
+  /* 统一应用壳层底色，透明侧边栏和页面外层都复用这一个值。 */
+  --app-shell-background: #ffffff;
+}
+
 html,
 body,
 #root {
   height: 100%;
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
     'Microsoft YaHei', sans-serif;
-  background-color: #ffffff;
+  background-color: var(--app-shell-background);
   color: #1a1a1a;
 }
 

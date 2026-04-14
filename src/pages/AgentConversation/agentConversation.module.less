@@ -1,7 +1,7 @@
 // 参考 ChatPage 样式设计
 .page {
   --conversation-width: 780px;
-  --page-background: #f5f5f5;
+  --page-background: var(--app-shell-background);
   flex: 1;
   min-width: 0;
   padding: 12px;
@@ -279,7 +279,7 @@
   bottom: 100%;
   left: 0;
   height: 72px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(244, 247, 251, 0.8), rgba(238, 243, 248, 0.96));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.96));
   pointer-events: none;
 }
 
