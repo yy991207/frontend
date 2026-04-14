@@ -8,114 +8,6 @@
   flex-direction: column;
 }
 
-.topBar {
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px 0 18px;
-  background: #ffffff;
-  border-bottom: 1px solid #eef1f5;
-  flex-shrink: 0;
-}
-
-.topBarLeft {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-.backIcon {
-  font-size: 16px;
-  color: #8c8c8c;
-}
-
-.topAvatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.topTitle {
-  font-size: 15px;
-  line-height: 22px;
-  font-weight: 600;
-  color: #1f2329;
-  white-space: nowrap;
-}
-
-.topEditIcon {
-  font-size: 14px;
-  color: #8f959e;
-  cursor: pointer;
-  transition: color 0.2s ease;
-
-  &:hover {
-    color: #245bdb;
-  }
-}
-
-.topTabs {
-  display: flex;
-  align-items: center;
-  gap: 28px;
-}
-
-.topTab {
-  border: none;
-  background: transparent;
-  color: #1f2329;
-  font-size: 16px;
-  line-height: 22px;
-  padding: 0;
-  cursor: pointer;
-  position: relative;
-}
-
-.topTabActive {
-  color: #245bdb;
-  font-weight: 600;
-}
-
-.topTabActive::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -15px;
-  height: 2px;
-  border-radius: 999px;
-  background: #245bdb;
-}
-
-.topBarRight {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.savedStatus {
-  color: #8f959e;
-  font-size: 13px;
-  transition: color 0.3s ease;
-}
-
-.unsavedStatus {
-  color: #ff9800;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
-}
-
 .publishButton {
   height: 32px;
   padding: 0 15px;
@@ -191,17 +83,6 @@
   }
 }
 
-.userBadge {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fff7e8;
-  font-size: 16px;
-}
-
 .layout {
   flex: 1;
   min-height: 0;
@@ -248,6 +129,13 @@
   line-height: 24px;
   color: #1f2329;
   font-weight: 600;
+}
+
+.configPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
 }
 
 .newSessionButton {
@@ -333,6 +221,24 @@
   font-size: 14px;
   line-height: 22px;
   color: #8f959e;
+}
+
+.heroTitleWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.heroEditIcon {
+  font-size: 14px;
+  color: #8f959e;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    color: #245bdb;
+  }
 }
 
 .suggestionSection {

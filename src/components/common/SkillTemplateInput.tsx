@@ -5,6 +5,7 @@ type SkillTemplateInputProps = {
   value: string
   onChange: (value: string) => void
   onSend?: () => void
+  onKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => void
   disabled?: boolean
   placeholder?: string
   className?: string
@@ -89,6 +90,7 @@ export default function SkillTemplateInput({
   value,
   onChange,
   onSend,
+  onKeyDown,
   disabled,
   placeholder,
   className,
@@ -247,6 +249,12 @@ export default function SkillTemplateInput({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
+      onKeyDown?.(e)
+
+      if (e.defaultPrevented) {
+        return
+      }
+
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault()
         onSend?.()
@@ -284,7 +292,7 @@ export default function SkillTemplateInput({
         }
       }
     },
-    [onSend, emitChange],
+    [onKeyDown, onSend, emitChange],
   )
 
   return (

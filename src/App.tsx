@@ -13,9 +13,17 @@ import AgentConversationPage from './pages/AgentConversation/AgentConversationPa
 export default function App() {
   return (
     <BrowserRouter>
-      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--app-shell-background)' }}>
         <Sidebar />
-        <div style={{ flex: 1, minWidth: 0, display: 'flex' }}>
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            padding: '8px 8px 8px 0',
+            background: 'var(--app-shell-background)',
+          }}
+        >
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/chat" element={<ChatPage />} />

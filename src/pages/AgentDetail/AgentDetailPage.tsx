@@ -595,40 +595,6 @@ export default function AgentDetailPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.topBar}>
-        <div className={styles.topBarLeft}>
-          <span className={styles.topTitle}>{agentName}</span>
-          <EditOutlined className={styles.topEditIcon} onClick={handleEditClick} />
-        </div>
-
-        <div className={styles.topBarRight}>
-          <Tooltip title="只有点击发布后才会保存个人智能体配置" placement="bottom" overlayInnerStyle={{ backgroundColor: '#000', color: '#fff' }}>
-            <button
-              type="button"
-              className={`${styles.publishButton} ${publishStatus === 'success' ? styles.publishSuccess : ''} ${publishStatus === 'error' ? styles.publishError : ''}`}
-              onClick={handlePublish}
-              disabled={publishing}
-            >
-              {publishing ? (
-                <>
-                  <LoadingOutlined spin /> 发布中
-                </>
-              ) : publishStatus === 'success' ? (
-                <>
-                  <CheckCircleOutlined /> 发布成功
-                </>
-              ) : publishStatus === 'error' ? (
-                <>
-                  <CloseCircleOutlined /> 发布失败
-                </>
-              ) : (
-                '发布'
-              )}
-            </button>
-          </Tooltip>
-        </div>
-      </div>
-
       <div className={styles.layout}>
         <main className={styles.chatPanel}>
           <div className={styles.chatPanelInner}>
@@ -655,7 +621,10 @@ export default function AgentDetailPage() {
                       <span className={styles.avatarLetter}>{getAvatarLetter(agentName)}</span>
                     </div>
                     <div className={styles.heroContent}>
-                      <h1 className={styles.heroTitle}>{agentName}</h1>
+                      <span className={styles.heroTitleWrap}>
+                        <h1 className={styles.heroTitle}>{agentName}</h1>
+                        <EditOutlined className={styles.heroEditIcon} onClick={handleEditClick} />
+                      </span>
                       <p className={styles.heroSubtitle}>{agentSubtitle}</p>
                     </div>
                   </div>
@@ -755,7 +724,33 @@ export default function AgentDetailPage() {
 
         <aside className={styles.configPanel}>
           <div className={styles.configPanelInner}>
-            <h2 className={styles.configHeading}>搭建</h2>
+            <div className={styles.configPanelHeader}>
+              <h2 className={styles.configHeading}>搭建</h2>
+              <Tooltip title="只有点击发布后才会保存个人智能体配置" placement="bottom" overlayInnerStyle={{ backgroundColor: '#000', color: '#fff' }}>
+                <button
+                  type="button"
+                  className={`${styles.publishButton} ${publishStatus === 'success' ? styles.publishSuccess : ''} ${publishStatus === 'error' ? styles.publishError : ''}`}
+                  onClick={handlePublish}
+                  disabled={publishing}
+                >
+                  {publishing ? (
+                    <>
+                      <LoadingOutlined spin /> 发布中
+                    </>
+                  ) : publishStatus === 'success' ? (
+                    <>
+                      <CheckCircleOutlined /> 发布成功
+                    </>
+                  ) : publishStatus === 'error' ? (
+                    <>
+                      <CloseCircleOutlined /> 发布失败
+                    </>
+                  ) : (
+                    '发布'
+                  )}
+                </button>
+              </Tooltip>
+            </div>
 
             <ConfigCard icon={null} title="指令">
               <textarea

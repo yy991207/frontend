@@ -50,10 +50,14 @@ vi.mock('../../components/chat/artifacts-context', () => ({
   }),
 }))
 
-vi.mock('../../services/ossUploadService', () => ({
-  createPendingUploadedFile: vi.fn(),
-  uploadPendingFileToOss: vi.fn(),
-}))
+vi.mock('../../services/ossUploadService', async () => {
+  const actual = await vi.importActual<typeof import('../../services/ossUploadService')>('../../services/ossUploadService')
+  return {
+    ...actual,
+    createPendingUploadedFile: vi.fn(),
+    uploadPendingFileToOss: vi.fn(),
+  }
+})
 
 vi.mock('../../services/agentFileUploadService', () => ({
   uploadPendingFileToOssWithDocumentParse: vi.fn(),

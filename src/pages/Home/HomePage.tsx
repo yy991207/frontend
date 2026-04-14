@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Avatar, Tabs, message } from 'antd'
 import {
+  AudioOutlined,
   ArrowUpOutlined,
   BarChartOutlined,
   BookOutlined,
@@ -11,7 +12,6 @@ import {
 } from '@ant-design/icons'
 import { useLocation, useNavigate } from 'react-router-dom'
 import homeTabsUrl from '../../../mock_json/home-tabs.json?url'
-import homeAvatar from '../../assets/home-avatar.png'
 import chatConfigText from '../../../config.yaml?raw'
 import { AttachmentMenu } from '../../components/common/AttachmentMenu'
 import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
@@ -32,6 +32,9 @@ import {
   type SkillItem,
 } from '../../services/skillPromptService'
 import styles from './home.module.less'
+
+const AILY_LOGO_URL = 'https://aily.feishu.cn/play/api/v1/files/static/offcial-logo15.png'
+const HOME_USER_NAME = '杨金玮'
 
 type HomeRouteState = {
   initialPrompt?: string
@@ -102,8 +105,9 @@ const DEFAULT_EMPTY_PROMPT_TEXT = '暂无指令，请在对话运行后创建指
 
 type PracticeItem = {
   id: number
-  coverClassName: string
-  coverText: string
+  coverClassName?: string
+  coverText?: string
+  coverImageUrl?: string
   title: string
   type: string
   views: string
@@ -165,6 +169,20 @@ const DEFAULT_HOME_TABS: HomeTab[] = [
   },
 ]
 
+const HOME_TEMPLATE_ACTIONS = [
+  { key: 'ppt', label: '生成 PPT', prompt: '帮我生成一份结构完整的 PPT 提纲', toolType: 'slides' },
+  { key: 'creative-ppt', label: '生成创意 PPT', prompt: '帮我生成一份更有创意的 PPT 提纲', toolType: 'slides' },
+  { key: 'doc', label: '写云文档', prompt: '帮我写一篇结构清晰的云文档内容', toolType: 'doc' },
+  { key: 'report', label: '写报告', prompt: '帮我输出一份可直接汇报的分析报告', toolType: 'report' },
+  { key: 'web', label: '搭建网页', prompt: '帮我设计一个可落地的网页首页', toolType: 'web' },
+  { key: 'dashboard', label: '搭建仪表盘', prompt: '帮我设计一个数据仪表盘页面', toolType: 'dashboard' },
+  { key: 'table', label: '创建多维表格', prompt: '帮我设计一个可直接使用的多维表格方案', toolType: 'table' },
+  { key: 'image', label: '生成图片', prompt: '帮我生成一组风格统一的图片', toolType: 'image' },
+  { key: 'excel', label: 'Excel', prompt: '帮我分析 Excel 数据并给出洞察', toolType: 'excel' },
+  { key: 'chat', label: '对话模式', prompt: '', toolType: null },
+  { key: 'more', label: '更多', prompt: '', toolType: null },
+] as const
+
 function getContentTypeIcon(type: string) {
   if (type === '图片') return <PictureOutlined />
   if (type === '云文档') return <BookOutlined />
@@ -214,7 +232,6 @@ export default function HomePage() {
   const [homeTabs, setHomeTabs] = useState<HomeTab[]>(DEFAULT_HOME_TABS)
   const [tabsLoading, setTabsLoading] = useState(true)
   const [tabsError, setTabsError] = useState('')
-  const [quickActionSkills, setQuickActionSkills] = useState<SkillItem[]>([])
   
   // 斜杠指令相关状态
   const [slashCommandOpen, setSlashCommandOpen] = useState(false)
@@ -351,52 +368,6 @@ export default function HomePage() {
     }
   }, [skillApiConfig])
 
-  // 获取快捷指令技能列表（我添加的 + 我创建的）
-  const fetchQuickActionSkills = useCallback(async (signal?: AbortSignal) => {
-    if (!skillApiConfig) {
-      setQuickActionSkills([])
-      return
-    }
-
-    try {
-      const fetchAdded = async (): Promise<SkillItem[]> => {
-        const requestUrl = new URL(skillApiConfig.manageEndpoint)
-        requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
-        const response = await fetch(requestUrl.toString(), { signal })
-        if (!response.ok) throw new Error('技能接口请求失败')
-        const data = (await response.json()) as SkillApiResponse
-        if (!data.success) throw new Error(data.msg || '技能接口返回失败')
-        return extractSkillItemsFromResponse(data)
-      }
-
-      const fetchCreated = async (): Promise<SkillItem[]> => {
-        if (!skillApiConfig.listEndpoint) return []
-        const requestUrl = new URL(skillApiConfig.listEndpoint)
-        requestUrl.searchParams.set(skillApiConfig.userIdParam, skillApiConfig.userId)
-        const response = await fetch(requestUrl.toString(), { signal })
-        if (!response.ok) throw new Error('我创建的技能接口请求失败')
-        const data = (await response.json()) as SkillApiResponse
-        if (!data.success) throw new Error(data.msg || '我创建的技能接口返回失败')
-        return extractSkillItemsFromResponse(data)
-      }
-
-      const [addedSkills, createdSkills] = await Promise.all([fetchAdded(), fetchCreated()])
-      const seen = new Set<string>()
-      const merged: SkillItem[] = []
-      for (const skill of [...addedSkills, ...createdSkills]) {
-        if (!seen.has(skill.id)) {
-          seen.add(skill.id)
-          merged.push(skill)
-        }
-      }
-      setQuickActionSkills(merged)
-    } catch {
-      if (!signal?.aborted) {
-        setQuickActionSkills([])
-      }
-    }
-  }, [skillApiConfig])
-
   // 跳转到技能管理页面
   const handleManageSkills = () => {
     navigate('/skills', {
@@ -426,15 +397,6 @@ export default function HomePage() {
       })
     }
   }, [slashCommandOpen, skills.length, skillsLoading, fetchSkills])
-
-  // 页面加载时获取快捷指令技能列表
-  useEffect(() => {
-    const controller = new AbortController()
-    void fetchQuickActionSkills(controller.signal)
-    return () => {
-      controller.abort()
-    }
-  }, [fetchQuickActionSkills])
 
   useEffect(() => {
     const routeState = location.state as HomeRouteState
@@ -574,6 +536,25 @@ export default function HomePage() {
     })
   }
 
+  const handleQuickActionClick = (action: (typeof HOME_TEMPLATE_ACTIONS)[number]) => {
+    if (action.key === 'more') {
+      navigate('/discover')
+      return
+    }
+
+    if (action.key === 'chat') {
+      clearSelectedSkill()
+      setPreferredToolType(null)
+      setPrompt('')
+      return
+    }
+
+    // 首页模板入口只负责帮用户快速填充意图，不直接发送，避免误触后马上跳到会话页。
+    clearSelectedSkill()
+    setPreferredToolType(action.toolType)
+    setPrompt(action.prompt)
+  }
+
   const renderPracticeCards = (items: PracticeItem[]) => {
     if (tabsLoading) {
       return <div className={styles.emptyCommands}>内容加载中...</div>
@@ -591,8 +572,18 @@ export default function HomePage() {
       <div className={styles.practiceGrid}>
         {items.map((item) => (
           <article key={item.id} className={styles.practiceCard}>
-            <div className={`${styles.practiceCover} ${styles[item.coverClassName]}`}>
-              <span className={styles.practiceCoverText}>{item.coverText}</span>
+            <div className={styles.practiceCover}>
+              {item.coverImageUrl ? (
+                <img src={item.coverImageUrl} alt={item.title} className={styles.practiceCoverImage} />
+              ) : (
+                <div className={`${styles.practiceFallbackCover} ${item.coverClassName ? styles[item.coverClassName] : ''}`}>
+                  <span className={styles.practiceCoverText}>{item.coverText}</span>
+                </div>
+              )}
+              <div className={styles.practiceCoverActions}>
+                <button type="button" className={styles.practiceActionButton}>查看</button>
+                <button type="button" className={styles.practiceActionPrimary}>做同款</button>
+              </div>
             </div>
             <div className={styles.practiceTitle}>{item.title}</div>
             <div className={styles.practiceMeta}>
@@ -671,8 +662,8 @@ export default function HomePage() {
                 }}
               >
                 <div className={styles.hero}>
-                  <Avatar size={92} src={<img src={homeAvatar} alt="张容悟头像" />} className={styles.heroAvatar} />
-                  <h1 className={styles.greeting}>Hi～ 有什么可以帮你的？</h1>
+                  <Avatar size={68} src={<img src={AILY_LOGO_URL} alt="飞书 aily logo" />} className={styles.heroAvatar} />
+                  <h1 className={styles.greeting}>Hi {HOME_USER_NAME}，有什么可以帮你的？</h1>
                 </div>
 
                 <div className={styles.composerWrap}>
@@ -704,10 +695,31 @@ export default function HomePage() {
                       onClose={() => setSlashCommandOpen(false)}
                       onManageSkills={handleManageSkills}
                     />
-                    <FileAttachmentPreview files={uploadedFiles} onRemove={handleRemoveFile} />
-                    {/* 上方输入区域 */}
-                    <div className={styles.inputTopArea}>
-                    <SkillTemplateInput
+                    <div className={styles.inputAccessoryLeft}>
+                      <AttachmentMenu
+                        placement="top"
+                        skills={skills}
+                        skillsLoading={skillsLoading}
+                        loadSkills={fetchSkills}
+                        onSelectSkill={handleSelectSkill}
+                        onManageSkills={handleManageSkills}
+                        onUploadFile={handleUploadFile}
+                        showTools
+                        webSearchEnabled={webSearchEnabled}
+                        knowledgeEnabled={knowledgeEnabled}
+                        onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
+                        onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
+                      />
+                    </div>
+                    <div className={styles.inputCenterArea}>
+                      {selectedSkillName ? (
+                        <div className={styles.selectedSkillRow}>
+                          <span className={styles.selectedSkillBadge}>/{selectedSkillName}</span>
+                          {selectedSkillDescription ? <span className={styles.selectedSkillDesc}>{selectedSkillDescription}</span> : null}
+                        </div>
+                      ) : null}
+                      <div className={styles.inputTopArea}>
+                        <SkillTemplateInput
                         value={prompt}
                         onChange={(value) => {
                           setPrompt(value)
@@ -779,70 +791,44 @@ export default function HomePage() {
                           }
                         }}
                         onSend={handleSend}
-                        placeholder='输入你的想法或输入"/"选择想要使用技能'
-                      />
-                    </div>
-                    {/* 下方按钮区域 */}
-                    <div className={styles.inputBottomArea}>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        accept="*/*"
-                        style={{ display: 'none' }}
-                        onChange={handleFileChange}
-                      />
-                      <div className={styles.inputBottomLeft}>
-                        <AttachmentMenu
-                          placement="top"
-                          skills={skills}
-                          skillsLoading={skillsLoading}
-                          loadSkills={fetchSkills}
-                          onSelectSkill={handleSelectSkill}
-                          onManageSkills={handleManageSkills}
-                          onUploadFile={handleUploadFile}
-                          showTools
-                          webSearchEnabled={webSearchEnabled}
-                          knowledgeEnabled={knowledgeEnabled}
-                          onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
-                          onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
+                        placeholder='总结罗振宇 2026 跨年演讲金句，生成一组图片'
                         />
                       </div>
-                      <div className={styles.inputBottomRight}>
-                        <div className={styles.inputActions}>
-                          <button
-                            type="button"
-                            className={`${styles.iconBtn} ${styles.sendBtn} ${!prompt.trim() ? styles.sendBtnDisabled : ''}`}
-                            onClick={handleSend}
-                            disabled={!prompt.trim()}
-                          >
-                            <ArrowUpOutlined />
-                          </button>
-                        </div>
-                      </div>
+                      <FileAttachmentPreview files={uploadedFiles} onRemove={handleRemoveFile} />
                     </div>
+                    <div className={styles.inputBottomRight}>
+                      <button type="button" className={styles.iconBtn} aria-label="语音输入">
+                        <AudioOutlined />
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.iconBtn} ${styles.sendBtn} ${!prompt.trim() ? styles.sendBtnDisabled : ''}`}
+                        onClick={handleSend}
+                        disabled={!prompt.trim()}
+                      >
+                        <ArrowUpOutlined />
+                      </button>
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept="*/*"
+                      style={{ display: 'none' }}
+                      onChange={handleFileChange}
+                    />
                   </div>
                 </div>
 
                 <div className={styles.quickActions}>
-                  {quickActionSkills.map((skill) => (
+                  {HOME_TEMPLATE_ACTIONS.map((action) => (
                     <button
-                      key={skill.id}
+                      key={action.key}
                       type="button"
                       className={styles.quickTag}
-                      onClick={() => {
-                        navigate('/', {
-                          state: {
-                            initialPrompt: buildSkillInitialPrompt(skill),
-                            toolType: skill.skillName || skill.id,
-                            skillName: skill.skillName || skill.id,
-                            skillDescription: skill.description,
-                            template: skill.template,
-                          },
-                        })
-                      }}
+                      onClick={() => handleQuickActionClick(action)}
                     >
-                      <span>{skill.title}</span>
+                      <span>{action.label}</span>
                     </button>
                   ))}
                 </div>

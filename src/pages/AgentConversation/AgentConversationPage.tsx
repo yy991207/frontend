@@ -1,5 +1,5 @@
 import { useLocation, useParams, useNavigate } from 'react-router-dom'
-import { Dropdown, message } from 'antd'
+import { message } from 'antd'
 import SkillTemplateInput from '../../components/common/SkillTemplateInput'
 import { SettingOutlined, ArrowUpOutlined } from '@ant-design/icons'
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
@@ -277,17 +277,6 @@ function AgentConversationPageContent() {
     )
   }
 
-  const dropdownMenu = {
-    items: [
-      {
-        key: 'config',
-        label: '配置',
-        icon: <SettingOutlined />,
-        onClick: handleNavigateToConfig,
-      },
-    ],
-  }
-
   return (
     <main className={styles.page}>
       <div className={`${styles.splitContainer} ${artifactOpen ? styles.splitContainerOpen : ''}`}>
@@ -303,11 +292,15 @@ function AgentConversationPageContent() {
               </div>
             </div>
             <div className={styles.headerRight}>
-              <Dropdown menu={dropdownMenu} trigger={['click']}>
-                <button type="button" className={styles.headerButton}>
-                  <SettingOutlined />
-                </button>
-              </Dropdown>
+              <button
+                type="button"
+                className={styles.headerButton}
+                onClick={handleNavigateToConfig}
+                aria-label="编辑智能体"
+                data-tooltip="编辑智能体"
+              >
+                <SettingOutlined />
+              </button>
             </div>
           </header>
 

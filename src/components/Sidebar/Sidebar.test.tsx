@@ -1,0 +1,81 @@
+import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
+import Sidebar from './Sidebar'
+import {
+  getAgentUsageLogs,
+  loadCustomAgentApiConfig,
+  type AgentUsageLogItem,
+  type CustomAgentApiConfig,
+} from '../../services/customAgentService'
+
+vi.mock('../ChatSessionHistory/ChatSessionHistory', () => ({
+  default: () => (
+    <div>
+      <span>今天</span>
+      <span>7 天内</span>
+      <span>30 天内</span>
+    </div>
+  ),
+}))
+
+vi.mock('../../services/customAgentService', async () => {
+  const actual = await vi.importActual<typeof import('../../services/customAgentService')>('../../services/customAgentService')
+  return {
+    ...actual,
+    loadCustomAgentApiConfig: vi.fn(),
+    getAgentUsageLogs: vi.fn(),
+    deleteAgentUsageLog: vi.fn(),
+  }
+})
+
+const mockedLoadCustomAgentApiConfig = vi.mocked(loadCustomAgentApiConfig)
+const mockedGetAgentUsageLogs = vi.mocked(getAgentUsageLogs)
+
+const MOCK_AGENT_CONFIG: CustomAgentApiConfig = {
+  userId: '123456',
+  baseUrl: 'http://localhost:8000',
+  createAgentEndpoint: 'http://localhost:8000/create',
+  listAgentEndpoint: 'http://localhost:8000/list',
+  viewAgentEndpoint: 'http://localhost:8000/view/{agent_id}',
+  updateAgentEndpoint: 'http://localhost:8000/update/{agent_id}',
+  chatAgentEndpoint: 'http://localhost:8000/chat/{agent_id}',
+  generateAgentTemplateEndpoint: 'http://localhost:8000/generate',
+  getAgentTemplateTaskEndpoint: 'http://localhost:8000/tasks/{task_id}',
+  agentTemplatesEndpoint: 'http://localhost:8000/templates',
+  agentTemplateDetailEndpoint: 'http://localhost:8000/template/{template_id}',
+  agentUsageLogsEndpoint: 'http://localhost:8000/logs',
+}
+
+const MOCK_AGENT_LIST: AgentUsageLogItem[] = [
+  {
+    agent_id: 'agent-1',
+    user_id: '123456',
+    agent_name: '产品和市场调研专家',
+    avatar_url: '',
+    used_at: '2026-04-14T10:00:00.000Z',
+  },
+]
+
+describe('Sidebar', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockedLoadCustomAgentApiConfig.mockResolvedValue(MOCK_AGENT_CONFIG)
+    mockedGetAgentUsageLogs.mockResolvedValue(MOCK_AGENT_LIST)
+  })
+
+  it('默认展示飞书 aily 风格的展开侧边栏布局', async () => {
+    render(
+      <MemoryRouter>
+        <Sidebar />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('飞书 aily')).toBeVisible()
+    expect(screen.getByText('开发应用')).toBeVisible()
+    expect(screen.getByText('杨金玮的智能伙伴')).toBeVisible()
+    expect(screen.getByText('产品和市场调研专家')).toBeVisible()
+    expect(screen.getByText('今天')).toBeVisible()
+    expect(screen.getByText('7 天内')).toBeVisible()
+    expect(screen.getByText('30 天内')).toBeVisible()
+  })
+})

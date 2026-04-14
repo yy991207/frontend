@@ -7,8 +7,9 @@
 }
 
 :root {
-  /* 统一应用壳层底色，透明侧边栏和页面外层都复用这一个值。 */
-  --app-shell-background: #ffffff;
+  /* 统一应用壳层底色，侧边栏和页面外层都复用这一个值。 */
+  --app-shell-background: #f5f5f5;
+  --app-shell-background-rgb: 245, 245, 245;
 }
 
 html,

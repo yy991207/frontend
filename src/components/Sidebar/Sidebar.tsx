@@ -2,24 +2,20 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import {
   BookOutlined,
+  AppstoreOutlined,
+  ClockCircleOutlined,
   CompassOutlined,
+  ExportOutlined,
   LoadingOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   MoreOutlined,
   PlusOutlined,
-  RobotOutlined,
   ThunderboltOutlined,
-  UserOutlined,
-  MessageOutlined,
-  EditOutlined,
-  FileTextOutlined,
-  CameraOutlined,
   DeleteOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import chatConfigText from '../../../config.yaml?raw'
-import homeAvatar from '../../assets/home-avatar.png'
 import { createNewChatPagePath } from '../../services/chatService'
 import { loadCustomAgentApiConfig, getAgentUsageLogs, deleteAgentUsageLog, type AgentUsageLogItem, type CustomAgentApiConfig } from '../../services/customAgentService'
 import { parseChatSessionConfig, findLatestEmptySession } from '../../services/chatSessionService'
@@ -30,14 +26,18 @@ import styles from './sidebar.module.less'
 
 const NAV_ITEMS = [
   { key: 'home', label: '新建', icon: <PlusOutlined /> },
-  { key: 'discover', label: '发现', icon: <CompassOutlined />, path: '/discover' },
   { key: 'library', label: '库', icon: <BookOutlined />, path: '/library' },
   { key: 'skills', label: '技能', icon: <ThunderboltOutlined />, path: '/skills' },
+  { key: 'discover', label: '发现', icon: <CompassOutlined />, path: '/discover' },
+  { key: 'partner', label: '开发应用', icon: <AppstoreOutlined />, path: '/partner' },
 ]
 
-function getAgentIcon(index: number) {
-  const icons = [<MessageOutlined />, <EditOutlined />, <FileTextOutlined />, <CameraOutlined />]
-  return icons[index % icons.length]
+const AILY_LOGO_URL = 'https://aily.feishu.cn/play/api/v1/files/static/offcial-logo15.png'
+const PARTNER_AVATAR_URL = 'https://s3-imfile.feishucdn.com/static-resource/v1/v3_00vn_7af88321-f0ad-4b2d-9e0f-f1fc704abbag'
+const USER_AVATAR_URL = 'https://s3-imfile.feishucdn.com/static-resource/v1/v3_00v9_b45c986e-1d75-4394-87d1-8554b35e4e1g~?image_size=noop&cut_type=&quality=&format=image&sticker_format=.webp'
+
+function resolveAgentAvatar(agent: AgentUsageLogItem) {
+  return agent.avatar_url?.trim() || AILY_LOGO_URL
 }
 
 interface AgentMenuProps {
@@ -130,7 +130,7 @@ export default function Sidebar() {
 
   const navigate = useNavigate()
   const location = useLocation()
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(true)
   const [creatingSession, setCreatingSession] = useState(false)
   const [agentList, setAgentList] = useState<AgentUsageLogItem[]>([])
   const [agentLoading, setAgentLoading] = useState(false)
@@ -259,129 +259,139 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className={`${styles.sidebar} ${expanded ? styles.sidebarExpanded : ''}`} style={{ width: expanded ? undefined : 48 }}>
-      <div className={styles.topRow}>
-        <button
-          type="button"
-          className={`${styles.iconButton} ${styles.tooltipTarget}`}
-          onClick={() => setExpanded((value) => !value)}
-          aria-expanded={expanded}
-          aria-label={expanded ? '收起侧边栏' : '展开侧边栏'}
-          data-tooltip={expanded ? '收起侧边栏' : '展开侧边栏'}
-        >
-          {expanded ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
-        </button>
-        <button
-          type="button"
-          className={styles.panelHead}
-          onClick={() => navigate('/')}
-          aria-label="返回果仁助手首页"
-        >
-          <span className={styles.brandAvatarWrap}>
-            <img src={homeAvatar} alt="果仁助手头像" className={styles.brandAvatar} />
-          </span>
-          <span className={styles.brandName}>果仁智能体</span>
-        </button>
-      </div>
-
-      <nav className={styles.nav}>
-        {NAV_ITEMS.map((item) => (
+    <aside className={`${styles.sidebar} ${expanded ? styles.sidebarExpanded : styles.sidebarCollapsed}`}>
+      <div className={styles.sidebarInner}>
+        <div className={styles.topRow}>
           <button
-            key={item.key}
             type="button"
-            className={`${styles.navRow} ${styles.tooltipTarget} ${isActive(item.path) ? styles.navRowActive : ''} ${
-              item.key === 'home' ? styles.homeRow : ''
-            }`}
-            onClick={() => {
-              if (item.key === 'home') {
-                void handleCreateSession()
-                return
-              }
-
-              handleItemClick(item.path)
-            }}
-            data-tooltip={item.key === 'home' && creatingSession ? '新建中...' : item.label}
-            aria-busy={item.key === 'home' ? creatingSession : undefined}
+            className={`${styles.iconButton} ${styles.tooltipTarget}`}
+            onClick={() => setExpanded((value) => !value)}
+            aria-expanded={expanded}
+            aria-label={expanded ? '收起侧边栏' : '展开侧边栏'}
+            data-tooltip={expanded ? '收起侧边栏' : '展开侧边栏'}
           >
-            <span className={styles.iconCell}>
-              {item.key === 'home' && creatingSession ? <LoadingOutlined /> : item.icon}
-            </span>
-            <span className={styles.labelCell}>{item.key === 'home' && creatingSession ? '新建中...' : item.label}</span>
+            {expanded ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
           </button>
-        ))}
-      </nav>
+          <button
+            type="button"
+            className={styles.panelHead}
+            onClick={() => navigate('/')}
+            aria-label="返回飞书 aily 首页"
+          >
+            <span className={styles.brandAvatarWrap}>
+              <img src={AILY_LOGO_URL} alt="飞书 aily" className={styles.brandAvatar} />
+            </span>
+            <span className={styles.brandName}>飞书 aily</span>
+          </button>
+        </div>
 
-      <div className={styles.sectionTitle}>智能伙伴</div>
+        <nav className={styles.nav}>
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className={`${styles.navRow} ${styles.tooltipTarget} ${isActive(item.path) ? styles.navRowActive : ''} ${
+                item.key === 'home' ? styles.homeRow : ''
+              }`}
+              onClick={() => {
+                if (item.key === 'home') {
+                  void handleCreateSession()
+                  return
+                }
 
-      <button
-        type="button"
-        className={`${styles.partnerRow} ${styles.tooltipTarget} ${location.pathname === '/partner' ? styles.navRowActive : ''}`}
-        data-tooltip="智能伙伴"
-        onClick={() => navigate('/partner')}
-      >
-        <span className={styles.iconCell}>
-          <RobotOutlined />
-        </span>
-        <span className={styles.labelCell}>智能伙伴</span>
-      </button>
+                handleItemClick(item.path)
+              }}
+              data-tooltip={item.key === 'home' && creatingSession ? '新建中...' : item.label}
+              aria-busy={item.key === 'home' ? creatingSession : undefined}
+            >
+              <span className={styles.iconCell}>
+                {item.key === 'home' && creatingSession ? <LoadingOutlined /> : item.icon}
+              </span>
+              <span className={styles.labelCell}>{item.key === 'home' && creatingSession ? '新建中...' : item.label}</span>
+            </button>
+          ))}
+        </nav>
 
-      {/* 智能体列表 */}
-      <div className={styles.sectionTitle}>智能体</div>
-      <div ref={agentListRef} className={`${styles.agentList} ${agentListScrolling ? styles.scrolling : ''}`}>
-        {agentLoading ? (
-          <div className={styles.agentLoading}>
-            <LoadingOutlined />
+        <div className={styles.sectionTitle}>智能伙伴</div>
+        <button
+          type="button"
+          className={`${styles.partnerRow} ${styles.tooltipTarget} ${location.pathname === '/partner' ? styles.navRowActive : ''}`}
+          data-tooltip="杨金玮的智能伙伴"
+          onClick={() => navigate('/partner')}
+        >
+          <span className={styles.avatarCell}>
+            <img src={PARTNER_AVATAR_URL} alt="智能伙伴头像" className={styles.avatarImage} />
+          </span>
+          <span className={styles.labelCell}>杨金玮的智能伙伴</span>
+        </button>
+
+        <div className={styles.sectionTitle}>智能体</div>
+        <div ref={agentListRef} className={`${styles.agentList} ${agentListScrolling ? styles.scrolling : ''}`}>
+          {agentLoading ? (
+            <div className={styles.agentLoading}>
+              <LoadingOutlined />
+            </div>
+          ) : agentList.length > 0 ? (
+            agentList.map((agent) => {
+              const isRemoving = removingAgentIds.has(agent.agent_id)
+              return (
+                <div
+                  key={agent.agent_id}
+                  className={`${styles.agentRow} ${isRemoving ? styles.agentRowRemoving : ''}`}
+                  onClick={() => navigate(`/agent/${agent.agent_id}/chat`)}
+                >
+                  <div className={styles.agentRowMain}>
+                    <span className={styles.avatarCell}>
+                      <img src={resolveAgentAvatar(agent)} alt="agent logo" className={styles.avatarImage} />
+                    </span>
+                    <span className={styles.agentNameText}>{agent.agent_name}</span>
+                  </div>
+                  {expanded ? <AgentMenu agent={agent} onDelete={setDeleteTargetAgent} /> : null}
+                </div>
+              )
+            })
+          ) : (
+            <div className={styles.agentEmpty}>暂无智能体使用记录</div>
+          )}
+        </div>
+
+        <DeleteConfirmModal
+          open={Boolean(deleteTargetAgent)}
+          title="删除智能体使用记录"
+          description="是否确认删除该智能体使用记录？"
+          loading={deleteLoading}
+          onCancel={() => setDeleteTargetAgent(null)}
+          onConfirm={() => {
+            if (deleteTargetAgent) {
+              void handleDeleteAgent(deleteTargetAgent)
+            }
+          }}
+        />
+
+        <div className={styles.sessionHistoryWrapper}>
+          <ChatSessionHistory expanded={expanded} />
+        </div>
+
+        <div className={styles.footerRow}>
+          <div className={styles.footerPanel}>
+            <div className={styles.userInfo}>
+              <span className={styles.avatarCell}>
+                <img src={USER_AVATAR_URL} alt="杨金玮" className={styles.avatarImage} />
+              </span>
+              <span className={styles.userName}>杨金玮</span>
+            </div>
+            <div className={styles.footerActions}>
+              <button type="button" className={styles.toolButton} aria-label="打开日程">
+                <ClockCircleOutlined />
+              </button>
+              <button type="button" className={styles.toolButton} aria-label="打开飞书">
+                <ExportOutlined />
+              </button>
+              <button type="button" className={styles.toolButton} aria-label="更多">
+                <MoreOutlined />
+              </button>
+            </div>
           </div>
-        ) : agentList.length > 0 ? (
-          agentList.map((agent, index) => {
-            const isRemoving = removingAgentIds.has(agent.agent_id)
-            return (
-              <div
-                key={agent.agent_id}
-                className={`${styles.agentRow} ${styles.agentRowWithMenu} ${isRemoving ? styles.agentRowRemoving : ''}`}
-                onClick={() => navigate(`/agent/${agent.agent_id}/chat`)}
-                style={{ cursor: 'pointer' }}
-              >
-                <span className={styles.iconCell}>{getAgentIcon(index)}</span>
-                <span className={styles.labelCell}>
-                  <span className={styles.agentNameText}>{agent.agent_name}</span>
-                  <AgentMenu agent={agent} onDelete={setDeleteTargetAgent} />
-                </span>
-              </div>
-            )
-          })
-        ) : (
-          <div className={styles.agentEmpty}>暂无智能体使用记录</div>
-        )}
-      </div>
-
-      <DeleteConfirmModal
-        open={Boolean(deleteTargetAgent)}
-        title="删除智能体使用记录"
-        description="是否确认删除该智能体使用记录？"
-        loading={deleteLoading}
-        onCancel={() => setDeleteTargetAgent(null)}
-        onConfirm={() => {
-          if (deleteTargetAgent) {
-            void handleDeleteAgent(deleteTargetAgent)
-          }
-        }}
-      />
-
-      {/* 会话历史组件 */}
-      <div className={styles.sessionHistoryWrapper}>
-        <ChatSessionHistory expanded={expanded} />
-      </div>
-
-      <div className={styles.spacer} />
-
-      {/* 底部这一行沿用同样的两列结构，保证展开时名字和工具按钮从图标轨道右侧拉开。 */}
-      <div className={styles.footerRow}>
-        <span className={styles.iconCell}>
-          <UserOutlined />
-        </span>
-        <div className={styles.footerPanel}>
-          <span className={styles.userName}>用户</span>
         </div>
       </div>
     </aside>
