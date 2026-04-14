@@ -31,6 +31,35 @@ const NAV_ITEMS = [
 const AILY_LOGO_URL = 'https://aily.feishu.cn/play/api/v1/files/static/offcial-logo15.png'
 const PARTNER_AVATAR_URL = 'https://s3-imfile.feishucdn.com/static-resource/v1/v3_00vn_7af88321-f0ad-4b2d-9e0f-f1fc704abbag'
 
+function getAvatarLetter(name: string) {
+  return name?.trim().charAt(0).toUpperCase() || 'A'
+}
+
+function AgentAvatar({ agent }: { agent: AgentUsageLogItem }) {
+  const avatarUrl = agent.avatar_url?.trim()
+  const letter = getAvatarLetter(agent.agent_name)
+
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt="agent logo"
+        className={styles.avatarImage}
+        onError={(e) => {
+          // 图片加载失败时，隐藏 img 并显示首字母
+          e.currentTarget.style.display = 'none'
+          const parent = e.currentTarget.parentElement
+          if (parent) {
+            parent.innerHTML = `<span class="${styles.avatarLetter}">${letter}</span>`
+          }
+        }}
+      />
+    )
+  }
+
+  return <span className={styles.avatarLetter}>{letter}</span>
+}
+
 function resolveAgentAvatar(agent: AgentUsageLogItem) {
   return agent.avatar_url?.trim() || AILY_LOGO_URL
 }
@@ -337,7 +366,7 @@ export default function Sidebar() {
                 >
                   <div className={styles.agentRowMain}>
                     <span className={styles.avatarCell}>
-                      <img src={resolveAgentAvatar(agent)} alt="agent logo" className={styles.avatarImage} />
+                      <AgentAvatar agent={agent} />
                     </span>
                     <span className={styles.agentNameText}>{agent.agent_name}</span>
                   </div>
