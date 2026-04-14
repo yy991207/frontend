@@ -755,6 +755,7 @@ function PartnerPageContent() {
     loadingMessage: ChatMessage,
     baseMessages: ChatMessage[],
     _toolType: string | null = null,
+    uploadedFiles: UploadedFile[] = [],
   ) => {
     if (!chatApiConfig) {
       setRequestError('聊天配置读取失败，请检查 config.yaml')
@@ -776,6 +777,13 @@ function PartnerPageContent() {
     }
 
     setRequestError('')
+
+    const completedFiles = uploadedFiles.filter((f) => f.status === 'completed')
+    const uploadedFilesPayload = completedFiles.map((f) => ({
+      resource_id: f.resourceId ?? f.objectKey,
+      file_name: f.name,
+      url: f.url,
+    }))
 
     const controller = new AbortController()
     abortControllerRef.current = controller
@@ -831,6 +839,7 @@ function PartnerPageContent() {
             message: prompt,
             enable_web_search: webSearchEnabled,
             include_tool_details: true,
+            uploaded_files: uploadedFilesPayload,
           },
           messages: nextMessages,
           loadingMessageId: loadingMessage.id,
@@ -849,6 +858,7 @@ function PartnerPageContent() {
           message: prompt,
           enable_web_search: webSearchEnabled,
           include_tool_details: true,
+          uploaded_files: uploadedFilesPayload,
         },
         controller.signal,
       )
@@ -1036,7 +1046,7 @@ function PartnerPageContent() {
     }
   }
 
-  const startAssistantReply = async (prompt: string, toolType: string | null = null) => {
+  const startAssistantReply = async (prompt: string, toolType: string | null = null, uploadedFiles: UploadedFile[] = []) => {
     const now = new Date()
     const userMessage: ChatMessage = {
       id: `user-${now.getTime()}`,
@@ -1057,7 +1067,7 @@ function PartnerPageContent() {
     setMessages(nextMessages)
     setIsResponding(true)
 
-    await runAssistantReply(prompt, userMessage, loadingMessage, nextMessages, toolType)
+    await runAssistantReply(prompt, userMessage, loadingMessage, nextMessages, toolType, uploadedFiles)
   }
 
   useEffect(() => {
@@ -1408,10 +1418,12 @@ function PartnerPageContent() {
         })
       : value
     const outgoingToolType = selectedSkillName ? preferredToolType || selectedSkillName : null
+    const pendingFiles = [...uploadedFiles]
 
     setDraft('')
     clearSelectedSkill()
-    void startAssistantReply(outgoingPrompt, outgoingToolType)
+    setUploadedFiles([])
+    void startAssistantReply(outgoingPrompt, outgoingToolType, pendingFiles)
   }
 
   const handleStop = () => {

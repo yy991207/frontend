@@ -39,10 +39,17 @@ type SessionResponse = Record<string, unknown> & {
   }
 }
 
+export type UploadedFileRef = {
+  resource_id: string
+  file_name: string
+  url: string
+}
+
 type StreamPayload = {
   message: string
   enable_web_search?: boolean
   include_tool_details?: boolean
+  uploaded_files?: UploadedFileRef[]
 }
 
 export type SkillOutputItem = {
@@ -224,6 +231,7 @@ export async function streamChatMessage(
       enable_web_search: payload.enable_web_search ?? false,
       include_tool_details: payload.include_tool_details ?? true,
       message: payload.message,
+      uploaded_files: payload.uploaded_files ?? [],
     }),
     signal,
   })

@@ -220,6 +220,8 @@ type UseSharedChatRuntimeOptions = {
   setSessionId: (sessionId: string) => void
   enableWebSearch?: boolean
   agentId?: string | null
+  uploadedFiles?: { id: string; status: string; name: string; url: string; resourceId?: string; objectKey: string }[]
+  onFilesSent?: () => void
 }
 
 export function useSharedChatRuntime({
@@ -229,6 +231,8 @@ export function useSharedChatRuntime({
   setSessionId,
   enableWebSearch = true,
   agentId = null,
+  uploadedFiles = [],
+  onFilesSent,
 }: UseSharedChatRuntimeOptions) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
@@ -486,6 +490,13 @@ export function useSharedChatRuntime({
       return
     }
 
+    const completedFiles = uploadedFiles.filter((f) => f.status === 'completed')
+    const uploadedFilesPayload = completedFiles.map((f) => ({
+      resource_id: f.resourceId ?? f.objectKey,
+      file_name: f.name,
+      url: f.url,
+    }))
+
     const now = new Date()
     const userMessage: ChatMessage = {
       id: `user-${now.getTime()}`,
@@ -549,6 +560,7 @@ export function useSharedChatRuntime({
           message: prompt,
           enable_web_search: enableWebSearch,
           include_tool_details: true,
+          uploaded_files: uploadedFilesPayload,
         },
         controller.signal,
       )
@@ -686,8 +698,9 @@ export function useSharedChatRuntime({
     const value = draft.trim()
     if (!value || isResponding) return
     setDraft('')
+    onFilesSent?.()
     void startAssistantReply(value)
-  }, [draft, isResponding, startAssistantReply])
+  }, [draft, isResponding, startAssistantReply, onFilesSent])
 
   return {
     draft,

@@ -137,6 +137,8 @@ function AgentConversationPageContent() {
     setSessionId,
     enableWebSearch: webSearchEnabled,
     agentId: id,
+    uploadedFiles,
+    onFilesSent: () => setUploadedFiles([]),
   })
 
   const routeSessionId = new URLSearchParams(location.search).get('sessionId')
