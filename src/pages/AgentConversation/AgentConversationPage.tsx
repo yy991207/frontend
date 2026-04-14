@@ -356,6 +356,7 @@ function AgentConversationPageContent() {
               <div className={styles.inputWrap} data-attachment-anchor="true">
                 <SkillSlashCommand
                   visible={slashCommandOpen}
+                  variant="agentConversation"
                   query={slashQuery}
                   setQuery={(query) => {
                     setSlashQuery(query)

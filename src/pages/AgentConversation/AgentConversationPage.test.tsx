@@ -14,6 +14,10 @@ const { mockedMessageInfo } = vi.hoisted(() => ({
   mockedMessageInfo: vi.fn(),
 }))
 
+const { mockedSkillSlashCommand } = vi.hoisted(() => ({
+  mockedSkillSlashCommand: vi.fn(),
+}))
+
 vi.mock('antd', () => ({
   message: {
     info: mockedMessageInfo,
@@ -44,7 +48,10 @@ vi.mock('../../components/common/FileAttachmentPreview', () => ({
 }))
 
 vi.mock('../../components/common/SkillSlashCommand', () => ({
-  SkillSlashCommand: () => null,
+  SkillSlashCommand: (props: { variant?: string }) => {
+    mockedSkillSlashCommand(props)
+    return <div data-testid="skill-slash-command" data-variant={props.variant ?? 'default'} />
+  },
 }))
 
 vi.mock('../../components/common/SkillTemplateInput', () => ({
@@ -235,6 +242,7 @@ describe('AgentConversationPage', () => {
     expect(screen.queryByText('联网检索')).not.toBeInTheDocument()
     expect(uploadButton).toBeInTheDocument()
     expect(screen.queryByTestId('attachment-menu')).not.toBeInTheDocument()
+    expect(screen.getByTestId('skill-slash-command')).toHaveAttribute('data-variant', 'agentConversation')
     expect(webSearchSwitch).toHaveAttribute('aria-checked', 'true')
     expect(webSearchSwitch).toHaveAttribute('data-state', 'enabled')
 
