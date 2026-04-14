@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import HomePage from './HomePage'
 
 vi.mock('../../components/common/AttachmentMenu', () => ({
-  AttachmentMenu: () => <button type="button">附件菜单</button>,
+  AttachmentMenu: () => <button type="button" data-testid="attachment-menu">附件菜单</button>,
 }))
 
 vi.mock('../../components/common/FileAttachmentPreview', () => ({
@@ -12,7 +12,9 @@ vi.mock('../../components/common/FileAttachmentPreview', () => ({
 }))
 
 vi.mock('../../components/common/SkillSlashCommand', () => ({
-  SkillSlashCommand: () => null,
+  SkillSlashCommand: (props: { position?: string; variant?: string }) => {
+    return <div data-testid="skill-slash-command" data-variant={props.variant ?? 'default'} data-position={props.position ?? 'above'} />
+  },
 }))
 
 vi.mock('../../components/common/SkillTemplateInput', () => ({
@@ -107,7 +109,7 @@ describe('HomePage', () => {
     expect(await screen.findByText('个人工作画像生成')).toBeVisible()
   })
 
-  it('首页复用 chatpage 输入区后不再展示旧的语音按钮', async () => {
+  it('首页使用 agentConversation 变体输入区，展示附件按钮和联网开关，技能面板在下方弹出', async () => {
     render(
       <MemoryRouter>
         <HomePage />
@@ -115,7 +117,11 @@ describe('HomePage', () => {
     )
 
     expect(await screen.findByTestId('home-composer')).toBeVisible()
-    expect(screen.queryByRole('button', { name: '语音输入' })).not.toBeInTheDocument()
+    // agentConversation 变体：不再渲染附件菜单
+    expect(screen.queryByTestId('attachment-menu')).not.toBeInTheDocument()
+    // 技能面板使用下方定位
+    expect(screen.getByTestId('skill-slash-command')).toHaveAttribute('data-variant', 'agentConversation')
+    expect(screen.getByTestId('skill-slash-command')).toHaveAttribute('data-position', 'below')
   })
 
   it('多行内容时首页输入框会切换成上下分区布局', async () => {

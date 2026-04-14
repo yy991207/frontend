@@ -734,6 +734,8 @@ export default function HomePage() {
                   <ChatComposer
                     testId="home-composer"
                     layout={isComposerMultiline ? 'stacked' : 'inline'}
+                    variant="agentConversation"
+                    skillPanelPosition="below"
                     value={prompt}
                     onChange={(value) => {
                       setPrompt(value)

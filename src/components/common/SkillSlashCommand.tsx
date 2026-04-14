@@ -28,6 +28,8 @@ export type SkillSlashCommandProps = {
   onRetry?: () => void
   /** 展示风格 */
   variant?: 'default' | 'agentConversation'
+  /** 技能面板弹出位置，默认输入框上方 */
+  position?: 'above' | 'below'
 }
 
 export function SkillSlashCommand(props: SkillSlashCommandProps) {
@@ -44,11 +46,13 @@ export function SkillSlashCommand(props: SkillSlashCommandProps) {
     onManageSkills,
     onRetry,
     variant = 'default',
+    position = 'above',
   } = props
 
   const listRef = useRef<HTMLDivElement>(null)
   const selectedItemRef = useRef<HTMLButtonElement>(null)
   const isAgentConversation = variant === 'agentConversation'
+  const isBelow = position === 'below'
 
   // 选中项滚动到可视区域
   useEffect(() => {
@@ -186,7 +190,7 @@ export function SkillSlashCommand(props: SkillSlashCommandProps) {
   )
 
   return (
-    <div className={`${styles.root} ${isAgentConversation ? styles.rootAgentConversation : ''}`} data-skill-slash-root>
+    <div className={`${styles.root} ${isAgentConversation ? styles.rootAgentConversation : ''} ${isBelow ? styles.rootPositionBelow : ''}`} data-skill-slash-root>
       {isAgentConversation ? (
         <div className={`${styles.skillList} ${styles.skillListAgentConversation}`} ref={listRef}>
           {renderListContent()}

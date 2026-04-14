@@ -45,6 +45,7 @@ type ChatComposerProps = {
   onStop?: () => void
   testId?: string
   layout?: 'inline' | 'stacked'
+  skillPanelPosition?: 'above' | 'below'
 }
 
 export function ChatComposer({
@@ -85,6 +86,7 @@ export function ChatComposer({
   onStop,
   testId,
   layout,
+  skillPanelPosition = 'above',
 }: ChatComposerProps) {
   const isAgentConversation = variant === 'agentConversation'
   const showStopButton = isResponding && typeof onStop === 'function'
@@ -95,6 +97,7 @@ export function ChatComposer({
       <SkillSlashCommand
         visible={slashCommandOpen}
         variant={isAgentConversation ? 'agentConversation' : 'default'}
+        position={skillPanelPosition}
         query={slashQuery}
         setQuery={(query) => {
           onSlashQueryChange(query)
