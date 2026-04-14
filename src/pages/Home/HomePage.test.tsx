@@ -136,4 +136,29 @@ describe('HomePage', () => {
 
     expect(await screen.findByTestId('home-composer')).toHaveAttribute('data-layout', 'stacked')
   })
+
+  it('技能回填到首页时只保留输入框里的完整提示词，不再额外渲染前置 skill 标签', async () => {
+    render(
+      <MemoryRouter
+        initialEntries={[
+          {
+            pathname: '/homepage',
+            state: {
+              initialPrompt: '基于 /ai-infographic 帮我制作一张关于 /主题 的信息图，类型是 /类型',
+              skillName: 'ai-infographic',
+              skillDescription: 'AI 信息图工具',
+              template: '帮我制作一张关于 /主题 的信息图，类型是 /类型',
+            },
+          },
+        ]}
+      >
+        <HomePage />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByLabelText('主页输入框')).toHaveValue(
+      '基于 /ai-infographic 帮我制作一张关于 /主题 的信息图，类型是 /类型',
+    )
+    expect(screen.queryByText('/ai-infographic')).not.toBeInTheDocument()
+  })
 })

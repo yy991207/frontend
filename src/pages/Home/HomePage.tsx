@@ -416,11 +416,11 @@ export default function HomePage() {
       return
     }
 
-    // 技能页回到首页后，把技能标签和模板拆开渲染，输入框里只保留可编辑部分。
+    // 首页统一只保留输入框里的完整提示词，避免 badge 和 “基于 /skill ...” 重复显示。
     if (routeState.skillName) {
       setSelectedSkillName(routeState.skillName.trim())
       setSelectedSkillDescription(routeState.skillDescription?.trim() ?? '')
-      setPrompt(routeState.template?.trim() ?? '')
+      setPrompt(routeState.initialPrompt.trim())
     } else {
       setSelectedSkillName('')
       setSelectedSkillDescription('')
@@ -747,7 +747,6 @@ export default function HomePage() {
                     placeholder="总结罗振宇 2026 跨年演讲金句，生成一组图片"
                     selectedSkillName={selectedSkillName}
                     selectedSkillDescription={selectedSkillDescription}
-                    showSelectedSkillBadge
                     slashCommandOpen={slashCommandOpen}
                     slashQuery={slashQuery}
                     onSlashQueryChange={setSlashQuery}
