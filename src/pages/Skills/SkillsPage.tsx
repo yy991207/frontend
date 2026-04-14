@@ -1596,7 +1596,7 @@ const handleOpenClawhubSkillDetail = useCallback(
                   <article
                     key={item.id}
                     className={styles.manageCard}
-                    onClick={() => handleOpenSkillDetail(item)}
+                    onClick={() => handleOpenSkillDetail(item, true)}
                   >
                     <div className={styles.manageCardHead}>
                       <span className={`${styles.manageCardIcon} ${styles[item.toneClassName]}`}>
