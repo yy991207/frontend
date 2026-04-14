@@ -303,6 +303,11 @@ export default function SkillTemplateInput({
         return
       }
 
+      // 输入法组合期间不处理快捷键（首次回车选中文字，二次回车才发送）
+      if (isComposing || e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) {
+        return
+      }
+
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault()
         onSend?.()

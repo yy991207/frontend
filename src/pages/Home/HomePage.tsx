@@ -721,8 +721,8 @@ export default function HomePage() {
                       <div className={styles.inputTopArea}>
                         {selectedSkillName ? (
                           <span
-                            className={styles.selectedSkillBadge}
-                            title={selectedSkillDescription || ''}
+                            className={`${styles.selectedSkillBadge} ${styles.skillTooltip}`}
+                            data-tooltip={selectedSkillDescription || ''}
                           >
                             /{selectedSkillName}
                           </span>

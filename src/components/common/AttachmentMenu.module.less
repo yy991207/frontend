@@ -226,11 +226,20 @@
 
 .submenuAlignBottom {
   bottom: 0;
+  transform-origin: left bottom;
 }
 
 .submenuAlignTop {
   top: 0;
   transform-origin: left top;
+}
+
+.submenuOpen.submenuAlignBottom {
+  transform: translateX(0) scale(1);
+}
+
+.submenuOpen.submenuAlignTop {
+  transform: translateX(0) scale(1);
 }
 
 .submenuOpen {
