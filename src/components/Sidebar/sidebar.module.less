@@ -1,9 +1,9 @@
 .sidebar {
   position: relative;
   z-index: 30;
-  width: 68px;
+  width: 48px;
   height: 100vh;
-  padding: 8px 4px 12px;
+  padding: 16px 8px 12px;
   background: transparent;
   border-right: none;
   display: flex;
@@ -14,7 +14,7 @@
 }
 
 .sidebarExpanded {
-  width: 292px;
+  width: 260px;
 }
 
 .topRow,
@@ -23,15 +23,15 @@
 .agentRow,
 .footerRow {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-columns: 32px minmax(0, 1fr);
   align-items: center;
   width: 100%;
   min-width: 0;
 }
 
 .topRow {
-  min-height: 44px;
-  margin-bottom: 8px;
+  min-height: 32px;
+  margin-bottom: 12px;
 }
 
 .iconButton,
@@ -90,9 +90,9 @@
 }
 
 .iconButton {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -101,7 +101,7 @@
   transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
 
   &:hover {
-    background: #eef2f7;
+    background: #e5e5e5;
     color: #111827;
   }
 }
@@ -165,21 +165,21 @@
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
 }
 
 .navRow,
 .partnerRow,
 .agentRow {
-  min-height: 44px;
+  min-height: 32px;
   padding: 0;
-  border-radius: 16px;
+  border-radius: 8px;
   color: #4b5563;
   text-align: left;
   transition: background-color 0.18s ease, color 0.18s ease;
 
   &:hover {
-    background: #f3f4f6;
+    background: #e5e5e5;
     color: #111827;
   }
 }
@@ -198,8 +198,8 @@
 }
 
 .iconCell {
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -424,8 +424,8 @@
 }
 
 .footerRow {
-  min-height: 48px;
-  padding-top: 10px;
+  min-height: 40px;
+  padding-top: 8px;
 }
 
 .footerPanel {

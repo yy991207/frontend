@@ -122,18 +122,27 @@
 
   .sectionContent {
     padding: 0;
-    gap: 6px;
+    gap: 8px;
   }
 
   .sessionItem {
     justify-content: center;
-    width: 44px;
-    height: 44px;
+    width: 32px;
+    height: 32px;
     margin: 0 auto;
+    border-radius: 8px;
+    grid-template-columns: 1fr;
+    padding: 0;
+
+    &:hover {
+      background: #e5e5e5;
+    }
   }
 
   .iconCell {
     margin-right: 0;
+    width: 32px;
+    height: 32px;
   }
 }
 

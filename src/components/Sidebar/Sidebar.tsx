@@ -259,7 +259,7 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className={`${styles.sidebar} ${expanded ? styles.sidebarExpanded : ''}`}>
+    <aside className={`${styles.sidebar} ${expanded ? styles.sidebarExpanded : ''}`} style={{ width: expanded ? undefined : 48 }}>
       <div className={styles.topRow}>
         <button
           type="button"
