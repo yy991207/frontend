@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Avatar, Tabs, message } from 'antd'
 import {
-  AudioOutlined,
-  ArrowUpOutlined,
   BarChartOutlined,
   BookOutlined,
   EyeOutlined,
@@ -13,10 +11,7 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom'
 import homeTabsUrl from '../../../mock_json/home-tabs.json?url'
 import chatConfigText from '../../../config.yaml?raw'
-import { AttachmentMenu } from '../../components/common/AttachmentMenu'
-import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
-import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
-import SkillTemplateInput from '../../components/common/SkillTemplateInput'
+import { ChatComposer } from '../../components/common/ChatComposer'
 import { AppPageShell, AppSurfacePanel } from '../../components/layout/AppPageShell'
 import {
   createPendingUploadedFile,
@@ -317,6 +312,20 @@ export default function HomePage() {
       return null
     }
   }, [])
+
+  const filteredSkills = useMemo(() => {
+    if (!slashQuery) {
+      return skills
+    }
+
+    const query = slashQuery.toLowerCase()
+    return skills.filter(
+      (skill) =>
+        skill.title.toLowerCase().includes(query) ||
+        skill.description.toLowerCase().includes(query) ||
+        skill.skillName.toLowerCase().includes(query),
+    )
+  }, [skills, slashQuery])
 
   // 获取用户技能列表（我添加的 + 我创建的）
   const fetchSkills = useCallback(async (signal?: AbortSignal) => {
@@ -669,164 +678,102 @@ export default function HomePage() {
                 </div>
 
                 <div className={styles.composerWrap}>
-                  <div
-                    data-testid="home-composer"
-                    data-layout={isComposerMultiline ? 'stacked' : 'inline'}
-                    className={`${styles.inputWrap} ${isComposerMultiline ? styles.inputWrapExpanded : ''}`}
-                  >
-                    {/* 斜杠指令浮层 */}
-                    <SkillSlashCommand
-                      visible={slashCommandOpen}
-                      query={slashQuery}
-                      setQuery={(query) => {
-                        setSlashQuery(query)
-                        setPrompt('/' + query)
-                      }}
-                      skills={skills.filter((skill) => {
-                        if (!slashQuery) return true
-                        const q = slashQuery.toLowerCase()
-                        return (
-                          skill.title.toLowerCase().includes(q) ||
-                          skill.description.toLowerCase().includes(q) ||
-                          skill.skillName.toLowerCase().includes(q)
-                        )
-                      })}
-                      loading={skillsLoading}
-                      selectedIndex={selectedSkillIndex}
-                      onSelectSkill={(skill) => {
-                        handleSelectSkill(skill)
-                        setSlashCommandOpen(false)
+                  <ChatComposer
+                    testId="home-composer"
+                    layout={isComposerMultiline ? 'stacked' : 'inline'}
+                    value={prompt}
+                    onChange={(value) => {
+                      setPrompt(value)
+
+                      // 检测斜杠指令触发
+                      if (skipSlashSelectRef.current) return
+                      if (value === '/' && !slashCommandOpen) {
+                        setSlashCommandOpen(true)
                         setSlashQuery('')
-                      }}
-                      onClose={() => setSlashCommandOpen(false)}
-                      onManageSkills={handleManageSkills}
-                    />
-                    <div className={styles.inputAccessoryLeft}>
-                      <AttachmentMenu
-                        placement="top"
-                        skills={skills}
-                        skillsLoading={skillsLoading}
-                        loadSkills={fetchSkills}
-                        onSelectSkill={handleSelectSkill}
-                        onManageSkills={handleManageSkills}
-                        onUploadFile={handleUploadFile}
-                        showTools
-                        webSearchEnabled={webSearchEnabled}
-                        knowledgeEnabled={knowledgeEnabled}
-                        onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
-                        onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
-                      />
-                    </div>
-                    <div className={styles.inputCenterArea}>
-                      <div className={styles.inputTopArea}>
-                        {selectedSkillName ? (
-                          <span
-                            className={`${styles.selectedSkillBadge} ${styles.skillTooltip}`}
-                            data-tooltip={selectedSkillDescription || ''}
-                          >
-                            /{selectedSkillName}
-                          </span>
-                        ) : null}
-                        <SkillTemplateInput
-                          value={prompt}
-                          onChange={(value) => {
-                            setPrompt(value)
+                        setSelectedSkillIndex(0)
+                      } else if (!value.startsWith('/')) {
+                        setSlashCommandOpen(false)
+                      } else if (value.startsWith('/')) {
+                        setSlashQuery(value.slice(1))
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+                        return
+                      }
 
-                            // 检测斜杠指令触发
-                            if (skipSlashSelectRef.current) return
-                            if (value === '/' && !slashCommandOpen) {
-                              setSlashCommandOpen(true)
-                              setSlashQuery('')
-                              setSelectedSkillIndex(0)
-                            } else if (!value.startsWith('/')) {
+                      // 斜杠指令浮层打开时的键盘处理
+                      if (slashCommandOpen) {
+                        switch (event.key) {
+                          case 'ArrowDown':
+                            event.preventDefault()
+                            setSelectedSkillIndex((prev) =>
+                              prev < filteredSkills.length - 1 ? prev + 1 : prev
+                            )
+                            return
+                          case 'ArrowUp':
+                            event.preventDefault()
+                            setSelectedSkillIndex((prev) => (prev > 0 ? prev - 1 : 0))
+                            return
+                          case 'Enter':
+                            event.preventDefault()
+                            event.stopPropagation()
+                            if (filteredSkills[selectedSkillIndex]) {
+                              handleSelectSkill(filteredSkills[selectedSkillIndex])
                               setSlashCommandOpen(false)
-                            } else if (value.startsWith('/')) {
-                              setSlashQuery(value.slice(1))
+                              setSlashQuery('')
                             }
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
-                              return
-                            }
+                            return
+                          case 'Escape':
+                            event.preventDefault()
+                            setSlashCommandOpen(false)
+                            return
+                        }
+                      }
 
-                            // 斜杠指令浮层打开时的键盘处理
-                            if (slashCommandOpen) {
-                              switch (event.key) {
-                                case 'ArrowDown':
-                                  event.preventDefault()
-                                  setSelectedSkillIndex((prev) =>
-                                    prev < skills.length - 1 ? prev + 1 : prev
-                                  )
-                                  return
-                                case 'ArrowUp':
-                                  event.preventDefault()
-                                  setSelectedSkillIndex((prev) => (prev > 0 ? prev - 1 : 0))
-                                  return
-                                case 'Enter':
-                                  event.preventDefault()
-                                  event.stopPropagation()
-                                  const filteredSkills = skills.filter((skill) => {
-                                    if (!slashQuery) return true
-                                    const q = slashQuery.toLowerCase()
-                                    return (
-                                      skill.title.toLowerCase().includes(q) ||
-                                      skill.description.toLowerCase().includes(q) ||
-                                      skill.skillName.toLowerCase().includes(q)
-                                    )
-                                  })
-                                  if (filteredSkills[selectedSkillIndex]) {
-                                    handleSelectSkill(filteredSkills[selectedSkillIndex])
-                                    setSlashCommandOpen(false)
-                                    setSlashQuery('')
-                                  }
-                                  return
-                                case 'Escape':
-                                  event.preventDefault()
-                                  setSlashCommandOpen(false)
-                                  return
-                              }
-                            }
+                      if (event.key === 'Backspace' && !prompt.trim() && selectedSkillName) {
+                        event.preventDefault()
+                        clearSelectedSkill()
+                      }
 
-                            if (event.key === 'Backspace' && !prompt.trim() && selectedSkillName) {
-                              event.preventDefault()
-                              clearSelectedSkill()
-                            }
-
-                            // 支持 Enter 发送，Shift+Enter 换行
-                            if (event.key === 'Enter' && !event.shiftKey) {
-                              event.preventDefault()
-                              handleSend()
-                            }
-                          }}
-                          onMultilineChange={setIsComposerMultiline}
-                          onSend={handleSend}
-                          placeholder='总结罗振宇 2026 跨年演讲金句，生成一组图片'
-                        />
-                      </div>
-                      <FileAttachmentPreview files={uploadedFiles} onRemove={handleRemoveFile} />
-                    </div>
-                    <div className={styles.inputBottomRight}>
-                      <button type="button" className={styles.iconBtn} aria-label="语音输入">
-                        <AudioOutlined />
-                      </button>
-                      <button
-                        type="button"
-                        className={`${styles.iconBtn} ${styles.sendBtn} ${!prompt.trim() ? styles.sendBtnDisabled : ''}`}
-                        onClick={handleSend}
-                        disabled={!prompt.trim()}
-                      >
-                        <ArrowUpOutlined />
-                      </button>
-                    </div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      accept="*/*"
-                      style={{ display: 'none' }}
-                      onChange={handleFileChange}
-                    />
-                  </div>
+                      // 支持 Enter 发送，Shift+Enter 换行
+                      if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault()
+                        handleSend()
+                      }
+                    }}
+                    onSend={handleSend}
+                    onMultilineChange={setIsComposerMultiline}
+                    placeholder="总结罗振宇 2026 跨年演讲金句，生成一组图片"
+                    selectedSkillName={selectedSkillName}
+                    selectedSkillDescription={selectedSkillDescription}
+                    showSelectedSkillBadge
+                    slashCommandOpen={slashCommandOpen}
+                    slashQuery={slashQuery}
+                    onSlashQueryChange={setSlashQuery}
+                    skills={skills}
+                    filteredSkills={filteredSkills}
+                    skillsLoading={skillsLoading}
+                    loadSkills={fetchSkills}
+                    selectedSkillIndex={selectedSkillIndex}
+                    onSelectSkill={(skill) => {
+                      handleSelectSkill(skill)
+                      setSlashCommandOpen(false)
+                      setSlashQuery('')
+                    }}
+                    onCloseSlashCommand={() => setSlashCommandOpen(false)}
+                    onManageSkills={handleManageSkills}
+                    uploadedFiles={uploadedFiles}
+                    onRemoveFile={handleRemoveFile}
+                    fileInputRef={fileInputRef}
+                    onFileChange={handleFileChange}
+                    onUploadFile={handleUploadFile}
+                    webSearchEnabled={webSearchEnabled}
+                    knowledgeEnabled={knowledgeEnabled}
+                    onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
+                    onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
+                    sendDisabled={!prompt.trim()}
+                  />
                 </div>
 
                 <div className={styles.quickActions}>

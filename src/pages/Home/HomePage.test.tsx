@@ -107,6 +107,17 @@ describe('HomePage', () => {
     expect(await screen.findByText('个人工作画像生成')).toBeVisible()
   })
 
+  it('首页复用 chatpage 输入区后不再展示旧的语音按钮', async () => {
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByTestId('home-composer')).toBeVisible()
+    expect(screen.queryByRole('button', { name: '语音输入' })).not.toBeInTheDocument()
+  })
+
   it('多行内容时首页输入框会切换成上下分区布局', async () => {
     render(
       <MemoryRouter
