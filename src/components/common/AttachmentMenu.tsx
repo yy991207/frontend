@@ -130,15 +130,45 @@ export function AttachmentMenu({
     }
   }, [closeAllMenus])
 
-  // 检测子菜单是否超出视口上边界，超出则改为向下对齐
+  // 检测子菜单是否超出视口边界，自动选择合适的对齐方式
   useEffect(() => {
     if (!activeSubmenu) return
 
     const measure = () => {
       const surface = rootRef.current?.querySelector(`.${styles.menuSurface}`)
-      const menuTop = surface?.getBoundingClientRect().top ?? 0
-      // 子菜单最大高度 420px，加上一点安全边距
-      setSubmenuAlignTop(menuTop < 440)
+      if (!surface) return
+
+      const menuRect = surface.getBoundingClientRect()
+      const menuTop = menuRect.top
+      const menuBottom = menuRect.bottom
+      const submenuHeight = 420 // 子菜单最大高度
+      const viewportHeight = window.innerHeight
+
+      // 向上展开时子菜单顶部位置 = menuBottom - submenuHeight
+      const submenuTopIfBottomAlign = menuBottom - submenuHeight
+      // 向下展开时子菜单底部位置 = menuTop + submenuHeight
+      const submenuBottomIfTopAlign = menuTop + submenuHeight
+
+      // 优先检测向上展开是否会超出上边界，如果会超出则改为向下展开
+      // 如果向下展开也会超出下边界，则根据哪个边界更近来决定
+      const wouldOverflowTop = submenuTopIfBottomAlign < 0
+      const wouldOverflowBottom = submenuBottomIfTopAlign > viewportHeight
+
+      if (wouldOverflowTop && !wouldOverflowBottom) {
+        // 向上展开会超出上边界，向下展开安全 -> 使用 top 对齐（向下展开）
+        setSubmenuAlignTop(true)
+      } else if (!wouldOverflowTop && wouldOverflowBottom) {
+        // 向下展开会超出下边界，向上展开安全 -> 使用 bottom 对齐（向上展开）
+        setSubmenuAlignTop(false)
+      } else if (wouldOverflowTop && wouldOverflowBottom) {
+        // 两种都会超出，根据哪个边界空间更大来决定
+        const topSpace = menuBottom
+        const bottomSpace = viewportHeight - menuTop
+        setSubmenuAlignTop(bottomSpace >= topSpace)
+      } else {
+        // 两种都安全，默认使用 bottom 对齐（向上展开）
+        setSubmenuAlignTop(false)
+      }
     }
 
     // 等 DOM 渲染后再测量
