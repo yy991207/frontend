@@ -130,13 +130,12 @@ function getMyCommandsEndpoint(): string {
 
 export async function generateCommandFromSession(
   sessionId: string,
-  userId: string,
 ): Promise<SaveCommandStep1Response> {
   const requestUrl = new URL(buildAbsoluteUrl(
     parseSimpleYaml(chatConfigText).url,
     '/api/v1/my-commands/generate',
   ))
-  requestUrl.searchParams.set('user_id', userId)
+  requestUrl.searchParams.set('user_id', getUserId())
 
   const response = await fetch(requestUrl.toString(), {
     method: 'POST',

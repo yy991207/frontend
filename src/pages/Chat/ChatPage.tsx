@@ -357,7 +357,6 @@ function ChatPageContent() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [saveCommandOpen, setSaveCommandOpen] = useState(false)
-  const [sessionUserId, setSessionUserId] = useState<string>('')
   const [agentName, setAgentName] = useState<string | null>(null)
   const [agentWebSearchLocked, setAgentWebSearchLocked] = useState(false)
   
@@ -784,7 +783,7 @@ function ChatPageContent() {
             enable_web_search: webSearchEnabled,
             include_tool_details: true,
             uploaded_files: uploadedFilesPayload,
-            tool_type: _toolType || undefined,
+            skill_name: _toolType || undefined,
           },
           messages: nextMessages,
           loadingMessageId: loadingMessage.id,
@@ -805,11 +804,11 @@ function ChatPageContent() {
           enable_web_search: webSearchEnabled,
           include_tool_details: true,
           uploaded_files: uploadedFilesPayload,
-          tool_type: _toolType || undefined,
+          skill_name: _toolType || undefined,
         },
         controller.signal,
       )
-      console.log('[DEBUG] stream payload:', { tool_type: _toolType || undefined })
+      console.log('[DEBUG] stream payload:', { skill_name: _toolType || undefined })
       await readSseStream(stream, {
         onEventId(eventId) {
           const nextSequence = parseLastEventSequence(eventId)
@@ -1335,7 +1334,6 @@ function ChatPageContent() {
         setRequestError('')
         clearChatStreamSnapshot(routeSessionId)
         setSessionLoading(false)
-        setSessionUserId(session.user_id)
 
         setAgentWebSearchLocked(false)
 
@@ -1669,7 +1667,6 @@ function ChatPageContent() {
       <SaveCommandModal
         open={saveCommandOpen}
         sessionId={currentSessionId ?? ''}
-        userId={sessionUserId}
         onClose={() => setSaveCommandOpen(false)}
         onSuccess={handleSaveCommandSuccess}
       />

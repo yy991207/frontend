@@ -584,7 +584,7 @@ export function useSharedChatRuntime({
           enable_web_search: enableWebSearch,
           include_tool_details: true,
           uploaded_files: uploadedFilesPayload,
-          tool_type: toolType || undefined,
+          skill_name: toolType || undefined,
         },
         controller.signal,
       )

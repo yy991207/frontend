@@ -15,7 +15,6 @@ vi.mock('../../services/commandsService', async () => {
 describe('SaveCommandModal', () => {
   const onClose = vi.fn()
   const onSuccess = vi.fn()
-  const TEST_USER_ID = '123456'
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -28,7 +27,7 @@ describe('SaveCommandModal', () => {
 
   it('返回 null 当 open 为 false', () => {
     const { container } = render(
-      <SaveCommandModal open={false} sessionId="test-session" userId={TEST_USER_ID} onClose={onClose} onSuccess={onSuccess} />,
+      <SaveCommandModal open={false} sessionId="test-session" onClose={onClose} onSuccess={onSuccess} />,
     )
     expect(container.innerHTML).toBe('')
   })
@@ -39,7 +38,7 @@ describe('SaveCommandModal', () => {
     )
 
     render(
-      <SaveCommandModal open sessionId="test-session" userId={TEST_USER_ID} onClose={onClose} onSuccess={onSuccess} />,
+      <SaveCommandModal open sessionId="test-session" onClose={onClose} onSuccess={onSuccess} />,
     )
 
     expect(screen.getByText('正在生成指令模板')).toBeVisible()
@@ -55,7 +54,7 @@ describe('SaveCommandModal', () => {
     })
 
     render(
-      <SaveCommandModal open sessionId="test-session" userId={TEST_USER_ID} onClose={onClose} onSuccess={onSuccess} />,
+      <SaveCommandModal open sessionId="test-session" onClose={onClose} onSuccess={onSuccess} />,
     )
 
     const nameInput = await screen.findByPlaceholderText('请输入指令名称') as HTMLInputElement
@@ -74,7 +73,7 @@ describe('SaveCommandModal', () => {
     })
 
     render(
-      <SaveCommandModal open sessionId="test-session" userId={TEST_USER_ID} onClose={onClose} onSuccess={onSuccess} />,
+      <SaveCommandModal open sessionId="test-session" onClose={onClose} onSuccess={onSuccess} />,
     )
 
     const nameInput = await screen.findByPlaceholderText('请输入指令名称') as HTMLInputElement
@@ -94,7 +93,7 @@ describe('SaveCommandModal', () => {
     })
 
     render(
-      <SaveCommandModal open sessionId="test-session" userId={TEST_USER_ID} onClose={onClose} onSuccess={onSuccess} />,
+      <SaveCommandModal open sessionId="test-session" onClose={onClose} onSuccess={onSuccess} />,
     )
 
     await screen.findByPlaceholderText('请输入指令名称')
@@ -121,7 +120,7 @@ describe('SaveCommandModal', () => {
     })
 
     render(
-      <SaveCommandModal open sessionId="test-session" userId={TEST_USER_ID} onClose={onClose} onSuccess={onSuccess} />,
+      <SaveCommandModal open sessionId="test-session" onClose={onClose} onSuccess={onSuccess} />,
     )
 
     await screen.findByPlaceholderText('请输入指令名称')
@@ -135,7 +134,7 @@ describe('SaveCommandModal', () => {
           attachments: [],
           source_session_id: 'test-session',
         },
-        TEST_USER_ID,
+        '123456',
       )
       expect(onSuccess).toHaveBeenCalled()
     })
@@ -147,7 +146,7 @@ describe('SaveCommandModal', () => {
     )
 
     render(
-      <SaveCommandModal open sessionId="test-session" userId={TEST_USER_ID} onClose={onClose} onSuccess={onSuccess} />,
+      <SaveCommandModal open sessionId="test-session" onClose={onClose} onSuccess={onSuccess} />,
     )
 
     await waitFor(() => {
@@ -168,7 +167,7 @@ describe('SaveCommandModal', () => {
     )
 
     render(
-      <SaveCommandModal open sessionId="test-session" userId={TEST_USER_ID} onClose={onClose} onSuccess={onSuccess} />,
+      <SaveCommandModal open sessionId="test-session" onClose={onClose} onSuccess={onSuccess} />,
     )
 
     await screen.findByPlaceholderText('请输入指令名称')
@@ -191,7 +190,7 @@ describe('SaveCommandModal', () => {
     )
 
     const { unmount } = render(
-      <SaveCommandModal open sessionId="test-session" userId={TEST_USER_ID} onClose={onClose} onSuccess={onSuccess} />,
+      <SaveCommandModal open sessionId="test-session" onClose={onClose} onSuccess={onSuccess} />,
     )
 
     unmount()

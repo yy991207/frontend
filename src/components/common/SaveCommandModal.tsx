@@ -4,6 +4,7 @@ import styles from './SaveCommandModal.module.less'
 import {
   generateCommandFromSession,
   createCommand,
+  getUserId,
   type CreateCommandRequest,
 } from '../../services/commandsService'
 
@@ -12,14 +13,13 @@ const { TextArea } = Input
 type SaveCommandModalProps = {
   open: boolean
   sessionId: string
-  userId: string
   onClose: () => void
   onSuccess: () => void
 }
 
 type ModalPhase = 'loading' | 'editing'
 
-export function SaveCommandModal({ open, sessionId, userId, onClose, onSuccess }: SaveCommandModalProps) {
+export function SaveCommandModal({ open, sessionId, onClose, onSuccess }: SaveCommandModalProps) {
   const [phase, setPhase] = useState<ModalPhase>('loading')
   const [name, setName] = useState('')
   const [template, setTemplate] = useState('')
@@ -37,7 +37,7 @@ export function SaveCommandModal({ open, sessionId, userId, onClose, onSuccess }
     setAttachments([])
     setSourceSessionId('')
 
-    generateCommandFromSession(sessionId, userId)
+    generateCommandFromSession(sessionId)
       .then((data) => {
         if (cancelled) return
         setName(data.name)
@@ -75,7 +75,7 @@ export function SaveCommandModal({ open, sessionId, userId, onClose, onSuccess }
         attachments,
         source_session_id: sourceSessionId,
       }
-      await createCommand(payload, userId)
+      await createCommand(payload, getUserId())
       onSuccess()
     } catch (error) {
       message.error(error instanceof Error ? error.message : '创建指令失败')
