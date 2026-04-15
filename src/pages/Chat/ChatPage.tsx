@@ -480,6 +480,12 @@ function ChatPageContent() {
     const value = location.state as { initialPrompt?: string; toolType?: string | null; uploadedFiles?: UploadedFile[] } | null
     return value?.toolType ?? null
   }, [location.state])
+  // 用 ref 保存首次渲染时的 toolType，避免 syncSessionToRoute 清空 location.state 后丢失
+  const initialToolTypeRef = useRef<string | null>(initialToolType)
+  if (initialToolType && !initialToolTypeRef.current) {
+    initialToolTypeRef.current = initialToolType
+  }
+  const resolvedInitialToolType = initialToolType ?? initialToolTypeRef.current
 
   const initialUploadedFiles = useMemo(() => {
     const value = location.state as { uploadedFiles?: UploadedFile[] } | null
@@ -778,6 +784,7 @@ function ChatPageContent() {
             enable_web_search: webSearchEnabled,
             include_tool_details: true,
             uploaded_files: uploadedFilesPayload,
+            tool_type: _toolType || undefined,
           },
           messages: nextMessages,
           loadingMessageId: loadingMessage.id,
@@ -789,6 +796,7 @@ function ChatPageContent() {
         return
       }
 
+      console.log('[DEBUG] runAssistantReply _toolType:', _toolType, 'prompt:', prompt.substring(0, 50))
       const stream = await streamChatMessage(
         chatApiConfig,
         resolvedSessionId,
@@ -797,10 +805,11 @@ function ChatPageContent() {
           enable_web_search: webSearchEnabled,
           include_tool_details: true,
           uploaded_files: uploadedFilesPayload,
+          tool_type: _toolType || undefined,
         },
         controller.signal,
       )
-
+      console.log('[DEBUG] stream payload:', { tool_type: _toolType || undefined })
       await readSseStream(stream, {
         onEventId(eventId) {
           const nextSequence = parseLastEventSequence(eventId)
@@ -1040,13 +1049,14 @@ function ChatPageContent() {
     // 首页首轮自动发送放到下一个 tick，再由 cleanup 只取消定时器。
     // 这样 StrictMode 的首轮重挂载只会清掉第一次调度，不会把真正的流式请求 abort 掉。
     const initialPromptTimer = window.setTimeout(() => {
+      console.log('[DEBUG initialPromptTimer] resolvedInitialToolType:', resolvedInitialToolType, 'initialPrompt:', initialPrompt.substring(0, 50))
       setRequestError('')
       void runAssistantReply(
         initialPrompt,
         initialConversation.userMessage,
         initialConversation.loadingMessage,
         [initialConversation.userMessage, initialConversation.loadingMessage],
-        initialToolType,
+        resolvedInitialToolType,
         initialUploadedFiles,
       )
     }, 0)
@@ -1054,7 +1064,7 @@ function ChatPageContent() {
     return () => {
       window.clearTimeout(initialPromptTimer)
     }
-  }, [initialConversation, initialPrompt, initialToolType, initialUploadedFiles, routeSessionId])
+  }, [initialConversation, initialPrompt, resolvedInitialToolType, initialUploadedFiles, routeSessionId])
 
   useEffect(() => {
     if (!routeSessionId) {

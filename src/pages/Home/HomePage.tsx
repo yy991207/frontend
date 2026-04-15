@@ -573,6 +573,7 @@ export default function HomePage() {
     setPrompt('')
     clearSelectedSkill()
     setUploadedFiles([])
+    console.log('[DEBUG HomePage] selectedSkillName:', selectedSkillName, 'preferredToolType:', preferredToolType, 'outgoingToolType:', preferredToolType || resolveQuickActionToolType(value))
     navigate('/chat', {
       state: {
         initialPrompt: outgoingPrompt,

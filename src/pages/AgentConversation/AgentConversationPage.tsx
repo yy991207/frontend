@@ -154,6 +154,7 @@ function AgentConversationPageContent() {
     agentId: id,
     uploadedFiles,
     onFilesSent: () => setUploadedFiles([]),
+    toolType: selectedSkillName || null,
   })
 
   const routeSessionId = new URLSearchParams(location.search).get('sessionId')

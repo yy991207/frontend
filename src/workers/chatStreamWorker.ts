@@ -32,6 +32,7 @@ type StreamPayload = {
   enable_web_search?: boolean
   include_tool_details?: boolean
   uploaded_files?: UploadedFileRef[]
+  tool_type?: string
 }
 
 type SubscribeCommand = {

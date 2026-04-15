@@ -236,6 +236,7 @@ type UseSharedChatRuntimeOptions = {
   agentId?: string | null
   uploadedFiles?: { id: string; status: string; name: string; url: string; resourceId?: string; objectKey: string; size?: number; ext?: string }[]
   onFilesSent?: () => void
+  toolType?: string | null
 }
 
 export function useSharedChatRuntime({
@@ -247,6 +248,7 @@ export function useSharedChatRuntime({
   agentId = null,
   uploadedFiles = [],
   onFilesSent,
+  toolType = null,
 }: UseSharedChatRuntimeOptions) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
@@ -498,7 +500,7 @@ export function useSharedChatRuntime({
     window.setTimeout(() => setCopiedMessageId((current) => (current === messageId ? null : current)), 1200)
   }, [])
 
-  const startAssistantReply = useCallback(async (prompt: string) => {
+  const startAssistantReply = useCallback(async (prompt: string, toolType?: string | null) => {
     if (!chatApiConfig) {
       setRequestError('聊天配置读取失败，请检查 config.yaml')
       return
@@ -582,6 +584,7 @@ export function useSharedChatRuntime({
           enable_web_search: enableWebSearch,
           include_tool_details: true,
           uploaded_files: uploadedFilesPayload,
+          tool_type: toolType || undefined,
         },
         controller.signal,
       )
@@ -721,8 +724,8 @@ export function useSharedChatRuntime({
     if (uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')) return
     setDraft('')
     onFilesSent?.()
-    void startAssistantReply(value)
-  }, [draft, isResponding, startAssistantReply, onFilesSent, uploadedFiles])
+    void startAssistantReply(value, toolType)
+  }, [draft, isResponding, startAssistantReply, onFilesSent, uploadedFiles, toolType])
 
   return {
     draft,

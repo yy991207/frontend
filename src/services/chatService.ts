@@ -50,6 +50,7 @@ type StreamPayload = {
   enable_web_search?: boolean
   include_tool_details?: boolean
   uploaded_files?: UploadedFileRef[]
+  tool_type?: string
 }
 
 export type SkillOutputItem = {
@@ -232,6 +233,7 @@ export async function streamChatMessage(
       include_tool_details: payload.include_tool_details ?? true,
       message: payload.message,
       uploaded_files: payload.uploaded_files ?? [],
+      ...(payload.tool_type ? { tool_type: payload.tool_type } : {}),
     }),
     signal,
   })
