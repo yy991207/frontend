@@ -27,7 +27,7 @@ import {
   advanceAssistantMessageForNextModelPhase,
   appendTextDeltaToStreamMessages,
 } from '../../core/messages/streaming'
-import type { LegacyChatMessage as ChatMessage } from '../../core/messages/types'
+import type { LegacyChatMessage as ChatMessage, UploadedFileRef } from '../../core/messages/types'
 import { groupMessages, resolveAssistantCopyTargets } from '../../core/messages/utils'
 import {
   createChatSession,
@@ -64,6 +64,7 @@ import {
   type ChatSessionDetail,
   type ChatSessionConfig,
   type ChatSessionMessageToolCall,
+  type ChatSessionMessageAttachment,
 } from '../../services/chatSessionService'
 import {
   loadCustomAgentApiConfig,
@@ -261,6 +262,17 @@ function mapToolCall(raw: ChatSessionMessageToolCall): ToolCall {
   }
 }
 
+function mapAttachmentsToUploadedFiles(attachments: ChatSessionMessageAttachment[] | undefined): UploadedFileRef[] | undefined {
+  if (!attachments || attachments.length === 0) return undefined
+  return attachments.map((att) => ({
+    id: att.resource_id,
+    name: att.file_name,
+    size: 0,
+    ext: att.file_name.split('.').pop()?.toLowerCase() || '',
+    url: att.url,
+  }))
+}
+
 function mapSessionDetailToMessages(session: ChatSessionDetail): ChatMessage[] {
   return session.messages.map((message) => {
     const rawSkillOutput = message.skill_output
@@ -281,6 +293,7 @@ function mapSessionDetailToMessages(session: ChatSessionDetail): ChatMessage[] {
       toolCalls: message.tool_calls.map(mapToolCall),
       references: message.references,
       skillOutput,
+      uploadedFiles: mapAttachmentsToUploadedFiles(message.attachments),
     }
   })
 }

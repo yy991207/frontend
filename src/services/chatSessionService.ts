@@ -22,6 +22,12 @@ export type ChatSessionMessageReference = {
   url?: string
 }
 
+export type ChatSessionMessageAttachment = {
+  resource_id: string
+  file_name: string
+  url: string
+}
+
 export type ChatSessionMessage = {
   message_id: string
   role: 'user' | 'assistant'
@@ -30,6 +36,7 @@ export type ChatSessionMessage = {
   tool_calls: ChatSessionMessageToolCall[]
   references: ChatSessionMessageReference[]
   skill_output: unknown
+  attachments?: ChatSessionMessageAttachment[]
   created_at: string
 }
 

@@ -28,10 +28,12 @@ import {
   loadChatStreamSnapshot,
   persistChatStreamSnapshot,
 } from './chatStreamSnapshotStore'
+import type { UploadedFileRef } from '../core/messages/types'
 import {
   getChatSession,
   parseChatSessionConfig,
   type ChatSessionMessage,
+  type ChatSessionMessageAttachment,
   type ChatSessionConfig,
 } from './chatSessionService'
 
@@ -136,6 +138,17 @@ function parseLastEventSequence(eventId: string) {
   return Number.isFinite(parsedSequence) ? parsedSequence : null
 }
 
+function mapAttachmentsToUploadedFiles(attachments: ChatSessionMessageAttachment[] | undefined): UploadedFileRef[] | undefined {
+  if (!attachments || attachments.length === 0) return undefined
+  return attachments.map((att) => ({
+    id: att.resource_id,
+    name: att.file_name,
+    size: 0,
+    ext: att.file_name.split('.').pop()?.toLowerCase() || '',
+    url: att.url,
+  }))
+}
+
 function convertSessionMessageToChatMessage(msg: ChatSessionMessage, sessionId: string): ChatMessage {
   const toolCalls = (msg.tool_calls || []).map((tc) => ({
     runId: tc.call_id || '',
@@ -165,6 +178,7 @@ function convertSessionMessageToChatMessage(msg: ChatSessionMessage, sessionId: 
     courses: [],
     skillOutput,
     loading: false,
+    uploadedFiles: mapAttachmentsToUploadedFiles(msg.attachments),
   }
 }
 
