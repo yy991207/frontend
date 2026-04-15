@@ -1393,13 +1393,8 @@ function ChatPageContent() {
     if (!value || isResponding) return
     if (uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')) return
 
-    const outgoingPrompt = selectedSkillName
-      ? buildSkillInitialPrompt({
-          skillName: selectedSkillName,
-          template: value,
-          title: selectedSkillName,
-        })
-      : value
+    // draft 已由 handleSelectSkill 完成拼接，直接使用
+    const outgoingPrompt = value
     const outgoingToolType = selectedSkillName ? preferredToolType || selectedSkillName : null
     const pendingFiles = [...uploadedFiles]
 

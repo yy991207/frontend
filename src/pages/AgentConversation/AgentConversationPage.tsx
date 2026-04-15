@@ -140,6 +140,7 @@ function AgentConversationPageContent() {
     copiedMessageId,
     handleCopy,
     handleSend,
+    handleStop,
     isResponding,
     requestError,
     sessionLoading,
@@ -458,6 +459,7 @@ function AgentConversationPageContent() {
                 onToggleKnowledge={() => {}}
                 sendDisabled={!draft.trim() || uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')}
                 isResponding={isResponding}
+                onStop={handleStop}
               />
             </div>
             <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>

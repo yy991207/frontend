@@ -559,13 +559,8 @@ export default function HomePage() {
     const value = prompt.trim()
     if (!value) return
 
-    const outgoingPrompt = selectedSkillName
-      ? buildSkillInitialPrompt({
-          skillName: selectedSkillName,
-          template: value,
-          title: selectedSkillName,
-        })
-      : value
+    // prompt 已由 handleSelectSkill 完成拼接，直接使用
+    const outgoingPrompt = value
 
     const completedFiles = uploadedFiles.filter((f) => f.status === 'completed')
     const pendingFiles = [...completedFiles]

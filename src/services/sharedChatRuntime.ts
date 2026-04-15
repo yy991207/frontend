@@ -718,6 +718,20 @@ export function useSharedChatRuntime({
     }
   }, [chatApiConfig, enableWebSearch, sessionId, setSessionId])
 
+  const handleStop = useCallback(() => {
+    if (streamBridgeRef.current && sessionId) {
+      streamBridgeRef.current.stopStream(sessionId)
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    setMessages((prev) =>
+      prev.map((m) => (m.loading ? { ...m, loading: false } : m)),
+    )
+    setIsResponding(false)
+  }, [sessionId])
+
   const handleSend = useCallback(() => {
     const value = draft.trim()
     if (!value || isResponding) return
@@ -736,6 +750,7 @@ export function useSharedChatRuntime({
     copiedMessageId,
     handleCopy,
     handleSend,
+    handleStop,
     isResponding,
     requestError,
     sessionLoading,
