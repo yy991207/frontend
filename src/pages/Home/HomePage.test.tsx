@@ -77,6 +77,35 @@ describe('HomePage', () => {
         } as Response
       }
 
+      if (requestUrl.includes('/api/v1/commands')) {
+        return {
+          ok: true,
+          json: async () => ({
+            success: true,
+            code: '200',
+            msg: 'success',
+            data: {
+              official_commands: [],
+              best_practices: [
+                {
+                  id: 'bp_weekly_report',
+                  type: 'practice',
+                  name: '个人工作画像生成',
+                  description: '生成个人工作画像',
+                  template: '帮我生成工作画像',
+                  skill_name: null,
+                  attachments: [],
+                  icon: null,
+                  messages: [],
+                  created_at: null,
+                },
+              ],
+              my_commands: [],
+            },
+          }),
+        } as Response
+      }
+
       return {
         ok: true,
         json: async () => ({

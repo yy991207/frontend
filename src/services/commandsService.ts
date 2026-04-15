@@ -6,6 +6,7 @@ export type CommandApiItem = {
   name: string
   description: string
   template: string
+  skill_name: string | null
   attachments: unknown[]
   icon: string | null
   messages: unknown[] | null
@@ -31,6 +32,8 @@ export type CommandPromptItem = {
   title: string
   summary: string
   template: string
+  skill_name: string | null
+  attachments: unknown[]
 }
 
 const MAX_DESCRIPTION_LENGTH = 200
@@ -79,6 +82,8 @@ export function mapCommandsToPromptItems(commands: CommandApiItem[]): CommandPro
       ? `${cmd.description.slice(0, MAX_DESCRIPTION_LENGTH)}…`
       : cmd.description,
     template: cmd.template,
+    skill_name: cmd.skill_name ?? null,
+    attachments: cmd.attachments,
   }))
 }
 

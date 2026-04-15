@@ -121,6 +121,11 @@ type PromptItem = {
   title: string
   summary: string
   template?: string
+  skill_name?: string | null
+  attachments?: unknown[]
+  coverImageUrl?: string
+  type?: string
+  practiceId?: string
 }
 
 type PracticeTab = {
@@ -445,17 +450,54 @@ export default function HomePage() {
         }
 
         const mockData = (await mockResponse.json()) as HomeTabsMockData
-        const officialCommands = commandsResponse?.data?.official_commands ?? []
-        const myCommands = commandsResponse?.data?.my_commands ?? []
+        const commandsResponseData = commandsResponse?.data
+        const officialCommands = commandsResponseData?.official_commands ?? []
+        const myCommands = commandsResponseData?.my_commands ?? []
+        const apiBestPractices = commandsResponseData?.best_practices ?? []
 
         const recommendedTab = mockData.tabs.find((t) => t.key === 'recommended-prompts')
         const myPromptsTab = mockData.tabs.find((t) => t.key === 'my-prompts')
-        const bestPracticeTab = mockData.tabs.find((t) => t.key === 'best-practice')
+        const mockBestPracticeTab = mockData.tabs.find((t) => t.key === 'best-practice')
+
+        // 从 mock 中构建封面图映射
+        const coverImageMap = new Map<string, string>()
+        const mockBestPracticeItems = mockBestPracticeTab?.items ?? []
+        for (const mockItem of mockBestPracticeItems) {
+          if ('title' in mockItem && 'coverImageUrl' in mockItem) {
+            coverImageMap.set(mockItem.title, mockItem.coverImageUrl as string)
+          }
+        }
+
+        // 映射 API 最佳实践数据 + 匹配封面图
+        const contentTypes = new Map<string, string>()
+        for (const mockItem of mockBestPracticeItems) {
+          if ('title' in mockItem && 'type' in mockItem) {
+            contentTypes.set(mockItem.title, mockItem.type as string)
+          }
+        }
+
+        const bestPracticeItems: PromptItem[] = apiBestPractices.map((cmd, index) => ({
+          id: index + 1,
+          icon: cmd.icon ?? '📝',
+          title: cmd.name,
+          summary: cmd.description,
+          template: cmd.template,
+          skill_name: cmd.skill_name,
+          attachments: cmd.attachments,
+          coverImageUrl: coverImageMap.get(cmd.name),
+          type: contentTypes.get(cmd.name) || '',
+          practiceId: cmd.id,
+        }))
 
         const mappedTabs: HomeTab[] = []
 
-        if (bestPracticeTab) {
-          mappedTabs.push(bestPracticeTab)
+        if (mockBestPracticeTab) {
+          mappedTabs.push({
+            key: mockBestPracticeTab.key,
+            label: mockBestPracticeTab.label,
+            contentType: 'practice-cards',
+            items: bestPracticeItems,
+          })
         }
 
         if (recommendedTab) {
@@ -467,6 +509,8 @@ export default function HomePage() {
               title: cmd.name,
               summary: cmd.description,
               template: cmd.template,
+              skill_name: cmd.skill_name,
+              attachments: cmd.attachments,
             })),
           })
         }
@@ -480,6 +524,8 @@ export default function HomePage() {
               title: cmd.name,
               summary: cmd.description,
               template: cmd.template,
+              skill_name: cmd.skill_name,
+              attachments: cmd.attachments,
             })),
           })
         }
@@ -597,6 +643,37 @@ export default function HomePage() {
     setPrompt(action.prompt)
   }
 
+  // 统一的指令点击处理：基于 skill_name + template 逻辑
+  const handleCommandClick = useCallback((item: PromptItem) => {
+    const skillName = item.skill_name
+    const template = item.template || ''
+    const attachments = item.attachments || []
+
+    // 基于 skill_name + template 逻辑
+    if (skillName && template) {
+      setPrompt(`基于 /${skillName} ${template}`)
+    } else if (template) {
+      setPrompt(template)
+    }
+
+    // 处理附件：将 API 附件转换为 UploadedFile 格式
+    if (attachments.length > 0) {
+      const mappedFiles: UploadedFile[] = attachments
+        .filter((a): a is { resource_id: string; file_name: string; url: string } =>
+          !!a && typeof a === 'object' && 'file_name' in a && 'url' in a,
+        )
+        .map((a, i) => ({
+          id: `attachment-${a.resource_id || i}`,
+          name: a.file_name,
+          url: a.url,
+          status: 'completed' as const,
+          size: 0,
+          progress: 100,
+        }))
+      setUploadedFiles(mappedFiles)
+    }
+  }, [])
+
   const renderPracticeCards = (items: PracticeItem[]) => {
     if (tabsLoading) {
       return <div className={styles.emptyCommands}>内容加载中...</div>
@@ -648,7 +725,7 @@ export default function HomePage() {
     )
   }
 
-  const renderPromptCards = (items: PromptItem[], emptyText = DEFAULT_EMPTY_PROMPT_TEXT) => {
+  const renderPromptCards = (items: PromptItem[], emptyText = DEFAULT_EMPTY_PROMPT_TEXT, onCardClick?: (item: PromptItem) => void) => {
     if (tabsLoading) {
       return <div className={styles.emptyCommands}>内容加载中...</div>
     }
@@ -669,7 +746,7 @@ export default function HomePage() {
             className={styles.promptCard}
             onClick={() => {
               if (item.template) {
-                setPrompt(item.template)
+                onCardClick?.(item)
               }
             }}
           >
@@ -684,13 +761,82 @@ export default function HomePage() {
     )
   }
 
+  const renderPracticePromptCards = (items: PromptItem[], onCardClick?: (item: PromptItem) => void, onViewConversation?: (practiceId: string) => void) => {
+    if (tabsLoading) {
+      return <div className={styles.emptyCommands}>内容加载中...</div>
+    }
+
+    if (tabsError) {
+      return <div className={styles.emptyCommands}>{tabsError}</div>
+    }
+
+    if (!items.length) {
+      return <div className={styles.emptyCommands}>暂无实践</div>
+    }
+
+    return (
+      <div className={styles.practiceGrid}>
+        {items.map((item) => (
+          <article
+            key={item.id}
+            className={styles.practiceCard}
+            onClick={() => {
+              if (item.template) {
+                onCardClick?.(item)
+              }
+            }}
+          >
+            <div className={styles.practiceCover}>
+              {item.coverImageUrl ? (
+                <img src={item.coverImageUrl} alt={item.title} className={styles.practiceCoverImage} />
+              ) : (
+                <div className={styles.practiceFallbackCover}>
+                  <span className={styles.practiceCoverText}>{item.title.charAt(0).toUpperCase()}</span>
+                </div>
+              )}
+              <div className={styles.practiceCoverActions}>
+                {item.practiceId && onViewConversation ? (
+                  <button
+                    type="button"
+                    className={styles.practiceActionButton}
+                    onClick={(e) => { e.stopPropagation(); onViewConversation(item.practiceId!) }}
+                  >
+                    查看对话
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className={styles.practiceActionPrimary}
+                  onClick={(e) => { e.stopPropagation(); onCardClick?.(item) }}
+                >
+                  做同款
+                </button>
+              </div>
+            </div>
+            <div className={styles.practiceTitle}>{item.title}</div>
+            {item.type ? (
+              <div className={styles.practiceMeta}>
+                <span className={styles.practiceMetaItem}>
+                  {getContentTypeIcon(item.type)}
+                  <span>{item.type}</span>
+                </span>
+              </div>
+            ) : null}
+          </article>
+        ))}
+      </div>
+    )
+  }
+
   const tabItems = homeTabs.map((tab) => ({
     key: tab.key,
     label: tab.label,
     children:
-      tab.contentType === 'practice-cards'
-        ? renderPracticeCards(tab.items)
-        : renderPromptCards(tab.items, tab.emptyText),
+      tab.key === 'best-practice'
+        ? renderPracticePromptCards(tab.items as PromptItem[], handleCommandClick, (practiceId) => navigate(`/practice/${practiceId}`))
+        : tab.contentType === 'prompt-cards'
+          ? renderPromptCards(tab.items as PromptItem[], tab.emptyText, handleCommandClick)
+          : renderPracticeCards(tab.items as PracticeItem[]),
   }))
 
   return (

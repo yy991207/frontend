@@ -9,6 +9,7 @@ import SkillsPage from './pages/Skills/SkillsPage'
 import AgentDetailPage from './pages/AgentDetail/AgentDetailPage'
 import AgentCreatePage from './pages/AgentCreate/AgentCreatePage'
 import AgentConversationPage from './pages/AgentConversation/AgentConversationPage'
+import PracticePreviewPage from './pages/Home/PracticePreviewPage'
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
             <Route path="/library" element={<LibraryPage />} />
             <Route path="/skills" element={<SkillsPage />} />
             <Route path="/partner" element={<PartnerPage />} />
+            <Route path="/practice/:practiceId" element={<PracticePreviewPage />} />
           </Routes>
         </div>
       </div>
