@@ -20,6 +20,7 @@ import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
 import SkillDetailPanel from '../../components/common/SkillDetailPanel'
 import { MessageList } from '../../components/chat/message-list'
 import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
+import { ChatComposer } from '../../components/common/ChatComposer'
 import SkillTemplateInput from '../../components/common/SkillTemplateInput'
 import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts-context'
 import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
@@ -560,54 +561,36 @@ const handleModalSave = (data: { name: string; description: string }) => {
 
             <div className={styles.composerArea}>
               <div className={styles.composerWrap}>
-                <div className={styles.inputWrap}>
-                  <FileAttachmentPreview files={uploadedFiles} onRemove={handleRemoveFile} />
-                  <div className={styles.inputTopArea}>
-                    <SkillTemplateInput
-                      value={draft}
-                      onChange={setDraft}
-                      onSend={handleSend}
-                      placeholder="输入问题进行测试..."
-                      className={styles.chatInput}
-                      maxRows={6}
-                      minRows={1}
-                      disabled={false}
-                    />
-                  </div>
-                  <div className={styles.inputBottomArea}>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      accept="*/*"
-                      style={{ display: 'none' }}
-                      onChange={handleFileChange}
-                    />
-                    <div className={styles.inputBottomLeft}>
-                      <button type="button" className={styles.iconBtn} aria-label="附件" onClick={handleUploadFile}>
-                        <PaperClipOutlined />
-                      </button>
-                    </div>
-                    <div className={styles.inputBottomRight}>
-                      <div className={styles.inputActions}>
-                        {isResponding ? (
-                          <button type="button" className={`${styles.iconBtn} ${styles.stopBtn}`} onClick={handleStop}>
-                            <LoadingOutlined />
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className={`${styles.iconBtn} ${styles.sendBtn} ${!draft.trim() ? styles.sendBtnDisabled : ''}`}
-                            onClick={handleSend}
-                            disabled={!draft.trim()}
-                          >
-                            <ArrowUpOutlined />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ChatComposer
+                  variant="agentConversation"
+                  value={draft}
+                  onChange={setDraft}
+                  onSend={handleSend}
+                  placeholder="输入问题进行测试..."
+                  uploadedFiles={uploadedFiles}
+                  onRemoveFile={handleRemoveFile}
+                  fileInputRef={fileInputRef}
+                  onFileChange={handleFileChange}
+                  onUploadFile={handleUploadFile}
+                  webSearchEnabled={webSearchEnabled}
+                  knowledgeEnabled={false}
+                  onToggleWebSearch={() => {}}
+                  onToggleKnowledge={() => {}}
+                  sendDisabled={!draft.trim()}
+                  isResponding={isResponding}
+                  onStop={handleStop}
+                  showUpload={false}
+                  slashCommandOpen={false}
+                  slashQuery=""
+                  onSlashQueryChange={() => {}}
+                  skills={[]}
+                  filteredSkills={[]}
+                  skillsLoading={false}
+                  selectedSkillIndex={0}
+                  onSelectSkill={() => {}}
+                  onCloseSlashCommand={() => {}}
+                  onManageSkills={() => {}}
+                />
               </div>
               <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>
             </div>

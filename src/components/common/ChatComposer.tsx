@@ -46,6 +46,7 @@ type ChatComposerProps = {
   testId?: string
   layout?: 'inline' | 'stacked'
   skillPanelPosition?: 'above' | 'below'
+  showUpload?: boolean
 }
 
 export function ChatComposer({
@@ -87,6 +88,7 @@ export function ChatComposer({
   testId,
   layout,
   skillPanelPosition = 'above',
+  showUpload = true,
 }: ChatComposerProps) {
   const isAgentConversation = variant === 'agentConversation'
   const showStopButton = isResponding && typeof onStop === 'function'
@@ -110,7 +112,7 @@ export function ChatComposer({
         onClose={onCloseSlashCommand}
         onManageSkills={onManageSkills}
       />
-      <FileAttachmentPreview files={uploadedFiles} onRemove={onRemoveFile} />
+      {showUpload !== false && <FileAttachmentPreview files={uploadedFiles} onRemove={onRemoveFile} />}
       <div className={styles.inputTopArea}>
         {showSelectedSkillBadge && selectedSkillName ? (
           <span
@@ -130,26 +132,30 @@ export function ChatComposer({
         />
       </div>
       <div className={styles.inputBottomArea}>
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept="*/*"
-          style={{ display: 'none' }}
-          onChange={onFileChange}
-        />
+        {showUpload !== false && (
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="*/*"
+            style={{ display: 'none' }}
+            onChange={onFileChange}
+          />
+        )}
         <div className={styles.inputBottomLeft}>
           {isAgentConversation ? (
             <>
-              <button
-                type="button"
-                aria-label="上传附件"
-                title="上传文档"
-                className={styles.uploadAttachmentButton}
-                onClick={onUploadFile}
-              >
-                <PaperClipOutlined />
-              </button>
+              {showUpload !== false && (
+                <button
+                  type="button"
+                  aria-label="上传附件"
+                  title="上传文档"
+                  className={styles.uploadAttachmentButton}
+                  onClick={onUploadFile}
+                >
+                  <PaperClipOutlined />
+                </button>
+              )}
               <button
                 type="button"
                 role="switch"

@@ -4,14 +4,12 @@ import {
   CameraOutlined,
   EditOutlined,
   GlobalOutlined,
-  PaperClipOutlined,
   PlusOutlined,
   SafetyCertificateOutlined,
   LoadingOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   DeleteOutlined,
-  ArrowUpOutlined,
 } from '@ant-design/icons'
 import { message, Spin, Tooltip } from 'antd'
 import EditAgentModal from '../../components/common/EditAgentModal'
@@ -19,8 +17,6 @@ import SkillConfigModal from '../../components/common/SkillConfigModal'
 import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
 import SkillDetailPanel from '../../components/common/SkillDetailPanel'
 import { MessageList } from '../../components/chat/message-list'
-import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
-import SkillTemplateInput from '../../components/common/SkillTemplateInput'
 import {
   loadCustomAgentApiConfig,
   updateCustomAgent,
@@ -37,6 +33,7 @@ import {
 } from '../../services/ossUploadService'
 import { uploadPendingFileToOssWithDocumentParse } from '../../services/agentFileUploadService'
 import type { ToolCall } from '../../core/messages/types'
+import { ChatComposer } from '../../components/common/ChatComposer'
 import {
   clearAgentStorage,
 } from '../../utils/agentStorage'
@@ -664,58 +661,39 @@ export default function AgentDetailPage() {
               </div>
             </div>
 
-            {/* 输入区域 - 使用 ChatPage 样式 */}
+            {/* 输入区域 */}
             <div className={styles.composerArea}>
               <div className={styles.composerWrap}>
-                <div className={styles.inputWrap}>
-                  <FileAttachmentPreview files={uploadedFiles} onRemove={handleRemoveFile} />
-                  {/* 上方输入区域 */}
-                  <div className={styles.inputTopArea}>
-                    <SkillTemplateInput
-                      value={chatInputValue}
-                      onChange={setChatInputValue}
-                      onSend={handleSendMessage}
-                      placeholder="问我任何问题"
-                      className={styles.chatInput}
-                      maxRows={8}
-                      minRows={1}
-                    />
-                  </div>
-                  {/* 下方按钮区域 */}
-                  <div className={styles.inputBottomArea}>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      accept="*/*"
-                      style={{ display: 'none' }}
-                      onChange={handleFileChange}
-                    />
-                    <div className={styles.inputBottomLeft}>
-                      <button type="button" className={styles.iconBtn} aria-label="附件" onClick={handleUploadFile}>
-                        <PaperClipOutlined />
-                      </button>
-                    </div>
-                    <div className={styles.inputBottomRight}>
-                      <div className={styles.inputActions}>
-                        {isChatResponding ? (
-                          <button type="button" className={`${styles.iconBtn} ${styles.stopBtn}`} onClick={handleStop}>
-                            <span className={styles.stopInner} />
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className={`${styles.iconBtn} ${styles.sendBtn} ${!chatInputValue.trim() ? styles.sendBtnDisabled : ''}`}
-                            onClick={handleSendMessage}
-                            disabled={!chatInputValue.trim()}
-                          >
-                            <ArrowUpOutlined />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ChatComposer
+                  variant="agentConversation"
+                  value={chatInputValue}
+                  onChange={setChatInputValue}
+                  onSend={handleSendMessage}
+                  placeholder="问我任何问题"
+                  uploadedFiles={uploadedFiles}
+                  onRemoveFile={handleRemoveFile}
+                  fileInputRef={fileInputRef}
+                  onFileChange={handleFileChange}
+                  onUploadFile={handleUploadFile}
+                  webSearchEnabled={false}
+                  knowledgeEnabled={false}
+                  onToggleWebSearch={() => {}}
+                  onToggleKnowledge={() => {}}
+                  sendDisabled={!chatInputValue.trim()}
+                  isResponding={isChatResponding}
+                  onStop={handleStop}
+                  showUpload={false}
+                  slashCommandOpen={false}
+                  slashQuery=""
+                  onSlashQueryChange={() => {}}
+                  skills={[]}
+                  filteredSkills={[]}
+                  skillsLoading={false}
+                  selectedSkillIndex={0}
+                  onSelectSkill={() => {}}
+                  onCloseSlashCommand={() => {}}
+                  onManageSkills={() => {}}
+                />
               </div>
               <div className={styles.footerHint}>AI 生成内容可能有误，请核实重要信息</div>
             </div>
