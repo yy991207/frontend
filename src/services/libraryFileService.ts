@@ -30,6 +30,43 @@ export async function fetchLibraryFileDetail(
   return response.json()
 }
 
+export type SaveToCloudDiskParams = {
+  url: string
+}
+
+export type SaveToCloudDiskResponse = {
+  success: boolean
+  message: string
+  code: number
+  result: Record<string, unknown>
+  timestamp: string | null
+}
+
+export async function saveToCloudDisk(
+  baseUrl: string,
+  token: string,
+  userId: string,
+  params: SaveToCloudDiskParams,
+): Promise<SaveToCloudDiskResponse> {
+  const cleanBaseUrl = baseUrl.replace(/\/+$/, '')
+  const url = `${cleanBaseUrl}/api/v1/files/library/save-to-cloud-disk`
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      access_token: token,
+      user_id: userId,
+      url: params.url,
+    }),
+  })
+  if (!response.ok) {
+    throw new Error('保存到云盘失败')
+  }
+  return response.json() as Promise<SaveToCloudDiskResponse>
+}
+
 export async function fetchPreviewContent(
   baseUrl: string,
   fileUrl: string,

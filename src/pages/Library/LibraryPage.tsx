@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   AudioOutlined,
+  CloudUploadOutlined,
   CloseCircleFilled,
   DownOutlined,
   DownloadOutlined,
@@ -16,13 +17,16 @@ import {
   VideoCameraOutlined,
 } from '@ant-design/icons'
 import { AppPageShell, AppSurfacePanel } from '../../components/layout/AppPageShell'
+import { message } from 'antd'
 import styles from './library.module.less'
 import { LibraryFilePreviewModal } from './LibraryFilePreviewModal'
+import { saveToCloudDisk } from '../../services/libraryFileService'
 
 type LibraryConfig = {
   baseUrl: string
   userId: string
   libraryPath: string
+  token: string
 }
 
 type LibraryFileType = 'document' | 'image' | 'video' | 'audio' | 'other'
@@ -124,6 +128,7 @@ async function loadLibraryConfig(): Promise<LibraryConfig> {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
   const userId = parsedConfig.user_id
+  const token = parsedConfig.token
 
   if (!baseUrl || !userId) {
     throw new Error('config.yaml 缺少 url 或 user_id 配置')
@@ -133,6 +138,7 @@ async function loadLibraryConfig(): Promise<LibraryConfig> {
     baseUrl,
     userId,
     libraryPath: LIBRARY_PATH,
+    token,
   }
 }
 
@@ -325,6 +331,24 @@ export default function LibraryPage() {
       }
     } catch (error) {
       console.error('下载失败:', error)
+    }
+  }
+
+  const handleSaveToCloudDisk = async (item: LibraryFileItem) => {
+    setOpenMenuId(null)
+    if (!config || !item.file_path) return
+
+    try {
+      const result = await saveToCloudDisk(config.baseUrl, config.token, config.userId, {
+        url: item.file_path,
+      })
+      if (result.success) {
+        message.success('保存到云盘成功')
+      } else {
+        message.error(result.message || '保存到云盘失败')
+      }
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '保存到云盘失败')
     }
   }
 
@@ -667,6 +691,10 @@ export default function LibraryPage() {
                                 <button type="button" className={styles.actionMenuItem} onClick={() => handleDownloadFile(item)}>
                                   <DownloadOutlined />
                                   <span>下载</span>
+                                </button>
+                                <button type="button" className={styles.actionMenuItem} onClick={() => handleSaveToCloudDisk(item)}>
+                                  <CloudUploadOutlined />
+                                  <span>保存到云盘</span>
                                 </button>
                               </div>
                             </div>
