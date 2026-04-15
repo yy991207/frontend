@@ -573,8 +573,12 @@ const handleModalSave = (data: { name: string; description: string }) => {
                   onFileChange={handleFileChange}
                   onUploadFile={handleUploadFile}
                   webSearchEnabled={webSearchEnabled}
+                  webSearchLocked={!webSearchEnabled}
                   knowledgeEnabled={false}
-                  onToggleWebSearch={() => {}}
+                  onToggleWebSearch={() => setWebSearchEnabled(!webSearchEnabled)}
+                  onLockedWebSearchClick={() => {
+                    void message.warning('当前智能体未开启联网检索，无法配置')
+                  }}
                   onToggleKnowledge={() => {}}
                   sendDisabled={!draft.trim()}
                   isResponding={isResponding}

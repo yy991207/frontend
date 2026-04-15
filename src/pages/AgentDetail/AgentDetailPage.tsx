@@ -675,9 +675,13 @@ export default function AgentDetailPage() {
                   fileInputRef={fileInputRef}
                   onFileChange={handleFileChange}
                   onUploadFile={handleUploadFile}
-                  webSearchEnabled={false}
+                  webSearchEnabled={webSearchEnabled}
+                  webSearchLocked={!webSearchEnabled}
                   knowledgeEnabled={false}
-                  onToggleWebSearch={() => {}}
+                  onToggleWebSearch={() => setWebSearchEnabled(!webSearchEnabled)}
+                  onLockedWebSearchClick={() => {
+                    void message.warning('当前智能体未开启联网检索，无法配置')
+                  }}
                   onToggleKnowledge={() => {}}
                   sendDisabled={!chatInputValue.trim()}
                   isResponding={isChatResponding}

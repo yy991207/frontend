@@ -61,9 +61,6 @@ function UserUploadedFileChip({ file }: { file: UploadedFileRef }) {
       </div>
       <div className={styles.userFileInfo}>
         <div className={styles.userFileName} title={file.name}>{file.name}</div>
-        <div className={styles.userFileMeta}>
-          <span>{formatFileSize(file.size)}</span>
-        </div>
       </div>
     </div>
   )
