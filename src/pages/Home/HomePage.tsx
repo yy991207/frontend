@@ -778,7 +778,7 @@ export default function HomePage() {
                     }}
                     onSend={handleSend}
                     onMultilineChange={setIsComposerMultiline}
-                    placeholder="总结罗振宇 2026 跨年演讲金句，生成一组图片"
+                    placeholder="输入你的想法或输入'/'选择想要使用技能"
                     selectedSkillName={selectedSkillName}
                     selectedSkillDescription={selectedSkillDescription}
                     slashCommandOpen={slashCommandOpen}
