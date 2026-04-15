@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import HomePage from './HomePage'
 
@@ -122,6 +122,26 @@ describe('HomePage', () => {
     // 技能面板使用下方定位
     expect(screen.getByTestId('skill-slash-command')).toHaveAttribute('data-variant', 'agentConversation')
     expect(screen.getByTestId('skill-slash-command')).toHaveAttribute('data-position', 'below')
+  })
+
+  it('输入斜杠时首页会抬高输入区层级，避免技能面板被下方页签遮挡', async () => {
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>,
+    )
+
+    const composerWrap = await screen.findByTestId('home-composer-wrap')
+    const input = screen.getByLabelText('主页输入框')
+
+    expect(composerWrap).toHaveAttribute('data-layer-state', 'normal')
+
+    fireEvent.change(input, { target: { value: '/' } })
+
+    await waitFor(() => {
+      expect(composerWrap).toHaveAttribute('data-layer-state', 'raised')
+      expect(global.fetch).toHaveBeenCalledTimes(4)
+    })
   })
 
   it('多行内容时首页输入框会切换成上下分区布局', async () => {

@@ -717,7 +717,11 @@ export default function HomePage() {
                   <h1 className={styles.greeting}>Hi {HOME_USER_NAME}，有什么可以帮你的？</h1>
                 </div>
 
-                <div className={styles.composerWrap}>
+                <div
+                  className={`${styles.composerWrap} ${slashCommandOpen ? styles.composerWrapRaised : ''}`}
+                  data-testid="home-composer-wrap"
+                  data-layer-state={slashCommandOpen ? 'raised' : 'normal'}
+                >
                   <ChatComposer
                     testId="home-composer"
                     layout={isComposerMultiline ? 'stacked' : 'inline'}
