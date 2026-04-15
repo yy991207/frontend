@@ -100,3 +100,62 @@ export async function fetchCommands(signal?: AbortSignal): Promise<CommandsRespo
 
   return data
 }
+
+export type SaveCommandStep1Response = {
+  name: string
+  template: string
+  attachments: unknown[]
+  source_session_id: string
+}
+
+export type CreateCommandRequest = {
+  name: string
+  template: string
+  attachments: unknown[]
+  source_session_id: string
+}
+
+export type CreateCommandResponse = {
+  id: string
+  name: string
+  template: string
+  attachments: unknown[]
+}
+
+function getMyCommandsEndpoint(): string {
+  const parsedConfig = parseSimpleYaml(chatConfigText)
+  const baseUrl = parsedConfig.url
+  return buildAbsoluteUrl(baseUrl, '/api/v1/my-commands')
+}
+
+export async function generateCommandFromSession(
+  sessionId: string,
+): Promise<SaveCommandStep1Response> {
+  const response = await fetch(getMyCommandsEndpoint(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId }),
+  })
+
+  if (!response.ok) {
+    throw new Error('生成指令模板失败')
+  }
+
+  return (await response.json()) as SaveCommandStep1Response
+}
+
+export async function createCommand(
+  data: CreateCommandRequest,
+): Promise<CreateCommandResponse> {
+  const response = await fetch(getMyCommandsEndpoint(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    throw new Error('创建指令失败')
+  }
+
+  return (await response.json()) as CreateCommandResponse
+}

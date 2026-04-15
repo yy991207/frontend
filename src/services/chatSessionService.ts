@@ -268,21 +268,24 @@ export async function findLatestEmptySession(
   signal?: AbortSignal,
 ): Promise<string | null> {
   const sessions = await fetchChatSessions(config, signal)
-  
-  const sortedByCreatedAt = [...sessions].sort((a, b) => {
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  })
-  
-  for (const session of sortedByCreatedAt) {
-    try {
-      const detail = await getChatSession(config, session.session_id, signal)
-      if (detail.message_count === 0) {
-        return session.session_id
-      }
-    } catch {
-      continue
-    }
+
+  if (sessions.length === 0) {
+    return null
   }
-  
+
+  // 只取最新创建的那一条会话，检查是否为空会话
+  const latestSession = [...sessions].sort((a, b) => {
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  })[0]
+
+  try {
+    const detail = await getChatSession(config, latestSession.session_id, signal)
+    if (detail.message_count === 0) {
+      return latestSession.session_id
+    }
+  } catch {
+    // 获取最新会话详情失败，不做额外处理
+  }
+
   return null
 }

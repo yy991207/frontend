@@ -5,6 +5,7 @@ import {
   EllipsisOutlined,
   ExportOutlined,
   FolderOpenOutlined,
+  SaveOutlined,
 } from '@ant-design/icons'
 import chatConfigText from '../../../config.yaml?raw'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -22,6 +23,7 @@ import {
 } from '../../services/ossUploadService'
 import { uploadPendingFileToOssWithDocumentParse } from '../../services/agentFileUploadService'
 import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal'
+import { SaveCommandModal } from '../../components/common/SaveCommandModal'
 import { adaptChatMessages } from '../../core/messages/adapters'
 import {
   advanceAssistantMessageForNextModelPhase,
@@ -354,6 +356,7 @@ function ChatPageContent() {
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [saveCommandOpen, setSaveCommandOpen] = useState(false)
   const [agentName, setAgentName] = useState<string | null>(null)
   const [agentWebSearchLocked, setAgentWebSearchLocked] = useState(false)
   
@@ -1447,6 +1450,27 @@ function ChatPageContent() {
     }
   }
 
+  const handleSaveCommandSuccess = useCallback(() => {
+    setSaveCommandOpen(false)
+    message.success(
+      <span>
+        创建成功，可在首页{' '}
+        <a
+          onClick={() => {
+            navigate('/', {
+              state: { activateTabKey: 'my-prompts' },
+            })
+          }}
+          style={{ color: '#1677ff', cursor: 'pointer' }}
+        >
+          我的指令
+        </a>{' '}
+        中查看
+      </span>,
+      { duration: 5 },
+    )
+  }, [navigate])
+
   return (
     <main className={styles.page}>
       <div className={`${styles.splitContainer} ${artifactOpen ? styles.splitContainerOpen : ''}`}>
@@ -1471,6 +1495,17 @@ function ChatPageContent() {
                 </button>
                 {headerMenuOpen ? (
                   <div className={styles.headerMenuDropdown}>
+                    <button
+                      type="button"
+                      className={styles.headerMenuItem}
+                      onClick={() => {
+                        setHeaderMenuOpen(false)
+                        setSaveCommandOpen(true)
+                      }}
+                    >
+                      <SaveOutlined className={styles.headerMenuItemIcon} />
+                      <span>保存为指令模版</span>
+                    </button>
                     <button
                       type="button"
                       className={styles.headerMenuItem}
@@ -1618,6 +1653,12 @@ function ChatPageContent() {
         loading={deleteLoading}
         onCancel={() => setDeleteConfirmOpen(false)}
         onConfirm={handleDeleteCurrentSession}
+      />
+      <SaveCommandModal
+        open={saveCommandOpen}
+        sessionId={currentSessionId ?? ''}
+        onClose={() => setSaveCommandOpen(false)}
+        onSuccess={handleSaveCommandSuccess}
       />
     </main>
   )

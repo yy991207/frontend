@@ -42,6 +42,7 @@ type HomeRouteState = {
   skillDescription?: string
   template?: string
   uploadedFiles?: UploadedFile[]
+  activateTabKey?: string
 } | null
 
 function parseSimpleYaml(rawText: string) {
@@ -220,6 +221,7 @@ export default function HomePage() {
   const [selectedSkillName, setSelectedSkillName] = useState('')
   const [selectedSkillDescription, setSelectedSkillDescription] = useState('')
   const [homeTabs, setHomeTabs] = useState<HomeTab[]>(DEFAULT_HOME_TABS)
+  const [activeTabKey, setActiveTabKey] = useState<string | undefined>(undefined)
   const [tabsLoading, setTabsLoading] = useState(true)
   const [tabsError, setTabsError] = useState('')
   
@@ -398,6 +400,12 @@ export default function HomePage() {
 
   useEffect(() => {
     const routeState = location.state as HomeRouteState
+
+    if (routeState?.activateTabKey) {
+      setActiveTabKey(routeState.activateTabKey)
+      navigate(location.pathname, { replace: true, state: null })
+      return
+    }
 
     if (!routeState?.initialPrompt) {
       return
@@ -825,7 +833,7 @@ export default function HomePage() {
             </div>
 
             <div className={styles.bottom}>
-              <Tabs items={tabItems} />
+              <Tabs items={tabItems} activeKey={activeTabKey} onChange={setActiveTabKey} />
             </div>
           </div>
         </div>
