@@ -967,6 +967,22 @@ function ChatPageContent() {
     }
   }
 
+  const handleStop = useCallback(() => {
+    // 优先尝试通过 SharedWorker 中断流式请求
+    if (streamBridgeRef.current && currentSessionId) {
+      streamBridgeRef.current.stopStream(currentSessionId)
+    }
+    // 备用：直接 abort（用于非 SharedWorker 路径）
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    setMessages((prev) => prev.map((m) =>
+      m.loading ? { ...m, loading: false } : m,
+    ))
+    setIsResponding(false)
+  }, [currentSessionId])
+
   const startAssistantReply = async (prompt: string, toolType: string | null = null, uploadedFiles: UploadedFile[] = []) => {
     const now = new Date()
     const completedFiles = uploadedFiles.filter((f) => f.status === 'completed')
@@ -1572,6 +1588,7 @@ function ChatPageContent() {
                 onToggleKnowledge={() => {}}
                 sendDisabled={!draft.trim() || uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')}
                 isResponding={isResponding}
+                onStop={handleStop}
               />
             </div>
             <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>

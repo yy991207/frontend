@@ -190,7 +190,7 @@ export function ChatComposer({
         </div>
         <div className={styles.inputBottomRight}>
           <div className={styles.inputActions}>
-            {showStopButton && !isAgentConversation ? (
+            {showStopButton ? (
               <button type="button" aria-label="停止生成" className={`${styles.iconBtn} ${styles.stopBtn}`} onClick={onStop}>
                 <span className={styles.stopInner} />
               </button>
