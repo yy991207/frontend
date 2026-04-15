@@ -1,0 +1,129 @@
+@keyframes loadingShimmer {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes loadingSpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.messageListSkeleton {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  padding: 16px 0 0;
+}
+
+.messageSkeletonUser {
+  width: min(50%, 360px);
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.messageSkeletonAssistant {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.messageSkeletonBar {
+  display: block;
+  height: 18px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(241, 241, 236, 0.92) 0%, rgba(250, 250, 249, 1) 50%, rgba(241, 241, 236, 0.92) 100%);
+  background-size: 220% 100%;
+  animation: loadingShimmer 1.6s ease-in-out infinite;
+}
+
+.messageSkeletonBarFull {
+  width: 100%;
+}
+
+.messageSkeletonBarLong {
+  width: 86%;
+}
+
+.messageSkeletonBarMedium {
+  width: 70%;
+}
+
+.messageSkeletonBarShort {
+  width: 46%;
+}
+
+.loadingShell {
+  max-width: 420px;
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 4px 0 2px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.loadingSpinnerWrap {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -1px;
+  color: #9ca3af;
+}
+
+.loadingSpinner {
+  font-size: 14px;
+  color: inherit;
+  animation: loadingSpin 0.9s linear infinite;
+}
+
+.loadingLines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+  max-width: 360px;
+}
+
+.loadingLine {
+  display: block;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(235, 239, 244, 0.9) 0%, rgba(248, 250, 252, 1) 50%, rgba(235, 239, 244, 0.9) 100%);
+  background-size: 220% 100%;
+  animation: loadingShimmer 1.6s ease-in-out infinite;
+}
+
+.loadingLineLong {
+  width: 82%;
+}
+
+.loadingLineMedium {
+  width: 64%;
+}
+
+.loadingLineShort {
+  width: 42%;
+}

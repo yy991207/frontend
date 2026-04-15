@@ -195,26 +195,14 @@ function getContentTypeIcon(type: string) {
 
 function getHomeStageMetrics(viewportWidth: number) {
   if (viewportWidth <= 640) {
-    return {
-      shellOffset: 58,
-      centerShift: 40,
-      preferredGap: 24,
-    }
+    return { shellOffset: 58, preferredGap: 16 }
   }
 
   if (viewportWidth <= 900) {
-    return {
-      shellOffset: 74,
-      centerShift: 60,
-      preferredGap: 28,
-    }
+    return { shellOffset: 74, preferredGap: 20 }
   }
 
-  return {
-    shellOffset: 76,
-    centerShift: 80,
-    preferredGap: 32,
-  }
+  return { shellOffset: 76, preferredGap: 24 }
 }
 
 export default function HomePage() {
@@ -251,13 +239,7 @@ export default function HomePage() {
       }
     }
 
-    const { shellOffset, centerShift } = getHomeStageMetrics(window.innerWidth)
-
-    // 减小上方区域高度，让页面整体上移
-    return {
-      minHeight: Math.max(window.innerHeight - shellOffset - 200, 420),
-      translateY: centerShift,
-    }
+    return { minHeight: 0, translateY: 0 }
   })
 
   const clearSelectedSkill = () => {
@@ -525,7 +507,7 @@ export default function HomePage() {
       return
     }
 
-    // 这里直接收短首屏舞台本身，避免再用 bottom 的负 margin 往上顶，导致 tabs 区和快捷操作真实重叠。
+    // 简化布局：让 heroStage 高度紧贴内容 + 小间距，不再有居中位移。
     const measureHeroStageLayout = () => {
       const currentTopSection = topSectionRef.current
 
@@ -534,21 +516,15 @@ export default function HomePage() {
       }
 
       const topSectionRect = currentTopSection.getBoundingClientRect()
-      const { shellOffset, centerShift, preferredGap } = getHomeStageMetrics(window.innerWidth)
-      // 减小上方区域高度，让页面整体上移
-      const baseMinHeight = Math.max(window.innerHeight - shellOffset - 200, Math.ceil(topSectionRect.height))
-      const nextMinHeight = Math.max(
-        Math.ceil(topSectionRect.height),
-        Math.min(baseMinHeight, Math.round(preferredGap + (baseMinHeight + topSectionRect.height) / 2 + centerShift)),
-      )
-      const nextTranslateY = Math.round(centerShift + (baseMinHeight - nextMinHeight) / 2)
+      const { preferredGap } = getHomeStageMetrics(window.innerWidth)
+      const nextMinHeight = Math.ceil(topSectionRect.height) + preferredGap
 
       setHeroStageLayout((currentValue) =>
-        currentValue.minHeight === nextMinHeight && currentValue.translateY === nextTranslateY
+        currentValue.minHeight === nextMinHeight
           ? currentValue
           : {
               minHeight: nextMinHeight,
-              translateY: nextTranslateY,
+              translateY: 0,
             },
       )
     }
@@ -727,9 +703,6 @@ export default function HomePage() {
               <div
                 ref={topSectionRef}
                 className={styles.topSection}
-                style={{
-                  transform: `translateY(${heroStageLayout.translateY}px)`,
-                }}
               >
                 <div className={styles.hero}>
                   <Avatar size={68} src={<img src={AILY_LOGO_URL} alt="飞书 aily logo" />} className={styles.heroAvatar} />

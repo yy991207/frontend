@@ -5,7 +5,6 @@ import {
   CaretUpOutlined,
   CopyOutlined,
   FileTextOutlined,
-  LoadingOutlined,
 } from '@ant-design/icons'
 import { useMemo, useState } from 'react'
 
@@ -17,6 +16,7 @@ import {
   extractTextFromMessage,
 } from '../../core/messages/utils'
 import styles from '../../pages/Chat/chat.module.less'
+import { MessageLoading } from './ChatLoadingAnimation'
 import artifactStyles from './artifacts.module.less'
 import { ChainOfThought, ChainOfThoughtContent, ChainOfThoughtSearchResult, ChainOfThoughtSearchResults, ChainOfThoughtStep } from './chain-of-thought'
 import { MarkdownContent } from './markdown-content'
@@ -349,21 +349,6 @@ function ProcessingMessage({
   )
 }
 
-function LoadingMessage() {
-  return (
-    <div className={styles.loadingShell} aria-label="正在生成回复">
-      <div className={styles.loadingSpinnerWrap} aria-hidden="true">
-        <LoadingOutlined className={styles.loadingSpinner} />
-      </div>
-      <div className={styles.loadingLines}>
-        <span className={`${styles.loadingLine} ${styles.loadingLineLong}`} />
-        <span className={`${styles.loadingLine} ${styles.loadingLineMedium}`} />
-        <span className={`${styles.loadingLine} ${styles.loadingLineShort}`} />
-      </div>
-    </div>
-  )
-}
-
 export function MessageGroupSection({
   group,
   copiedMessageId,
@@ -413,7 +398,7 @@ export function MessageGroupSection({
         <>
           {group.messages.map((message) => (
             <div key={message.id} className={styles.assistantRow}>
-              <LoadingMessage />
+              <MessageLoading />
             </div>
           ))}
         </>

@@ -6,6 +6,8 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
 import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts-context'
 import { MessageList } from '../../components/chat/message-list'
+import { useAutoScroll } from '../../components/chat/use-auto-scroll'
+import { ThreadLoading } from '../../components/chat/ChatLoadingAnimation'
 import { viewCustomAgent, loadCustomAgentApiConfig, type AgentDetail, type EnabledSkill } from '../../services/customAgentService'
 import { parseChatApiConfig, type ChatApiConfig } from '../../services/chatService'
 import { useSharedChatRuntime } from '../../services/sharedChatRuntime'
@@ -156,6 +158,12 @@ function AgentConversationPageContent() {
 
   const routeSessionId = new URLSearchParams(location.search).get('sessionId')
   const shouldShowHistoryLoading = routeSessionId && sessionLoading && groupedMessages.length === 0
+
+  const { containerRef: messagesViewportRef } = useAutoScroll({
+    messages: groupedMessages,
+    isResponding,
+    sessionLoading,
+  })
 
   const sessionBaseUrl = useMemo(() => {
     if (!chatApiConfig) return null
@@ -310,12 +318,10 @@ function AgentConversationPageContent() {
             </div>
           </header>
 
-          <div className={styles.messages}>
+          <div ref={messagesViewportRef} className={styles.messages}>
             <div className={styles.messageColumn}>
               {shouldShowHistoryLoading ? (
-                <div className={styles.loadingState}>
-                  <span>加载历史消息...</span>
-                </div>
+                <ThreadLoading />
               ) : groupedMessages.length > 0 ? (
                 <MessageList
                   groups={groupedMessages}
