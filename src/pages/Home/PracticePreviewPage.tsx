@@ -130,20 +130,21 @@ export default function PracticePreviewPage() {
         </header>
 
         <div className={styles.messages}>
-          <MessageList
-            groups={groupedMessages}
-            threadLoading={false}
-            copiedMessageId={null}
-            assistantCopyTargets={{}}
-            onCopy={() => {}}
-            getToolDisplayTitle={() => ''}
-            getToolDisplaySummary={() => ''}
-          />
+          <div className={styles.messageColumn}>
+            <MessageList
+              groups={groupedMessages}
+              threadLoading={false}
+              copiedMessageId={null}
+              assistantCopyTargets={{}}
+              onCopy={() => {}}
+              getToolDisplayTitle={() => ''}
+              getToolDisplaySummary={() => ''}
+            />
+          </div>
         </div>
 
         <div className={styles.footer}>
           <button type="button" className={styles.createButton} onClick={handleBack}>
-            <span>✚</span>
             <span>立即创作</span>
           </button>
           <div className={styles.hint}>AI 生成内容可能有误，请核实重要信息</div>
