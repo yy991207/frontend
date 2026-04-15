@@ -357,6 +357,7 @@ function ChatPageContent() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [saveCommandOpen, setSaveCommandOpen] = useState(false)
+  const [sessionUserId, setSessionUserId] = useState<string>('')
   const [agentName, setAgentName] = useState<string | null>(null)
   const [agentWebSearchLocked, setAgentWebSearchLocked] = useState(false)
   
@@ -1324,7 +1325,8 @@ function ChatPageContent() {
         setRequestError('')
         clearChatStreamSnapshot(routeSessionId)
         setSessionLoading(false)
-        
+        setSessionUserId(session.user_id)
+
         setAgentWebSearchLocked(false)
 
         // 如果session有agent_name字段，直接使用
@@ -1657,6 +1659,7 @@ function ChatPageContent() {
       <SaveCommandModal
         open={saveCommandOpen}
         sessionId={currentSessionId ?? ''}
+        userId={sessionUserId}
         onClose={() => setSaveCommandOpen(false)}
         onSuccess={handleSaveCommandSuccess}
       />

@@ -12,13 +12,14 @@ const { TextArea } = Input
 type SaveCommandModalProps = {
   open: boolean
   sessionId: string
+  userId: string
   onClose: () => void
   onSuccess: () => void
 }
 
 type ModalPhase = 'loading' | 'editing'
 
-export function SaveCommandModal({ open, sessionId, onClose, onSuccess }: SaveCommandModalProps) {
+export function SaveCommandModal({ open, sessionId, userId, onClose, onSuccess }: SaveCommandModalProps) {
   const [phase, setPhase] = useState<ModalPhase>('loading')
   const [name, setName] = useState('')
   const [template, setTemplate] = useState('')
@@ -36,7 +37,7 @@ export function SaveCommandModal({ open, sessionId, onClose, onSuccess }: SaveCo
     setAttachments([])
     setSourceSessionId('')
 
-    generateCommandFromSession(sessionId)
+    generateCommandFromSession(sessionId, userId)
       .then((data) => {
         if (cancelled) return
         setName(data.name)
@@ -74,7 +75,7 @@ export function SaveCommandModal({ open, sessionId, onClose, onSuccess }: SaveCo
         attachments,
         source_session_id: sourceSessionId,
       }
-      await createCommand(payload)
+      await createCommand(payload, userId)
       onSuccess()
     } catch (error) {
       message.error(error instanceof Error ? error.message : '创建指令失败')

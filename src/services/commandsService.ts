@@ -130,8 +130,15 @@ function getMyCommandsEndpoint(): string {
 
 export async function generateCommandFromSession(
   sessionId: string,
+  userId: string,
 ): Promise<SaveCommandStep1Response> {
-  const response = await fetch(getMyCommandsEndpoint(), {
+  const requestUrl = new URL(buildAbsoluteUrl(
+    parseSimpleYaml(chatConfigText).url,
+    '/api/v1/my-commands/generate',
+  ))
+  requestUrl.searchParams.set('user_id', userId)
+
+  const response = await fetch(requestUrl.toString(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ session_id: sessionId }),
@@ -141,13 +148,28 @@ export async function generateCommandFromSession(
     throw new Error('生成指令模板失败')
   }
 
-  return (await response.json()) as SaveCommandStep1Response
+  const data = (await response.json()) as {
+    success: boolean
+    code: string
+    msg: string
+    data: SaveCommandStep1Response
+  }
+
+  if (!data.success) {
+    throw new Error(data.msg || '生成指令模板失败')
+  }
+
+  return data.data
 }
 
 export async function createCommand(
   data: CreateCommandRequest,
+  userId: string,
 ): Promise<CreateCommandResponse> {
-  const response = await fetch(getMyCommandsEndpoint(), {
+  const requestUrl = new URL(getMyCommandsEndpoint())
+  requestUrl.searchParams.set('user_id', userId)
+
+  const response = await fetch(requestUrl.toString(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -157,5 +179,16 @@ export async function createCommand(
     throw new Error('创建指令失败')
   }
 
-  return (await response.json()) as CreateCommandResponse
+  const result = (await response.json()) as {
+    success: boolean
+    code: string
+    msg: string
+    data: CreateCommandResponse
+  }
+
+  if (!result.success) {
+    throw new Error(result.msg || '创建指令失败')
+  }
+
+  return result.data
 }
