@@ -1,3 +1,4 @@
+import { App as AntdApp } from 'antd'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Sidebar from './components/Sidebar/Sidebar'
 import ChatPage from './pages/Chat/ChatPage'
@@ -13,7 +14,8 @@ import PracticePreviewPage from './pages/Home/PracticePreviewPage'
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <AntdApp>
+      <BrowserRouter>
       <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--app-shell-background)' }}>
         <Sidebar />
         <div
@@ -40,5 +42,6 @@ export default function App() {
         </div>
       </div>
     </BrowserRouter>
+    </AntdApp>
   )
 }

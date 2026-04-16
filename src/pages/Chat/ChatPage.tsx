@@ -1562,6 +1562,14 @@ function ChatPageContent() {
                   } else if (value.startsWith('/')) {
                     setSlashQuery(value.slice(1))
                   }
+
+                  // 用户手动编辑输入框，删除已选技能的 /skillName 标记时，清空技能状态
+                  if (selectedSkillName) {
+                    const skillDisplayName = `/${selectedSkillName.replace(/^\/+/, '')}`
+                    if (!value.includes(skillDisplayName)) {
+                      clearSelectedSkill()
+                    }
+                  }
                 }}
                 onKeyDown={(event) => {
                   if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
