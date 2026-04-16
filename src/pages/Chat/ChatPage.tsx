@@ -1457,23 +1457,25 @@ function ChatPageContent() {
 
   const handleSaveCommandSuccess = useCallback(() => {
     setSaveCommandOpen(false)
-    message.success(
-      <span>
-        创建成功，可在首页{' '}
-        <a
-          onClick={() => {
-            navigate('/', {
-              state: { activateTabKey: 'my-prompts' },
-            })
-          }}
-          style={{ color: '#1677ff', cursor: 'pointer' }}
-        >
-          我的指令
-        </a>{' '}
-        中查看
-      </span>,
-      { duration: 5 },
-    )
+    message.success({
+      content: (
+        <span>
+          创建成功，可在首页{' '}
+          <a
+            onClick={() => {
+              navigate('/', {
+                state: { activateTabKey: 'my-prompts' },
+              })
+            }}
+            style={{ color: '#1677ff', cursor: 'pointer' }}
+          >
+            我的指令
+          </a>{' '}
+          中查看
+        </span>
+      ),
+      duration: 5,
+    })
   }, [navigate])
 
   return (
