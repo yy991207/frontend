@@ -310,12 +310,12 @@ export default function Sidebar() {
             type="button"
             className={styles.panelHead}
             onClick={() => navigate('/')}
-            aria-label="返回飞书 aily 首页"
+            aria-label="返回果仁首页"
           >
             <span className={styles.brandAvatarWrap}>
-              <img src={AILY_LOGO_URL} alt="飞书 aily" className={styles.brandAvatar} />
+              <img src={AILY_LOGO_URL} alt="果仁" className={styles.brandAvatar} />
             </span>
-            <span className={styles.brandName}>飞书 aily</span>
+            <span className={styles.brandName}>果仁</span>
           </button>
         </div>
 
@@ -350,13 +350,13 @@ export default function Sidebar() {
         <button
           type="button"
           className={`${styles.partnerRow} ${styles.tooltipTarget} ${location.pathname === '/partner' ? styles.navRowActive : ''}`}
-          data-tooltip="杨金玮的智能伙伴"
+          data-tooltip="你的智能伙伴"
           onClick={() => navigate('/partner')}
         >
           <span className={styles.avatarCell}>
             <img src={PARTNER_AVATAR_URL} alt="智能伙伴头像" className={styles.avatarImage} />
           </span>
-          <span className={styles.labelCell}>杨金玮的智能伙伴</span>
+          <span className={styles.labelCell}>你的智能伙伴</span>
         </button>
 
         <div className={styles.lowerSection}>

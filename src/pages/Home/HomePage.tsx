@@ -33,7 +33,7 @@ import {
 import styles from './home.module.less'
 
 const AILY_LOGO_URL = 'https://aily.feishu.cn/play/api/v1/files/static/offcial-logo15.png'
-const HOME_USER_NAME = '杨金玮'
+const HOME_USER_NAME = '~'
 
 type HomeRouteState = {
   initialPrompt?: string
@@ -858,7 +858,7 @@ export default function HomePage() {
               >
                 <div className={styles.hero}>
                   <Avatar size={68} src={<img src={AILY_LOGO_URL} alt="飞书 aily logo" />} className={styles.heroAvatar} />
-                  <h1 className={styles.greeting}>Hi {HOME_USER_NAME}，有什么可以帮你的？</h1>
+                  <h1 className={styles.greeting}>Hi {HOME_USER_NAME} 有什么可以帮你的？</h1>
                 </div>
 
                 <div
@@ -973,7 +973,7 @@ export default function HomePage() {
                   />
                 </div>
 
-                <div className={styles.quickActions}>
+                <div className={styles.quickActions} style={{ display: 'none' }}>
                   {HOME_TEMPLATE_ACTIONS.map((action) => (
                     <button
                       key={action.key}
