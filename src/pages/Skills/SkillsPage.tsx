@@ -24,6 +24,8 @@ import { fetchClawhubSkills, fetchClawhubSkillDetail, installClawhubSkill, searc
 import styles from './skills.module.less'
 
 type SkillsMode = 'discover' | 'manage'
+
+type SearchSkillItem = SkillApiItem & { _source?: 'official' | 'clawhub' }
 type ManageTab = 'added' | 'created'
 type CreateOptionKey = 'chat' | 'upload'
 type DataSource = 'all' | 'official' | 'clawhub'
@@ -221,7 +223,7 @@ export default function SkillsPage() {
   const [clawhubDetailLoading, setClawhubDetailLoading] = useState(false)
   const [dataSource, setDataSource] = useState<DataSource>('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<SkillApiItem[]>([])
+  const [searchResults, setSearchResults] = useState<SearchSkillItem[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
   const [searchError, setSearchError] = useState('')
   const [showSearchResults, setShowSearchResults] = useState(false)
@@ -799,7 +801,68 @@ const handleOpenClawhubSkillDetail = useCallback(
         return
       }
 
-      if (dataSource === 'clawhub' && skillApiConfig) {
+      if (dataSource === 'official') {
+        const query = value.trim().toLowerCase()
+        const filtered = featuredSkills.filter(
+          (item) =>
+            item.title?.toLowerCase().includes(query) ||
+            item.skillName?.toLowerCase().includes(query) ||
+            item.description?.toLowerCase().includes(query),
+        )
+        const tagged = filtered.map((item) => ({ ...item, _source: 'official' as const }))
+        setSearchResults(tagged)
+        setShowSearchResults(true)
+        setSearchLoading(false)
+        setSearchError('')
+      } else if (dataSource === 'all') {
+        searchControllerRef.current?.abort()
+        const controller = new AbortController()
+        searchControllerRef.current = controller
+
+        setSearchLoading(true)
+        setSearchError('')
+        setShowSearchResults(true)
+
+        const query = value.trim().toLowerCase()
+        const officialFiltered = featuredSkills.filter(
+          (item) =>
+            item.title?.toLowerCase().includes(query) ||
+            item.skillName?.toLowerCase().includes(query) ||
+            item.description?.toLowerCase().includes(query),
+        ).map((item) => ({ ...item, _source: 'official' as const }))
+
+        if (!skillApiConfig) {
+          setSearchResults(officialFiltered)
+          setSearchLoading(false)
+          return
+        }
+
+        const baseUrl = skillApiConfig.featuredEndpoint.replace(/\/api\/v1\/skills.*$/, '')
+        void searchClawhubSkills({
+          baseUrl,
+          userId: skillApiConfig.userId,
+          q: value.trim(),
+          limit: 20,
+          signal: controller.signal,
+        }).then((result) => {
+          if (controller.signal.aborted) {
+            return
+          }
+
+          const clawhubTagged = result.success
+            ? result.skills.map((item) => ({ ...item, _source: 'clawhub' as const }))
+            : []
+
+          const merged = [...officialFiltered, ...clawhubTagged]
+          setSearchResults(merged)
+          if (!result.success) {
+            setSearchError(result.msg || '搜索部分技能失败')
+          } else {
+            setSearchError('')
+          }
+          setSearchLoading(false)
+        })
+      } else if (dataSource === 'clawhub' && skillApiConfig) {
         searchControllerRef.current?.abort()
         const controller = new AbortController()
         searchControllerRef.current = controller
@@ -821,7 +884,8 @@ const handleOpenClawhubSkillDetail = useCallback(
           }
 
           if (result.success) {
-            setSearchResults(result.skills)
+            const tagged = result.skills.map((item) => ({ ...item, _source: 'clawhub' as const }))
+            setSearchResults(tagged)
             setSearchError('')
           } else {
             setSearchResults([])
@@ -831,7 +895,7 @@ const handleOpenClawhubSkillDetail = useCallback(
         })
       }
     },
-    [dataSource, skillApiConfig],
+    [dataSource, skillApiConfig, featuredSkills],
   )
 
   const handleClearSearch = useCallback(() => {
@@ -1370,7 +1434,7 @@ const handleOpenClawhubSkillDetail = useCallback(
                   ) : null}
                 </label>
 
-                {showSearchResults && dataSource === 'clawhub' ? (
+                {(showSearchResults && (dataSource === 'clawhub' || dataSource === 'official' || dataSource === 'all')) ? (
                   <div className={styles.searchResultsOverlay}>
                     <div className={styles.searchResultsHeader}>
                       <span className={styles.searchResultsTitle}>
@@ -1387,7 +1451,9 @@ const handleOpenClawhubSkillDetail = useCallback(
                               type="button"
                               className={styles.searchResultMain}
                               onClick={() => {
-                                handleOpenClawhubSkillDetail(skill)
+                                if (skill._source === 'clawhub') {
+                                  handleOpenClawhubSkillDetail(skill)
+                                }
                                 setShowSearchResults(false)
                               }}
                             >
@@ -1399,16 +1465,35 @@ const handleOpenClawhubSkillDetail = useCallback(
                               <div className={styles.searchResultContent}>
                                 <span className={styles.searchResultName}>{skill.title}</span>
                                 <span className={styles.searchResultDesc}>{skill.description}</span>
+                                {dataSource === 'all' && skill._source ? (
+                                  <span className={`${styles.searchResultSource} ${skill._source === 'official' ? styles.searchResultSourceOfficial : styles.searchResultSourceClawhub}`}>
+                                    {skill._source === 'official' ? '官方精选' : 'Claw Hub'}
+                                  </span>
+                                ) : null}
                               </div>
                             </button>
-                            <button
-                              type="button"
-                              className={styles.searchResultActionButton}
-                              onClick={() => handleUseClawhubSkill(skill)}
-                              disabled={skillActionLoadingId === skill.id}
-                            >
-                              {skillActionLoadingId === skill.id ? '处理中...' : skill.isSelected ? '使用' : '添加'}
-                            </button>
+                            {(dataSource === 'official' || (dataSource === 'all' && skill._source === 'official')) ? (
+                              <button
+                                type="button"
+                                className={styles.searchResultActionButton}
+                                onClick={() => {
+                                  handleUseSkill(skill)
+                                  setShowSearchResults(false)
+                                }}
+                                disabled={skillActionLoadingId === skill.id}
+                              >
+                                {skillActionLoadingId === skill.id ? '处理中...' : skill.isSelected ? '使用' : '添加'}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className={styles.searchResultActionButton}
+                                onClick={() => handleUseClawhubSkill(skill)}
+                                disabled={skillActionLoadingId === skill.id}
+                              >
+                                {skillActionLoadingId === skill.id ? '处理中...' : skill.isSelected ? '使用' : '添加'}
+                              </button>
+                            )}
                           </div>
                         ))}
                         {searchResults.length === 0 && !searchLoading ? (
