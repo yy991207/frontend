@@ -165,28 +165,37 @@ export default function Sidebar() {
   const agentListRef = useRef<HTMLDivElement>(null)
   const [agentListScrolling, setAgentListScrolling] = useState(false)
   const agentListScrollTimeoutRef = useRef<number | null>(null)
+  const hasLoadedOnceRef = useRef(false)
 
-  const fetchAgents = useCallback(async () => {
-    setAgentLoading(true)
+  const fetchAgents = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false
     try {
+      if (!silent) {
+        setAgentLoading(true)
+      }
       const config = await loadCustomAgentApiConfig()
       setAgentConfig(config)
       const logs = await getAgentUsageLogs(config)
       setAgentList(logs)
+      hasLoadedOnceRef.current = true
     } catch (error) {
       console.error('获取智能体使用日志失败:', error)
     } finally {
-      setAgentLoading(false)
+      if (!silent) {
+        setAgentLoading(false)
+      }
     }
   }, [])
 
+  // 静默预加载，避免首屏闪烁
   useEffect(() => {
-    void fetchAgents()
+    if (hasLoadedOnceRef.current) return
+    void fetchAgents({ silent: true })
   }, [fetchAgents])
 
   useEffect(() => {
     const handleRefresh = () => {
-      void fetchAgents()
+      void fetchAgents({ silent: true })
     }
 
     window.addEventListener(AGENT_USAGE_LOG_REFRESH_EVENT, handleRefresh)
@@ -211,7 +220,8 @@ export default function Sidebar() {
         return next
       })
 
-      await fetchAgents()
+      // 静默刷新，避免闪烁
+      await fetchAgents({ silent: true })
       setDeleteTargetAgent(null)
     } catch (error) {
       setRemovingAgentIds((prev) => {
@@ -349,39 +359,49 @@ export default function Sidebar() {
           <span className={styles.labelCell}>杨金玮的智能伙伴</span>
         </button>
 
-        <div className={styles.sectionTitle}>智能体</div>
-        <div
-          ref={agentListRef}
-          data-testid="sidebar-agent-list"
-          data-sidebar-mode={expanded ? 'expanded' : 'collapsed'}
-          className={`${styles.agentList} ${agentListScrolling ? styles.scrolling : ''}`}
-        >
-          {agentLoading ? (
-            <div className={styles.agentLoading}>
-              <LoadingOutlined />
-            </div>
-          ) : agentList.length > 0 ? (
-            agentList.map((agent) => {
-              const isRemoving = removingAgentIds.has(agent.agent_id)
-              return (
-                <div
-                  key={agent.agent_id}
-                  className={`${styles.agentRow} ${isRemoving ? styles.agentRowRemoving : ''}`}
-                  onClick={() => navigate(`/agent/${agent.agent_id}/chat`)}
-                >
-                  <div className={styles.agentRowMain}>
-                    <span className={styles.avatarCell}>
-                      <AgentAvatar agent={agent} />
-                    </span>
-                    <span className={styles.agentNameText}>{agent.agent_name}</span>
+        <div className={styles.lowerSection}>
+          <div className={styles.sectionTitle}>智能体</div>
+          <div
+            ref={agentListRef}
+            data-testid="sidebar-agent-list"
+            data-sidebar-mode={expanded ? 'expanded' : 'collapsed'}
+            className={`${styles.agentList} ${agentListScrolling ? styles.scrolling : ''}`}
+          >
+            {agentLoading ? (
+              <div className={styles.agentLoading}>
+                <LoadingOutlined />
+              </div>
+            ) : agentList.length > 0 ? (
+              agentList.map((agent) => {
+                const isRemoving = removingAgentIds.has(agent.agent_id)
+                return (
+                  <div
+                    key={agent.agent_id}
+                    className={`${styles.agentRow} ${isRemoving ? styles.agentRowRemoving : ''}`}
+                    onClick={() => navigate(`/agent/${agent.agent_id}/chat`)}
+                  >
+                    <div className={styles.agentRowMain}>
+                      <span className={styles.avatarCell}>
+                        <AgentAvatar agent={agent} />
+                      </span>
+                      <span className={styles.agentNameText}>{agent.agent_name}</span>
+                    </div>
+                    {expanded ? <AgentMenu agent={agent} onDelete={setDeleteTargetAgent} /> : null}
                   </div>
-                  {expanded ? <AgentMenu agent={agent} onDelete={setDeleteTargetAgent} /> : null}
-                </div>
-              )
-            })
-          ) : (
-            <div className={styles.agentEmpty}>暂无智能体使用记录</div>
-          )}
+                )
+              })
+            ) : (
+              <div className={styles.agentEmpty}>暂无智能体使用记录</div>
+            )}
+          </div>
+
+          <div
+            data-testid="sidebar-session-history-wrapper"
+            data-sidebar-mode={expanded ? 'expanded' : 'collapsed'}
+            className={styles.sessionHistoryWrapper}
+          >
+            <ChatSessionHistory expanded={expanded} />
+          </div>
         </div>
 
         <DeleteConfirmModal
@@ -396,14 +416,6 @@ export default function Sidebar() {
             }
           }}
         />
-
-        <div
-          data-testid="sidebar-session-history-wrapper"
-          data-sidebar-mode={expanded ? 'expanded' : 'collapsed'}
-          className={styles.sessionHistoryWrapper}
-        >
-          <ChatSessionHistory expanded={expanded} />
-        </div>
       </div>
     </aside>
   )
