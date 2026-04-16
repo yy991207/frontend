@@ -14,7 +14,7 @@ type SkillTemplateInputProps = {
   minRows?: number
 }
 
-type Segment = { type: 'text' | 'placeholder'; text: string }
+type Segment = { type: 'text' | 'placeholder' | 'skill'; text: string }
 
 const PLACEHOLDER_RE = /\/[\w\u4e00-\u9fa5-]+/g
 
@@ -34,8 +34,9 @@ function parseSegments(text: string): Segment[] {
     if (m.index > lastIndex) {
       result.push({ type: 'text', text: text.slice(lastIndex, m.index) })
     }
-    // 所有 /xxx 都渲染为 placeholder，技能名称由外部的 selectedSkillBadge 显示
-    result.push({ type: 'placeholder', text: m[0] })
+    // 第一个 /xxx 为技能名（不可编辑），其余为 template 占位符（可编辑）
+    const isSkill = text.startsWith(`基于 ${m[0]} `) || text.startsWith(`${m[0]} `)
+    result.push({ type: isSkill ? 'skill' : 'placeholder', text: m[0] })
     lastIndex = m.index + m[0].length
   }
   if (lastIndex < text.length) {
@@ -66,7 +67,11 @@ function buildHTML(segments: Segment[]): string {
       if (seg.type === 'text') {
         return `<span data-plain="true">${escapeHTML(seg.text)}</span>`
       }
-      // 所有 /xxx 都渲染为 placeholder 标签
+      if (seg.type === 'skill') {
+        // 技能名标签：不可点击编辑
+        return `<span class="${styles.skillPlaceholderTag}" contenteditable="false" data-plain="true"><span class="${styles.placeholderTagText}">${escapeHTML(seg.text)}</span></span>`
+      }
+      // 其他 /xxx 渲染为可编辑的 placeholder 标签
       return `<span class="${styles.placeholderTag}" contenteditable="false" data-plain="true"><span class="${styles.placeholderTagText}">${escapeHTML(seg.text)}</span></span>`
     })
     .join('')

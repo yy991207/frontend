@@ -651,7 +651,7 @@ export default function HomePage() {
 
     // 基于 skill_name + template 逻辑
     if (skillName && template) {
-      setPrompt(`基于 /${skillName} ${template}`)
+      setPrompt(`/${skillName} ${template}`)
     } else if (template) {
       setPrompt(template)
     }
