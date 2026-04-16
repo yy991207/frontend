@@ -1509,7 +1509,7 @@ function ChatPageContent() {
                       }}
                     >
                       <SaveOutlined className={styles.headerMenuItemIcon} />
-                      <span>保存为指令模版</span>
+                      <span>保存为指令</span>
                     </button>
                     <button
                       type="button"

@@ -61,7 +61,7 @@ describe('SaveCommandModal', () => {
     expect(nameInput.value).toBe('天气查询')
     const templateInput = screen.getByPlaceholderText('请输入指令内容') as HTMLTextAreaElement
     expect(templateInput.value).toBe('查询/地点天气')
-    expect(screen.getByText('保存为指令模板')).toBeVisible()
+    expect(screen.getByText('保存为指令')).toBeVisible()
   })
 
   it('name 为空时点击保存提示错误', async () => {

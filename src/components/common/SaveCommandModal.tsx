@@ -107,7 +107,7 @@ export function SaveCommandModal({ open, sessionId, onClose, onSuccess }: SaveCo
         ) : (
           <>
             <div className={styles.editHeader}>
-              <h3 className={styles.editTitle}>保存为指令模板</h3>
+              <h3 className={styles.editTitle}>保存为指令</h3>
               <p className={styles.editDescription}>
                 系统已根据当前会话内容生成指令模板，你可以修改名称和指令内容后保存。
               </p>
