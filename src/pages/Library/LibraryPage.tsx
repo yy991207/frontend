@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   AudioOutlined,
   CloudUploadOutlined,
-  CloseCircleFilled,
-  DownOutlined,
   DownloadOutlined,
   EyeOutlined,
   FileImageOutlined,
@@ -17,7 +16,8 @@ import {
   VideoCameraOutlined,
 } from '@ant-design/icons'
 import { AppPageShell, AppSurfacePanel } from '../../components/layout/AppPageShell'
-import { message } from 'antd'
+import { Button, Dropdown, Empty, Input, Pagination, Select, Spin, Table, Tag, message } from 'antd'
+import type { MenuProps, TableColumnsType } from 'antd'
 import styles from './library.module.less'
 import { LibraryFilePreviewModal } from './LibraryFilePreviewModal'
 import { saveToCloudDisk } from '../../services/libraryFileService'
@@ -52,7 +52,7 @@ type LibraryResponse = {
 type FilterOption = {
   key: string
   label: string
-  icon: React.ReactNode
+  icon: ReactNode
 }
 
 type QueryState = {
@@ -69,11 +69,15 @@ type FilterCategory = {
   label: string
 }
 
+type SelectOption = {
+  value: string
+  label: ReactNode
+}
+
 const LIBRARY_PATH = '/api/v1/files/library'
 const PAGE_SIZE = 8
 const FILE_TYPE_ALL = 'all'
 const SOURCE_ALL = 'all'
-const FIXED_ROW_COUNT = 8
 
 const FILE_TYPE_OPTIONS: FilterOption[] = [
   { key: FILE_TYPE_ALL, label: '全部', icon: <MenuOutlined /> },
@@ -248,20 +252,13 @@ function getFileTypeTagClass(fileType: LibraryFileType) {
   return styles.typeTagOther
 }
 
-function buildPageNumbers(currentPage: number, totalPages: number) {
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => index + 1)
-  }
-
-  if (currentPage <= 4) {
-    return [1, 2, 3, 4, 5, 'ellipsis', totalPages]
-  }
-
-  if (currentPage >= totalPages - 3) {
-    return [1, 'ellipsis', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages]
-  }
-
-  return [1, 'ellipsis', currentPage - 1, currentPage, currentPage + 1, 'ellipsis-right', totalPages]
+function buildTypeOptionLabel(option: FilterOption) {
+  return (
+    <span className={styles.selectOptionLabel}>
+      <span className={styles.selectOptionIcon}>{option.icon}</span>
+      <span>{option.label}</span>
+    </span>
+  )
 }
 
 export default function LibraryPage() {
@@ -276,15 +273,9 @@ export default function LibraryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
-  const [primaryDropdownOpen, setPrimaryDropdownOpen] = useState(false)
-  const [secondaryDropdownOpen, setSecondaryDropdownOpen] = useState(false)
   const [previewFileId, setPreviewFileId] = useState<string | null>(null)
   const [previewVisible, setPreviewVisible] = useState(false)
   const [config, setConfig] = useState<LibraryConfig | null>(null)
-  const menuWrapRef = useRef<HTMLDivElement | null>(null)
-  const primaryDropdownRef = useRef<HTMLDivElement | null>(null)
-  const secondaryDropdownRef = useRef<HTMLDivElement | null>(null)
 
   const handleFilePreview = (fileId: string) => {
     setPreviewFileId(fileId)
@@ -297,7 +288,6 @@ export default function LibraryPage() {
   }
 
   const handleViewSession = (item: LibraryFileItem) => {
-    setOpenMenuId(null)
     if (item.session_id) {
       if (item.agent_id) {
         navigate(`/agent/${item.agent_id}/chat?sessionId=${item.session_id}`)
@@ -308,7 +298,6 @@ export default function LibraryPage() {
   }
 
   const handleDownloadFile = async (item: LibraryFileItem) => {
-    setOpenMenuId(null)
     if (!config || !item.file_path) return
 
     try {
@@ -329,13 +318,13 @@ export default function LibraryPage() {
         link.click()
         document.body.removeChild(link)
       }
-    } catch (error) {
-      console.error('下载失败:', error)
+    } catch (downloadError) {
+      console.error('下载失败:', downloadError)
+      message.error('下载失败，请稍后重试')
     }
   }
 
   const handleSaveToCloudDisk = async (item: LibraryFileItem) => {
-    setOpenMenuId(null)
     if (!config || !item.file_path) return
 
     try {
@@ -347,30 +336,10 @@ export default function LibraryPage() {
       } else {
         message.error(result.message || '保存到云盘失败')
       }
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : '保存到云盘失败')
+    } catch (saveError) {
+      message.error(saveError instanceof Error ? saveError.message : '保存到云盘失败')
     }
   }
-
-  useEffect(() => {
-    const handlePointerDown = (event: MouseEvent) => {
-      if (event.target instanceof Element && !event.target.closest('[data-action-menu-root="true"]')) {
-        setOpenMenuId(null)
-      }
-      if (!primaryDropdownRef.current?.contains(event.target as Node)) {
-        setPrimaryDropdownOpen(false)
-      }
-      if (!secondaryDropdownRef.current?.contains(event.target as Node)) {
-        setSecondaryDropdownOpen(false)
-      }
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-    }
-  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -446,13 +415,147 @@ export default function LibraryPage() {
   const total = visibleFiles.length
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const safeCurrentPage = Math.min(currentPage, totalPages)
-  const pageNumbers = buildPageNumbers(safeCurrentPage, totalPages)
   const pagedFiles = useMemo(() => {
+    // 这里先继续保留前端分页切片，避免这次改造顺手改接口协议。
     const start = (safeCurrentPage - 1) * PAGE_SIZE
     return visibleFiles.slice(start, start + PAGE_SIZE)
   }, [safeCurrentPage, visibleFiles])
-  const emptyRows = Math.max(0, FIXED_ROW_COUNT - pagedFiles.length)
   const hasActiveFilters = activeFilter !== FILE_TYPE_ALL || selectedSource !== SOURCE_ALL || hasKeyword
+
+  const secondaryFilterOptions = useMemo<SelectOption[]>(() => {
+    if (primaryCategory === 'source') {
+      return sourceOptions.map((option) => ({
+        value: option.value,
+        label: option.label,
+      }))
+    }
+
+    return FILE_TYPE_OPTIONS.map((option) => ({
+      value: option.key,
+      label: buildTypeOptionLabel(option),
+    }))
+  }, [primaryCategory, sourceOptions])
+
+  const columns: TableColumnsType<LibraryFileItem> = [
+    {
+      title: '名称',
+      dataIndex: 'file_name',
+      key: 'file_name',
+      width: '34%',
+      render: (_, item) => (
+        <button
+          type="button"
+          className={styles.fileNameButton}
+          onClick={() => handleFilePreview(item.file_id)}
+        >
+          <span className={styles.fileIcon}>
+            <span className={styles.fileIconLetter}>{getAvatarLetter(item.file_name)}</span>
+          </span>
+          <span className={styles.fileMeta}>
+            <span className={styles.fileName} title={item.file_name}>
+              {item.file_name}
+            </span>
+          </span>
+        </button>
+      ),
+    },
+    {
+      title: '来源',
+      dataIndex: 'agent_name',
+      key: 'agent_name',
+      width: '18%',
+      render: (value: string) => (
+        <span className={styles.agentName} title={value}>
+          {value || '-'}
+        </span>
+      ),
+    },
+    {
+      title: '类型',
+      dataIndex: 'file_type',
+      key: 'file_type',
+      width: '12%',
+      render: (value: LibraryFileType) => (
+        <Tag className={`${styles.typeTag} ${getFileTypeTagClass(value)}`} bordered={false}>
+          {getFileTypeText(value)}
+        </Tag>
+      ),
+    },
+    {
+      title: '时间',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      width: '18%',
+      render: (value: string) => <span className={styles.timeText}>{formatDateTime(value)}</span>,
+    },
+    {
+      title: '查看',
+      key: 'preview',
+      width: 110,
+      render: (_, item) => (
+        <Button type="link" className={styles.viewButton} onClick={() => handleFilePreview(item.file_id)}>
+          查看详情
+        </Button>
+      ),
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 88,
+      align: 'right',
+      render: (_, item) => {
+        const menuItems: MenuProps['items'] = [
+          {
+            key: 'view-session',
+            icon: <EyeOutlined />,
+            label: '查看对话',
+          },
+          {
+            key: 'download',
+            icon: <DownloadOutlined />,
+            label: '下载',
+          },
+          {
+            key: 'save-to-cloud',
+            icon: <CloudUploadOutlined />,
+            label: '保存到云盘',
+          },
+        ]
+
+        return (
+          <Dropdown
+            trigger={['click']}
+            placement="bottomRight"
+            menu={{
+              items: menuItems,
+              onClick: ({ key }) => {
+                if (key === 'view-session') {
+                  handleViewSession(item)
+                  return
+                }
+                if (key === 'download') {
+                  void handleDownloadFile(item)
+                  return
+                }
+                if (key === 'save-to-cloud') {
+                  void handleSaveToCloudDisk(item)
+                }
+              },
+            }}
+          >
+            <Button
+              type="text"
+              className={styles.actionButton}
+              icon={<MoreOutlined />}
+              aria-label="更多操作"
+            />
+          </Dropdown>
+        )
+      },
+    },
+  ]
+
+  const emptyDescription = error || (hasActiveFilters ? '没有匹配结果，换个筛选条件试试吧' : '暂无文件内容')
 
   return (
     <AppPageShell>
@@ -466,295 +569,77 @@ export default function LibraryPage() {
 
           <div className={styles.tools}>
             <div className={styles.cascadeFilterGroup}>
-              <div ref={primaryDropdownRef} className={styles.filterDropdownWrap}>
-                <button
-                  type="button"
-                  className={`${styles.filterDropdownButton} ${primaryDropdownOpen ? styles.filterDropdownButtonOpen : ''}`}
-                  onClick={() => {
-                  setPrimaryDropdownOpen((v) => {
-                    if (!v) {
-                      setSecondaryDropdownOpen(false)
-                    }
-                    return !v
-                  })
+              <Select
+                value={primaryCategory}
+                className={styles.filterSelect}
+                options={FILTER_CATEGORIES.map((category) => ({
+                  value: category.key,
+                  label: category.label,
+                }))}
+                onChange={(value) => setPrimaryCategory(value)}
+              />
+              <Select
+                value={primaryCategory === 'source' ? secondarySource : secondaryType}
+                className={styles.filterSelect}
+                options={secondaryFilterOptions}
+                onChange={(value) => {
+                  if (primaryCategory === 'source') {
+                    setSecondarySource(value)
+                    return
+                  }
+                  setSecondaryType(value)
                 }}
-                >
-                  <span>{FILTER_CATEGORIES.find((c) => c.key === primaryCategory)?.label || '来源'}</span>
-                  <DownOutlined className={`${styles.filterDropdownArrow} ${primaryDropdownOpen ? styles.filterDropdownArrowOpen : ''}`} />
-                </button>
-                {primaryDropdownOpen && (
-                  <div className={styles.filterDropdownMenu}>
-                    {FILTER_CATEGORIES.map((category) => (
-                      <button
-                        key={category.key}
-                        type="button"
-                        className={`${styles.filterDropdownOption} ${primaryCategory === category.key ? styles.filterDropdownOptionActive : ''}`}
-                        onClick={() => {
-                          setPrimaryCategory(category.key)
-                          setPrimaryDropdownOpen(false)
-                        }}
-                      >
-                        {category.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div ref={secondaryDropdownRef} className={styles.filterDropdownWrap}>
-                <button
-                  type="button"
-                  className={`${styles.filterDropdownButton} ${secondaryDropdownOpen ? styles.filterDropdownButtonOpen : ''}`}
-                  onClick={() => {
-                  setSecondaryDropdownOpen((v) => {
-                    if (!v) {
-                      setPrimaryDropdownOpen(false)
-                    }
-                    return !v
-                  })
-                }}
-                >
-                  <span>
-                    {primaryCategory === 'source'
-                      ? sourceOptions.find((o) => o.value === secondarySource)?.label || '全部来源'
-                      : FILE_TYPE_OPTIONS.find((o) => o.key === secondaryType)?.label || '全部'}
-                  </span>
-                  <DownOutlined className={`${styles.filterDropdownArrow} ${secondaryDropdownOpen ? styles.filterDropdownArrowOpen : ''}`} />
-                </button>
-                {secondaryDropdownOpen && (
-                  <div className={styles.filterDropdownMenu}>
-                    {(primaryCategory === 'source'
-                      ? sourceOptions
-                      : FILE_TYPE_OPTIONS.map((option) => ({ value: option.key, label: option.label }))
-                    ).map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        className={`${styles.filterDropdownOption} ${(primaryCategory === 'source' ? secondarySource : secondaryType) === option.value ? styles.filterDropdownOptionActive : ''}`}
-                        onClick={() => {
-                          if (primaryCategory === 'source') {
-                            setSecondarySource(option.value)
-                          } else {
-                            setSecondaryType(option.value)
-                          }
-                          setSecondaryDropdownOpen(false)
-                        }}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              />
             </div>
 
-            <label className={styles.searchBox}>
-              <SearchOutlined className={styles.searchIcon} />
-              <input
-                value={keyword}
-                onChange={(event) => setKeyword(event.target.value)}
-                className={styles.searchInput}
-                placeholder="搜索"
-              />
-              {hasKeyword ? (
-                <button
-                  type="button"
-                  className={styles.clearButton}
-                  aria-label="清空搜索"
-                  onClick={() => setKeyword('')}
-                >
-                  <CloseCircleFilled />
-                </button>
-              ) : null}
-            </label>
+            <Input
+              value={keyword}
+              allowClear
+              className={styles.searchInput}
+              placeholder="搜索"
+              prefix={<SearchOutlined className={styles.searchIcon} />}
+              onChange={(event) => setKeyword(event.target.value)}
+            />
           </div>
 
           <div className={styles.content}>
             <div className={styles.tableWrap}>
-              <div className={styles.tableHeader}>
-                <span className={styles.nameCol}>名称</span>
-                <span className={styles.sourceCol}>来源</span>
-                <span className={styles.typeCol}>类型</span>
-                <span className={styles.timeCol}>时间</span>
-                <span className={styles.actionCol}>操作</span>
+              <Spin
+                spinning={loading}
+                indicator={<LoadingOutlined spin className={styles.feedbackIcon} />}
+              >
+                <Table<LibraryFileItem>
+                  rowKey="file_id"
+                  className={styles.libraryTable}
+                  columns={columns}
+                  dataSource={pagedFiles}
+                  pagination={false}
+                  scroll={{ x: 1080 }}
+                  locale={{
+                    emptyText: (
+                      <div className={styles.emptyState}>
+                        <Empty
+                          image={Empty.PRESENTED_IMAGE_SIMPLE}
+                          description={emptyDescription}
+                        />
+                      </div>
+                    ),
+                  }}
+                />
+              </Spin>
+
+              <div className={styles.paginationRow}>
+                <div className={styles.paginationSummary}>第 {safeCurrentPage}/{totalPages} 页，共 {total} 条</div>
+                <Pagination
+                  current={safeCurrentPage}
+                  total={total}
+                  pageSize={PAGE_SIZE}
+                  size="small"
+                  showSizeChanger={false}
+                  disabled={loading || total === 0}
+                  onChange={(page) => setCurrentPage(page)}
+                />
               </div>
-
-              {loading ? (
-                <div className={styles.feedbackState}>
-                  <LoadingOutlined className={styles.feedbackIcon} />
-                  <p className={styles.emptyText}>正在加载文件库...</p>
-                </div>
-              ) : error ? (
-                <div className={styles.feedbackState}>
-                  <p className={styles.emptyText}>{error}</p>
-                </div>
-              ) : total === 0 ? (
-                <>
-                  <div className={styles.emptyTableState}>
-                    <p className={styles.emptyText}>{hasActiveFilters ? '没有匹配结果，换个筛选条件试试吧' : '暂无文件内容'}</p>
-                  </div>
-                  <div className={styles.paginationRow}>
-                    <div className={styles.paginationRight}>
-                      <div className={styles.paginationSummary}>第 {safeCurrentPage}/{totalPages} 页，共 {total} 条</div>
-                      <div className={styles.paginationControls}>
-                        <button
-                          type="button"
-                          className={styles.pageButton}
-                          disabled={safeCurrentPage <= 1}
-                          onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                        >
-                          上一页
-                        </button>
-                        {pageNumbers.map((pageNumber, index) =>
-                          typeof pageNumber === 'number' ? (
-                            <button
-                              key={pageNumber}
-                              type="button"
-                              className={`${styles.pageButton} ${safeCurrentPage === pageNumber ? styles.pageButtonActive : ''}`}
-                              onClick={() => setCurrentPage(pageNumber)}
-                            >
-                              {pageNumber}
-                            </button>
-                          ) : (
-                            <span key={`${pageNumber}-${index}`} className={styles.pageEllipsis}>
-                              ...
-                            </span>
-                          ),
-                        )}
-                        <button
-                          type="button"
-                          className={styles.pageButton}
-                          disabled={safeCurrentPage >= totalPages}
-                          onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                        >
-                          下一页
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className={styles.tableBody}>
-                    {pagedFiles.map((item) => {
-                      const menuOpen = openMenuId === item.file_id
-
-                      return (
-                        <div key={item.file_id} className={styles.tableRow}>
-                          <div
-                            className={styles.nameCol}
-                            onClick={() => handleFilePreview(item.file_id)}
-                            style={{ cursor: 'pointer' }}
-                          >
-                            <div className={styles.fileIcon}>
-                              <span className={styles.fileIconLetter}>{getAvatarLetter(item.file_name)}</span>
-                            </div>
-                            <div className={styles.fileMeta}>
-                              <div className={styles.fileName} title={item.file_name}>{item.file_name}</div>
-                            </div>
-                          </div>
-
-                          <div className={styles.sourceCol}>
-                            <span className={styles.agentName}>{item.agent_name}</span>
-                          </div>
-
-                          <div className={styles.typeCol}>
-                            <span className={`${styles.typeTag} ${getFileTypeTagClass(item.file_type)}`}>
-                              {getFileTypeText(item.file_type)}
-                            </span>
-                          </div>
-
-                          <div className={styles.timeCol}>{formatDateTime(item.created_at)}</div>
-
-                          <div className={styles.actionCol}>
-                            <div ref={menuWrapRef} className={styles.actionWrap} data-action-menu-root="true">
-                              <button
-                                type="button"
-                                className={`${styles.actionButton} ${menuOpen ? styles.actionButtonActive : ''}`}
-                                onClick={() => setOpenMenuId((current) => (current === item.file_id ? null : item.file_id))}
-                                aria-label="更多操作"
-                              >
-                                <MoreOutlined />
-                              </button>
-
-                              <div className={`${styles.actionMenu} ${menuOpen ? styles.actionMenuOpen : ''}`}>
-                                <button
-                                  type="button"
-                                  className={styles.actionMenuItem}
-                                  onClick={(event) => {
-                                    event.stopPropagation()
-                                    handleViewSession(item)
-                                  }}
-                                >
-                                  <EyeOutlined />
-                                  <span>查看对话</span>
-                                </button>
-                                <button type="button" className={styles.actionMenuItem} onClick={() => handleDownloadFile(item)}>
-                                  <DownloadOutlined />
-                                  <span>下载</span>
-                                </button>
-                                <button type="button" className={styles.actionMenuItem} onClick={() => handleSaveToCloudDisk(item)}>
-                                  <CloudUploadOutlined />
-                                  <span>保存到云盘</span>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-
-                    {Array.from({ length: emptyRows }).map((_, index) => (
-                      <div key={`placeholder-${index}`} className={`${styles.tableRow} ${styles.tableRowPlaceholder}`}>
-                        <div className={styles.nameCol} />
-                        <div className={styles.sourceCol} />
-                        <div className={styles.typeCol} />
-                        <div className={styles.timeCol} />
-                        <div className={styles.actionCol} />
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className={styles.paginationRow}>
-                    <div className={styles.paginationRight}>
-                      <div className={styles.paginationSummary}>第 {safeCurrentPage}/{totalPages} 页，共 {total} 条</div>
-                      <div className={styles.paginationControls}>
-                        <button
-                          type="button"
-                          className={styles.pageButton}
-                          disabled={safeCurrentPage <= 1}
-                          onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                        >
-                          上一页
-                        </button>
-                        {pageNumbers.map((pageNumber, index) =>
-                          typeof pageNumber === 'number' ? (
-                            <button
-                              key={pageNumber}
-                              type="button"
-                              className={`${styles.pageButton} ${safeCurrentPage === pageNumber ? styles.pageButtonActive : ''}`}
-                              onClick={() => setCurrentPage(pageNumber)}
-                            >
-                              {pageNumber}
-                            </button>
-                          ) : (
-                            <span key={`${pageNumber}-${index}`} className={styles.pageEllipsis}>
-                              ...
-                            </span>
-                          ),
-                        )}
-                        <button
-                          type="button"
-                          className={styles.pageButton}
-                          disabled={safeCurrentPage >= totalPages}
-                          onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                        >
-                          下一页
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
             </div>
           </div>
         </div>
