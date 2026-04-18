@@ -26,6 +26,7 @@ import {
   type EnabledSkill,
   type ChatMessageItem,
   type PresetQuestion,
+  type RecommendSkillsRequest,
 } from '../../services/customAgentService'
 import {
   createPendingUploadedFile,
@@ -567,6 +568,15 @@ export default function AgentDetailPage() {
     }
   }
 
+  // 缓存 agentInfo，使用本地 state 数据而非接口数据，避免每次渲染创建新对象引用导致 SkillConfigModal 重复请求
+  const skillModalAgentInfo = useMemo<RecommendSkillsRequest | undefined>(() =>
+    agentName ? {
+      agent_name: agentName,
+      description: agentSubtitle,
+      agent_prompt: agentInstruction || null,
+    } : undefined,
+  [agentName, agentSubtitle, agentInstruction])
+
   // 加载状态
   if (loading) {
     return (
@@ -1041,6 +1051,7 @@ export default function AgentDetailPage() {
         onCancel={handleSkillModalCancel}
         onSkillChange={handleSkillChange}
         currentSkills={agentSkills}
+        agentInfo={skillModalAgentInfo}
       />
 
       <KnowledgeSpaceModal

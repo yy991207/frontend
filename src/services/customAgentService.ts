@@ -13,6 +13,7 @@ export type CustomAgentApiConfig = {
   agentTemplatesEndpoint: string
   agentTemplateDetailEndpoint: string
   agentUsageLogsEndpoint: string
+  recommendSkillsEndpoint?: string
 }
 
 export type PresetQuestion = {
@@ -114,6 +115,7 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
   const agentTemplatesPath = parsedConfig.agent_templates_path
   const agentTemplateDetailPath = parsedConfig.agent_template_detail_path
   const agentUsageLogsPath = parsedConfig.agent_usage_logs_path
+  const recommendSkillsPath = parsedConfig.recommend_skills_path
   const userId = parsedConfig.user_id
 
   if (!baseUrl || !createAgentPath || !listAgentPath || !viewAgentPath || !updateAgentPath || !chatAgentPath || !generateTemplatePath || !getTemplateTaskPath || !agentTemplatesPath || !agentTemplateDetailPath || !agentUsageLogsPath || !userId) {
@@ -133,6 +135,7 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
     agentTemplatesEndpoint: buildAbsoluteUrl(baseUrl, agentTemplatesPath),
     agentTemplateDetailEndpoint: buildAbsoluteUrl(baseUrl, agentTemplateDetailPath),
     agentUsageLogsEndpoint: buildAbsoluteUrl(baseUrl, agentUsageLogsPath),
+    ...(recommendSkillsPath ? { recommendSkillsEndpoint: buildAbsoluteUrl(baseUrl, recommendSkillsPath) } : {}),
   }
 }
 
@@ -698,4 +701,44 @@ export async function deleteAgentUsageLog(
   if (!data.success) {
     throw new Error(data.msg || '删除智能体使用记录失败')
   }
+}
+
+export type RecommendSkillsRequest = {
+  agent_name: string
+  description: string
+  agent_prompt?: string | null
+}
+
+export async function recommendSkills(
+  config: CustomAgentApiConfig,
+  payload: RecommendSkillsRequest,
+  signal?: AbortSignal,
+): Promise<RecommendedSkill[]> {
+  if (!config.recommendSkillsEndpoint) {
+    return []
+  }
+
+  const requestUrl = new URL(config.recommendSkillsEndpoint)
+  requestUrl.searchParams.set('user_id', config.userId)
+
+  const response = await fetch(requestUrl.toString(), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(payload),
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(`获取推荐技能失败: HTTP ${response.status}`)
+  }
+
+  const data = await response.json()
+  if (!data.success) {
+    throw new Error(data.msg || '获取推荐技能失败')
+  }
+
+  return data.data?.skills || []
 }

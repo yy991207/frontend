@@ -122,6 +122,7 @@ const MOCK_CONFIG: CustomAgentApiConfig = {
   agentTemplatesEndpoint: 'http://localhost:8000/templates',
   agentTemplateDetailEndpoint: 'http://localhost:8000/template/{template_id}',
   agentUsageLogsEndpoint: 'http://localhost:8000/logs',
+  recommendSkillsEndpoint: 'http://localhost:8000/recommend-skills',
 }
 
 const MOCK_AGENT: AgentDetail = {
@@ -185,6 +186,7 @@ describe('AgentConversationPage', () => {
       copiedMessageId: null,
       handleCopy: vi.fn(),
       handleSend: vi.fn(),
+      handleStop: vi.fn(),
       isResponding: false,
       requestError: '',
       sessionLoading: false,

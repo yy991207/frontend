@@ -1,11 +1,9 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
-  ArrowUpOutlined,
   CameraOutlined,
   EditOutlined,
   GlobalOutlined,
-  PaperClipOutlined,
   PlusOutlined,
   SafetyCertificateOutlined,
   CheckCircleOutlined,
@@ -19,9 +17,7 @@ import SkillConfigModal from '../../components/common/SkillConfigModal'
 import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
 import SkillDetailPanel from '../../components/common/SkillDetailPanel'
 import { MessageList } from '../../components/chat/message-list'
-import { FileAttachmentPreview } from '../../components/common/FileAttachmentPreview'
 import { ChatComposer } from '../../components/common/ChatComposer'
-import SkillTemplateInput from '../../components/common/SkillTemplateInput'
 import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts-context'
 import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
 import {
@@ -39,6 +35,7 @@ import {
   type PresetQuestion,
   type CustomAgentApiConfig,
   type RecommendedSkill,
+  type RecommendSkillsRequest,
 } from '../../services/customAgentService'
 import type { ToolCall, ChatReference, SkillOutputItem } from '../../core/messages/types'
 import {
@@ -170,6 +167,15 @@ function AgentCreatePageContent() {
     () => resolveAssistantCopyTargets(adaptedMessages, { excludeLastTurn: isResponding }),
     [adaptedMessages, isResponding],
   )
+
+  // 缓存 agentInfo，避免每次渲染创建新对象引用导致 SkillConfigModal 重复请求
+  const skillModalAgentInfo = useMemo<RecommendSkillsRequest | undefined>(() =>
+    agentName ? {
+      agent_name: agentName,
+      description: agentSubtitle || '',
+      agent_prompt: agentInstruction || null,
+    } : undefined,
+  [agentName, agentSubtitle, agentInstruction])
 
   const handleCopy = useCallback(async (messageId: string, content: string) => {
     if (!content) return
@@ -945,6 +951,7 @@ const handleModalSave = (data: { name: string; description: string }) => {
         onSkillChange={handleSkillChange}
         currentSkills={agentSkills}
         recommendedSkills={recommendedSkills}
+        agentInfo={skillModalAgentInfo}
       />
 
       <KnowledgeSpaceModal

@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { message } from 'antd'
 import { SaveCommandModal } from './SaveCommandModal'
 import * as commandsService from '../../services/commandsService'
+import type { SaveCommandStep1Response } from '../../services/commandsService'
 
 vi.mock('../../services/commandsService', async () => {
   const actual = await vi.importActual('../../services/commandsService')
@@ -18,7 +19,7 @@ describe('SaveCommandModal', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.spyOn(message, 'error').mockImplementation(() => {})
+    vi.spyOn(message, 'error').mockImplementation(() => '' as never)
   })
 
   afterEach(() => {
@@ -182,7 +183,7 @@ describe('SaveCommandModal', () => {
   })
 
   it('loading 阶段关闭弹窗，竞态清理', async () => {
-    let resolveStep1: (value: typeof commandsService.SaveCommandStep1Response) => void
+    let resolveStep1: ((value: SaveCommandStep1Response) => void) | undefined
     vi.mocked(commandsService.generateCommandFromSession).mockReturnValue(
       new Promise((resolve) => {
         resolveStep1 = resolve
@@ -195,7 +196,7 @@ describe('SaveCommandModal', () => {
 
     unmount()
 
-    resolveStep1!({
+    resolveStep1?.({
       name: '天气查询',
       template: '查询/地点天气',
       attachments: [],

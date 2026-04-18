@@ -10,7 +10,6 @@ import { Button, message, Segmented, Spin } from 'antd'
 import { useCallback, useMemo, useState } from 'react'
 
 import type { CourseTableArtifact } from '../../core/artifacts/course-table'
-import { buildCourseTablePreviewHtml, parseCourseTableArtifact } from '../../core/artifacts/course-table'
 import { buildMarkdownPreviewHtml, renderMarkdownToHtml } from '../../core/artifacts/markdown-render'
 import { getFileName } from '../../core/utils/files'
 import styles from './file-preview.module.less'

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useStickToBottom } from './use-stick-to-bottom'
 
 type UseAutoScrollProps = {

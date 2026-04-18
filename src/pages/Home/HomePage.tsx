@@ -33,7 +33,7 @@ import {
 import styles from './home.module.less'
 
 const AILY_LOGO_URL = 'https://aily.feishu.cn/play/api/v1/files/static/offcial-logo15.png'
-const HOME_USER_NAME = '~'
+const DEFAULT_HOME_USER_NAME = '杨金玮'
 
 type HomeRouteState = {
   initialPrompt?: string
@@ -128,22 +128,13 @@ type PromptItem = {
   practiceId?: string
 }
 
-type PracticeTab = {
+type HomeTab = {
   key: string
   label: string
-  contentType: 'practice-cards'
-  items: PracticeItem[]
-}
-
-type PromptTab = {
-  key: string
-  label: string
-  contentType: 'prompt-cards'
-  items: PromptItem[]
+  contentType: 'practice-cards' | 'prompt-cards'
+  items: Array<PracticeItem | PromptItem>
   emptyText?: string
 }
-
-type HomeTab = PracticeTab | PromptTab
 
 type HomeTabsMockData = {
   tabs: HomeTab[]
@@ -175,6 +166,18 @@ const DEFAULT_HOME_TABS: HomeTab[] = [
     items: [],
   },
 ]
+
+function getHomeUserName() {
+  if (typeof window === 'undefined') {
+    return DEFAULT_HOME_USER_NAME
+  }
+
+  const cachedName = window.localStorage.getItem('display_name')
+    || window.localStorage.getItem('user_name')
+    || window.localStorage.getItem('username')
+
+  return cachedName?.trim() || DEFAULT_HOME_USER_NAME
+}
 
 const HOME_TEMPLATE_ACTIONS = [
   { key: 'ppt', label: '生成 PPT', prompt: '帮我生成一份结构完整的 PPT 提纲', toolType: 'slides' },
@@ -237,6 +240,7 @@ export default function HomePage() {
   const skipSlashSelectRef = useRef(false)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const homeUserName = useMemo(() => getHomeUserName(), [])
   
   const [heroStageLayout, setHeroStageLayout] = useState<HeroStageLayout>(() => {
     if (typeof window === 'undefined') {
@@ -667,10 +671,13 @@ export default function HomePage() {
         .map((a, i) => ({
           id: `attachment-${a.resource_id || i}`,
           name: a.file_name,
+          type: '',
+          ext: a.file_name.split('.').pop()?.toLowerCase() || '',
           url: a.url,
           status: 'completed' as const,
           size: 0,
-          progress: 100,
+          objectKey: '',
+          uploadProgress: 100,
         }))
       setUploadedFiles(mappedFiles)
     }
@@ -858,7 +865,7 @@ export default function HomePage() {
               >
                 <div className={styles.hero}>
                   <Avatar size={68} src={<img src={AILY_LOGO_URL} alt="飞书 aily logo" />} className={styles.heroAvatar} />
-                  <h1 className={styles.greeting}>Hi {HOME_USER_NAME} 有什么可以帮你的？</h1>
+                  <h1 className={styles.greeting}>Hi {homeUserName}，有什么可以帮你的？</h1>
                 </div>
 
                 <div
@@ -973,7 +980,7 @@ export default function HomePage() {
                   />
                 </div>
 
-                <div className={styles.quickActions} style={{ display: 'none' }}>
+                <div className={styles.quickActions}>
                   {HOME_TEMPLATE_ACTIONS.map((action) => (
                     <button
                       key={action.key}

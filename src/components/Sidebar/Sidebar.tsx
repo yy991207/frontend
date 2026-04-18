@@ -60,10 +60,6 @@ function AgentAvatar({ agent }: { agent: AgentUsageLogItem }) {
   return <span className={styles.avatarLetter}>{letter}</span>
 }
 
-function resolveAgentAvatar(agent: AgentUsageLogItem) {
-  return agent.avatar_url?.trim() || AILY_LOGO_URL
-}
-
 interface AgentMenuProps {
   agent: AgentUsageLogItem
   onDelete: (agent: AgentUsageLogItem) => void

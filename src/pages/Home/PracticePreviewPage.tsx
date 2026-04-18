@@ -1,11 +1,11 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { useMemo, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { AppPageShell, AppSurfacePanel } from '../../components/layout/AppPageShell'
 import { MessageList } from '../../components/chat/message-list'
 import { adaptChatMessages } from '../../core/messages/adapters'
 import { groupMessages } from '../../core/messages/utils'
-import { fetchCommands, type CommandsResponse } from '../../services/commandsService'
-import type { LegacyChatMessage } from '../../core/messages/types'
+import { fetchCommands } from '../../services/commandsService'
+import type { LegacyChatMessage, MessageGroup } from '../../core/messages/types'
 import styles from './practicePreview.module.less'
 
 function formatTime(date: Date) {
@@ -22,7 +22,7 @@ export default function PracticePreviewPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [practiceName, setPracticeName] = useState('')
-  const [groupedMessages, setGroupedMessages] = useState<ReturnType<typeof groupMessages>>([])
+  const [groupedMessages, setGroupedMessages] = useState<MessageGroup[]>([])
 
   useEffect(() => {
     if (!practiceId) {
@@ -52,7 +52,7 @@ export default function PracticePreviewPage() {
         setPracticeName(practice.name)
 
         // 转换 API messages 为 LegacyChatMessage 格式
-        const apiMessages = practice.messages || []
+        const apiMessages = Array.isArray(practice.messages) ? practice.messages : []
         const messages: LegacyChatMessage[] = apiMessages.map((msg: any, index) => ({
           id: `msg-${index}`,
           role: msg.role as 'user' | 'assistant',

@@ -14,7 +14,6 @@ import {
   ThunderboltOutlined,
   ToolOutlined,
 } from '@ant-design/icons'
-import { ALLOWED_FILE_EXTENSIONS } from '../../services/ossUploadService'
 import styles from './AttachmentMenu.module.less'
 
 type SubmenuKey = 'skill' | 'tool' | null
@@ -383,7 +382,7 @@ export function AttachmentMenu({
             document.body,
           )
         : null}
-      {menuOpen && activeSubmenu && menuReady
+      {menuOpen && activeSubmenu
         ? createPortal(
               <div
                 ref={submenuRef}
@@ -394,6 +393,7 @@ export function AttachmentMenu({
                   top: submenuPosition.top,
                   left: submenuPosition.left,
                   zIndex: 1000,
+                  visibility: menuReady ? 'visible' : 'hidden',
                 }}
                 aria-hidden={false}
               >

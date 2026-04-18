@@ -10,7 +10,7 @@ import styles from './ChatComposer.module.less'
 type ChatComposerProps = {
   value: string
   onChange: (value: string) => void
-  onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void
+  onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void
   onSend: () => void
   placeholder: string
   onMultilineChange?: (isMultiline: boolean) => void
@@ -24,7 +24,7 @@ type ChatComposerProps = {
   skills: AttachmentSkillItem[]
   filteredSkills: AttachmentSkillItem[]
   skillsLoading: boolean
-  loadSkills: (signal?: AbortSignal) => Promise<void>
+  loadSkills?: (signal?: AbortSignal) => Promise<void>
   selectedSkillIndex: number
   onSelectSkill: (skill: AttachmentSkillItem) => void
   onCloseSlashCommand: () => void
@@ -66,7 +66,7 @@ export function ChatComposer({
   skills,
   filteredSkills,
   skillsLoading,
-  loadSkills,
+  loadSkills = async () => {},
   selectedSkillIndex,
   onSelectSkill,
   onCloseSlashCommand,
@@ -132,16 +132,14 @@ export function ChatComposer({
         />
       </div>
       <div className={styles.inputBottomArea}>
-        {showUpload !== false && (
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept="*/*"
-            style={{ display: 'none' }}
-            onChange={onFileChange}
-          />
-        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="*/*"
+          style={{ display: 'none' }}
+          onChange={onFileChange}
+        />
         <div className={styles.inputBottomLeft}>
           {isAgentConversation ? (
             <>

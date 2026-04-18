@@ -1,6 +1,4 @@
 import type { MessageGroup, ToolCall } from '../../core/messages/types'
-import styles from '../../pages/Chat/chat.module.less'
-
 import { ThreadLoading } from './ChatLoadingAnimation'
 import { MessageGroupSection } from './message-group'
 
