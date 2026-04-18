@@ -1,3 +1,5 @@
+import { API_PATHS, buildAbsoluteApiUrl } from './apiEndpoints'
+
 export type PartnerApiConfig = {
   userId: string
   viewConfigEndpoint: string
@@ -54,25 +56,19 @@ function parseSimpleYaml(rawText: string) {
   }, {})
 }
 
-function buildAbsoluteUrl(baseUrl: string, path: string) {
-  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
-}
-
 export function parsePartnerApiConfig(rawText: string): PartnerApiConfig {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
-  const viewPartnerConfigPath = parsedConfig.view_partner_config_path
-  const updatePartnerConfigPath = parsedConfig.update_partner_config_path
   const userId = parsedConfig.user_id
 
-  if (!baseUrl || !viewPartnerConfigPath || !updatePartnerConfigPath || !userId) {
-    throw new Error('config.yaml 缺少 url、view_partner_config_path、update_partner_config_path 或 user_id 配置')
+  if (!baseUrl || !userId) {
+    throw new Error('config.yaml 缺少 url 或 user_id 配置')
   }
 
   return {
     userId,
-    viewConfigEndpoint: buildAbsoluteUrl(baseUrl, viewPartnerConfigPath),
-    updateConfigEndpoint: buildAbsoluteUrl(baseUrl, updatePartnerConfigPath),
+    viewConfigEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.viewPartnerConfig),
+    updateConfigEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.updatePartnerConfig),
   }
 }
 

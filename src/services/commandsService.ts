@@ -1,4 +1,5 @@
 import chatConfigText from '../../config.yaml?raw'
+import { API_PATHS, buildAbsoluteApiUrl } from './apiEndpoints'
 
 export type CommandApiItem = {
   id: string
@@ -57,15 +58,10 @@ function parseSimpleYaml(rawText: string) {
   }, {})
 }
 
-function buildAbsoluteUrl(baseUrl: string, path: string) {
-  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
-}
-
 function getCommandsEndpoint(): string {
   const parsedConfig = parseSimpleYaml(chatConfigText)
   const baseUrl = parsedConfig.url
-  const commandsPath = parsedConfig.commands_list_path ?? '/api/v1/commands'
-  return buildAbsoluteUrl(baseUrl, commandsPath)
+  return buildAbsoluteApiUrl(baseUrl, API_PATHS.commandsList)
 }
 
 export function getUserId(): string {
@@ -130,15 +126,15 @@ export type CreateCommandResponse = {
 function getMyCommandsEndpoint(): string {
   const parsedConfig = parseSimpleYaml(chatConfigText)
   const baseUrl = parsedConfig.url
-  return buildAbsoluteUrl(baseUrl, '/api/v1/my-commands')
+  return buildAbsoluteApiUrl(baseUrl, API_PATHS.myCommands)
 }
 
 export async function generateCommandFromSession(
   sessionId: string,
 ): Promise<SaveCommandStep1Response> {
-  const requestUrl = new URL(buildAbsoluteUrl(
+  const requestUrl = new URL(buildAbsoluteApiUrl(
     parseSimpleYaml(chatConfigText).url,
-    '/api/v1/my-commands/generate',
+    API_PATHS.generateMyCommand,
   ))
   requestUrl.searchParams.set('user_id', getUserId())
 

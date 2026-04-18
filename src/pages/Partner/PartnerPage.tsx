@@ -76,6 +76,7 @@ import {
   extractSkillItemsFromResponse,
   type SkillApiResponse,
 } from '../../services/skillPromptService'
+import { API_PATHS, USER_ID_QUERY_PARAM, buildAbsoluteApiUrl } from '../../services/apiEndpoints'
 import { adaptChatMessages } from '../../core/messages/adapters'
 import {
   advanceAssistantMessageForNextModelPhase,
@@ -126,33 +127,21 @@ function parseSimpleYaml(rawText: string) {
   }, {})
 }
 
-function buildAbsoluteUrl(baseUrl: string, path: string) {
-  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
-}
-
 function parseSkillApiConfig(rawText: string) {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
-  const managePath = parsedConfig.view_user_skills_path
-  const listPath = parsedConfig.list_user_skills_path
   const userId = parsedConfig.user_id
-  const userIdParam = parsedConfig.skill_user_id_param
+  const userIdParam = USER_ID_QUERY_PARAM
 
-  if (!baseUrl || !managePath || !userId || !userIdParam) {
-    throw new Error('config.yaml 缺少 url、view_user_skills_path、user_id 或 skill_user_id_param 配置')
+  if (!baseUrl || !userId) {
+    throw new Error('config.yaml 缺少 url 或 user_id 配置')
   }
 
-  const managePathWithUser = managePath.includes('{user_id}')
-    ? managePath.replace('{user_id}', encodeURIComponent(userId))
-    : managePath
-
-  const listEndpoint = listPath
-    ? buildAbsoluteUrl(baseUrl, listPath)
-    : null
+  const managePathWithUser = API_PATHS.viewUserSkills.replace('{user_id}', encodeURIComponent(userId))
 
   return {
-    manageEndpoint: buildAbsoluteUrl(baseUrl, managePathWithUser),
-    listEndpoint,
+    manageEndpoint: buildAbsoluteApiUrl(baseUrl, managePathWithUser),
+    listEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.listCustomSkills),
     userId,
     userIdParam,
   }

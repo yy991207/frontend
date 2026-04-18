@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { CloseOutlined, CopyOutlined, LoadingOutlined } from '@ant-design/icons'
 import { MarkdownContent } from '../chat/markdown-content'
+import { API_PATHS, buildAbsoluteApiUrl } from '../../services/apiEndpoints'
 import styles from './SkillDetailModal.module.less'
 
 export type SkillConfigField = {
@@ -70,7 +71,7 @@ async function loadApiConfig(): Promise<{ baseUrl: string; userId: string }> {
 }
 
 async function fetchSkillDetail(baseUrl: string, userId: string, skillName: string): Promise<SkillDetail> {
-  const url = `${baseUrl.replace(/\/+$/, '')}/api/v1/skills/${skillName}?user_id=${userId}`
+  const url = `${buildAbsoluteApiUrl(baseUrl, API_PATHS.regularSkillDetail).replace('{skill_name}', encodeURIComponent(skillName))}?user_id=${userId}`
   const response = await fetch(url, {
     method: 'GET',
     headers: {

@@ -1,3 +1,4 @@
+import { API_PATHS, USER_ID_QUERY_PARAM, buildAbsoluteApiUrl } from './apiEndpoints'
 import { extractSkillItemsFromResponse, type SkillApiResponse, type SkillItem } from './skillPromptService.ts'
 
 export type CustomSkillListApiConfig = {
@@ -32,27 +33,21 @@ function parseSimpleYaml(rawText: string) {
   }, {})
 }
 
-function buildAbsoluteUrl(baseUrl: string, path: string) {
-  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
-}
-
 export function parseCustomSkillListApiConfig(rawText: string): CustomSkillListApiConfig {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
-  const listUserSkillsPath = parsedConfig.list_user_skills_path
-  const deleteUserSkillPath = parsedConfig.del_user_skill_path
   const userId = parsedConfig.user_id
-  const userIdParam = parsedConfig.skill_user_id_param
+  const userIdParam = USER_ID_QUERY_PARAM
 
-  if (!baseUrl || !listUserSkillsPath || !userId || !userIdParam) {
-    throw new Error('config.yaml 缺少 url、list_user_skills_path、user_id 或 skill_user_id_param 配置')
+  if (!baseUrl || !userId) {
+    throw new Error('config.yaml 缺少 url 或 user_id 配置')
   }
 
   return {
     userId,
     userIdParam,
-    listEndpoint: buildAbsoluteUrl(baseUrl, listUserSkillsPath),
-    deleteEndpointTemplate: deleteUserSkillPath ? buildAbsoluteUrl(baseUrl, deleteUserSkillPath) : undefined,
+    listEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.listCustomSkills),
+    deleteEndpointTemplate: buildAbsoluteApiUrl(baseUrl, API_PATHS.deleteCustomSkill),
   }
 }
 
@@ -88,7 +83,7 @@ export async function deleteCreatedSkill(
   const normalizedSkillName = skillName.trim()
 
   if (!config.deleteEndpointTemplate) {
-    throw new Error('config.yaml 缺少 del_user_skill_path 配置')
+    throw new Error('缺少删除技能接口配置')
   }
 
   if (!normalizedSkillName) {

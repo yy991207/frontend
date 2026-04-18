@@ -320,9 +320,7 @@ export default function Sidebar() {
             <button
               key={item.key}
               type="button"
-              className={`${styles.navRow} ${styles.tooltipTarget} ${isActive(item.path) ? styles.navRowActive : ''} ${
-                item.key === 'home' ? styles.homeRow : ''
-              }`}
+              className={`${styles.navRow} ${styles.tooltipTarget} ${isActive(item.path) ? styles.navRowActive : ''}`}
               onClick={() => {
                 if (item.key === 'home') {
                   void handleCreateSession()

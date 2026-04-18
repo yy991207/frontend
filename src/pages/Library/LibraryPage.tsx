@@ -21,6 +21,7 @@ import type { MenuProps, TableColumnsType } from 'antd'
 import styles from './library.module.less'
 import { LibraryFilePreviewModal } from './LibraryFilePreviewModal'
 import { saveToCloudDisk } from '../../services/libraryFileService'
+import { API_PATHS, buildAbsoluteApiUrl } from '../../services/apiEndpoints'
 
 type LibraryConfig = {
   baseUrl: string
@@ -74,7 +75,6 @@ type SelectOption = {
   label: ReactNode
 }
 
-const LIBRARY_PATH = '/api/v1/files/library'
 const PAGE_SIZE = 8
 const FILE_TYPE_ALL = 'all'
 const SOURCE_ALL = 'all'
@@ -117,10 +117,6 @@ function parseSimpleYaml(rawText: string) {
   }, {})
 }
 
-function buildAbsoluteUrl(baseUrl: string, path: string) {
-  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
-}
-
 async function loadLibraryConfig(): Promise<LibraryConfig> {
   const response = await fetch('/config.yaml')
 
@@ -141,7 +137,7 @@ async function loadLibraryConfig(): Promise<LibraryConfig> {
   return {
     baseUrl,
     userId,
-    libraryPath: LIBRARY_PATH,
+    libraryPath: API_PATHS.library,
     token,
   }
 }
@@ -167,7 +163,7 @@ function buildAgentTypeQueryValue(value: string): LibraryAgentType | null {
 }
 
 async function fetchLibraryFiles(config: LibraryConfig, query: QueryState, signal?: AbortSignal): Promise<LibraryResponse> {
-  const requestUrl = new URL(buildAbsoluteUrl(config.baseUrl, config.libraryPath))
+  const requestUrl = new URL(buildAbsoluteApiUrl(config.baseUrl, config.libraryPath))
   requestUrl.searchParams.set('user_id', config.userId)
 
   const agentType = buildAgentTypeQueryValue(query.agentType)
@@ -301,7 +297,7 @@ export default function LibraryPage() {
     if (!config || !item.file_path) return
 
     try {
-      const endpoint = buildAbsoluteUrl(config.baseUrl, '/api/v1/chat/files/download-url')
+      const endpoint = buildAbsoluteApiUrl(config.baseUrl, API_PATHS.libraryFileDownloadUrl)
       const requestUrl = new URL(endpoint)
       requestUrl.searchParams.set('url', item.file_path)
       requestUrl.searchParams.set('expires', '3600')

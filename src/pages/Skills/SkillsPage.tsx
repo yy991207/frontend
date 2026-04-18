@@ -21,6 +21,7 @@ import { deleteCreatedSkill as deleteCreatedSkillFromApi, fetchCreatedSkills as 
 import { buildSkillInitialPrompt, extractSkillItemsFromResponse, type SkillApiResponse, type SkillItem as SkillApiItem } from '../../services/skillPromptService'
 import { parseSkillUploadApiConfig, uploadCustomSkill, type UploadedSkillSummary } from '../../services/skillUploadService'
 import { fetchClawhubSkills, fetchClawhubSkillDetail, installClawhubSkill, searchClawhubSkills, type ClawhubSkillDetail } from '../../services/clawhubService'
+import { API_PATHS, USER_ID_QUERY_PARAM, buildAbsoluteApiUrl } from '../../services/apiEndpoints'
 import styles from './skills.module.less'
 
 type SkillsMode = 'discover' | 'manage'
@@ -95,39 +96,25 @@ function parseSimpleYaml(rawText: string) {
   }, {})
 }
 
-function buildAbsoluteUrl(baseUrl: string, path: string) {
-  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
-}
-
 function parseSkillApiConfig(rawText: string): SkillApiConfig {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
-  const skillPath = parsedConfig.skill_path
-  const managePath = parsedConfig.view_user_skills_path
-  const addPath = parsedConfig.add_user_skills_path
-  const removePath = parsedConfig.del_user_skills_path
   const userId = parsedConfig.user_id
-  const userIdParam = parsedConfig.skill_user_id_param
+  const userIdParam = USER_ID_QUERY_PARAM
 
-  if (!baseUrl || !skillPath || !managePath || !addPath || !removePath || !userId || !userIdParam) {
-    throw new Error('config.yaml 缺少 url、skill_path、view_user_skills_path、add_user_skills_path、del_user_skills_path、user_id 或 skill_user_id_param 配置')
+  if (!baseUrl || !userId) {
+    throw new Error('config.yaml 缺少 url 或 user_id 配置')
   }
 
-  const managePathWithUser = managePath.includes('{user_id}')
-    ? managePath.replace('{user_id}', encodeURIComponent(userId))
-    : managePath
-  const addPathWithUser = addPath.includes('{user_id}')
-    ? addPath.replace('{user_id}', encodeURIComponent(userId))
-    : addPath
-  const removePathWithUser = removePath.includes('{user_id}')
-    ? removePath.replace('{user_id}', encodeURIComponent(userId))
-    : removePath
+  const managePathWithUser = API_PATHS.viewUserSkills.replace('{user_id}', encodeURIComponent(userId))
+  const addPathWithUser = API_PATHS.addUserSkill.replace('{user_id}', encodeURIComponent(userId))
+  const removePathWithUser = API_PATHS.deleteUserSkill.replace('{user_id}', encodeURIComponent(userId))
 
   return {
-    featuredEndpoint: buildAbsoluteUrl(baseUrl, skillPath),
-    manageEndpoint: buildAbsoluteUrl(baseUrl, managePathWithUser),
-    addSkillEndpoint: buildAbsoluteUrl(baseUrl, addPathWithUser),
-    removeSkillEndpointTemplate: buildAbsoluteUrl(baseUrl, removePathWithUser),
+    featuredEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.skillList),
+    manageEndpoint: buildAbsoluteApiUrl(baseUrl, managePathWithUser),
+    addSkillEndpoint: buildAbsoluteApiUrl(baseUrl, addPathWithUser),
+    removeSkillEndpointTemplate: buildAbsoluteApiUrl(baseUrl, removePathWithUser),
     userId,
     userIdParam,
   }
@@ -243,7 +230,7 @@ export default function SkillsPage() {
   const uploadRequestControllerRef = useRef<AbortController | null>(null)
   const skillApiConfig = useMemo(() => {
     try {
-      // 接口地址和 userId 统一从 config.yaml 读取，避免页面里写死环境配置。
+      // 运行时环境仍从 config.yaml 读取，接口路径统一走代码常量，避免浏览器暴露完整路由表。
       return parseSkillApiConfig(skillConfigText)
     } catch {
       return null
@@ -251,7 +238,7 @@ export default function SkillsPage() {
   }, [])
   const skillUploadApiConfig = useMemo(() => {
     try {
-      // 上传技能单独读 upload_skill_path，避免和列表接口配置混在一起。
+      // 上传技能和列表接口都走同一套代码常量，只保留运行时环境配置。
       return parseSkillUploadApiConfig(skillConfigText)
     } catch {
       return null
@@ -259,7 +246,7 @@ export default function SkillsPage() {
   }, [])
   const customSkillListApiConfig = useMemo(() => {
     try {
-      // “我创建的”单独走 list_user_skills_path，和“我添加的”接口隔离开。
+      // “我创建的”和“我添加的”仍走不同接口，但接口路径已经统一收口到代码常量。
       return parseCustomSkillListApiConfig(skillConfigText)
     } catch {
       return null

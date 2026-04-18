@@ -63,16 +63,16 @@ describe('Sidebar', () => {
     mockedGetAgentUsageLogs.mockResolvedValue(MOCK_AGENT_LIST)
   })
 
-  it('默认展示飞书 aily 风格的展开侧边栏布局', async () => {
+  it('默认展示当前展开侧边栏布局', async () => {
     render(
       <MemoryRouter>
         <Sidebar />
       </MemoryRouter>,
     )
 
-    expect(await screen.findByText('飞书 aily')).toBeVisible()
+    expect(await screen.findByText('果仁')).toBeVisible()
     expect(screen.getByText('发现')).toBeVisible()
-    expect(screen.getByText('杨金玮的智能伙伴')).toBeVisible()
+    expect(screen.getByText('你的智能伙伴')).toBeVisible()
     expect(screen.getByText('产品和市场调研专家')).toBeVisible()
     expect(screen.getByText('今天')).toBeVisible()
     expect(screen.getByText('7 天内')).toBeVisible()
@@ -86,12 +86,26 @@ describe('Sidebar', () => {
       </MemoryRouter>,
     )
 
-    expect(await screen.findByText('飞书 aily')).toBeVisible()
+    expect(await screen.findByText('果仁')).toBeVisible()
 
     fireEvent.click(screen.getByRole('button', { name: '收起侧边栏' }))
 
     expect(screen.getByRole('button', { name: '展开侧边栏' })).toHaveAttribute('aria-expanded', 'false')
     expect(screen.getByTestId('session-history')).toHaveAttribute('data-expanded', 'false')
     expect(screen.getByTestId('sidebar-agent-list')).toHaveAttribute('data-sidebar-mode', 'collapsed')
+  })
+
+  it('新建按钮默认不应带常驻选中背景样式', async () => {
+    render(
+      <MemoryRouter>
+        <Sidebar />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('果仁')).toBeVisible()
+
+    const createButton = screen.getByRole('button', { name: /新建/ })
+
+    expect(createButton.className).not.toContain('homeRow')
   })
 })

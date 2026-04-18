@@ -2,6 +2,7 @@ import {
   uploadPendingFileToOss,
   type UploadedFile,
 } from './ossUploadService'
+import { API_PATHS, buildAbsoluteApiUrl } from './apiEndpoints'
 
 export type AgentFileApiConfig = {
   userId: string
@@ -84,10 +85,6 @@ function parseSimpleYaml(rawText: string): Record<string, string> {
   return config
 }
 
-function buildAbsoluteUrl(baseUrl: string, path: string) {
-  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
-}
-
 function getParseTaskEndpoint(config: AgentFileApiConfig, taskId: string) {
   return config.parseTaskEndpoint.replace('{task_id}', encodeURIComponent(taskId))
 }
@@ -130,8 +127,8 @@ export function parseAgentFileApiConfig(rawText: string): AgentFileApiConfig {
 
   return {
     userId,
-    uploadEndpoint: buildAbsoluteUrl(baseUrl, '/api/v1/agent/files/upload'),
-    parseTaskEndpoint: buildAbsoluteUrl(baseUrl, '/api/v1/parse/{task_id}'),
+    uploadEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.agentFileUpload),
+    parseTaskEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.parseTask),
   }
 }
 

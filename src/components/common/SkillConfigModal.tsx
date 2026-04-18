@@ -13,6 +13,7 @@ import {
 } from '../../services/skillPromptService'
 import { installClawhubSkill } from '../../services/clawhubService'
 import { loadCustomAgentApiConfig, type EnabledSkill, type RecommendedSkill, type RecommendSkillsRequest, recommendSkills } from '../../services/customAgentService'
+import { API_PATHS, USER_ID_QUERY_PARAM, buildAbsoluteApiUrl } from '../../services/apiEndpoints'
 import styles from './SkillConfigModal.module.less'
 
 type SkillConfigModalProps = {
@@ -54,10 +55,6 @@ function parseSimpleYaml(rawText: string) {
   }, {})
 }
 
-function buildAbsoluteUrl(baseUrl: string, path: string) {
-  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
-}
-
 function getSkillUniqueKey(skill: Pick<SkillItem, 'skillName' | 'id'>) {
   return skill.skillName || skill.id
 }
@@ -95,32 +92,22 @@ function buildOptimisticAddedSkill(skill: RecommendedSkill): SkillItem {
 function parseSkillApiConfig(rawText: string): SkillApiConfig {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
-  const skillPath = parsedConfig.skill_path
-  const managePath = parsedConfig.view_user_skills_path
-  const addPath = parsedConfig.add_user_skills_path
-  const removePath = parsedConfig.del_user_skills_path
   const userId = parsedConfig.user_id
-  const userIdParam = parsedConfig.skill_user_id_param
+  const userIdParam = USER_ID_QUERY_PARAM
 
-  if (!baseUrl || !skillPath || !managePath || !addPath || !removePath || !userId || !userIdParam) {
-    throw new Error('config.yaml 缺少必要的技能接口配置')
+  if (!baseUrl || !userId) {
+    throw new Error('config.yaml 缺少 url 或 user_id 配置')
   }
 
-  const managePathWithUser = managePath.includes('{user_id}')
-    ? managePath.replace('{user_id}', encodeURIComponent(userId))
-    : managePath
-  const addPathWithUser = addPath.includes('{user_id}')
-    ? addPath.replace('{user_id}', encodeURIComponent(userId))
-    : addPath
-  const removePathWithUser = removePath.includes('{user_id}')
-    ? removePath.replace('{user_id}', encodeURIComponent(userId))
-    : removePath
+  const managePathWithUser = API_PATHS.viewUserSkills.replace('{user_id}', encodeURIComponent(userId))
+  const addPathWithUser = API_PATHS.addUserSkill.replace('{user_id}', encodeURIComponent(userId))
+  const removePathWithUser = API_PATHS.deleteUserSkill.replace('{user_id}', encodeURIComponent(userId))
 
   return {
-    featuredEndpoint: buildAbsoluteUrl(baseUrl, skillPath),
-    manageEndpoint: buildAbsoluteUrl(baseUrl, managePathWithUser),
-    addSkillEndpoint: buildAbsoluteUrl(baseUrl, addPathWithUser),
-    removeSkillEndpointTemplate: buildAbsoluteUrl(baseUrl, removePathWithUser),
+    featuredEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.skillList),
+    manageEndpoint: buildAbsoluteApiUrl(baseUrl, managePathWithUser),
+    addSkillEndpoint: buildAbsoluteApiUrl(baseUrl, addPathWithUser),
+    removeSkillEndpointTemplate: buildAbsoluteApiUrl(baseUrl, removePathWithUser),
     userId,
     userIdParam,
   }

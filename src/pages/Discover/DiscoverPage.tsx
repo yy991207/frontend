@@ -107,7 +107,11 @@ export default function DiscoverPage() {
     async function fetchMyCreatedAgents() {
       setMyCreatedLoading(true)
       try {
-        const response = await fetch('http://192.168.30.238:8000/api/v1/custom-agents?user_id=123456', {
+        const config = await loadCustomAgentApiConfig()
+        const requestUrl = new URL(config.listAgentEndpoint)
+        requestUrl.searchParams.set('user_id', config.userId)
+
+        const response = await fetch(requestUrl.toString(), {
           method: 'GET',
           headers: { Accept: 'application/json' },
         })

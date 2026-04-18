@@ -1,3 +1,5 @@
+import { API_PATHS, DEFAULT_API_BASE_URL, DEFAULT_USER_ID } from './apiEndpoints'
+
 export type ChatApiConfig = {
   userId: string
   createSessionEndpoint: string
@@ -5,9 +7,9 @@ export type ChatApiConfig = {
 }
 
 const DEFAULT_CHAT_API_CONFIG: ChatApiConfig = {
-  userId: '123456',
-  createSessionEndpoint: 'http://192.168.30.238:8000/api/v1/chat/sessions',
-  streamEndpointBase: 'http://192.168.30.238:8000/api/v1/chat/sessions',
+  userId: DEFAULT_USER_ID,
+  createSessionEndpoint: `${DEFAULT_API_BASE_URL.replace(/\/+$/, '')}${API_PATHS.createChatSession}`,
+  streamEndpointBase: `${DEFAULT_API_BASE_URL.replace(/\/+$/, '')}${API_PATHS.createChatSession}`,
 }
 
 export type ToolCall = {
@@ -153,7 +155,7 @@ export function parseChatApiConfig(rawText: string): ChatApiConfig {
     throw new Error('config.yaml 缺少 url 或 user_id 配置')
   }
 
-  const createChatSessionPath = parsedConfig.create_chat_session_path || '/api/v1/chat/sessions'
+  const createChatSessionPath = API_PATHS.createChatSession
   const sessionBaseUrl = new URL(createChatSessionPath, baseUrl).toString()
 
   return {

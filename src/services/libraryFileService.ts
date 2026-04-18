@@ -1,3 +1,5 @@
+import { API_PATHS, buildAbsoluteApiUrl } from './apiEndpoints'
+
 export type LibraryFileDetail = {
   file_id: string
   file_name: string
@@ -17,8 +19,7 @@ export async function fetchLibraryFileDetail(
   fileId: string,
   signal?: AbortSignal,
 ): Promise<LibraryFileDetail> {
-  const cleanBaseUrl = baseUrl.replace(/\/+$/, '')
-  const url = `${cleanBaseUrl}/api/v1/files/library/${fileId}`
+  const url = `${buildAbsoluteApiUrl(baseUrl, API_PATHS.library)}/${encodeURIComponent(fileId)}`
   const response = await fetch(url, {
     method: 'GET',
     headers: { Accept: 'application/json' },
@@ -48,8 +49,7 @@ export async function saveToCloudDisk(
   userId: string,
   params: SaveToCloudDiskParams,
 ): Promise<SaveToCloudDiskResponse> {
-  const cleanBaseUrl = baseUrl.replace(/\/+$/, '')
-  const url = `${cleanBaseUrl}/api/v1/files/library/save-to-cloud-disk`
+  const url = buildAbsoluteApiUrl(baseUrl, API_PATHS.librarySaveToCloudDisk)
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -72,8 +72,7 @@ export async function fetchPreviewContent(
   fileUrl: string,
   signal?: AbortSignal,
 ): Promise<string> {
-  const cleanBaseUrl = baseUrl.replace(/\/+$/, '')
-  const url = `${cleanBaseUrl}/api/v1/chat/files/preview?url=${encodeURIComponent(fileUrl)}`
+  const url = `${buildAbsoluteApiUrl(baseUrl, API_PATHS.libraryFilePreview)}?url=${encodeURIComponent(fileUrl)}`
   const response = await fetch(url, { signal })
   if (!response.ok) {
     throw new Error(`获取预览内容失败: HTTP ${response.status}`)

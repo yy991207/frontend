@@ -1,3 +1,4 @@
+import { API_PATHS, buildAbsoluteApiUrl } from './apiEndpoints'
 import { readSseStream, type ChatReference, type SkillOutputItem, type ToolCall } from './chatService'
 
 export type CustomAgentApiConfig = {
@@ -90,10 +91,6 @@ function parseSimpleYaml(rawText: string) {
   }, {})
 }
 
-function buildAbsoluteUrl(baseUrl: string, path: string) {
-  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
-}
-
 export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> {
   const response = await fetch('/config.yaml')
 
@@ -105,37 +102,26 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
   const parsedConfig = parseSimpleYaml(rawText)
 
   const baseUrl = parsedConfig.url
-  const createAgentPath = parsedConfig.create_custom_agent_path
-  const listAgentPath = parsedConfig.list_custom_agent_path
-  const viewAgentPath = parsedConfig.view_custom_agent_path
-  const updateAgentPath = parsedConfig.update_custom_agent_path
-  const chatAgentPath = parsedConfig.chat_custom_agent_path
-  const generateTemplatePath = parsedConfig.generate_agent_template_path
-  const getTemplateTaskPath = parsedConfig.get_agent_template_task_path
-  const agentTemplatesPath = parsedConfig.agent_templates_path
-  const agentTemplateDetailPath = parsedConfig.agent_template_detail_path
-  const agentUsageLogsPath = parsedConfig.agent_usage_logs_path
-  const recommendSkillsPath = parsedConfig.recommend_skills_path
   const userId = parsedConfig.user_id
 
-  if (!baseUrl || !createAgentPath || !listAgentPath || !viewAgentPath || !updateAgentPath || !chatAgentPath || !generateTemplatePath || !getTemplateTaskPath || !agentTemplatesPath || !agentTemplateDetailPath || !agentUsageLogsPath || !userId) {
-    throw new Error('config.yaml 缺少必要的接口配置')
+  if (!baseUrl || !userId) {
+    throw new Error('config.yaml 缺少 url 或 user_id 配置')
   }
 
   return {
     userId,
     baseUrl,
-    createAgentEndpoint: buildAbsoluteUrl(baseUrl, createAgentPath),
-    listAgentEndpoint: buildAbsoluteUrl(baseUrl, listAgentPath),
-    viewAgentEndpoint: buildAbsoluteUrl(baseUrl, viewAgentPath),
-    updateAgentEndpoint: buildAbsoluteUrl(baseUrl, updateAgentPath),
-    chatAgentEndpoint: buildAbsoluteUrl(baseUrl, chatAgentPath),
-    generateAgentTemplateEndpoint: buildAbsoluteUrl(baseUrl, generateTemplatePath),
-    getAgentTemplateTaskEndpoint: buildAbsoluteUrl(baseUrl, getTemplateTaskPath),
-    agentTemplatesEndpoint: buildAbsoluteUrl(baseUrl, agentTemplatesPath),
-    agentTemplateDetailEndpoint: buildAbsoluteUrl(baseUrl, agentTemplateDetailPath),
-    agentUsageLogsEndpoint: buildAbsoluteUrl(baseUrl, agentUsageLogsPath),
-    ...(recommendSkillsPath ? { recommendSkillsEndpoint: buildAbsoluteUrl(baseUrl, recommendSkillsPath) } : {}),
+    createAgentEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.createCustomAgent),
+    listAgentEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.listCustomAgent),
+    viewAgentEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.viewCustomAgent),
+    updateAgentEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.updateCustomAgent),
+    chatAgentEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.chatCustomAgent),
+    generateAgentTemplateEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.generateAgentTemplate),
+    getAgentTemplateTaskEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.getAgentTemplateTask),
+    agentTemplatesEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.agentTemplates),
+    agentTemplateDetailEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.agentTemplateDetail),
+    agentUsageLogsEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.agentUsageLogs),
+    recommendSkillsEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.recommendSkills),
   }
 }
 
@@ -654,8 +640,7 @@ export async function addAgentUsageLog(
   config: CustomAgentApiConfig,
   agentId: string,
 ): Promise<void> {
-  const endpoint = `${config.baseUrl.replace(/\/+$/, '')}/api/v1/custom-agents/usage-logs`
-  const requestUrl = new URL(endpoint)
+  const requestUrl = new URL(config.agentUsageLogsEndpoint)
   requestUrl.searchParams.set('user_id', config.userId)
 
   const response = await fetch(requestUrl.toString(), {
@@ -681,7 +666,8 @@ export async function deleteAgentUsageLog(
   config: CustomAgentApiConfig,
   agentId: string,
 ): Promise<void> {
-  const endpoint = `${config.baseUrl.replace(/\/+$/, '')}/api/v1/custom-agents/usage-logs/${encodeURIComponent(agentId)}`
+  const endpoint = buildAbsoluteApiUrl(config.baseUrl, API_PATHS.agentUsageLogDetail)
+    .replace('{agent_id}', encodeURIComponent(agentId))
   const requestUrl = new URL(endpoint)
   requestUrl.searchParams.set('user_id', config.userId)
   requestUrl.searchParams.set('agent_id', agentId)

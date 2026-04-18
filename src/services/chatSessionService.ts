@@ -1,3 +1,5 @@
+import { API_PATHS, DEFAULT_API_BASE_URL, DEFAULT_USER_ID } from './apiEndpoints'
+
 export type ChatSession = {
   session_id: string
   session_name: string | null
@@ -66,12 +68,12 @@ export type ChatSessionConfig = {
 
 // 从 config.yaml 读取的配置
 const DEFAULT_CONFIG: ChatSessionConfig = {
-  baseUrl: 'http://192.168.30.238:8000/',
-  userId: '123456',
-  viewChatSessionsPath: '/api/v1/chat/sessions',
-  delChatSessionPath: '/api/v1/chat/sessions',
-  getChatSessionPath: '/api/v1/chat/sessions/{session_id}',
-  viewGeneratedCodePath: '/api/v1/chat/sessions/{session_id}/files/preview',
+  baseUrl: DEFAULT_API_BASE_URL,
+  userId: DEFAULT_USER_ID,
+  viewChatSessionsPath: API_PATHS.viewChatSessions,
+  delChatSessionPath: API_PATHS.deleteChatSession,
+  getChatSessionPath: API_PATHS.getChatSession,
+  viewGeneratedCodePath: API_PATHS.viewGeneratedCode,
 }
 
 /**
@@ -102,13 +104,13 @@ export function parseChatSessionConfig(rawText: string): ChatSessionConfig {
 
   const baseUrl = config.url || DEFAULT_CONFIG.baseUrl
   const userId = config.user_id || DEFAULT_CONFIG.userId
-  const viewChatSessionsPath = config.view_chat_sessions_path || DEFAULT_CONFIG.viewChatSessionsPath
-  const delChatSessionPath = config.del_chat_session_path || DEFAULT_CONFIG.delChatSessionPath
-  const getChatSessionPath = config.get_chat_session_path || DEFAULT_CONFIG.getChatSessionPath
-  const viewGeneratedCodePath = config.view_generated_code_path || DEFAULT_CONFIG.viewGeneratedCodePath
+  const viewChatSessionsPath = DEFAULT_CONFIG.viewChatSessionsPath
+  const delChatSessionPath = DEFAULT_CONFIG.delChatSessionPath
+  const getChatSessionPath = DEFAULT_CONFIG.getChatSessionPath
+  const viewGeneratedCodePath = DEFAULT_CONFIG.viewGeneratedCodePath
 
   if (!baseUrl || !userId || !viewChatSessionsPath) {
-    throw new Error('config.yaml 缺少 url、user_id 或 view_chat_sessions_path 配置')
+    throw new Error('config.yaml 缺少 url 或 user_id 配置')
   }
 
   return {

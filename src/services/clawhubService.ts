@@ -1,3 +1,4 @@
+import { API_PATHS, buildAbsoluteApiUrl } from './apiEndpoints'
 import type { SkillItem, SkillApiResponse } from './skillPromptService'
 import { normalizeSkillItems } from './skillPromptService'
 
@@ -47,7 +48,7 @@ export type ClawhubDetailResult = {
 export async function fetchClawhubSkills(params: ClawhubBrowseParams): Promise<ClawhubBrowseResult> {
   const { baseUrl, userId, limit, offset = 0, signal } = params
 
-  const endpoint = `${baseUrl.replace(/\/+$/, '')}/api/v1/skills/clawhub/browse`
+  const endpoint = buildAbsoluteApiUrl(baseUrl, API_PATHS.clawhubBrowse)
   const requestUrl = new URL(endpoint)
 
   requestUrl.searchParams.set('user_id', userId)
@@ -105,7 +106,8 @@ export type ClawhubInstallResult = {
 export async function installClawhubSkill(params: ClawhubInstallParams): Promise<ClawhubInstallResult> {
   const { baseUrl, userId, slug, signal } = params
 
-  const endpoint = `${baseUrl.replace(/\/+$/, '')}/api/v1/skills/clawhub/${encodeURIComponent(slug)}/install`
+  const endpoint = buildAbsoluteApiUrl(baseUrl, API_PATHS.clawhubInstall)
+    .replace('{slug}', encodeURIComponent(slug))
   const requestUrl = new URL(endpoint)
 
   requestUrl.searchParams.set('user_id', userId)
@@ -162,7 +164,7 @@ export type ClawhubSearchResult = {
 export async function searchClawhubSkills(params: ClawhubSearchParams): Promise<ClawhubSearchResult> {
   const { baseUrl, userId, q, limit = 20, signal } = params
 
-  const endpoint = `${baseUrl.replace(/\/+$/, '')}/api/v1/skills/clawhub/search`
+  const endpoint = buildAbsoluteApiUrl(baseUrl, API_PATHS.clawhubSearch)
   const requestUrl = new URL(endpoint)
 
   requestUrl.searchParams.set('q', q)
@@ -217,7 +219,8 @@ export async function searchClawhubSkills(params: ClawhubSearchParams): Promise<
 export async function fetchClawhubSkillDetail(params: ClawhubDetailParams): Promise<ClawhubDetailResult> {
   const { baseUrl, userId, slug, signal } = params
 
-  const endpoint = `${baseUrl.replace(/\/+$/, '')}/api/v1/skills/clawhub/${encodeURIComponent(slug)}`
+  const endpoint = buildAbsoluteApiUrl(baseUrl, API_PATHS.clawhubSkillDetail)
+    .replace('{slug}', encodeURIComponent(slug))
   const requestUrl = new URL(endpoint)
   requestUrl.searchParams.set('user_id', userId)
 

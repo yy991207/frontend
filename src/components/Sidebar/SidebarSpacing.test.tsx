@@ -72,7 +72,7 @@ describe('Sidebar collapsed layout spacing', () => {
     )
 
     // 等待渲染完成
-    expect(await screen.findByText('飞书 aily')).toBeVisible()
+    expect(await screen.findByText('果仁')).toBeVisible()
 
     // 点击收起按钮
     const collapseButton = screen.getByRole('button', { name: '收起侧边栏' })
@@ -97,7 +97,7 @@ describe('Sidebar collapsed layout spacing', () => {
       </MemoryRouter>,
     )
 
-    expect(await screen.findByText('飞书 aily')).toBeVisible()
+    expect(await screen.findByText('果仁')).toBeVisible()
 
     const sidebar = document.querySelector('aside')!
     const computedStyle = window.getComputedStyle(sidebar)
@@ -114,7 +114,7 @@ describe('Sidebar collapsed layout spacing', () => {
       </MemoryRouter>,
     )
 
-    expect(await screen.findByText('飞书 aily')).toBeVisible()
+    expect(await screen.findByText('果仁')).toBeVisible()
 
     const sidebar = document.querySelector('aside')!
 
