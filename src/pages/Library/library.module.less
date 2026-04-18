@@ -60,22 +60,17 @@
 .cascadeFilterGroup {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px;
-  border-radius: 18px;
-  border: 1px solid #dce3ed;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+  gap: 8px;
 }
 
 .filterSelect {
   min-width: 132px;
 
   :global(.ant-select-selector) {
-    height: 36px !important;
+    height: 46px !important;
     padding: 0 12px !important;
     border-radius: 12px !important;
-    border-color: transparent !important;
+    border-color: #d9e0ea !important;
     box-shadow: none !important;
     background: #ffffff !important;
   }
@@ -91,7 +86,11 @@
 
   &:global(.ant-select-focused) :global(.ant-select-selector),
   &:hover :global(.ant-select-selector) {
-    border-color: #dce3ed !important;
+    border-color: #cfd8e3 !important;
+  }
+
+  &:global(.ant-select-focused) :global(.ant-select-selector) {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08) !important;
   }
 }
 
@@ -110,9 +109,13 @@
 
 .searchInput {
   width: 396px;
-  height: 48px;
-  border-radius: 16px;
-  border-color: #d9e0ea;
+  
+  &:global(.ant-input-affix-wrapper) {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 12px;
+    border-color: #d9e0ea;
+  }
 
   :global(.ant-input-prefix) {
     margin-right: 10px;
