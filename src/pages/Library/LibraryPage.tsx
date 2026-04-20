@@ -15,9 +15,9 @@ import {
   SearchOutlined,
   VideoCameraOutlined,
 } from '@ant-design/icons'
+import { getUrlUserId } from '../../utils/urlParams'
 import styles from './library.module.less'
 import { LibraryFilePreviewModal } from './LibraryFilePreviewModal'
-import { getUrlUserId } from '../../services/userIdService'
 
 type LibraryConfig = {
   baseUrl: string
@@ -123,9 +123,8 @@ async function loadLibraryConfig(): Promise<LibraryConfig> {
   const rawText = await response.text()
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
-  const configUserId = parsedConfig.user_id
   const urlUserId = getUrlUserId()
-  const userId = urlUserId || configUserId
+  const userId = urlUserId || parsedConfig.user_id
 
   if (!baseUrl || !userId) {
     throw new Error('config.yaml 缺少 url 或 user_id 配置')

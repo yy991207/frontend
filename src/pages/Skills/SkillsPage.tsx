@@ -15,11 +15,11 @@ import {
 } from '@ant-design/icons'
 import SkillDetailModal, { type SkillDetail } from '../../components/common/SkillDetailModal'
 import skillConfigText from '../../../config.yaml?raw'
+import { getUrlUserId } from '../../utils/urlParams'
 import { deleteCreatedSkill as deleteCreatedSkillFromApi, fetchCreatedSkills as fetchCreatedSkillsFromApi, parseCustomSkillListApiConfig } from '../../services/customSkillListService'
 import { buildSkillInitialPrompt, extractSkillItemsFromResponse, type SkillApiResponse, type SkillItem as SkillApiItem } from '../../services/skillPromptService'
 import { parseSkillUploadApiConfig, uploadCustomSkill, type UploadedSkillSummary } from '../../services/skillUploadService'
 import { fetchClawhubSkills, fetchClawhubSkillDetail, installClawhubSkill, type ClawhubSkillDetail } from '../../services/clawhubService'
-import { getUrlUserId } from '../../services/userIdService'
 import styles from './skills.module.less'
 
 type SkillsMode = 'discover' | 'manage'
@@ -102,10 +102,9 @@ function parseSkillApiConfig(rawText: string): SkillApiConfig {
   const managePath = parsedConfig.view_user_skills_path
   const addPath = parsedConfig.add_user_skills_path
   const removePath = parsedConfig.del_user_skills_path
-  const configUserId = parsedConfig.user_id
-  const urlUserId = getUrlUserId()
-  const userId = urlUserId || configUserId
   const userIdParam = parsedConfig.skill_user_id_param
+  const urlUserId = getUrlUserId()
+  const userId = urlUserId || parsedConfig.user_id
 
   if (!baseUrl || !skillPath || !managePath || !addPath || !removePath || !userId || !userIdParam) {
     throw new Error('config.yaml 缺少 url、skill_path、view_user_skills_path、add_user_skills_path、del_user_skills_path、user_id 或 skill_user_id_param 配置')

@@ -1,5 +1,5 @@
 import { extractSkillItemsFromResponse, type SkillApiResponse, type SkillItem } from './skillPromptService.ts'
-import { getUrlUserId } from './userIdService'
+import { getUrlUserId } from '../utils/urlParams'
 
 export type CustomSkillListApiConfig = {
   userId: string
@@ -42,10 +42,9 @@ export function parseCustomSkillListApiConfig(rawText: string): CustomSkillListA
   const baseUrl = parsedConfig.url
   const listUserSkillsPath = parsedConfig.list_user_skills_path
   const deleteUserSkillPath = parsedConfig.del_user_skill_path
-  const configUserId = parsedConfig.user_id
-  const urlUserId = getUrlUserId()
-  const userId = urlUserId || configUserId
   const userIdParam = parsedConfig.skill_user_id_param
+  const urlUserId = getUrlUserId()
+  const userId = urlUserId || parsedConfig.user_id
 
   if (!baseUrl || !listUserSkillsPath || !userId || !userIdParam) {
     throw new Error('config.yaml 缺少 url、list_user_skills_path、user_id 或 skill_user_id_param 配置')

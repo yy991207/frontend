@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { CloseOutlined, SearchOutlined } from '@ant-design/icons'
 import { message } from 'antd'
 import skillConfigText from '../../../config.yaml?raw'
+import { getUrlUserId } from '../../utils/urlParams'
 import {
   fetchCreatedSkills as fetchCreatedSkillsFromApi,
   parseCustomSkillListApiConfig,
@@ -12,7 +13,6 @@ import {
   type SkillItem,
 } from '../../services/skillPromptService'
 import { type EnabledSkill } from '../../services/customAgentService'
-import { getUrlUserId } from '../../services/userIdService'
 import styles from './SkillConfigModal.module.less'
 
 type SkillConfigModalProps = {
@@ -63,10 +63,9 @@ function parseSkillApiConfig(rawText: string): SkillApiConfig {
   const managePath = parsedConfig.view_user_skills_path
   const addPath = parsedConfig.add_user_skills_path
   const removePath = parsedConfig.del_user_skills_path
-  const configUserId = parsedConfig.user_id
-  const urlUserId = getUrlUserId()
-  const userId = urlUserId || configUserId
   const userIdParam = parsedConfig.skill_user_id_param
+  const urlUserId = getUrlUserId()
+  const userId = urlUserId || parsedConfig.user_id
 
   if (!baseUrl || !skillPath || !managePath || !addPath || !removePath || !userId || !userIdParam) {
     throw new Error('config.yaml 缺少必要的技能接口配置')

@@ -79,7 +79,7 @@ import {
 } from '../../core/messages/streaming'
 import type { LegacyChatMessage as ChatMessage } from '../../core/messages/types'
 import { groupMessages, resolveAssistantCopyTargets } from '../../core/messages/utils'
-import { getUrlUserId } from '../../services/userIdService'
+import { getUrlUserId } from '../../utils/urlParams'
 import styles from './partner.module.less'
 
 type SettingMenuItem = {
@@ -132,10 +132,9 @@ function parseSkillApiConfig(rawText: string) {
   const baseUrl = parsedConfig.url
   const managePath = parsedConfig.view_user_skills_path
   const listPath = parsedConfig.list_user_skills_path
-  const configUserId = parsedConfig.user_id
-  const urlUserId = getUrlUserId()
-  const userId = urlUserId || configUserId
   const userIdParam = parsedConfig.skill_user_id_param
+  const urlUserId = getUrlUserId()
+  const userId = urlUserId || parsedConfig.user_id
 
   if (!baseUrl || !managePath || !userId || !userIdParam) {
     throw new Error('config.yaml 缺少 url、view_user_skills_path、user_id 或 skill_user_id_param 配置')

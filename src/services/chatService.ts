@@ -4,6 +4,8 @@ export type ChatApiConfig = {
   streamEndpointBase: string
 }
 
+import { getUrlUserId } from '../utils/urlParams'
+
 const DEFAULT_CHAT_API_CONFIG: ChatApiConfig = {
   userId: '123456',
   createSessionEndpoint: 'http://192.168.30.238:8000/api/v1/chat/sessions',
@@ -136,14 +138,11 @@ function parseSimpleYaml(rawText: string) {
   }, {})
 }
 
-import { getUrlUserId } from './userIdService'
-
 export function parseChatApiConfig(rawText: string): ChatApiConfig {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url || new URL(DEFAULT_CHAT_API_CONFIG.createSessionEndpoint).origin
-  const configUserId = parsedConfig.user_id || DEFAULT_CHAT_API_CONFIG.userId
   const urlUserId = getUrlUserId()
-  const userId = urlUserId || configUserId
+  const userId = urlUserId || parsedConfig.user_id || DEFAULT_CHAT_API_CONFIG.userId
 
   if (!baseUrl || !userId) {
     throw new Error('config.yaml 缺少 url 或 user_id 配置')

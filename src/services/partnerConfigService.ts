@@ -1,10 +1,10 @@
-import { getUrlUserId } from './userIdService'
-
 export type PartnerApiConfig = {
   userId: string
   viewConfigEndpoint: string
   updateConfigEndpoint: string
 }
+
+import { getUrlUserId } from '../utils/urlParams'
 
 export type PartnerConfig = {
   agentName: string
@@ -65,9 +65,8 @@ export function parsePartnerApiConfig(rawText: string): PartnerApiConfig {
   const baseUrl = parsedConfig.url
   const viewPartnerConfigPath = parsedConfig.view_partner_config_path
   const updatePartnerConfigPath = parsedConfig.update_partner_config_path
-  const configUserId = parsedConfig.user_id
   const urlUserId = getUrlUserId()
-  const userId = urlUserId || configUserId
+  const userId = urlUserId || parsedConfig.user_id
 
   if (!baseUrl || !viewPartnerConfigPath || !updatePartnerConfigPath || !userId) {
     throw new Error('config.yaml 缺少 url、view_partner_config_path、update_partner_config_path 或 user_id 配置')

@@ -1,5 +1,5 @@
 import { readSseStream, type ChatReference, type SkillOutputItem, type ToolCall } from './chatService'
-import { getUrlUserId } from './userIdService'
+import { getUrlUserId } from '../utils/urlParams'
 
 export type CustomAgentApiConfig = {
   userId: string
@@ -115,9 +115,8 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
   const agentTemplatesPath = parsedConfig.agent_templates_path
   const agentTemplateDetailPath = parsedConfig.agent_template_detail_path
   const agentUsageLogsPath = parsedConfig.agent_usage_logs_path
-  const configUserId = parsedConfig.user_id
   const urlUserId = getUrlUserId()
-  const userId = urlUserId || configUserId
+  const userId = urlUserId || parsedConfig.user_id
 
   if (!baseUrl || !createAgentPath || !listAgentPath || !viewAgentPath || !updateAgentPath || !chatAgentPath || !generateTemplatePath || !getTemplateTaskPath || !agentTemplatesPath || !agentTemplateDetailPath || !agentUsageLogsPath || !userId) {
     throw new Error('config.yaml 缺少必要的接口配置')

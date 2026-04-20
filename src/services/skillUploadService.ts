@@ -1,10 +1,10 @@
-import { getUrlUserId } from './userIdService'
-
 export type SkillUploadApiConfig = {
   userId: string
   userIdParam: string
   uploadEndpoint: string
 }
+
+import { getUrlUserId } from '../utils/urlParams'
 
 export type UploadedSkillSummary = {
   skillId: string
@@ -109,10 +109,9 @@ export function parseSkillUploadApiConfig(rawText: string): SkillUploadApiConfig
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
   const uploadSkillPath = parsedConfig.upload_skill_path
-  const configUserId = parsedConfig.user_id
-  const urlUserId = getUrlUserId()
-  const userId = urlUserId || configUserId
   const userIdParam = parsedConfig.skill_user_id_param
+  const urlUserId = getUrlUserId()
+  const userId = urlUserId || parsedConfig.user_id
 
   if (!baseUrl || !uploadSkillPath || !userId || !userIdParam) {
     throw new Error('config.yaml 缺少 url、upload_skill_path、user_id 或 skill_user_id_param 配置')
