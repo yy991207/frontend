@@ -19,6 +19,7 @@ import { deleteCreatedSkill as deleteCreatedSkillFromApi, fetchCreatedSkills as 
 import { buildSkillInitialPrompt, extractSkillItemsFromResponse, type SkillApiResponse, type SkillItem as SkillApiItem } from '../../services/skillPromptService'
 import { parseSkillUploadApiConfig, uploadCustomSkill, type UploadedSkillSummary } from '../../services/skillUploadService'
 import { fetchClawhubSkills, fetchClawhubSkillDetail, installClawhubSkill, type ClawhubSkillDetail } from '../../services/clawhubService'
+import { getUrlUserId } from '../../services/userIdService'
 import styles from './skills.module.less'
 
 type SkillsMode = 'discover' | 'manage'
@@ -101,7 +102,9 @@ function parseSkillApiConfig(rawText: string): SkillApiConfig {
   const managePath = parsedConfig.view_user_skills_path
   const addPath = parsedConfig.add_user_skills_path
   const removePath = parsedConfig.del_user_skills_path
-  const userId = parsedConfig.user_id
+  const configUserId = parsedConfig.user_id
+  const urlUserId = getUrlUserId()
+  const userId = urlUserId || configUserId
   const userIdParam = parsedConfig.skill_user_id_param
 
   if (!baseUrl || !skillPath || !managePath || !addPath || !removePath || !userId || !userIdParam) {

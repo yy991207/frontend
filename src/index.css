@@ -16,6 +16,16 @@ body,
   color: #1a1a1a;
 }
 
+/* 隐藏所有滚动条但保留滚动能力 */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
 /* 隐藏横向滚动条但保留滚动能力 */
 .scroll-x-hidden {
   overflow-x: auto;

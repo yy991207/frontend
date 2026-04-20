@@ -18,6 +18,7 @@ import {
   type SkillApiResponse,
   type SkillItem as SkillApiItem,
 } from '../../services/skillPromptService'
+import { getUrlUserId } from '../../services/userIdService'
 import styles from './PartnerSkillManagement.module.less'
 
 type ManageTab = 'added' | 'created'
@@ -89,7 +90,9 @@ function parseSkillApiConfig(rawText: string): SkillApiConfig {
   const managePath = parsedConfig.view_user_skills_path
   const addPath = parsedConfig.add_user_skills_path
   const removePath = parsedConfig.del_user_skills_path
-  const userId = parsedConfig.user_id
+  const configUserId = parsedConfig.user_id
+  const urlUserId = getUrlUserId()
+  const userId = urlUserId || configUserId
   const userIdParam = parsedConfig.skill_user_id_param
 
   if (!baseUrl || !skillPath || !managePath || !addPath || !removePath || !userId || !userIdParam) {

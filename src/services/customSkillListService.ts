@@ -1,4 +1,5 @@
 import { extractSkillItemsFromResponse, type SkillApiResponse, type SkillItem } from './skillPromptService.ts'
+import { getUrlUserId } from './userIdService'
 
 export type CustomSkillListApiConfig = {
   userId: string
@@ -41,7 +42,9 @@ export function parseCustomSkillListApiConfig(rawText: string): CustomSkillListA
   const baseUrl = parsedConfig.url
   const listUserSkillsPath = parsedConfig.list_user_skills_path
   const deleteUserSkillPath = parsedConfig.del_user_skill_path
-  const userId = parsedConfig.user_id
+  const configUserId = parsedConfig.user_id
+  const urlUserId = getUrlUserId()
+  const userId = urlUserId || configUserId
   const userIdParam = parsedConfig.skill_user_id_param
 
   if (!baseUrl || !listUserSkillsPath || !userId || !userIdParam) {

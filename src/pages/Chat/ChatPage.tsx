@@ -73,6 +73,7 @@ import {
   extractSkillItemsFromResponse,
   type SkillApiResponse,
 } from '../../services/skillPromptService'
+import { getUrlUserId } from '../../services/userIdService'
 import styles from './chat.module.less'
 
 type SkillItem = AttachmentSkillItem
@@ -288,7 +289,9 @@ function parseSkillApiConfig(rawText: string) {
   const baseUrl = parsedConfig.url
   const managePath = parsedConfig.view_user_skills_path
   const listPath = parsedConfig.list_user_skills_path
-  const userId = parsedConfig.user_id
+  const configUserId = parsedConfig.user_id
+  const urlUserId = getUrlUserId()
+  const userId = urlUserId || configUserId
   const userIdParam = parsedConfig.skill_user_id_param
 
   if (!baseUrl || !managePath || !userId || !userIdParam) {

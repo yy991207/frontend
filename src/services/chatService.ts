@@ -136,10 +136,14 @@ function parseSimpleYaml(rawText: string) {
   }, {})
 }
 
+import { getUrlUserId } from './userIdService'
+
 export function parseChatApiConfig(rawText: string): ChatApiConfig {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url || new URL(DEFAULT_CHAT_API_CONFIG.createSessionEndpoint).origin
-  const userId = parsedConfig.user_id || DEFAULT_CHAT_API_CONFIG.userId
+  const configUserId = parsedConfig.user_id || DEFAULT_CHAT_API_CONFIG.userId
+  const urlUserId = getUrlUserId()
+  const userId = urlUserId || configUserId
 
   if (!baseUrl || !userId) {
     throw new Error('config.yaml 缺少 url 或 user_id 配置')

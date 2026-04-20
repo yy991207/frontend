@@ -1,3 +1,5 @@
+import { getUrlUserId } from './userIdService'
+
 export type SkillUploadApiConfig = {
   userId: string
   userIdParam: string
@@ -107,7 +109,9 @@ export function parseSkillUploadApiConfig(rawText: string): SkillUploadApiConfig
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
   const uploadSkillPath = parsedConfig.upload_skill_path
-  const userId = parsedConfig.user_id
+  const configUserId = parsedConfig.user_id
+  const urlUserId = getUrlUserId()
+  const userId = urlUserId || configUserId
   const userIdParam = parsedConfig.skill_user_id_param
 
   if (!baseUrl || !uploadSkillPath || !userId || !userIdParam) {

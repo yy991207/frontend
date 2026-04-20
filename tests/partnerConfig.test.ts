@@ -23,8 +23,6 @@ test('parsePartnerApiConfig reads agent endpoint and user id from config', () =>
 test('extractPartnerConfig maps agent name and markdown memories', () => {
   const config = extractPartnerConfig({
     success: true,
-    code: '200',
-    msg: 'success',
     data: {
       agent: {
         agent_name: 'guoren',

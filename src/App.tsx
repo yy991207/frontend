@@ -9,8 +9,16 @@ import SkillsPage from './pages/Skills/SkillsPage'
 import AgentDetailPage from './pages/AgentDetail/AgentDetailPage'
 import AgentCreatePage from './pages/AgentCreate/AgentCreatePage'
 import AgentConversationPage from './pages/AgentConversation/AgentConversationPage'
+import { setUrlUserId } from './services/userIdService'
 
 export default function App() {
+  const params = new URLSearchParams(window.location.search);
+  const urlUserId = params.get('user_id');
+  console.log('urlUserId', urlUserId)
+  if (urlUserId) {
+    setUrlUserId(urlUserId);
+  }
+
   return (
     <BrowserRouter>
       <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>

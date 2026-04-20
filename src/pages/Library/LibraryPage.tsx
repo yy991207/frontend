@@ -17,6 +17,7 @@ import {
 } from '@ant-design/icons'
 import styles from './library.module.less'
 import { LibraryFilePreviewModal } from './LibraryFilePreviewModal'
+import { getUrlUserId } from '../../services/userIdService'
 
 type LibraryConfig = {
   baseUrl: string
@@ -122,7 +123,9 @@ async function loadLibraryConfig(): Promise<LibraryConfig> {
   const rawText = await response.text()
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
-  const userId = parsedConfig.user_id
+  const configUserId = parsedConfig.user_id
+  const urlUserId = getUrlUserId()
+  const userId = urlUserId || configUserId
 
   if (!baseUrl || !userId) {
     throw new Error('config.yaml 缺少 url 或 user_id 配置')
