@@ -23,13 +23,10 @@ import { uploadPendingFileToOssWithDocumentParse } from '../../services/agentFil
 import {
   buildSkillInitialPrompt,
 } from '../../services/skillPromptService'
+import { getAvatarLetter, normalizeAgentAvatarUrl } from '../../utils/agentAvatar'
 import styles from './agentConversation.module.less'
 
 type SkillItemType = AttachmentSkillItem
-
-function getAvatarLetter(name?: string) {
-  return name?.trim().charAt(0).toUpperCase() || 'A'
-}
 
 function AgentAvatar({
   name,
@@ -42,7 +39,7 @@ function AgentAvatar({
   className: string
   imageClassName: string
 }) {
-  const normalizedAvatarUrl = avatarUrl?.trim()
+  const normalizedAvatarUrl = normalizeAgentAvatarUrl(avatarUrl)
 
   if (normalizedAvatarUrl) {
     return (

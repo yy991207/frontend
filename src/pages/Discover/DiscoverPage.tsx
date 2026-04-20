@@ -20,11 +20,8 @@ import {
   type OfficialAgentItem,
 } from '../../services/customAgentService'
 import { notifyAgentUsageLogRefresh } from '../../services/chatSessionEvents'
+import { getAvatarLetter, normalizeAgentAvatarUrl } from '../../utils/agentAvatar'
 import styles from './discover.module.less'
-
-function getAvatarLetter(name: string) {
-  return name?.trim().charAt(0).toUpperCase() || 'A'
-}
 
 type MyCreatedAgent = {
   agent_id: string
@@ -230,36 +227,40 @@ export default function DiscoverPage() {
                   <span>加载中...</span>
                 </div>
               ) : getCurrentFeaturedAgents().length > 0 ? (
-                getCurrentFeaturedAgents().map((agent) => (
-                  <div
-                    key={agent.agent_id}
-                    className={styles.featuredCard}
-                    onClick={() => handleAgentChat(agent.agent_id)}
-                  >
-                    <div className={styles.featuredCardIcon}>
-                      {agent.avatar_url ? (
-                        <img src={agent.avatar_url} alt={agent.agent_name} className={styles.featuredCardAvatarImage} />
-                      ) : (
-                        <span>{getAvatarLetter(agent.agent_name)}</span>
-                      )}
-                      <div className={styles.featuredCardBadge}>
-                        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFUAAABUCAYAAADzqXv/AAAACXBIWXMAACE4AAAhOAFFljFgAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAovSURBVHgB7VtbaBRXGP7OmdAo" alt="" />
+                getCurrentFeaturedAgents().map((agent) => {
+                  const avatarUrl = normalizeAgentAvatarUrl(agent.avatar_url)
+
+                  return (
+                    <div
+                      key={agent.agent_id}
+                      className={styles.featuredCard}
+                      onClick={() => handleAgentChat(agent.agent_id)}
+                    >
+                      <div className={styles.featuredCardIcon}>
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt={agent.agent_name} className={styles.featuredCardAvatarImage} />
+                        ) : (
+                          <span>{getAvatarLetter(agent.agent_name)}</span>
+                        )}
+                        <div className={styles.featuredCardBadge}>
+                          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFUAAABUCAYAAADzqXv/AAAACXBIWXMAACE4AAAhOAFFljFgAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAovSURBVHgB7VtbaBRXGP7OmdAo" alt="" />
+                        </div>
+                      </div>
+                      <h3 className={styles.featuredCardTitle}>{agent.agent_name}</h3>
+                      <p className={styles.featuredCardDesc}>{agent.description}</p>
+                      <div className={styles.featuredCardMeta}>
+                        <div className={styles.metaAuthor}>
+                          <span>@果仁官方</span>
+                        </div>
+                        <div className={styles.metaDivider} />
+                        <div className={styles.metaUsage}>
+                          <MessageOutlined />
+                          <span>{formatUsage(0)}</span>
+                        </div>
                       </div>
                     </div>
-                    <h3 className={styles.featuredCardTitle}>{agent.agent_name}</h3>
-                    <p className={styles.featuredCardDesc}>{agent.description}</p>
-                    <div className={styles.featuredCardMeta}>
-                      <div className={styles.metaAuthor}>
-                        <span>@果仁官方</span>
-                      </div>
-                      <div className={styles.metaDivider} />
-                      <div className={styles.metaUsage}>
-                        <MessageOutlined />
-                        <span>{formatUsage(0)}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))
+                  )
+                })
               ) : (
                 <div className={styles.emptyContainer}>暂无官方智能体</div>
               )}

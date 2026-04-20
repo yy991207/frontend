@@ -242,10 +242,10 @@ describe('AgentConversationPage', () => {
     expect(screen.queryByRole('button', { name: '编辑智能体' })).not.toBeInTheDocument()
   })
 
-  it('聊天页头部和欢迎区头像优先使用同一个 avatar_url 数据源', async () => {
+  it('聊天页头部和欢迎区头像优先使用有效的 avatar_url 数据源', async () => {
     mockedViewCustomAgent.mockResolvedValueOnce({
       ...MOCK_AGENT,
-      avatar_url: 'https://example.com/agent-avatar.png',
+      avatar_url: 'https://guoren-skills-test.oss-cn-beijing.aliyuncs.com/agent-avatar.png',
     })
 
     renderPage()
@@ -257,7 +257,28 @@ describe('AgentConversationPage', () => {
     const avatarImages = screen.getAllByAltText('测试智能体头像')
     expect(avatarImages).toHaveLength(2)
     avatarImages.forEach((image) => {
-      expect(image).toHaveAttribute('src', 'https://example.com/agent-avatar.png')
+      expect(image).toHaveAttribute('src', 'https://guoren-skills-test.oss-cn-beijing.aliyuncs.com/agent-avatar.png')
+    })
+  })
+
+  it('聊天页遇到 example 占位头像时展示白底黑字默认头像', async () => {
+    mockedViewCustomAgent.mockResolvedValueOnce({
+      ...MOCK_AGENT,
+      avatar_url: 'https://example.com/avatar.png',
+    })
+
+    renderPage()
+
+    await waitFor(() => {
+      expect(mockedViewCustomAgent).toHaveBeenCalledWith(MOCK_CONFIG, 'agent-1')
+    })
+
+    expect(screen.queryByAltText('测试智能体头像')).not.toBeInTheDocument()
+    screen.getAllByText('测').forEach((avatarLetter) => {
+      expect(avatarLetter).toHaveStyle({
+        background: '#ffffff',
+        color: '#1f2329',
+      })
     })
   })
 

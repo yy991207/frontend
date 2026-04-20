@@ -124,6 +124,21 @@ describe('Sidebar', () => {
     expect(activeAgentRow?.className).toContain('sidebarItemActive')
   })
 
+  it('智能体使用记录的字母头像应为白底黑字', async () => {
+    render(
+      <MemoryRouter>
+        <Sidebar />
+      </MemoryRouter>,
+    )
+
+    const avatarLetter = await screen.findByText('产')
+
+    expect(avatarLetter).toHaveStyle({
+      background: '#ffffff',
+      color: '#1f2329',
+    })
+  })
+
   it('进入带 sessionId 的智能体会话时，不应同时高亮智能体行', async () => {
     render(
       <MemoryRouter initialEntries={['/agent/agent-1/chat?sessionId=session-1']}>

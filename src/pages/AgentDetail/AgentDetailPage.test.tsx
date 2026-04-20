@@ -1,4 +1,4 @@
-import { act, fireEvent, render, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import AgentDetailPage from './AgentDetailPage'
 import {
@@ -172,5 +172,21 @@ describe('AgentDetailPage', () => {
         onStatusChange: expect.any(Function),
       }),
     )
+  })
+
+  it('自定义智能体主头像应为白底黑字', async () => {
+    renderPage()
+
+    await waitFor(() => {
+      expect(mockedViewCustomAgent).toHaveBeenCalled()
+    })
+
+    const avatarLetter = screen.getByText('测')
+    expect(avatarLetter.parentElement).toHaveStyle({
+      background: '#ffffff',
+    })
+    expect(avatarLetter).toHaveStyle({
+      color: '#1f2329',
+    })
   })
 })

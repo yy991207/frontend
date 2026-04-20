@@ -224,4 +224,16 @@ describe('AgentCreatePage', () => {
       }),
     )
   })
+
+  it('创建页自定义智能体主头像应为白底黑字', () => {
+    renderPage()
+
+    const avatarLetter = screen.getByText('西')
+    expect(avatarLetter.parentElement).toHaveStyle({
+      background: '#ffffff',
+    })
+    expect(avatarLetter).toHaveStyle({
+      color: '#1f2329',
+    })
+  })
 })

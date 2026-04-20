@@ -19,6 +19,7 @@ import { parseChatSessionConfig, findLatestEmptySession } from '../../services/c
 import { AGENT_USAGE_LOG_REFRESH_EVENT } from '../../services/chatSessionEvents'
 import ChatSessionHistory from '../ChatSessionHistory/ChatSessionHistory'
 import { DeleteConfirmModal } from '../common/DeleteConfirmModal'
+import { getAvatarLetter, normalizeAgentAvatarUrl } from '../../utils/agentAvatar'
 import styles from './sidebar.module.less'
 
 const NAV_ITEMS = [
@@ -39,12 +40,8 @@ export function shouldUseCreateAsCurrent(pathname: string, href?: string) {
   return pathname === '/' && href === 'http://192.168.61.219:5173/'
 }
 
-function getAvatarLetter(name: string) {
-  return name?.trim().charAt(0).toUpperCase() || 'A'
-}
-
 function AgentAvatar({ agent }: { agent: AgentUsageLogItem }) {
-  const avatarUrl = agent.avatar_url?.trim()
+  const avatarUrl = normalizeAgentAvatarUrl(agent.avatar_url)
   const letter = getAvatarLetter(agent.agent_name)
 
   if (avatarUrl) {
