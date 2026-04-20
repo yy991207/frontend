@@ -166,7 +166,8 @@
     opacity 0.18s ease;
 
   &:hover {
-    background: #ececec;
+    background: #ffffff;
+    background: var(--sidebar-item-hover-background);
   }
 
   &.sessionItemRemoving {
@@ -178,13 +179,20 @@
   }
 }
 
+.sessionItemActive {
+  background: #ffffff;
+  background: var(--sidebar-item-active-background);
+  color: #1f2329;
+  color: var(--sidebar-item-active-color);
+}
+
 .iconCell {
   width: 36px;
   height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #646a73;
+  color: inherit;
   font-size: 18px;
 
   :global(.anticon) {
@@ -215,9 +223,19 @@
   transition: opacity 0.18s ease, transform 0.2s ease;
 }
 
+.sessionItemActive .agentLabel {
+  background: rgba(20, 86, 240, 0.12);
+  color: var(--sidebar-item-active-color);
+}
+
 .agentLabelDefault {
   background: #edf8ef;
   color: #2c8b4b;
+}
+
+.sessionItemActive .agentLabelDefault {
+  background: rgba(20, 86, 240, 0.12);
+  color: var(--sidebar-item-active-color);
 }
 
 .sessionNameText {

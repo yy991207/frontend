@@ -27,6 +27,34 @@ import styles from './agentConversation.module.less'
 
 type SkillItemType = AttachmentSkillItem
 
+function getAvatarLetter(name?: string) {
+  return name?.trim().charAt(0).toUpperCase() || 'A'
+}
+
+function AgentAvatar({
+  name,
+  avatarUrl,
+  className,
+  imageClassName,
+}: {
+  name?: string
+  avatarUrl?: string | null
+  className: string
+  imageClassName: string
+}) {
+  const normalizedAvatarUrl = avatarUrl?.trim()
+
+  if (normalizedAvatarUrl) {
+    return (
+      <div className={className}>
+        <img src={normalizedAvatarUrl} alt={`${name || '智能体'}头像`} className={imageClassName} />
+      </div>
+    )
+  }
+
+  return <div className={className}>{getAvatarLetter(name)}</div>
+}
+
 export default function AgentConversationPage() {
   return (
     <ArtifactsProvider>
@@ -40,6 +68,7 @@ function AgentConversationPageContent() {
   const navigate = useNavigate()
   const location = useLocation()
   const { addFile, selectFile, open: artifactOpen } = useArtifacts()
+  const [customAgentConfig, setCustomAgentConfig] = useState<Awaited<ReturnType<typeof loadCustomAgentApiConfig>> | null>(null)
   const [agentData, setAgentData] = useState<AgentDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -182,6 +211,15 @@ function AgentConversationPageContent() {
     return routeSessionId || sessionId || null
   }, [location.search, sessionId])
 
+  const canEditAgent = useMemo(() => {
+    // 只有当前用户自己创建的智能体才允许进入编辑页，企业精选等他人智能体不展示入口
+    if (!customAgentConfig || !agentData) {
+      return false
+    }
+
+    return agentData.creator_user_id === customAgentConfig.userId
+  }, [customAgentConfig, agentData])
+
   const syncSessionToRoute = useCallback((newSessionId: string) => {
     navigate(
       {
@@ -226,6 +264,7 @@ function AgentConversationPageContent() {
         const nextChatApiConfig = await loadChatApiConfig()
 
         if (!cancelled) {
+          setCustomAgentConfig(config)
           setAgentData(agent)
           setChatApiConfig(nextChatApiConfig)
           setWebSearchEnabled(agent.enable_web_search)
@@ -299,24 +338,29 @@ function AgentConversationPageContent() {
         <AppSurfacePanel className={styles.panel}>
           <header className={styles.header}>
             <div className={styles.headerLeft}>
-              <div className={styles.avatar}>
-                {agentData?.agent_name?.charAt(0).toUpperCase() || 'A'}
-              </div>
+              <AgentAvatar
+                name={agentData?.agent_name}
+                avatarUrl={agentData?.avatar_url}
+                className={styles.avatar}
+                imageClassName={styles.avatarImage}
+              />
               <div className={styles.headerInfo}>
                 <h1 className={styles.agentName}>{agentData?.agent_name || '智能体'}</h1>
                 {agentData?.description ? <p className={styles.agentDesc}>{agentData.description}</p> : null}
               </div>
             </div>
             <div className={styles.headerRight}>
-              <button
-                type="button"
-                className={styles.headerButton}
-                onClick={handleNavigateToConfig}
-                aria-label="编辑智能体"
-                data-tooltip="编辑智能体"
-              >
-                <SettingOutlined />
-              </button>
+              {canEditAgent ? (
+                <button
+                  type="button"
+                  className={styles.headerButton}
+                  onClick={handleNavigateToConfig}
+                  aria-label="编辑智能体"
+                  data-tooltip="编辑智能体"
+                >
+                  <SettingOutlined />
+                </button>
+              ) : null}
             </div>
           </header>
 
@@ -337,9 +381,12 @@ function AgentConversationPageContent() {
                 />
               ) : (
                 <div className={styles.welcomeArea}>
-                  <div className={styles.welcomeIcon}>
-                    {agentData?.agent_name?.charAt(0).toUpperCase() || 'A'}
-                  </div>
+                  <AgentAvatar
+                    name={agentData?.agent_name}
+                    avatarUrl={agentData?.avatar_url}
+                    className={styles.welcomeIcon}
+                    imageClassName={styles.welcomeIconImage}
+                  />
                   <h2 className={styles.welcomeTitle}>你好，我是 {agentData?.agent_name || '智能体'}</h2>
                   {agentData?.description ? <p className={styles.welcomeDesc}>{agentData.description}</p> : null}
                   {agentData?.preset_questions && agentData.preset_questions.length > 0 ? (

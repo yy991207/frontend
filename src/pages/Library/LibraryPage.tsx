@@ -75,7 +75,7 @@ type SelectOption = {
   label: ReactNode
 }
 
-const PAGE_SIZE = 8
+const PAGE_SIZE = 16
 const FILE_TYPE_ALL = 'all'
 const SOURCE_ALL = 'all'
 
@@ -226,10 +226,6 @@ function formatDateTime(value: string) {
   })
     .format(date)
     .replace(/\//g, '-')
-}
-
-function getAvatarLetter(name: string) {
-  return name.trim().charAt(0).toUpperCase() || '库'
 }
 
 function getFileTypeText(fileType: LibraryFileType) {
@@ -444,9 +440,6 @@ export default function LibraryPage() {
           className={styles.fileNameButton}
           onClick={() => handleFilePreview(item.file_id)}
         >
-          <span className={styles.fileIcon}>
-            <span className={styles.fileIconLetter}>{getAvatarLetter(item.file_name)}</span>
-          </span>
           <span className={styles.fileMeta}>
             <span className={styles.fileName} title={item.file_name}>
               {item.file_name}
@@ -607,6 +600,7 @@ export default function LibraryPage() {
                 <Table<LibraryFileItem>
                   rowKey="file_id"
                   className={styles.libraryTable}
+                  size="small"
                   columns={columns}
                   dataSource={pagedFiles}
                   pagination={false}

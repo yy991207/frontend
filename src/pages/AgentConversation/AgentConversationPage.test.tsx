@@ -227,6 +227,40 @@ describe('AgentConversationPage', () => {
     expect(screen.getByText('详情页')).toBeInTheDocument()
   })
 
+  it('企业精选智能体不展示编辑按钮', async () => {
+    mockedViewCustomAgent.mockResolvedValueOnce({
+      ...MOCK_AGENT,
+      creator_user_id: 'guoren',
+    })
+
+    renderPage()
+
+    await waitFor(() => {
+      expect(mockedViewCustomAgent).toHaveBeenCalledWith(MOCK_CONFIG, 'agent-1')
+    })
+
+    expect(screen.queryByRole('button', { name: '编辑智能体' })).not.toBeInTheDocument()
+  })
+
+  it('聊天页头部和欢迎区头像优先使用同一个 avatar_url 数据源', async () => {
+    mockedViewCustomAgent.mockResolvedValueOnce({
+      ...MOCK_AGENT,
+      avatar_url: 'https://example.com/agent-avatar.png',
+    })
+
+    renderPage()
+
+    await waitFor(() => {
+      expect(mockedViewCustomAgent).toHaveBeenCalledWith(MOCK_CONFIG, 'agent-1')
+    })
+
+    const avatarImages = screen.getAllByAltText('测试智能体头像')
+    expect(avatarImages).toHaveLength(2)
+    avatarImages.forEach((image) => {
+      expect(image).toHaveAttribute('src', 'https://example.com/agent-avatar.png')
+    })
+  })
+
   it('输入框底栏直接提供联网检索配置，并且附件菜单不再展示工具入口', async () => {
     mockedViewCustomAgent.mockResolvedValueOnce({
       ...MOCK_AGENT,

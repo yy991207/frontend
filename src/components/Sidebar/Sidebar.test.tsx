@@ -1,6 +1,7 @@
+import '../../index.css'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import Sidebar from './Sidebar'
+import Sidebar, { shouldUseCreateAsCurrent } from './Sidebar'
 import {
   getAgentUsageLogs,
   loadCustomAgentApiConfig,
@@ -107,5 +108,54 @@ describe('Sidebar', () => {
     const createButton = screen.getByRole('button', { name: /新建/ })
 
     expect(createButton.className).not.toContain('homeRow')
+  })
+
+  it('当前智能体行应使用统一的选中背景样式', async () => {
+    render(
+      <MemoryRouter initialEntries={['/agent/agent-1/chat']}>
+        <Sidebar />
+      </MemoryRouter>,
+    )
+
+    const activeAgentName = await screen.findByText('产品和市场调研专家')
+    const activeAgentRow = activeAgentName.closest('[aria-current="page"]')
+
+    expect(activeAgentRow).not.toBeNull()
+    expect(activeAgentRow?.className).toContain('sidebarItemActive')
+  })
+
+  it('进入带 sessionId 的智能体会话时，不应同时高亮智能体行', async () => {
+    render(
+      <MemoryRouter initialEntries={['/agent/agent-1/chat?sessionId=session-1']}>
+        <Sidebar />
+      </MemoryRouter>,
+    )
+
+    const agentName = await screen.findByText('产品和市场调研专家')
+    const agentRow = agentName.closest('[aria-current="page"]')
+
+    expect(agentRow).toBeNull()
+  })
+
+  it('指定根地址下应把新建按钮视为当前项', () => {
+    expect(shouldUseCreateAsCurrent('/', 'http://192.168.61.219:5173/')).toBe(true)
+    expect(shouldUseCreateAsCurrent('/', 'http://127.0.0.1:5173/')).toBe(false)
+    expect(shouldUseCreateAsCurrent('/skills', 'http://192.168.61.219:5173/skills')).toBe(false)
+  })
+
+  it('当前导航项应保持白色背景和默认文字色', async () => {
+    render(
+      <MemoryRouter initialEntries={['/skills']}>
+        <Sidebar />
+      </MemoryRouter>,
+    )
+
+    const activeNavButton = await screen.findByRole('button', { name: /技能/ })
+
+    expect(activeNavButton).toHaveAttribute('aria-current', 'page')
+    expect(activeNavButton).toHaveStyle({
+      backgroundColor: '#ffffff',
+      color: '#1f2329',
+    })
   })
 })

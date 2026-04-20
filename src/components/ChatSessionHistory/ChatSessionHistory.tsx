@@ -14,6 +14,11 @@ import { CHAT_SESSION_HISTORY_REFRESH_EVENT } from '../../services/chatSessionEv
 import { DeleteConfirmModal } from '../common/DeleteConfirmModal'
 import styles from './chatSessionHistory.module.less'
 
+const CURRENT_SESSION_ITEM_STYLE = {
+  backgroundColor: '#ffffff',
+  color: '#1f2329',
+}
+
 // 加载配置
 async function loadConfig(): Promise<ChatSessionConfig> {
   try {
@@ -280,15 +285,17 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
   const renderSessionItem = (session: ChatSession, options?: { collapsed?: boolean }) => {
     const isRemoving = removingSessionIds.has(session.session_id)
     const collapsed = options?.collapsed ?? false
+    const isCurrentSession = getCurrentSessionId() === session.session_id
     const agentLabel = session.agent_id ? '个人' : '通用'
     const agentLabelClass = session.agent_id ? styles.agentLabel : `${styles.agentLabel} ${styles.agentLabelDefault}`
     return (
       <div
         key={session.session_id}
-        className={`${styles.sessionItem} ${isRemoving ? styles.sessionItemRemoving : ''}`}
+        className={`${styles.sessionItem} ${isCurrentSession ? styles.sessionItemActive : ''} ${isRemoving ? styles.sessionItemRemoving : ''}`}
         onClick={() => handleSessionClick(session)}
         title={getSessionDisplayName(session)}
-        style={{ cursor: 'pointer' }}
+        aria-current={isCurrentSession ? 'page' : undefined}
+        style={isCurrentSession ? { ...CURRENT_SESSION_ITEM_STYLE, cursor: 'pointer' } : { cursor: 'pointer' }}
       >
         <span className={styles.iconCell}>
           <MessageOutlined />

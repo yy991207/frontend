@@ -30,6 +30,14 @@ const NAV_ITEMS = [
 
 const AILY_LOGO_URL = 'https://aily.feishu.cn/play/api/v1/files/static/offcial-logo15.png'
 const PARTNER_AVATAR_URL = 'https://s3-imfile.feishucdn.com/static-resource/v1/v3_00vn_7af88321-f0ad-4b2d-9e0f-f1fc704abbag'
+const CURRENT_SIDEBAR_ITEM_STYLE = {
+  backgroundColor: '#ffffff',
+  color: '#1f2329',
+}
+
+export function shouldUseCreateAsCurrent(pathname: string, href?: string) {
+  return pathname === '/' && href === 'http://192.168.61.219:5173/'
+}
 
 function getAvatarLetter(name: string) {
   return name?.trim().charAt(0).toUpperCase() || 'A'
@@ -255,7 +263,24 @@ export default function Sidebar() {
     }
   }, [])
 
-  const isActive = (path?: string) => (path ? location.pathname === path : false)
+  const isCreateCurrent = shouldUseCreateAsCurrent(
+    location.pathname,
+    typeof window !== 'undefined' ? window.location.href : undefined,
+  )
+  const isActive = (itemKey: string, path?: string) => {
+    if (itemKey === 'home') {
+      return isCreateCurrent
+    }
+    return path ? location.pathname === path : false
+  }
+  const isAgentActive = (agentId: string) => {
+    const currentSessionId = new URLSearchParams(location.search).get('sessionId')
+    if (currentSessionId) {
+      return false
+    }
+    const agentBasePath = `/agent/${agentId}`
+    return location.pathname === agentBasePath || location.pathname === `${agentBasePath}/chat`
+  }
 
   const handleItemClick = (path?: string) => {
     if (path) {
@@ -316,36 +341,43 @@ export default function Sidebar() {
         </div>
 
         <nav className={styles.nav}>
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              className={`${styles.navRow} ${styles.tooltipTarget} ${isActive(item.path) ? styles.navRowActive : ''}`}
-              onClick={() => {
-                if (item.key === 'home') {
-                  void handleCreateSession()
-                  return
-                }
+          {NAV_ITEMS.map((item) => {
+            const active = isActive(item.key, item.path)
+            return (
+              <button
+                key={item.key}
+                type="button"
+                className={`${styles.navRow} ${styles.tooltipTarget} ${active ? styles.sidebarItemActive : ''}`}
+                onClick={() => {
+                  if (item.key === 'home') {
+                    void handleCreateSession()
+                    return
+                  }
 
-                handleItemClick(item.path)
-              }}
-              data-tooltip={item.key === 'home' && creatingSession ? '新建中...' : item.label}
-              aria-busy={item.key === 'home' ? creatingSession : undefined}
-            >
-              <span className={styles.iconCell}>
-                {item.key === 'home' && creatingSession ? <LoadingOutlined /> : item.icon}
-              </span>
-              <span className={styles.labelCell}>{item.key === 'home' && creatingSession ? '新建中...' : item.label}</span>
-            </button>
-          ))}
+                  handleItemClick(item.path)
+                }}
+                data-tooltip={item.key === 'home' && creatingSession ? '新建中...' : item.label}
+                aria-busy={item.key === 'home' ? creatingSession : undefined}
+                aria-current={active ? 'page' : undefined}
+                style={active ? CURRENT_SIDEBAR_ITEM_STYLE : undefined}
+              >
+                <span className={styles.iconCell}>
+                  {item.key === 'home' && creatingSession ? <LoadingOutlined /> : item.icon}
+                </span>
+                <span className={styles.labelCell}>{item.key === 'home' && creatingSession ? '新建中...' : item.label}</span>
+              </button>
+            )
+          })}
         </nav>
 
         <div className={styles.sectionTitle}>智能伙伴</div>
         <button
           type="button"
-          className={`${styles.partnerRow} ${styles.tooltipTarget} ${location.pathname === '/partner' ? styles.navRowActive : ''}`}
+          className={`${styles.partnerRow} ${styles.tooltipTarget} ${location.pathname === '/partner' ? styles.sidebarItemActive : ''}`}
           data-tooltip="你的智能伙伴"
           onClick={() => navigate('/partner')}
+          aria-current={location.pathname === '/partner' ? 'page' : undefined}
+          style={location.pathname === '/partner' ? CURRENT_SIDEBAR_ITEM_STYLE : undefined}
         >
           <span className={styles.avatarCell}>
             <img src={PARTNER_AVATAR_URL} alt="智能伙伴头像" className={styles.avatarImage} />
@@ -368,11 +400,14 @@ export default function Sidebar() {
             ) : agentList.length > 0 ? (
               agentList.map((agent) => {
                 const isRemoving = removingAgentIds.has(agent.agent_id)
+                const active = isAgentActive(agent.agent_id)
                 return (
                   <div
                     key={agent.agent_id}
-                    className={`${styles.agentRow} ${isRemoving ? styles.agentRowRemoving : ''}`}
+                    className={`${styles.agentRow} ${active ? styles.sidebarItemActive : ''} ${isRemoving ? styles.agentRowRemoving : ''}`}
                     onClick={() => navigate(`/agent/${agent.agent_id}/chat`)}
+                    aria-current={active ? 'page' : undefined}
+                    style={active ? CURRENT_SIDEBAR_ITEM_STYLE : undefined}
                   >
                     <div className={styles.agentRowMain}>
                       <span className={styles.avatarCell}>

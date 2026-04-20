@@ -221,13 +221,16 @@
     color 0.18s ease;
 
   &:hover {
-    background: #ececec;
+    background: #ffffff;
+    background: var(--sidebar-item-hover-background);
   }
 }
 
-.navRowActive {
-  background: #ebeef5;
-  color: #1456f0;
+.sidebarItemActive {
+  background: #ffffff;
+  background: var(--sidebar-item-active-background);
+  color: #1f2329;
+  color: var(--sidebar-item-active-color);
 }
 
 .iconCell {
@@ -327,6 +330,7 @@
   padding: 0 8px 0 0;
   border-radius: 12px;
   cursor: pointer;
+  color: #1f2329;
   transition:
     width 0.28s ease,
     min-height 0.28s ease,
@@ -336,7 +340,8 @@
     opacity 0.18s ease;
 
   &:hover {
-    background: #ececec;
+    background: #ffffff;
+    background: var(--sidebar-item-hover-background);
   }
 }
 
@@ -359,7 +364,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 14px;
-  color: #1f2329;
+  color: inherit;
   transition: opacity 0.18s ease, transform 0.2s ease;
 }
 

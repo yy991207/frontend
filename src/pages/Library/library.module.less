@@ -178,20 +178,21 @@
   }
 
   :global(.ant-table-thead > tr > th) {
-    height: 56px;
-    padding: 0 20px;
+    height: 42px;
+    padding: 8px 16px;
     background: #f8fafc;
     color: #64748b;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     border-bottom: 1px solid #edf1f6;
   }
 
   :global(.ant-table-tbody > tr > td) {
-    height: 76px;
-    padding: 0 20px;
+    height: 44px;
+    padding: 6px 16px;
     border-bottom: 1px solid #f1f5f9;
     background: #ffffff;
+    vertical-align: middle;
   }
 
   :global(.ant-table-tbody > tr:hover > td) {
@@ -211,31 +212,13 @@
   padding: 0;
   display: flex;
   align-items: center;
-  gap: 16px;
   text-align: left;
   cursor: pointer;
+  line-height: 1;
 
   &:hover .fileName {
     color: #2563eb;
   }
-}
-
-.fileIcon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #3370ff;
-  color: #ffffff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.fileIconLetter {
-  line-height: 1;
 }
 
 .fileMeta {
@@ -245,8 +228,8 @@
 }
 
 .fileName {
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 14px;
+  line-height: 18px;
   color: #1f2937;
   font-weight: 400;
   white-space: nowrap;
@@ -258,7 +241,8 @@
 .timeText {
   display: inline-block;
   max-width: 100%;
-  font-size: 15px;
+  font-size: 13px;
+  line-height: 18px;
   color: #1f2937;
   white-space: nowrap;
   overflow: hidden;

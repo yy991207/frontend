@@ -4,6 +4,7 @@ import { readSseStream, type ChatReference, type SkillOutputItem, type ToolCall 
 export type CustomAgentApiConfig = {
   userId: string
   baseUrl: string
+  token?: string
   createAgentEndpoint: string
   listAgentEndpoint: string
   viewAgentEndpoint: string
@@ -66,6 +67,28 @@ type ListCustomAgentResponse = {
   }
 }
 
+export type OfficialAgentItem = {
+  agent_id: string
+  creator_user_id: string
+  agent_name: string
+  description: string
+  avatar_url: string | null
+  is_active: boolean
+  is_public: boolean
+  created_at: string
+  updated_at: string
+}
+
+type ListOfficialAgentResponse = {
+  success?: boolean
+  code?: string | number
+  msg?: string
+  data?: {
+    agents: OfficialAgentItem[]
+    total: number
+  }
+}
+
 function parseSimpleYaml(rawText: string) {
   return rawText.split(/\r?\n/).reduce<Record<string, string>>((result, line) => {
     const trimmedLine = line.trim()
@@ -103,6 +126,7 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
 
   const baseUrl = parsedConfig.url
   const userId = parsedConfig.user_id
+  const token = parsedConfig.token
 
   if (!baseUrl || !userId) {
     throw new Error('config.yaml 缺少 url 或 user_id 配置')
@@ -111,6 +135,7 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
   return {
     userId,
     baseUrl,
+    token,
     createAgentEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.createCustomAgent),
     listAgentEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.listCustomAgent),
     viewAgentEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.viewCustomAgent),
@@ -175,6 +200,35 @@ export async function listCustomAgents(
 
   if (!data.success) {
     throw new Error(data.msg || '获取智能体列表失败')
+  }
+
+  return data.data?.agents || []
+}
+
+export async function listOfficialAgents(
+  config: CustomAgentApiConfig,
+  signal?: AbortSignal,
+): Promise<OfficialAgentItem[]> {
+  const requestUrl = new URL(buildAbsoluteApiUrl(config.baseUrl, '/api/v1/admin/agents'))
+  requestUrl.searchParams.set('is_active', 'true')
+
+  const response = await fetch(requestUrl.toString(), {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}),
+    },
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(`获取官方智能体列表失败: HTTP ${response.status}`)
+  }
+
+  const data = (await response.json()) as ListOfficialAgentResponse
+
+  if (!data.success) {
+    throw new Error(data.msg || '获取官方智能体列表失败')
   }
 
   return data.data?.agents || []
