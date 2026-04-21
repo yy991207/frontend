@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { CloseOutlined, CopyOutlined, LoadingOutlined } from '@ant-design/icons'
 import { MarkdownContent } from '../chat/markdown-content'
-import { getConfigUrl } from '../../utils/urlParams'
+import { API_PATHS, buildAbsoluteApiUrl } from '../../services/apiEndpoints'
 import styles from './SkillDetailModal.module.less'
 
 export type SkillConfigField = {
@@ -49,7 +49,7 @@ type ParsedSkillDoc = {
 }
 
 async function loadApiConfig(): Promise<{ baseUrl: string; userId: string }> {
-  const response = await fetch(getConfigUrl())
+  const response = await fetch('/config.yaml')
   if (!response.ok) {
     throw new Error('加载配置文件失败')
   }
@@ -71,8 +71,7 @@ async function loadApiConfig(): Promise<{ baseUrl: string; userId: string }> {
 }
 
 async function fetchSkillDetail(baseUrl: string, userId: string, skillName: string): Promise<SkillDetail> {
-  console.log('Fetching skill detail...',userId)
-  const url = `${baseUrl.replace(/\/+$/, '')}/api/v1/skills/${skillName}?user_id=${userId}`
+  const url = `${buildAbsoluteApiUrl(baseUrl, API_PATHS.regularSkillDetail).replace('{skill_name}', encodeURIComponent(skillName))}?user_id=${userId}`
   const response = await fetch(url, {
     method: 'GET',
     headers: {
@@ -247,6 +246,7 @@ export default function SkillDetailModal({ visible, skillName, isSelected, actio
   const displayName = skillDetail?.chinese_name || skillName
   const displayDescription = skillDetail?.description || '该技能用于完成特定任务，并按照技能配置要求生成结果。'
   const actionLabel = isSelected ? '使用' : '添加'
+  const actionClassName = isSelected ? styles.secondaryAction : styles.primaryAction
 
   return (
     <div className={styles.modalOverlay} onClick={onCancel}>
@@ -256,7 +256,7 @@ export default function SkillDetailModal({ visible, skillName, isSelected, actio
             <h3 className={styles.headerTitle}>{displayName}</h3>
           </div>
           <div className={styles.headerActions}>
-            <button type="button" className={styles.primaryAction} onClick={onAction} disabled={actionLoading}>
+            <button type="button" className={actionClassName} onClick={onAction} disabled={actionLoading}>
               {actionLoading ? '处理中...' : actionLabel}
             </button>
             <button type="button" className={styles.modalCloseBtn} onClick={onCancel} aria-label="关闭技能详情弹窗">

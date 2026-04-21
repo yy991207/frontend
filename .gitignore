@@ -1,11 +1,6 @@
 # Logs
 logs
-tests/*
-!tests/customSkillListService.test.ts
-!tests/skillUploadService.test.ts
-!tests/skillUploadModal.test.ts
-!tests/chatReasoningIntegration.test.ts
-!tests/agentDetailToolOrdering.test.ts
+tests/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -21,6 +16,9 @@ doc/images/*
 !doc/工作记录 - 2026 年 0403.md
 !doc/工作记录 - 2026 年 0404.md
 !doc/工作记录 - 2026 年 0410.md
+
+.npmrc
+npmrc
 node_modules
 dist
 dist-ssr
@@ -37,5 +35,4 @@ dist-ssr
 *.sln
 *.sw?
 docs/
-tests/
 doc/

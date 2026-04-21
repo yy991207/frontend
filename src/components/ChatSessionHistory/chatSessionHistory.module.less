@@ -1,49 +1,77 @@
 .container {
   display: flex;
   flex-direction: column;
-  width: 100%;
   flex: 1;
   min-height: 0;
   overflow: hidden;
 }
 
 .sectionTitle {
-  margin: 18px 0 10px 12px;
-  color: #9ca3af;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
+  display: none;
 }
 
-.sessionList {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-height: 0;
-  flex: 1;
-}
-
-.sessionListExpanded {
-  flex: 1;
-}
-
-.sessionListCollapsed {
-  flex: 0 0 auto;
-}
-
+.sessionList,
 .content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   min-height: 0;
+}
+
+.sessionPanels {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.expandedPanel,
+.collapsedPanel {
+  min-height: 0;
+  transition:
+    opacity 0.18s ease,
+    transform 0.2s ease,
+    max-height 0.28s ease;
+}
+
+.panelVisible {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.panelHidden {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateX(-8px);
+}
+
+.expandedPanel.panelVisible {
+  display: flex;
+  flex: 1;
+  max-height: 999px;
+}
+
+.collapsedPanel.panelVisible {
+  max-height: 52px;
+}
+
+.sessionListExpanded,
+.contentExpanded {
   flex: 1;
 }
 
+.sessionListCollapsed,
+.collapsedPanel {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
 .contentExpanded {
-  flex: 1;
-  min-height: 0;
   overflow-y: auto;
-  padding: 4px 4px 0 0;
+  padding-right: 4px;
 
   &::-webkit-scrollbar {
     width: 4px;
@@ -55,16 +83,11 @@
 
   &::-webkit-scrollbar-thumb {
     background: transparent;
-    border-radius: 2px;
-    transition: background 0.3s ease;
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: #9ca3af;
+    border-radius: 999px;
   }
 
   &.scrolling::-webkit-scrollbar-thumb {
-    background: #d1d5db;
+    background: #d3d6da;
   }
 }
 
@@ -76,248 +99,237 @@
 .error,
 .empty {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 32px 16px;
-  color: #6b7280;
+  min-height: 48px;
+  color: #8f959e;
   font-size: 13px;
   text-align: center;
 }
 
 .error {
-  color: #ef4444;
+  color: #f54a45;
 }
 
 .retryButton {
   margin-top: 12px;
-  padding: 6px 16px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid #dde1e6;
   background: #ffffff;
-  color: #374151;
-  font-size: 13px;
+  color: #1f2329;
+  border-radius: 8px;
+  padding: 6px 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #f3f4f6;
-    border-color: #d1d5db;
-  }
 }
 
 .section {
   display: flex;
   flex-direction: column;
-  transition: all 0.2s ease;
-}
-
-.sectionCollapsed {
-  .sectionDivider,
-  .sectionHeader,
-  .labelCell,
-  .menuContainer {
-    display: none;
-  }
-
-  .sectionContent {
-    padding: 0;
-    gap: 6px;
-  }
-
-  .sessionItem {
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    margin: 0 auto;
-  }
-
-  .iconCell {
-    margin-right: 0;
-  }
+  gap: 4px;
 }
 
 .sectionDivider {
-  height: 1px;
-  background: #f0f0f0;
-  margin: 8px 16px;
+  display: none;
 }
 
 .sectionHeader {
-  margin: 0 0 10px 12px;
-  color: #9ca3af;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
+  margin: 8px 0 0 10px;
+  color: #8f959e;
+  font-size: 12px;
+  line-height: 20px;
+  transition: opacity 0.18s ease, transform 0.2s ease;
 }
 
 .sectionContent {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  transition: all 0.2s ease;
 }
 
 .sessionItem {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-columns: 36px minmax(0, 1fr);
   align-items: center;
   width: 100%;
-  min-width: 0;
-  min-height: 44px;
-  padding: 0;
-  border-radius: 16px;
+  min-height: 38px;
   border: none;
+  border-radius: 12px;
+  padding: 0 8px 0 0;
   background: transparent;
-  color: #4b5563;
-  text-align: left;
+  color: #1f2329;
   cursor: pointer;
-  transition: background-color 0.18s ease, color 0.18s ease, opacity 0.2s ease, transform 0.2s ease;
-  position: relative;
-
-  &.sessionItemRemoving {
-    animation: sessionItemFadeOut 0.2s ease forwards;
-  }
-
-  @keyframes sessionItemFadeOut {
-    from {
-      opacity: 1;
-      transform: translateY(0);
-      max-height: 44px;
-    }
-    to {
-      opacity: 0;
-      transform: translateY(-4px);
-      max-height: 0;
-    }
-  }
+  transition:
+    width 0.28s ease,
+    min-height 0.28s ease,
+    padding 0.28s ease,
+    gap 0.2s ease,
+    background-color 0.18s ease,
+    opacity 0.18s ease;
 
   &:hover {
-    background: #f3f4f6;
-    color: #111827;
-
-    .moreButton {
-      opacity: 1;
-    }
+    background: #ffffff;
+    background: var(--sidebar-item-hover-background);
   }
 
-  &:active {
-    background: #e5e7eb;
+  &.sessionItemRemoving {
+    opacity: 0.5;
+  }
+
+  &:hover .moreButton {
+    opacity: 1;
   }
 }
 
+.sessionItemActive {
+  background: #ffffff;
+  background: var(--sidebar-item-active-background);
+  color: #1f2329;
+  color: var(--sidebar-item-active-color);
+}
+
 .iconCell {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  color: inherit;
   font-size: 18px;
-  color: #6b7280;
+
+  :global(.anticon) {
+    transform: translateX(-2px);
+  }
 }
 
 .labelCell {
   min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  overflow: hidden;
+  transition: opacity 0.18s ease, transform 0.2s ease;
 }
 
 .agentLabel {
-  flex-shrink: 0;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: #e0f2fe;
-  color: #0369a1;
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #eff4ff;
+  color: #1456f0;
   font-size: 11px;
-  font-weight: 500;
-  line-height: 1.2;
+  line-height: 18px;
+  flex-shrink: 0;
+  transition: opacity 0.18s ease, transform 0.2s ease;
+}
+
+.sessionItemActive .agentLabel {
+  background: rgba(20, 86, 240, 0.12);
+  color: var(--sidebar-item-active-color);
 }
 
 .agentLabelDefault {
-  background: #dcfce7;
-  color: #166534;
+  background: #edf8ef;
+  color: #2c8b4b;
+}
+
+.sessionItemActive .agentLabelDefault {
+  background: rgba(20, 86, 240, 0.12);
+  color: var(--sidebar-item-active-color);
 }
 
 .sessionNameText {
+  min-width: 0;
   flex: 1;
-  font-size: 14px;
-  font-weight: 500;
-  color: inherit;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: inherit;
+  font-size: 14px;
+  transition: opacity 0.18s ease, transform 0.2s ease;
 }
 
-.sectionCollapsed .sessionNameText {
-  display: none;
-}
-
-// 菜单容器
 .menuContainer {
-  position: relative;
-  flex-shrink: 0;
   margin-left: auto;
-}
-
-.sectionCollapsed .menuContainer {
-  display: none;
+  flex-shrink: 0;
+  transition: opacity 0.18s ease, transform 0.2s ease;
 }
 
 .moreButton {
   width: 28px;
   height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: #9ca3af;
-  font-size: 16px;
+  color: #8f959e;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+  transition: opacity 0.18s ease, background-color 0.18s ease;
 
   &:hover {
-    background: #e5e7eb;
-    color: #374151;
+    background: #e2e5e9;
   }
 }
 
-// 下拉菜单
 .menuDropdown {
   min-width: 120px;
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border: 1px solid #e5e7eb;
-  z-index: 1000;
   padding: 4px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #eceef2;
+  box-shadow: 0 16px 36px rgba(31, 35, 41, 0.12);
+  z-index: 1000;
 }
 
 .menuItem {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
   padding: 8px 12px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
-  color: #ef4444;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+  color: #f54a45;
   text-align: left;
+  cursor: pointer;
 
   &:hover {
-    background: #fef2f2;
+    background: #fff2f0;
   }
 }
 
 .menuItemIcon {
   font-size: 14px;
+}
+
+.menuItemText {
+  flex: 1;
+}
+
+.sectionCollapsed .sectionHeader,
+.sectionCollapsed .menuContainer,
+.sectionCollapsed .sessionNameText,
+.sectionCollapsed .agentLabel {
+  display: none;
+}
+
+.sectionCollapsed .sectionContent {
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.sectionCollapsed .sessionItem {
+  grid-template-columns: 1fr;
+  width: 36px;
+  min-height: 36px;
+  padding: 0;
+}
+
+.sectionCollapsed .iconCell {
+  width: 36px;
+  height: 36px;
 }

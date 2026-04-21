@@ -1,0 +1,239 @@
+.inputWrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-radius: 28px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  padding: 12px 8px 12px 14px;
+  min-height: 58px;
+
+  &:focus-within {
+    border-color: rgba(22, 119, 255, 0.5);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08), 0 0 0 2px rgba(22, 119, 255, 0.1);
+  }
+
+  :global(.ant-input) {
+    padding: 0 !important;
+    line-height: 1.5 !important;
+  }
+
+  :global(.ant-input-textarea) {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.inputTopArea {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.inputBottomArea {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.inputBottomLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.inputBottomRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.inputActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.uploadAttachmentButton {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.16s ease, color 0.16s ease;
+
+  &:hover {
+    background: #f3f4f6;
+    color: #111827;
+  }
+}
+
+.inlineToolToggle {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+
+  &:hover {
+    background: #f3f4f6;
+  }
+}
+
+.inlineToolToggleOn {
+  color: #111827;
+  background: rgba(17, 24, 39, 0.08);
+}
+
+.inlineToolToggleOff {
+  color: #6b7280;
+}
+
+.inlineToolToggleLocked {
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.08);
+
+  &:hover {
+    background: rgba(148, 163, 184, 0.12);
+  }
+}
+
+.iconBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #6b7280;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: #f3f4f6;
+  }
+}
+
+.sendBtn {
+  background-color: #111827;
+  color: #ffffff;
+
+  &:hover {
+    background-color: #1f2937;
+  }
+}
+
+.sendBtnDisabled {
+  background-color: #d1d5db;
+  color: #ffffff;
+  cursor: not-allowed;
+
+  &:hover {
+    background-color: #d1d5db;
+  }
+}
+
+.stopBtn {
+  background-color: #111827;
+  color: #ffffff;
+
+  &:hover {
+    background-color: #1f2937;
+  }
+}
+
+.stopInner {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: #ffffff;
+}
+
+.selectedSkillBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  min-height: 24px;
+  border-radius: 999px;
+  border: 1px solid #dbe6ff;
+  background: #f3f7ff;
+  color: #1456f0;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.skillTooltip {
+  position: relative;
+  cursor: pointer;
+
+  &::before,
+  &::after {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.16s ease;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  &:hover::before,
+  &:hover::after {
+    opacity: 1;
+  }
+
+  &::before {
+    content: '';
+    top: calc(100% + 4px);
+    width: 8px;
+    height: 8px;
+    background: rgba(31, 35, 41, 0.96);
+    transform: translateX(-50%) rotate(45deg);
+    z-index: 30;
+  }
+
+  &::after {
+    content: attr(data-tooltip);
+    top: calc(100% + 8px);
+    padding: 7px 12px;
+    border-radius: 10px;
+    background: rgba(31, 35, 41, 0.96);
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: nowrap;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    z-index: 31;
+    transform: translateX(-50%);
+  }
+}

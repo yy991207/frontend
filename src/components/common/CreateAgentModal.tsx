@@ -83,6 +83,7 @@ export default function CreateAgentModal({ visible, onCancel }: CreateAgentModal
           description: result.description,
           agentPrompt: result.agent_prompt,
           presetQuestions: result.preset_questions,
+          recommendedSkills: result.recommended_skills,
         },
       },
     })
@@ -109,13 +110,16 @@ export default function CreateAgentModal({ visible, onCancel }: CreateAgentModal
     try {
       const config = await loadCustomAgentApiConfig()
       const taskResponse = await getAgentTemplateTask(config, taskId, abortControllerRef.current?.signal)
-      
-      if (taskResponse.success && taskResponse.data.is_completed && taskResponse.data.result) {
+
+      const phase = taskResponse.data.phase
+
+      // 这里只在推荐真正完成后才进入创建页，避免创建页再额外走推荐 loading 和轮询。
+      if (phase === 'completed' && taskResponse.data.result) {
         handleSuccess(taskResponse.data.result)
         return
       }
 
-      if (taskResponse.success && !taskResponse.data.is_completed) {
+      if (taskResponse.success && taskResponse.data.result) {
         abortControllerRef.current = new AbortController()
         pollingTimeoutRef.current = window.setTimeout(() => {
           pollTaskStatus(taskId)
@@ -127,6 +131,11 @@ export default function CreateAgentModal({ visible, onCancel }: CreateAgentModal
         handleError(taskResponse.data.error || taskResponse.msg || '生成失败，请重试')
         return
       }
+
+      abortControllerRef.current = new AbortController()
+      pollingTimeoutRef.current = window.setTimeout(() => {
+        pollTaskStatus(taskId)
+      }, POLL_INTERVAL)
     } catch (err) {
       if (!abortControllerRef.current?.signal.aborted) {
         handleError(err instanceof Error ? err.message : '请求失败，请重试')

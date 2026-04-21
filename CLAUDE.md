@@ -1,83 +1,104 @@
-# guoren-frontend CLAUDE.md
+# CLAUDE.md
 
-本文件为 `guoren-frontend/` 前端目录的开发指南，所有关于该前端的代码修改均以本文件为准。
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+# guoren-frontend 开发指南
+
+本文件为 `guoren-frontend/` 前端目录的开发指南，所有代码修改均以本文件为准。
 
 ## 技术栈
 
 | 技术 | 版本 | 说明 |
 |------|------|------|
-| React | 18.x | 函数组件 + Hooks，严禁使用 Class 组件 |
-| TypeScript | 5.x | 严格模式，所有组件和函数必须有类型注解 |
-| Ant Design | 5.x | 主 UI 组件库 |
-| React Router | 6.x | 客户端路由 |
-| Vite | 5.x | 构建工具 |
-| CSS Modules / less | — | 样式方案，antd 主题通过 ConfigProvider 定制 |
+| React | 19.x | 函数组件 + Hooks，严禁使用 Class 组件 |
+| TypeScript | 5.9.x | 严格模式，所有组件和函数必须有类型注解 |
+| Ant Design | 6.x | 主 UI 组件库 |
+| grt-components | 1.5.x | 内部组件库 |
+| React Router | 7.x | 客户端路由 |
+| Vite | 8.x | 构建工具 |
+| Less | 4.x | CSS 预处理器 |
+| streamdown / remark / rehype | — | Markdown 渲染管线 |
 
-## 页面结构（参考设计图）
+## 常用命令
 
-整体为**左侧固定导航栏 + 右侧主内容区**的两栏布局。
+```bash
+npm install           # 安装依赖
+npm run dev           # 启动开发服务器 (http://0.0.0.0:5173)
+npm run build         # 类型检查 + 生产构建 (tsc -b && vite build)
+npm run lint          # ESLint 检查
+npm run preview       # 预览构建产物
+npm run test          # 运行 Vitest 单元测试
+npx vitest run <path> # 运行指定测试文件
+```
 
-### 左侧导航栏（Sidebar）
-- 顶部：应用 Logo + 用户名（飞书 aily 风格）
-- 导航菜单项：新建、库、技能、发现、开发应用
-- 智能伙伴区：当前用户绑定的 AI 伙伴头像 + 名称
-- 历史记录区："7 天内" 分组，列出最近会话
-- 底部：用户头像 + 用户名 + 历史/设置图标
+## 路由结构
 
-### 主页（Home）
-- 中央欢迎区：AI 头像 + 问候语（"Hi {用户名}，有什么可以帮你的?"）
-- 输入框：左侧 "+" 附件按钮，右侧语音 + 发送按钮，支持 `/` 触发技能下拉
-- 快捷指令标签行：横向滚动，含生成PPT、写报告、搭建网页等
-- 底部内容区：最佳实践 / 推荐指令 / 我的指令 三个 Tab，Tab 内容为卡片网格
+路由定义在 `src/App.tsx`，整体为**左侧固定导航栏 + 右侧主内容区**的两栏布局。
 
-### 技能页（Skills）
-- 顶部标题 + "创建" 下拉按钮 + "管理技能" 按钮
-- 搜索框
-- Banner 轮播（官方推荐技能包 / 直播预告）
-- "官方精选" 卡片网格（可换一换），每张卡片：彩色图标、名称、标签、描述、使用次数
-
-### 技能管理页（Skill Management）
-- 返回按钮 + 页面标题"管理技能" + 搜索框 + "+ 创建" 按钮
-- Tab 切换：我添加的 / 我创建的
-- 2 列卡片网格，每张卡片：
-  - 彩色图标 + 名称 + "内置" Badge + "..." 更多菜单
-  - 描述文本
-  - "立即使用" 按钮
-  - "..." 菜单含：自动调用（Toggle）、移除
-
-### "/" 技能快速调用面板
-- 在输入框输入 `/` 时弹出 Dropdown
-- 列表项：彩色图标 + 技能名 + 标签组 + 描述
-- 底部固定"管理技能"入口
+| 路径 | 页面组件 | 说明 |
+|------|----------|------|
+| `/` | `HomePage` | 首页（deerflow 风格白底工作台） |
+| `/chat` | `ChatPage` | 聊天页（流式消息、工具调用、右侧预览面板） |
+| `/skills` | `SkillsPage` | 技能发现页 |
+| `/library` | `LibraryPage` | 库（文件管理 + 预览） |
+| `/discover` | `DiscoverPage` | 发现页 |
+| `/partner` | `PartnerPage` | 智能伙伴管理页 |
+| `/agent/:id` | `AgentDetailPage` | 智能伙伴详情 |
+| `/agent/:id/chat` | `AgentConversationPage` | 智能伙伴对话页 |
+| `/agent/create` | `AgentCreatePage` | 创建智能伙伴 |
 
 ## 目录结构
 
 ```
-guoren-frontend/
-├── public/
-├── src/
-│   ├── assets/          # 图片、图标等静态资源
-│   ├── components/      # 公共组件
-│   │   ├── Layout/      # Sidebar、AppLayout
-│   │   └── common/      # Button、Card 等通用封装
-│   ├── pages/           # 页面组件（与路由一一对应）
-│   │   ├── Home/        # 主页
-│   │   ├── Skills/      # 技能发现页
-│   │   ├── SkillManage/ # 技能管理页
-│   │   ├── Library/     # 库
-│   │   └── Discover/    # 发现
-│   ├── hooks/           # 自定义 Hook
-│   ├── services/        # API 请求层（fetch/axios 封装）
-│   ├── store/           # 全局状态（Zustand 或 Context）
-│   ├── types/           # 全局 TypeScript 类型定义
-│   ├── utils/           # 工具函数
-│   ├── App.tsx
-│   └── main.tsx
-├── index.html
-├── vite.config.ts
-├── tsconfig.json
-└── package.json
+src/
+  assets/                静态资源（图片、图标等）
+  components/
+    Sidebar/             左侧导航栏组件
+    ChatSessionHistory/  会话历史列表
+    chat/                聊天相关组件（消息列表、工具调用渲染、Markdown 内容、Artifact 展示等）
+    common/              通用组件（附件菜单、技能 Slash 命令面板、各种 Modal 等）
+    Partner/             智能伙伴相关组件（模型管理、工作区、技能管理）
+  core/
+    messages/            消息适配、流式处理、类型定义、消息分组
+    artifacts/           课程表解析、Markdown 渲染、Artifact 加载器
+    rehype/              rehype 插件配置
+    streamdown/          streamdown 插件配置
+    utils/               核心工具函数
+  hooks/                 自定义 Hook（技能 Slash 命令、滚动等）
+  pages/                 页面组件（与路由一一对应）
+  services/              API 请求层（chat、skill、library、oss、partner 等）
+  workers/               流式消息处理 Web Worker
+  utils/                 通用工具函数
+  test/                  Vitest 测试 setup
 ```
+
+## 核心架构
+
+### 流式聊天管线
+
+聊天功能是整个前端的核心。数据流如下：
+
+1. **`src/services/chatService.ts`** — 底层 HTTP/SSE 请求封装，负责与后端流式接口通信
+2. **`src/services/chatStreamBridgeService.ts`** — 流式消息桥接服务，统一管理流的状态
+3. **`src/services/chatStreamSnapshotStore.ts`** — 流快照持久化（sessionStorage），支持页面刷新后恢复
+4. **`src/services/sharedChatRuntime.ts`** — 核心 React Hook（`useSharedChatRuntime`），封装所有聊天状态和逻辑，被 ChatPage、AgentConversationPage 等复用
+5. **`src/workers/chatStreamWorker.ts`** — Web Worker，在后台线程处理流式消息，避免阻塞 UI
+6. **`src/core/messages/`** — 消息类型定义、适配器、流式更新逻辑、消息分组
+
+### 消息类型体系
+
+- `Message` / `LegacyChatMessage` — 单条消息（`core/messages/types.ts`）
+- `MessageGroup` — 消息分组（human / assistant:processing / assistant:reasoning / assistant:subagent 等）
+- `ToolCall` — 工具调用记录（名称、状态、输入/输出）
+- `CourseItem` / `SkillOutputItem` — 结构化输出项
+
+### Markdown 渲染管线
+
+基于 `streamdown` + `remark-gfm` + `remark-math` + `rehype-katex` + `rehype-raw`，支持 GFM 表格、数学公式、KaTeX 渲染。插件配置在 `src/core/streamdown/plugins.ts`。
+
+### 配置来源
+
+前端从 `/config.yaml` 读取运行时配置（API 地址、会话参数等），通过 `src/services/chatSessionService.ts` 解析。
 
 ## 开发规范
 
@@ -88,53 +109,31 @@ guoren-frontend/
 
 ### 样式
 - 优先使用 Ant Design 组件，不重复造轮子
-- 自定义样式使用 CSS Modules（`xxx.module.less`），避免全局类名污染
-- 主题色、间距等设计 token 通过 `antd` ConfigProvider 统一配置，不硬编码颜色值
-
-### 状态管理
-- 组件内部状态用 `useState` / `useReducer`
-- 跨页面/全局状态用 Zustand 或 React Context
-- 服务端数据缓存用 SWR 或 React Query（后续按需引入）
+- 自定义样式使用 Less（`.less` 文件），避免全局类名污染
+- 主题色、间距等设计 token 通过 `antd` ConfigProvider 统一配置
 
 ### API 层
-- 所有请求统一放在 `src/services/` 下，按模块分文件（`skillService.ts`、`chatService.ts` 等）
+- 所有请求统一放在 `src/services/` 下，按模块分文件
 - 请求函数必须有入参和返回值的类型定义
-- 后端接口基准地址通过环境变量 `VITE_API_BASE_URL` 配置
 
 ### 命名约定
 - 组件文件：`PascalCase.tsx`
 - 工具/服务文件：`camelCase.ts`
-- CSS Module：`camelCase.module.less`
 - 类型文件：`camelCase.types.ts` 或集中在 `types/` 目录
+
+## 测试
+
+- 测试框架：Vitest + jsdom + @testing-library/react
+- 测试文件位于 `tests/` 目录
+- 运行单个测试：`npx vitest run tests/文件名.test.tsx`
 
 ## 后端接口
 
-后端服务基于本仓库根目录的 FastAPI 项目（默认 `http://localhost:8000`）。
-
-关键接口（与前端相关）：
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/v1/chat/sessions/{id}/stream` | SSE 流式聊天 |
-| GET  | `/api/v1/chat/sessions/{id}/files` | 列出会话生成的文件 |
-| GET  | `/api/v1/chat/sessions/{id}/files/download` | 下载/预览文件 |
-| POST | `/api/v1/questions` | 随机提问（首页快捷指令数据源） |
-
-SSE 事件类型参考根目录 `CLAUDE.md` 的"SSE 流式事件"章节。
-
-## Quick Start（待项目初始化后更新）
-
-```bash
-cd guoren-frontend
-npm install
-npm run dev      # 开发服务器 http://localhost:5173
-npm run build    # 生产构建
-npm run preview  # 预览构建产物
-```
+后端服务基于 FastAPI 项目（默认 `http://localhost:8000`），接口地址通过 `/config.yaml` 配置。
 
 ## 注意事项
 
 - 本目录下的 CLAUDE.md **优先于**根目录 CLAUDE.md 中的前端相关说明
 - 修改前必须先读取对应文件，不得凭猜测修改
 - 涉及多组件改动时，须梳理调用链后再动手
-- 设计参考图存放在本目录下的 `*.png` 文件中，开发时以这些截图为视觉基准
+- 设计参考图存放在 `doc/images/` 目录下，开发时以这些截图为视觉基准

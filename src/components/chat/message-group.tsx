@@ -5,11 +5,10 @@ import {
   CaretUpOutlined,
   CopyOutlined,
   FileTextOutlined,
-  LoadingOutlined,
 } from '@ant-design/icons'
 import { useMemo, useState } from 'react'
 
-import type { CourseItem, Message, MessageGroup, SkillOutputItem, ToolCall } from '../../core/messages/types'
+import type { CourseItem, Message, MessageGroup, SkillOutputItem, ToolCall, UploadedFileRef } from '../../core/messages/types'
 import {
   extractAssistantOutputText,
   extractReasoningContentFromMessage,
@@ -17,6 +16,7 @@ import {
   extractTextFromMessage,
 } from '../../core/messages/utils'
 import styles from '../../pages/Chat/chat.module.less'
+import { MessageLoading } from './ChatLoadingAnimation'
 import artifactStyles from './artifacts.module.less'
 import { ChainOfThought, ChainOfThoughtContent, ChainOfThoughtSearchResult, ChainOfThoughtSearchResults, ChainOfThoughtStep } from './chain-of-thought'
 import { MarkdownContent } from './markdown-content'
@@ -26,6 +26,44 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function getFileTypeEmoji(ext: string): string {
+  const iconMap: Record<string, string> = {
+    pdf: '📄',
+    doc: '📝',
+    docx: '📝',
+    xls: '📊',
+    xlsx: '📊',
+    ppt: '📽️',
+    pptx: '📽️',
+    txt: '📃',
+    json: '📋',
+    csv: '📈',
+    jpg: '🖼️',
+    jpeg: '🖼️',
+    png: '🖼️',
+    gif: '🖼️',
+    bmp: '🖼️',
+    zip: '📦',
+    rar: '📦',
+  }
+  return iconMap[ext] || '📎'
+}
+
+function UserUploadedFileChip({ file }: { file: UploadedFileRef }) {
+  const ext = file.ext || file.name.split('.').pop()?.toLowerCase() || ''
+
+  return (
+    <div className={styles.userFileItem}>
+      <div className={styles.userFileIcon}>
+        <span className={styles.userFileIconText}>{getFileTypeEmoji(ext)}</span>
+      </div>
+      <div className={styles.userFileInfo}>
+        <div className={styles.userFileName} title={file.name}>{file.name}</div>
+      </div>
+    </div>
+  )
 }
 
 function SkillOutputCard({
@@ -311,21 +349,6 @@ function ProcessingMessage({
   )
 }
 
-function LoadingMessage() {
-  return (
-    <div className={styles.loadingShell} aria-label="正在生成回复">
-      <div className={styles.loadingSpinnerWrap} aria-hidden="true">
-        <LoadingOutlined className={styles.loadingSpinner} />
-      </div>
-      <div className={styles.loadingLines}>
-        <span className={`${styles.loadingLine} ${styles.loadingLineLong}`} />
-        <span className={`${styles.loadingLine} ${styles.loadingLineMedium}`} />
-        <span className={`${styles.loadingLine} ${styles.loadingLineShort}`} />
-      </div>
-    </div>
-  )
-}
-
 export function MessageGroupSection({
   group,
   copiedMessageId,
@@ -341,6 +364,13 @@ export function MessageGroupSection({
           {group.messages.map((message) => (
             <div key={message.id} className={styles.userRow}>
               <div className={styles.userMessageWrap}>
+                {message.uploadedFiles && message.uploadedFiles.length > 0 ? (
+                  <div className={styles.userFileList}>
+                    {message.uploadedFiles.map((file) => (
+                      <UserUploadedFileChip key={file.id} file={file} />
+                    ))}
+                  </div>
+                ) : null}
                 <div className={styles.userBubble}>{extractTextFromMessage(message)}</div>
                 <div className={styles.userActions}>
                   <span>{message.timestamp}</span>
@@ -368,7 +398,7 @@ export function MessageGroupSection({
         <>
           {group.messages.map((message) => (
             <div key={message.id} className={styles.assistantRow}>
-              <LoadingMessage />
+              <MessageLoading />
             </div>
           ))}
         </>

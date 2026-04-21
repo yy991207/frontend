@@ -1,3 +1,4 @@
+import { App as AntdApp } from 'antd'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Sidebar from './components/Sidebar/Sidebar'
 import ChatPage from './pages/Chat/ChatPage'
@@ -9,13 +10,23 @@ import SkillsPage from './pages/Skills/SkillsPage'
 import AgentDetailPage from './pages/AgentDetail/AgentDetailPage'
 import AgentCreatePage from './pages/AgentCreate/AgentCreatePage'
 import AgentConversationPage from './pages/AgentConversation/AgentConversationPage'
+import PracticePreviewPage from './pages/Home/PracticePreviewPage'
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <AntdApp>
+      <BrowserRouter>
+      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--app-shell-background)' }}>
         <Sidebar />
-        <div style={{ flex: 1, minWidth: 0, display: 'flex' }}>
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            padding: '8px 8px 8px 0',
+            background: 'var(--app-shell-background)',
+          }}
+        >
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/chat" element={<ChatPage />} />
@@ -26,9 +37,11 @@ export default function App() {
             <Route path="/library" element={<LibraryPage />} />
             <Route path="/skills" element={<SkillsPage />} />
             <Route path="/partner" element={<PartnerPage />} />
+            <Route path="/practice/:practiceId" element={<PracticePreviewPage />} />
           </Routes>
         </div>
       </div>
     </BrowserRouter>
+    </AntdApp>
   )
 }

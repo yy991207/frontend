@@ -25,10 +25,18 @@ export type StreamBridgeSnapshot = {
   error?: string
 }
 
+type UploadedFileRef = {
+  resource_id: string
+  file_name: string
+  url: string
+}
+
 type StreamPayload = {
   message: string
   enable_web_search?: boolean
   include_tool_details?: boolean
+  uploaded_files?: UploadedFileRef[]
+  skill_name?: string
 }
 
 type SubscribeCommand = {

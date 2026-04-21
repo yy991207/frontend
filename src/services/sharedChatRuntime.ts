@@ -28,13 +28,14 @@ import {
   loadChatStreamSnapshot,
   persistChatStreamSnapshot,
 } from './chatStreamSnapshotStore'
+import type { UploadedFileRef } from '../core/messages/types'
 import {
   getChatSession,
   parseChatSessionConfig,
   type ChatSessionMessage,
+  type ChatSessionMessageAttachment,
   type ChatSessionConfig,
 } from './chatSessionService'
-import { getConfigUrl } from '../utils/urlParams'
 
 function formatTime(date: Date) {
   return date.toLocaleTimeString('zh-CN', {
@@ -137,6 +138,17 @@ function parseLastEventSequence(eventId: string) {
   return Number.isFinite(parsedSequence) ? parsedSequence : null
 }
 
+function mapAttachmentsToUploadedFiles(attachments: ChatSessionMessageAttachment[] | undefined): UploadedFileRef[] | undefined {
+  if (!attachments || attachments.length === 0) return undefined
+  return attachments.map((att) => ({
+    id: att.resource_id,
+    name: att.file_name,
+    size: 0,
+    ext: att.file_name.split('.').pop()?.toLowerCase() || '',
+    url: att.url,
+  }))
+}
+
 function convertSessionMessageToChatMessage(msg: ChatSessionMessage, sessionId: string): ChatMessage {
   const toolCalls = (msg.tool_calls || []).map((tc) => ({
     runId: tc.call_id || '',
@@ -166,6 +178,7 @@ function convertSessionMessageToChatMessage(msg: ChatSessionMessage, sessionId: 
     courses: [],
     skillOutput,
     loading: false,
+    uploadedFiles: mapAttachmentsToUploadedFiles(msg.attachments),
   }
 }
 
@@ -174,7 +187,7 @@ async function loadSessionHistoryMessages(
   signal: AbortSignal,
 ): Promise<ChatMessage[]> {
   try {
-    const response = await fetch(getConfigUrl())
+    const response = await fetch('/config.yaml')
     if (!response.ok) {
       return []
     }
@@ -221,6 +234,9 @@ type UseSharedChatRuntimeOptions = {
   setSessionId: (sessionId: string) => void
   enableWebSearch?: boolean
   agentId?: string | null
+  uploadedFiles?: { id: string; status: string; name: string; url: string; resourceId?: string; objectKey: string; size?: number; ext?: string }[]
+  onFilesSent?: () => void
+  toolType?: string | null
 }
 
 export function useSharedChatRuntime({
@@ -230,6 +246,9 @@ export function useSharedChatRuntime({
   setSessionId,
   enableWebSearch = true,
   agentId = null,
+  uploadedFiles = [],
+  onFilesSent,
+  toolType = null,
 }: UseSharedChatRuntimeOptions) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
@@ -481,11 +500,18 @@ export function useSharedChatRuntime({
     window.setTimeout(() => setCopiedMessageId((current) => (current === messageId ? null : current)), 1200)
   }, [])
 
-  const startAssistantReply = useCallback(async (prompt: string) => {
+  const startAssistantReply = useCallback(async (prompt: string, toolType?: string | null) => {
     if (!chatApiConfig) {
       setRequestError('聊天配置读取失败，请检查 config.yaml')
       return
     }
+
+    const completedFiles = uploadedFiles.filter((f) => f.status === 'completed')
+    const uploadedFilesPayload = completedFiles.map((f) => ({
+      resource_id: f.resourceId ?? f.objectKey,
+      file_name: f.name,
+      url: f.url,
+    }))
 
     const now = new Date()
     const userMessage: ChatMessage = {
@@ -493,6 +519,13 @@ export function useSharedChatRuntime({
       role: 'user',
       content: prompt,
       timestamp: formatTime(now),
+      uploadedFiles: completedFiles.map((f) => ({
+        id: f.id,
+        name: f.name,
+        size: f.size ?? 0,
+        ext: f.ext ?? '',
+        url: f.url,
+      })),
     }
     const loadingMessage: ChatMessage = {
       id: `assistant-${now.getTime()}`,
@@ -550,6 +583,8 @@ export function useSharedChatRuntime({
           message: prompt,
           enable_web_search: enableWebSearch,
           include_tool_details: true,
+          uploaded_files: uploadedFilesPayload,
+          skill_name: toolType || undefined,
         },
         controller.signal,
       )
@@ -683,12 +718,28 @@ export function useSharedChatRuntime({
     }
   }, [chatApiConfig, enableWebSearch, sessionId, setSessionId])
 
+  const handleStop = useCallback(() => {
+    if (streamBridgeRef.current && sessionId) {
+      streamBridgeRef.current.stopStream(sessionId)
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    setMessages((prev) =>
+      prev.map((m) => (m.loading ? { ...m, loading: false } : m)),
+    )
+    setIsResponding(false)
+  }, [sessionId])
+
   const handleSend = useCallback(() => {
     const value = draft.trim()
     if (!value || isResponding) return
+    if (uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')) return
     setDraft('')
-    void startAssistantReply(value)
-  }, [draft, isResponding, startAssistantReply])
+    onFilesSent?.()
+    void startAssistantReply(value, toolType)
+  }, [draft, isResponding, startAssistantReply, onFilesSent, uploadedFiles, toolType])
 
   return {
     draft,
@@ -699,6 +750,7 @@ export function useSharedChatRuntime({
     copiedMessageId,
     handleCopy,
     handleSend,
+    handleStop,
     isResponding,
     requestError,
     sessionLoading,

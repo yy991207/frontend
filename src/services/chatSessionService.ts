@@ -1,3 +1,5 @@
+import { API_PATHS, DEFAULT_API_BASE_URL, DEFAULT_USER_ID } from './apiEndpoints'
+
 export type ChatSession = {
   session_id: string
   session_name: string | null
@@ -6,8 +8,6 @@ export type ChatSession = {
   updated_at: string
   agent_id?: string | null
 }
-
-import { getUrlUserId } from '../utils/urlParams'
 
 export type ChatSessionMessageToolCall = {
   call_id: string
@@ -24,6 +24,12 @@ export type ChatSessionMessageReference = {
   url?: string
 }
 
+export type ChatSessionMessageAttachment = {
+  resource_id: string
+  file_name: string
+  url: string
+}
+
 export type ChatSessionMessage = {
   message_id: string
   role: 'user' | 'assistant'
@@ -32,6 +38,7 @@ export type ChatSessionMessage = {
   tool_calls: ChatSessionMessageToolCall[]
   references: ChatSessionMessageReference[]
   skill_output: unknown
+  attachments?: ChatSessionMessageAttachment[]
   created_at: string
 }
 
@@ -61,12 +68,12 @@ export type ChatSessionConfig = {
 
 // 从 config.yaml 读取的配置
 const DEFAULT_CONFIG: ChatSessionConfig = {
-  baseUrl: 'http://192.168.30.238:8000/',
-  userId: '123456',
-  viewChatSessionsPath: '/api/v1/chat/sessions',
-  delChatSessionPath: '/api/v1/chat/sessions',
-  getChatSessionPath: '/api/v1/chat/sessions/{session_id}',
-  viewGeneratedCodePath: '/api/v1/chat/sessions/{session_id}/files/preview',
+  baseUrl: DEFAULT_API_BASE_URL,
+  userId: DEFAULT_USER_ID,
+  viewChatSessionsPath: API_PATHS.viewChatSessions,
+  delChatSessionPath: API_PATHS.deleteChatSession,
+  getChatSessionPath: API_PATHS.getChatSession,
+  viewGeneratedCodePath: API_PATHS.viewGeneratedCode,
 }
 
 /**
@@ -96,15 +103,14 @@ export function parseChatSessionConfig(rawText: string): ChatSessionConfig {
   }
 
   const baseUrl = config.url || DEFAULT_CONFIG.baseUrl
-  const urlUserId = getUrlUserId()
-  const userId = urlUserId || DEFAULT_CONFIG.userId
-  const viewChatSessionsPath = config.view_chat_sessions_path || DEFAULT_CONFIG.viewChatSessionsPath
-  const delChatSessionPath = config.del_chat_session_path || DEFAULT_CONFIG.delChatSessionPath
-  const getChatSessionPath = config.get_chat_session_path || DEFAULT_CONFIG.getChatSessionPath
-  const viewGeneratedCodePath = config.view_generated_code_path || DEFAULT_CONFIG.viewGeneratedCodePath
+  const userId = config.user_id || DEFAULT_CONFIG.userId
+  const viewChatSessionsPath = DEFAULT_CONFIG.viewChatSessionsPath
+  const delChatSessionPath = DEFAULT_CONFIG.delChatSessionPath
+  const getChatSessionPath = DEFAULT_CONFIG.getChatSessionPath
+  const viewGeneratedCodePath = DEFAULT_CONFIG.viewGeneratedCodePath
 
   if (!baseUrl || !userId || !viewChatSessionsPath) {
-    throw new Error('config.yaml 缺少 url、user_id 或 view_chat_sessions_path 配置')
+    throw new Error('config.yaml 缺少 url 或 user_id 配置')
   }
 
   return {
@@ -264,21 +270,24 @@ export async function findLatestEmptySession(
   signal?: AbortSignal,
 ): Promise<string | null> {
   const sessions = await fetchChatSessions(config, signal)
-  
-  const sortedByCreatedAt = [...sessions].sort((a, b) => {
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  })
-  
-  for (const session of sortedByCreatedAt) {
-    try {
-      const detail = await getChatSession(config, session.session_id, signal)
-      if (detail.message_count === 0) {
-        return session.session_id
-      }
-    } catch {
-      continue
-    }
+
+  if (sessions.length === 0) {
+    return null
   }
-  
+
+  // 只取最新创建的那一条会话，检查是否为空会话
+  const latestSession = [...sessions].sort((a, b) => {
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  })[0]
+
+  try {
+    const detail = await getChatSession(config, latestSession.session_id, signal)
+    if (detail.message_count === 0) {
+      return latestSession.session_id
+    }
+  } catch {
+    // 获取最新会话详情失败，不做额外处理
+  }
+
   return null
 }

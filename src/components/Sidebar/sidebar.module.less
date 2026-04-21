@@ -1,245 +1,297 @@
 .sidebar {
-  position: relative;
-  z-index: 30;
-  width: 68px;
+  width: 280px;
   height: 100vh;
-  padding: 8px 10px 12px;
-  background: #ffffff;
-  border-right: 1px solid #eef2f7;
-  display: flex;
-  flex-direction: column;
   flex-shrink: 0;
-  overflow: visible;
-  transition: width 0.28s ease, box-shadow 0.28s ease;
+  background: var(--app-shell-background);
+  padding: 0;
+  transition: width 0.28s ease;
 }
 
 .sidebarExpanded {
-  width: 292px;
-  box-shadow: 14px 0 28px rgba(15, 23, 42, 0.06);
+  width: 280px;
+}
+
+.sidebarCollapsed {
+  width: 56px;
+}
+
+.sidebarInner {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 8px 8px 12px;
+  background: var(--app-shell-background);
+  color: #1f2329;
 }
 
 .topRow,
 .navRow,
-.partnerRow,
-.agentRow,
-.footerRow {
+.partnerRow {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-columns: 36px minmax(0, 1fr);
   align-items: center;
-  width: 100%;
-  min-width: 0;
+  gap: 8px;
 }
 
 .topRow {
-  min-height: 44px;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+  transition: grid-template-columns 0.28s ease, gap 0.2s ease;
 }
 
 .iconButton,
 .navRow,
-.partnerRow,
-.agentRow,
-.toolButton {
+.partnerRow {
   border: none;
   background: transparent;
   cursor: pointer;
+}
+
+.iconButton,
+.toolButton {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #646a73;
+  font-size: 18px;
+  transition: background-color 0.18s ease, color 0.18s ease;
+
+  &:hover {
+    background: #ececec;
+    color: #1f2329;
+  }
 }
 
 .tooltipTarget {
   position: relative;
 }
 
-.sidebar:not(.sidebarExpanded) .tooltipTarget:hover::before,
-.sidebar:not(.sidebarExpanded) .tooltipTarget:hover::after {
+.sidebarCollapsed .tooltipTarget:hover::before,
+.sidebarCollapsed .tooltipTarget:hover::after {
   opacity: 1;
 }
 
-.sidebar:not(.sidebarExpanded) .tooltipTarget::before,
-.sidebar:not(.sidebarExpanded) .tooltipTarget::after {
+.sidebarCollapsed .tooltipTarget::before,
+.sidebarCollapsed .tooltipTarget::after {
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.16s ease, transform 0.16s ease;
+  transition: opacity 0.16s ease;
 }
 
-.sidebar:not(.sidebarExpanded) .tooltipTarget::before {
+.sidebarCollapsed .tooltipTarget::before {
   content: '';
   position: absolute;
-  left: calc(100% + 5px);
+  left: calc(100% + 6px);
   top: 50%;
-  width: 10px;
-  height: 10px;
-  background: rgba(17, 24, 39, 0.96);
+  width: 8px;
+  height: 8px;
+  background: rgba(31, 35, 41, 0.96);
   transform: translateY(-50%) rotate(45deg);
-  z-index: 59;
+  z-index: 30;
 }
 
-.sidebar:not(.sidebarExpanded) .tooltipTarget::after {
+.sidebarCollapsed .tooltipTarget::after {
   content: attr(data-tooltip);
   position: absolute;
-  left: calc(100% + 9px);
+  left: calc(100% + 10px);
   top: 50%;
-  padding: 8px 12px;
-  border-radius: 12px;
-  background: rgba(17, 24, 39, 0.96);
-  color: #ffffff;
-  font-size: 13px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: rgba(31, 35, 41, 0.96);
+  color: #fff;
+  font-size: 12px;
   line-height: 1;
   white-space: nowrap;
-  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.18);
   transform: translateY(-50%);
-  z-index: 60;
+  z-index: 31;
 }
 
-.iconButton {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #4b5563;
-  font-size: 18px;
-  transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
-
-  &:hover {
-    background: #eef2f7;
-    color: #111827;
-  }
-}
-
-.panelHead,
-.sectionTitle,
 .labelCell,
-.footerPanel {
+.brandName,
+.userName {
+  transition: opacity 0.18s ease, max-width 0.28s ease;
+}
+
+.sectionTitle {
+  transition:
+    opacity 0.18s ease,
+    max-height 0.28s ease,
+    margin 0.28s ease;
+}
+
+.sidebarCollapsed .labelCell,
+.sidebarCollapsed .brandName,
+.sidebarCollapsed .userName {
+  max-width: 0;
   opacity: 0;
-  transform: translateX(-10px);
-  transition: opacity 0.2s ease, transform 0.24s ease;
+  overflow: hidden;
   pointer-events: none;
 }
 
-.sidebarExpanded .panelHead,
-.sidebarExpanded .sectionTitle,
-.sidebarExpanded .labelCell,
-.sidebarExpanded .footerPanel {
-  opacity: 1;
-  transform: translateX(0);
-  pointer-events: auto;
+.sidebarCollapsed .sectionTitle {
+  max-height: 0;
+  margin: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .panelHead {
+  min-width: 0;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-width: 0;
-  overflow: hidden;
+  gap: 8px;
   padding: 0;
-  white-space: nowrap;
   border: none;
   background: transparent;
   text-align: left;
+  overflow: hidden;
   cursor: pointer;
 }
 
-.brandAvatarWrap {
-  width: 30px;
-  height: 30px;
+.brandAvatarWrap,
+.avatarCell {
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  flex-shrink: 0;
   overflow: hidden;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.1);
+  flex-shrink: 0;
 }
 
-.brandAvatar {
+.brandAvatarWrap {
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+}
+
+.brandAvatar,
+.avatarImage {
   width: 100%;
   height: 100%;
   display: block;
   object-fit: cover;
 }
 
+.avatarLetter {
+  color: #1f2329;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 32px;
+  text-align: center;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(31, 35, 41, 0.08);
+}
+
 .brandName {
-  color: #111827;
-  font-size: 15px;
-  font-weight: 600;
+  color: #1f2329;
+  font-size: 16px;
+  font-weight: 400;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
 }
 
 .nav {
   display: flex;
   flex-direction: column;
+  width: 100%;
   gap: 4px;
+  margin-top: 8px;
+  transition: width 0.28s ease, align-items 0.28s ease;
 }
 
 .navRow,
-.partnerRow,
-.agentRow {
-  min-height: 44px;
-  padding: 0;
-  border-radius: 16px;
-  color: #4b5563;
+.partnerRow {
+  width: 100%;
+  min-height: 40px;
+  border-radius: 12px;
+  padding: 0 8px 0 0;
   text-align: left;
-  transition: background-color 0.18s ease, color 0.18s ease;
+  color: #2b2f36;
+  transition:
+    width 0.28s ease,
+    min-height 0.28s ease,
+    padding 0.28s ease,
+    gap 0.2s ease,
+    background-color 0.18s ease,
+    color 0.18s ease;
 
   &:hover {
-    background: #f3f4f6;
-    color: #111827;
+    background: #ffffff;
+    background: var(--sidebar-item-hover-background);
   }
 }
 
-.homeRow {
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: inset 0 0 0 1px rgba(226, 232, 240, 0.75);
-}
-
-.navRowActive {
-  background: #eff6ff;
-  color: #0f6bff;
-
-  .iconCell {
-    color: #0f6bff;
-  }
+.sidebarItemActive {
+  background: #ffffff;
+  background: var(--sidebar-item-active-background);
+  color: #1f2329;
+  color: var(--sidebar-item-active-color);
 }
 
 .iconCell {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  color: #6b7280;
+  color: inherit;
 }
 
 .labelCell {
   min-width: 0;
+  max-width: 220px;
   overflow: hidden;
   white-space: nowrap;
+  text-overflow: ellipsis;
   color: inherit;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .sectionTitle {
-  margin: 18px 0 10px 12px;
-  color: #9ca3af;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
+  margin: 1vh 0 0.2vh 10px;
+  max-height: 20px;
+  color: #8f959e;
+  font-size: 12px;
+  line-height: 20px;
 }
 
 .partnerRow {
-  margin-bottom: 8px;
+  min-height: 44px;
 }
 
-// 智能体列表样式
-.agentList {
+.lowerSection {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+}
+
+.agentList {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 50%;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
   gap: 4px;
-  margin-bottom: 8px;
-  height: 188px;
   overflow-y: auto;
-  overflow-x: hidden;
   padding-right: 4px;
+  transition:
+    width 0.28s ease,
+    gap 0.2s ease,
+    padding-right 0.28s ease,
+    opacity 0.18s ease,
+    transform 0.2s ease;
 
   &::-webkit-scrollbar {
     width: 4px;
@@ -251,97 +303,217 @@
 
   &::-webkit-scrollbar-thumb {
     background: transparent;
-    border-radius: 2px;
-    transition: background 0.3s ease;
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: #9ca3af;
+    border-radius: 999px;
   }
 
   &.scrolling::-webkit-scrollbar-thumb {
-    background: #d1d5db;
+    background: #d3d6da;
   }
 }
 
-.agentRow {
-  .labelCell {
-    font-size: 13px;
-  }
-}
-
-.agentLoading {
+.agentLoading,
+.agentEmpty {
+  min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  color: #9ca3af;
-  font-size: 16px;
-}
-
-.agentTooltip {
-  position: fixed;
-  z-index: 1000;
-  max-width: 280px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  background: rgba(17, 24, 39, 0.95);
-  color: #ffffff;
+  color: #8f959e;
   font-size: 13px;
-  line-height: 1.6;
-  white-space: normal;
-  word-break: break-word;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.2);
-  transform: translateY(-50%);
-  pointer-events: none;
-  animation: tooltipFadeIn 0.2s ease;
 }
 
-@keyframes tooltipFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-50%) translateX(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(-50%) translateX(0);
-  }
-}
-
-// 会话历史容器样式
-.sessionHistoryWrapper {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  margin: 12px 0 16px;
-}
-
-.spacer {
-  flex: 0 0 8px;
-}
-
-.footerRow {
-  min-height: 48px;
-  padding-top: 10px;
-  border-top: 1px solid #eef2f7;
-}
-
-.footerPanel {
-  min-width: 0;
+.agentRow {
+  width: 100%;
+  min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  padding: 0 8px 0 0;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #1f2329;
+  transition:
+    width 0.28s ease,
+    min-height 0.28s ease,
+    padding 0.28s ease,
+    gap 0.2s ease,
+    background-color 0.18s ease,
+    opacity 0.18s ease;
+
+  &:hover {
+    background: #ffffff;
+    background: var(--sidebar-item-hover-background);
+  }
 }
 
-.userName {
+.agentRowRemoving {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.agentRowMain {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: gap 0.2s ease;
+}
+
+.agentNameText {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #374151;
   font-size: 14px;
-  font-weight: 600;
+  color: inherit;
+  transition: opacity 0.18s ease, transform 0.2s ease;
+}
+
+.agentMenuContainer {
+  position: relative;
+  flex-shrink: 0;
+  transition: opacity 0.18s ease, transform 0.2s ease;
+}
+
+.agentMoreButton {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #8f959e;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.18s ease, background-color 0.18s ease;
+
+  &:hover {
+    background: #e2e5e9;
+  }
+}
+
+.agentRow:hover .agentMoreButton {
+  opacity: 1;
+}
+
+.agentMenuDropdown {
+  min-width: 120px;
+  padding: 4px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #eceef2;
+  box-shadow: 0 16px 36px rgba(31, 35, 41, 0.12);
+  z-index: 1000;
+}
+
+.agentMenuItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #f54a45;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: #fff2f0;
+  }
+}
+
+.agentMenuItemIcon {
+  font-size: 14px;
+}
+
+.agentMenuItemText {
+  flex: 1;
+}
+
+.sessionHistoryWrapper {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition:
+    width 0.28s ease,
+    opacity 0.18s ease,
+    transform 0.2s ease;
+}
+
+.sidebarCollapsed .topRow {
+  grid-template-columns: 36px 0fr;
+  gap: 0;
+}
+
+.sidebarCollapsed .nav {
+  width: 100%;
+  align-items: flex-start;
+}
+
+.sidebarCollapsed .panelHead {
+  max-width: 0;
+  max-height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sidebarCollapsed .brandAvatarWrap {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.sidebarCollapsed .navRow,
+.sidebarCollapsed .partnerRow {
+  width: 36px;
+  min-height: 36px;
+  padding: 0;
+  grid-template-columns: 36px 0fr;
+  gap: 0;
+}
+
+.sidebarCollapsed .agentList {
+  width: 100%;
+  align-items: flex-start;
+  gap: 8px;
+  padding-right: 0;
+}
+
+.sidebarCollapsed .agentLoading,
+.sidebarCollapsed .agentEmpty {
+  display: none;
+}
+
+.sidebarCollapsed .agentRow {
+  width: 36px;
+  min-height: 36px;
+  padding: 0;
+  justify-content: flex-start;
+  gap: 0;
+}
+
+.sidebarCollapsed .agentRowMain {
+  width: 36px;
+  justify-content: flex-start;
+  gap: 0;
+}
+
+.sidebarCollapsed .agentNameText,
+.sidebarCollapsed .agentMenuContainer {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform: none;
+}
+
+.sidebarCollapsed .sessionHistoryWrapper {
+  width: 100%;
 }

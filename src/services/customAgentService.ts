@@ -1,9 +1,10 @@
+import { API_PATHS, buildAbsoluteApiUrl } from './apiEndpoints'
 import { readSseStream, type ChatReference, type SkillOutputItem, type ToolCall } from './chatService'
-import { getUrlUserId, getConfigUrl } from '../utils/urlParams'
 
 export type CustomAgentApiConfig = {
   userId: string
   baseUrl: string
+  token?: string
   createAgentEndpoint: string
   listAgentEndpoint: string
   viewAgentEndpoint: string
@@ -14,6 +15,7 @@ export type CustomAgentApiConfig = {
   agentTemplatesEndpoint: string
   agentTemplateDetailEndpoint: string
   agentUsageLogsEndpoint: string
+  recommendSkillsEndpoint?: string
 }
 
 export type PresetQuestion = {
@@ -65,6 +67,28 @@ type ListCustomAgentResponse = {
   }
 }
 
+export type OfficialAgentItem = {
+  agent_id: string
+  creator_user_id: string
+  agent_name: string
+  description: string
+  avatar_url: string | null
+  is_active: boolean
+  is_public: boolean
+  created_at: string
+  updated_at: string
+}
+
+type ListOfficialAgentResponse = {
+  success?: boolean
+  code?: string | number
+  msg?: string
+  data?: {
+    agents: OfficialAgentItem[]
+    total: number
+  }
+}
+
 function parseSimpleYaml(rawText: string) {
   return rawText.split(/\r?\n/).reduce<Record<string, string>>((result, line) => {
     const trimmedLine = line.trim()
@@ -90,71 +114,39 @@ function parseSimpleYaml(rawText: string) {
   }, {})
 }
 
-function buildAbsoluteUrl(baseUrl: string, path: string) {
-  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
-}
-
 export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> {
-  const configUrl = getConfigUrl()
-  console.log('[customAgentService] Fetching config from:', configUrl)
-  const response = await fetch(configUrl)
+  const response = await fetch('/config.yaml')
 
   if (!response.ok) {
-    console.error('[customAgentService] Failed to fetch config.yaml, status:', response.status)
     throw new Error('加载配置文件失败')
   }
 
   const rawText = await response.text()
-  console.log('[customAgentService] config.yaml rawText:', rawText)
   const parsedConfig = parseSimpleYaml(rawText)
-  console.log('[customAgentService] parsedConfig:', parsedConfig)
 
   const baseUrl = parsedConfig.url
-  const createAgentPath = parsedConfig.create_custom_agent_path
-  const listAgentPath = parsedConfig.list_custom_agent_path
-  const viewAgentPath = parsedConfig.view_custom_agent_path
-  const updateAgentPath = parsedConfig.update_custom_agent_path
-  const chatAgentPath = parsedConfig.chat_custom_agent_path
-  const generateTemplatePath = parsedConfig.generate_agent_template_path
-  const getTemplateTaskPath = parsedConfig.get_agent_template_task_path
-  const agentTemplatesPath = parsedConfig.agent_templates_path
-  const agentTemplateDetailPath = parsedConfig.agent_template_detail_path
-  const agentUsageLogsPath = parsedConfig.agent_usage_logs_path
-  const urlUserId = getUrlUserId()
-  const userId = urlUserId || ''
+  const userId = parsedConfig.user_id
+  const token = parsedConfig.token
 
-  const missingFields: string[] = []
-  if (!baseUrl) missingFields.push('url')
-  if (!createAgentPath) missingFields.push('create_custom_agent_path')
-  if (!listAgentPath) missingFields.push('list_custom_agent_path')
-  if (!viewAgentPath) missingFields.push('view_custom_agent_path')
-  if (!updateAgentPath) missingFields.push('update_custom_agent_path')
-  if (!chatAgentPath) missingFields.push('chat_custom_agent_path')
-  if (!generateTemplatePath) missingFields.push('generate_agent_template_path')
-  if (!getTemplateTaskPath) missingFields.push('get_agent_template_task_path')
-  if (!agentTemplatesPath) missingFields.push('agent_templates_path')
-  if (!agentTemplateDetailPath) missingFields.push('agent_template_detail_path')
-  if (!agentUsageLogsPath) missingFields.push('agent_usage_logs_path')
-  if (!userId) missingFields.push('userId')
-
-  if (missingFields.length > 0) {
-    console.error('[customAgentService] Missing config fields:', missingFields)
-    throw new Error('config.yaml 缺少必要的接口配置')
+  if (!baseUrl || !userId) {
+    throw new Error('config.yaml 缺少 url 或 user_id 配置')
   }
 
   return {
     userId,
     baseUrl,
-    createAgentEndpoint: buildAbsoluteUrl(baseUrl, createAgentPath),
-    listAgentEndpoint: buildAbsoluteUrl(baseUrl, listAgentPath),
-    viewAgentEndpoint: buildAbsoluteUrl(baseUrl, viewAgentPath),
-    updateAgentEndpoint: buildAbsoluteUrl(baseUrl, updateAgentPath),
-    chatAgentEndpoint: buildAbsoluteUrl(baseUrl, chatAgentPath),
-    generateAgentTemplateEndpoint: buildAbsoluteUrl(baseUrl, generateTemplatePath),
-    getAgentTemplateTaskEndpoint: buildAbsoluteUrl(baseUrl, getTemplateTaskPath),
-    agentTemplatesEndpoint: buildAbsoluteUrl(baseUrl, agentTemplatesPath),
-    agentTemplateDetailEndpoint: buildAbsoluteUrl(baseUrl, agentTemplateDetailPath),
-    agentUsageLogsEndpoint: buildAbsoluteUrl(baseUrl, agentUsageLogsPath),
+    token,
+    createAgentEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.createCustomAgent),
+    listAgentEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.listCustomAgent),
+    viewAgentEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.viewCustomAgent),
+    updateAgentEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.updateCustomAgent),
+    chatAgentEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.chatCustomAgent),
+    generateAgentTemplateEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.generateAgentTemplate),
+    getAgentTemplateTaskEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.getAgentTemplateTask),
+    agentTemplatesEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.agentTemplates),
+    agentTemplateDetailEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.agentTemplateDetail),
+    agentUsageLogsEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.agentUsageLogs),
+    recommendSkillsEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.recommendSkills),
   }
 }
 
@@ -213,11 +205,41 @@ export async function listCustomAgents(
   return data.data?.agents || []
 }
 
+export async function listOfficialAgents(
+  config: CustomAgentApiConfig,
+  signal?: AbortSignal,
+): Promise<OfficialAgentItem[]> {
+  const requestUrl = new URL(buildAbsoluteApiUrl(config.baseUrl, '/api/v1/admin/agents'))
+  requestUrl.searchParams.set('is_active', 'true')
+
+  const response = await fetch(requestUrl.toString(), {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}),
+    },
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(`获取官方智能体列表失败: HTTP ${response.status}`)
+  }
+
+  const data = (await response.json()) as ListOfficialAgentResponse
+
+  if (!data.success) {
+    throw new Error(data.msg || '获取官方智能体列表失败')
+  }
+
+  return data.data?.agents || []
+}
+
 export type EnabledSkill = {
   skill_name: string
   chinese_name: string
   description: string
   template?: string
+  source?: string
 }
 
 export type AgentDetail = {
@@ -428,11 +450,23 @@ export type PresetQuestionGenerated = {
   category: string
 }
 
+export type RecommendedSkill = {
+  name: string
+  chinese_name: string
+  description: string
+  source: string
+  template: string | null
+  placeholders: unknown | null
+  config_fields: unknown | null
+  is_selected: boolean
+}
+
 export type AgentTemplateTaskResult = {
   agent_name: string
   description: string
   agent_prompt: string
   preset_questions: PresetQuestionGenerated[]
+  recommended_skills: RecommendedSkill[]
 }
 
 export type AgentTemplateTaskResponse = {
@@ -442,11 +476,13 @@ export type AgentTemplateTaskResponse = {
   data: {
     task_id: string
     status: string
+    phase: string
     progress: {
       agent_name: boolean
       description: boolean
       agent_prompt: boolean
       preset_questions: boolean
+      recommended_skills: boolean
     }
     is_completed: boolean
     result: AgentTemplateTaskResult | null
@@ -641,15 +677,108 @@ export async function getAgentUsageLogs(
   })
 
   if (!response.ok) {
-    throw new Error(`获取智能体使用日志失败2: HTTP ${response.status}`)
+    throw new Error(`获取智能体使用日志失败: HTTP ${response.status}`)
   }
 
   const data = (await response.json()) as AgentUsageLogsResponse
 
   if (!data.success) {
-    throw new Error(data.msg || '获取智能体使用日志失败3')
+    throw new Error(data.msg || '获取智能体使用日志失败')
   }
 
   const logs = data.data?.logs || []
   return logs.sort((a, b) => new Date(b.used_at).getTime() - new Date(a.used_at).getTime())
+}
+
+export async function addAgentUsageLog(
+  config: CustomAgentApiConfig,
+  agentId: string,
+): Promise<void> {
+  const requestUrl = new URL(config.agentUsageLogsEndpoint)
+  requestUrl.searchParams.set('user_id', config.userId)
+
+  const response = await fetch(requestUrl.toString(), {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ agent_id: agentId }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`添加智能体使用记录失败: HTTP ${response.status}`)
+  }
+
+  const data = await response.json()
+  if (!data.success) {
+    throw new Error(data.msg || '添加智能体使用记录失败')
+  }
+}
+
+export async function deleteAgentUsageLog(
+  config: CustomAgentApiConfig,
+  agentId: string,
+): Promise<void> {
+  const endpoint = buildAbsoluteApiUrl(config.baseUrl, API_PATHS.agentUsageLogDetail)
+    .replace('{agent_id}', encodeURIComponent(agentId))
+  const requestUrl = new URL(endpoint)
+  requestUrl.searchParams.set('user_id', config.userId)
+  requestUrl.searchParams.set('agent_id', agentId)
+
+  const response = await fetch(requestUrl.toString(), {
+    method: 'DELETE',
+    headers: {
+      Accept: 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`删除智能体使用记录失败: HTTP ${response.status}`)
+  }
+
+  const data = await response.json()
+  if (!data.success) {
+    throw new Error(data.msg || '删除智能体使用记录失败')
+  }
+}
+
+export type RecommendSkillsRequest = {
+  agent_name: string
+  description: string
+  agent_prompt?: string | null
+}
+
+export async function recommendSkills(
+  config: CustomAgentApiConfig,
+  payload: RecommendSkillsRequest,
+  signal?: AbortSignal,
+): Promise<RecommendedSkill[]> {
+  if (!config.recommendSkillsEndpoint) {
+    return []
+  }
+
+  const requestUrl = new URL(config.recommendSkillsEndpoint)
+  requestUrl.searchParams.set('user_id', config.userId)
+
+  const response = await fetch(requestUrl.toString(), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(payload),
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(`获取推荐技能失败: HTTP ${response.status}`)
+  }
+
+  const data = await response.json()
+  if (!data.success) {
+    throw new Error(data.msg || '获取推荐技能失败')
+  }
+
+  return data.data?.skills || []
 }

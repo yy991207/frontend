@@ -1,21 +1,17 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import {
-  AppstoreAddOutlined,
   CameraOutlined,
   EditOutlined,
   GlobalOutlined,
-  PaperClipOutlined,
   PlusOutlined,
   SafetyCertificateOutlined,
-  SoundOutlined,
   LoadingOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   DeleteOutlined,
-  ArrowUpOutlined,
 } from '@ant-design/icons'
-import { message, Spin, Input } from 'antd'
+import { message, Spin, Tooltip } from 'antd'
 import EditAgentModal from '../../components/common/EditAgentModal'
 import SkillConfigModal from '../../components/common/SkillConfigModal'
 import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
@@ -30,8 +26,15 @@ import {
   type EnabledSkill,
   type ChatMessageItem,
   type PresetQuestion,
+  type RecommendSkillsRequest,
 } from '../../services/customAgentService'
+import {
+  createPendingUploadedFile,
+  type UploadedFile,
+} from '../../services/ossUploadService'
+import { uploadPendingFileToOssWithDocumentParse } from '../../services/agentFileUploadService'
 import type { ToolCall } from '../../core/messages/types'
+import { ChatComposer } from '../../components/common/ChatComposer'
 import {
   clearAgentStorage,
 } from '../../utils/agentStorage'
@@ -127,11 +130,54 @@ export default function AgentDetailPage() {
   const activeAssistantMessageIdRef = useRef<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatAbortControllerRef = useRef<AbortController | null>(null)
+  
+  // 上传文件相关状态
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const commitChatMessages = useCallback((nextMessages: AgentChatMessage[]) => {
     chatMessagesRef.current = nextMessages
     setChatMessages(nextMessages)
   }, [])
+
+  const handleUploadFile = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    for (const file of Array.from(files)) {
+      const pendingFile = createPendingUploadedFile(file)
+      setUploadedFiles((prev) => [...prev, pendingFile])
+
+      const uploadedFile = await uploadPendingFileToOssWithDocumentParse(pendingFile, file, {
+        onProgress: (progress) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
+            ),
+          )
+        },
+        onStatusChange: (nextFile) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) => (f.id === pendingFile.id ? nextFile : f)),
+          )
+        },
+      })
+
+      setUploadedFiles((prev) =>
+        prev.map((f) => (f.id === pendingFile.id ? uploadedFile : f)),
+      )
+    }
+
+    event.target.value = ''
+  }
+
+  const handleRemoveFile = (fileId: string) => {
+    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId))
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -522,6 +568,15 @@ export default function AgentDetailPage() {
     }
   }
 
+  // 缓存 agentInfo，使用本地 state 数据而非接口数据，避免每次渲染创建新对象引用导致 SkillConfigModal 重复请求
+  const skillModalAgentInfo = useMemo<RecommendSkillsRequest | undefined>(() =>
+    agentName ? {
+      agent_name: agentName,
+      description: agentSubtitle,
+      agent_prompt: agentInstruction || null,
+    } : undefined,
+  [agentName, agentSubtitle, agentInstruction])
+
   // 加载状态
   if (loading) {
     return (
@@ -547,38 +602,6 @@ export default function AgentDetailPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.topBar}>
-        <div className={styles.topBarLeft}>
-          <span className={styles.topTitle}>{agentName}</span>
-          <EditOutlined className={styles.topEditIcon} onClick={handleEditClick} />
-        </div>
-
-        <div className={styles.topBarRight}>
-          <button
-            type="button"
-            className={`${styles.publishButton} ${publishStatus === 'success' ? styles.publishSuccess : ''} ${publishStatus === 'error' ? styles.publishError : ''}`}
-            onClick={handlePublish}
-            disabled={publishing}
-          >
-            {publishing ? (
-              <>
-                <LoadingOutlined spin /> 发布中
-              </>
-            ) : publishStatus === 'success' ? (
-              <>
-                <CheckCircleOutlined /> 发布成功
-              </>
-            ) : publishStatus === 'error' ? (
-              <>
-                <CloseCircleOutlined /> 发布失败
-              </>
-            ) : (
-              '发布'
-            )}
-          </button>
-        </div>
-      </div>
-
       <div className={styles.layout}>
         <main className={styles.chatPanel}>
           <div className={styles.chatPanelInner}>
@@ -605,7 +628,10 @@ export default function AgentDetailPage() {
                       <span className={styles.avatarLetter}>{getAvatarLetter(agentName)}</span>
                     </div>
                     <div className={styles.heroContent}>
-                      <h1 className={styles.heroTitle}>{agentName}</h1>
+                      <span className={styles.heroTitleWrap}>
+                        <h1 className={styles.heroTitle}>{agentName}</h1>
+                        <EditOutlined className={styles.heroEditIcon} onClick={handleEditClick} />
+                      </span>
                       <p className={styles.heroSubtitle}>{agentSubtitle}</p>
                     </div>
                   </div>
@@ -645,85 +671,43 @@ export default function AgentDetailPage() {
               </div>
             </div>
 
-            {/* 输入区域 - 使用 ChatPage 样式 */}
+            {/* 输入区域 */}
             <div className={styles.composerArea}>
               <div className={styles.composerWrap}>
-                <div className={styles.inputWrap}>
-                  {/* 上方输入区域 */}
-                  <div className={styles.inputTopArea}>
-                    <Input.TextArea
-                      value={chatInputValue}
-                      onChange={(e) => setChatInputValue(e.target.value)}
-                      onKeyDown={(e) => {
-                        // 中文输入法composition期间不触发发送
-                        if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) {
-                          return
-                        }
-                        // 支持 Enter 发送，Shift+Enter 换行
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault()
-                          handleSendMessage()
-                        }
-                      }}
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        border: 'none',
-                        boxShadow: 'none',
-                        background: 'transparent',
-                        fontSize: 14,
-                        resize: 'none',
-                        minHeight: 24,
-                        maxHeight: 200,
-                        overflowY: 'auto',
-                        lineHeight: 1.5,
-                        padding: 0,
-                      }}
-                      variant="borderless"
-                      placeholder="问我任何问题"
-                      autoSize={{ minRows: 1, maxRows: 8 }}
-                    />
-                  </div>
-                  {/* 下方按钮区域 */}
-                  <div className={styles.inputBottomArea}>
-                    <div className={styles.inputBottomLeft}>
-                      <button type="button" className={styles.toolPill}>
-                        <SoundOutlined />
-                        深度规划
-                      </button>
-                      <button type="button" className={`${styles.toolPill} ${webSearchEnabled ? styles.toolPillActive : ''}`} onClick={() => setWebSearchEnabled(v => !v)}>
-                        <GlobalOutlined />
-                        联网
-                      </button>
-                      <button type="button" className={styles.toolPill}>
-                        <AppstoreAddOutlined />
-                        工具
-                        <span className={styles.toolCaret}>⌄</span>
-                      </button>
-                    </div>
-                    <div className={styles.inputBottomRight}>
-                      <div className={styles.inputActions}>
-                        <button type="button" className={styles.iconBtn} aria-label="附件">
-                          <PaperClipOutlined />
-                        </button>
-                        {isChatResponding ? (
-                          <button type="button" className={`${styles.iconBtn} ${styles.stopBtn}`} onClick={handleStop}>
-                            <span className={styles.stopInner} />
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className={`${styles.iconBtn} ${styles.sendBtn} ${!chatInputValue.trim() ? styles.sendBtnDisabled : ''}`}
-                            onClick={handleSendMessage}
-                            disabled={!chatInputValue.trim()}
-                          >
-                            <ArrowUpOutlined />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ChatComposer
+                  variant="agentConversation"
+                  value={chatInputValue}
+                  onChange={setChatInputValue}
+                  onSend={handleSendMessage}
+                  placeholder="问我任何问题"
+                  uploadedFiles={uploadedFiles}
+                  onRemoveFile={handleRemoveFile}
+                  fileInputRef={fileInputRef}
+                  onFileChange={handleFileChange}
+                  onUploadFile={handleUploadFile}
+                  webSearchEnabled={webSearchEnabled}
+                  webSearchLocked={!webSearchEnabled}
+                  knowledgeEnabled={false}
+                  onToggleWebSearch={() => setWebSearchEnabled(!webSearchEnabled)}
+                  onLockedWebSearchClick={() => {
+                    void message.warning('当前智能体未开启联网检索，无法配置')
+                  }}
+                  onToggleKnowledge={() => {}}
+                  sendDisabled={!chatInputValue.trim()}
+                  isResponding={isChatResponding}
+                  onStop={handleStop}
+                  showUpload={false}
+                  slashCommandOpen={false}
+                  slashQuery=""
+                  onSlashQueryChange={() => {}}
+                  skills={[]}
+                  filteredSkills={[]}
+                  skillsLoading={false}
+                  selectedSkillIndex={0}
+                  onSelectSkill={() => {}}
+                  onCloseSlashCommand={() => {}}
+                  onManageSkills={() => {}}
+                />
               </div>
               <div className={styles.footerHint}>AI 生成内容可能有误，请核实重要信息</div>
             </div>
@@ -732,7 +716,33 @@ export default function AgentDetailPage() {
 
         <aside className={styles.configPanel}>
           <div className={styles.configPanelInner}>
-            <h2 className={styles.configHeading}>搭建</h2>
+            <div className={styles.configPanelHeader}>
+              <h2 className={styles.configHeading}>搭建</h2>
+              <Tooltip title="只有点击发布后才会保存个人智能体配置" placement="bottom" overlayInnerStyle={{ backgroundColor: '#000', color: '#fff' }}>
+                <button
+                  type="button"
+                  className={`${styles.publishButton} ${publishStatus === 'success' ? styles.publishSuccess : ''} ${publishStatus === 'error' ? styles.publishError : ''}`}
+                  onClick={handlePublish}
+                  disabled={publishing}
+                >
+                  {publishing ? (
+                    <>
+                      <LoadingOutlined spin /> 发布中
+                    </>
+                  ) : publishStatus === 'success' ? (
+                    <>
+                      <CheckCircleOutlined /> 发布成功
+                    </>
+                  ) : publishStatus === 'error' ? (
+                    <>
+                      <CloseCircleOutlined /> 发布失败
+                    </>
+                  ) : (
+                    '发布'
+                  )}
+                </button>
+              </Tooltip>
+            </div>
 
             <ConfigCard icon={null} title="指令">
               <textarea
@@ -791,6 +801,23 @@ export default function AgentDetailPage() {
                         <div className={styles.serviceActions}>
                           <button
                             type="button"
+                            className={styles.useSkillBtn}
+                            onClick={() => {
+                              const normalizedSkillName = skill.skill_name.trim().replace(/^\/+/, '')
+                              const skillPrefix = normalizedSkillName ? `/${normalizedSkillName}` : ''
+                              if (skillPrefix && skill.template) {
+                                setChatInputValue(`基于 ${skillPrefix} ${skill.template}`)
+                              } else if (skill.template) {
+                                setChatInputValue(skill.template)
+                              } else if (skillPrefix) {
+                                setChatInputValue(skillPrefix)
+                              }
+                            }}
+                          >
+                            使用
+                          </button>
+                          <button
+                            type="button"
                             className={styles.smallIconButton}
                             onClick={() => {
                               setAgentSkills(agentSkills.filter((s) => s.skill_name !== skill.skill_name))
@@ -805,11 +832,12 @@ export default function AgentDetailPage() {
                           </button>
                         </div>
                       </div>
-                      {isExpanded && (
+                       {isExpanded && (
                         <div className={styles.serviceBody}>
                           <SkillDetailPanel
                             visible={true}
                             skillName={skill.skill_name}
+                            source={skill.source}
                           />
                         </div>
                       )}
@@ -1023,6 +1051,7 @@ export default function AgentDetailPage() {
         onCancel={handleSkillModalCancel}
         onSkillChange={handleSkillChange}
         currentSkills={agentSkills}
+        agentInfo={skillModalAgentInfo}
       />
 
       <KnowledgeSpaceModal

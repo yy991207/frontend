@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Input } from 'antd'
+import { message } from 'antd'
 import {
-  ArrowUpOutlined,
-  CloseOutlined,
   DeleteOutlined,
   EllipsisOutlined,
   ExportOutlined,
   FolderOpenOutlined,
+  SaveOutlined,
 } from '@ant-design/icons'
 import chatConfigText from '../../../config.yaml?raw'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -14,15 +13,23 @@ import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
 import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts-context'
 import { MessageList } from '../../components/chat/message-list'
 import { useStickToBottom } from '../../components/chat/use-stick-to-bottom'
-import { AttachmentMenu, type AttachmentSkillItem } from '../../components/common/AttachmentMenu'
-import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
+import { type AttachmentSkillItem } from '../../components/common/AttachmentMenu'
+import { ChatComposer } from '../../components/common/ChatComposer'
+import {
+  createPendingUploadedFile,
+  type UploadedFile,
+  isAllowedFileType,
+  ALLOWED_FILE_EXTENSIONS,
+} from '../../services/ossUploadService'
+import { uploadPendingFileToOssWithDocumentParse } from '../../services/agentFileUploadService'
 import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal'
+import { SaveCommandModal } from '../../components/common/SaveCommandModal'
 import { adaptChatMessages } from '../../core/messages/adapters'
 import {
   advanceAssistantMessageForNextModelPhase,
   appendTextDeltaToStreamMessages,
 } from '../../core/messages/streaming'
-import type { LegacyChatMessage as ChatMessage } from '../../core/messages/types'
+import type { LegacyChatMessage as ChatMessage, UploadedFileRef } from '../../core/messages/types'
 import { groupMessages, resolveAssistantCopyTargets } from '../../core/messages/utils'
 import {
   createChatSession,
@@ -32,7 +39,6 @@ import {
   parseCourseTableContent,
   readSseStream,
   resumeChatMessageStream,
-  stopChatMessageStream,
   streamChatMessage,
   type ChatApiConfig,
   type CourseItem,
@@ -60,20 +66,19 @@ import {
   type ChatSessionDetail,
   type ChatSessionConfig,
   type ChatSessionMessageToolCall,
+  type ChatSessionMessageAttachment,
 } from '../../services/chatSessionService'
 import {
   loadCustomAgentApiConfig,
   viewCustomAgent,
-  type AgentDetail,
   type EnabledSkill,
 } from '../../services/customAgentService'
 import {
-  buildSkillDisplayName,
   buildSkillInitialPrompt,
   extractSkillItemsFromResponse,
   type SkillApiResponse,
 } from '../../services/skillPromptService'
-import { getUrlUserId, getConfigUrl } from '../../utils/urlParams'
+import { API_PATHS, USER_ID_QUERY_PARAM, buildAbsoluteApiUrl } from '../../services/apiEndpoints'
 import styles from './chat.module.less'
 
 type SkillItem = AttachmentSkillItem
@@ -231,13 +236,9 @@ function parseSimpleYaml(rawText: string) {
   }, {})
 }
 
-function buildAbsoluteUrl(baseUrl: string, path: string) {
-  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
-}
-
 async function loadChatSessionConfig(): Promise<ChatSessionConfig> {
   try {
-    const response = await fetch(getConfigUrl())
+    const response = await fetch('/config.yaml')
     if (response.ok) {
       const rawText = await response.text()
       return parseChatSessionConfig(rawText)
@@ -260,6 +261,17 @@ function mapToolCall(raw: ChatSessionMessageToolCall): ToolCall {
   }
 }
 
+function mapAttachmentsToUploadedFiles(attachments: ChatSessionMessageAttachment[] | undefined): UploadedFileRef[] | undefined {
+  if (!attachments || attachments.length === 0) return undefined
+  return attachments.map((att) => ({
+    id: att.resource_id,
+    name: att.file_name,
+    size: 0,
+    ext: att.file_name.split('.').pop()?.toLowerCase() || '',
+    url: att.url,
+  }))
+}
+
 function mapSessionDetailToMessages(session: ChatSessionDetail): ChatMessage[] {
   return session.messages.map((message) => {
     const rawSkillOutput = message.skill_output
@@ -280,6 +292,7 @@ function mapSessionDetailToMessages(session: ChatSessionDetail): ChatMessage[] {
       toolCalls: message.tool_calls.map(mapToolCall),
       references: message.references,
       skillOutput,
+      uploadedFiles: mapAttachmentsToUploadedFiles(message.attachments),
     }
   })
 }
@@ -287,27 +300,18 @@ function mapSessionDetailToMessages(session: ChatSessionDetail): ChatMessage[] {
 function parseSkillApiConfig(rawText: string) {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
-  const managePath = parsedConfig.view_user_skills_path
-  const listPath = parsedConfig.list_user_skills_path
-  const userIdParam = parsedConfig.skill_user_id_param
-  const urlUserId = getUrlUserId()
-  const userId = urlUserId || ''
+  const userId = parsedConfig.user_id
+  const userIdParam = USER_ID_QUERY_PARAM
 
-  if (!baseUrl || !managePath || !userId || !userIdParam) {
-    throw new Error('config.yaml 缺少 url、view_user_skills_path、user_id 或 skill_user_id_param 配置')
+  if (!baseUrl || !userId) {
+    throw new Error('config.yaml 缺少 url 或 user_id 配置')
   }
 
-  const managePathWithUser = managePath.includes('{user_id}')
-    ? managePath.replace('{user_id}', encodeURIComponent(userId))
-    : managePath
-
-  const listEndpoint = listPath
-    ? buildAbsoluteUrl(baseUrl, listPath)
-    : null
+  const managePathWithUser = API_PATHS.viewUserSkills.replace('{user_id}', encodeURIComponent(userId))
 
   return {
-    manageEndpoint: buildAbsoluteUrl(baseUrl, managePathWithUser),
-    listEndpoint,
+    manageEndpoint: buildAbsoluteApiUrl(baseUrl, managePathWithUser),
+    listEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.listCustomSkills),
     userId,
     userIdParam,
   }
@@ -332,35 +336,96 @@ function ChatPageContent() {
   const [skillsLoading, setSkillsLoading] = useState(false)
   const skillsFetchingRef = useRef(false)
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
-  const [knowledgeEnabled, setKnowledgeEnabled] = useState(false)
   const [draft, setDraft] = useState('')
   const [preferredToolType, setPreferredToolType] = useState<string | null>(null)
   const [selectedSkillName, setSelectedSkillName] = useState('')
-  const [selectedSkillDescription, setSelectedSkillDescription] = useState('')
   const [requestError, setRequestError] = useState('')
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [sessionLoading, setSessionLoading] = useState(false)
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [saveCommandOpen, setSaveCommandOpen] = useState(false)
   const [agentName, setAgentName] = useState<string | null>(null)
-  const [agentDetail, setAgentDetail] = useState<AgentDetail | null>(null)
-  const [agentDetailLoading, setAgentDetailLoading] = useState(false)
-  const [agentWebSearchEnabled, setAgentWebSearchEnabled] = useState(true)
   const [agentWebSearchLocked, setAgentWebSearchLocked] = useState(false)
   
   // 斜杠指令相关状态
   const [slashCommandOpen, setSlashCommandOpen] = useState(false)
   const [slashQuery, setSlashQuery] = useState('')
   const [selectedSkillIndex, setSelectedSkillIndex] = useState(0)
+  const skipSlashSelectRef = useRef(false)
+  
+  // 上传文件相关状态
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   
   const stickToBottom = useStickToBottom()
   const { containerRef: messagesViewportRef, scrollToBottom } = stickToBottom
 
+  const filteredSkills = useMemo(() => {
+    if (!slashQuery) {
+      return skills
+    }
+
+    const query = slashQuery.toLowerCase()
+    return skills.filter(
+      (skill) =>
+        skill.title.toLowerCase().includes(query) ||
+        skill.description.toLowerCase().includes(query) ||
+        skill.skillName.toLowerCase().includes(query),
+    )
+  }, [skills, slashQuery])
+
   const clearSelectedSkill = () => {
     setPreferredToolType(null)
     setSelectedSkillName('')
-    setSelectedSkillDescription('')
+  }
+
+  // 处理上传文件
+  const handleUploadFile = () => {
+    fileInputRef.current?.click()
+  }
+
+  // 处理文件选择
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    for (const file of Array.from(files)) {
+      if (!isAllowedFileType(file.name)) {
+        message.warning(`不支持的文件类型: ${file.name}，仅支持 ${ALLOWED_FILE_EXTENSIONS.join('、')} 格式`)
+        continue
+      }
+
+      const pendingFile = createPendingUploadedFile(file)
+      setUploadedFiles((prev) => [...prev, pendingFile])
+
+      const uploadedFile = await uploadPendingFileToOssWithDocumentParse(pendingFile, file, {
+        onProgress: (progress) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
+            ),
+          )
+        },
+        onStatusChange: (nextFile) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) => (f.id === pendingFile.id ? nextFile : f)),
+          )
+        },
+      })
+
+      setUploadedFiles((prev) =>
+        prev.map((f) => (f.id === pendingFile.id ? uploadedFile : f)),
+      )
+    }
+    
+    event.target.value = ''
+  }
+
+  // 删除已添加的文件
+  const handleRemoveFile = (fileId: string) => {
+    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId))
   }
 
   const chatApiConfig = useMemo<ChatApiConfig | null>(() => {
@@ -395,13 +460,24 @@ function ChatPageContent() {
   }, [location.search])
 
   const initialPrompt = useMemo(() => {
-    const value = location.state as { initialPrompt?: string; toolType?: string | null } | null
+    const value = location.state as { initialPrompt?: string; toolType?: string | null; uploadedFiles?: UploadedFile[] } | null
     return value?.initialPrompt?.trim() ?? ''
   }, [location.state])
 
   const initialToolType = useMemo(() => {
-    const value = location.state as { initialPrompt?: string; toolType?: string | null } | null
+    const value = location.state as { initialPrompt?: string; toolType?: string | null; uploadedFiles?: UploadedFile[] } | null
     return value?.toolType ?? null
+  }, [location.state])
+  // 用 ref 保存首次渲染时的 toolType，避免 syncSessionToRoute 清空 location.state 后丢失
+  const initialToolTypeRef = useRef<string | null>(initialToolType)
+  if (initialToolType && !initialToolTypeRef.current) {
+    initialToolTypeRef.current = initialToolType
+  }
+  const resolvedInitialToolType = initialToolType ?? initialToolTypeRef.current
+
+  const initialUploadedFiles = useMemo(() => {
+    const value = location.state as { uploadedFiles?: UploadedFile[] } | null
+    return value?.uploadedFiles ?? []
   }, [location.state])
 
   const initialConversation = useMemo(() => {
@@ -410,12 +486,20 @@ function ChatPageContent() {
     }
 
     const now = new Date()
+    const completedFiles = initialUploadedFiles.filter((f) => f.status === 'completed')
     return {
       userMessage: {
         id: `user-${now.getTime()}`,
         role: 'user' as const,
         content: initialPrompt,
         timestamp: formatTime(now),
+        uploadedFiles: completedFiles.map((f) => ({
+          id: f.id,
+          name: f.name,
+          size: f.size,
+          ext: f.ext,
+          url: f.url,
+        })),
       },
       loadingMessage: {
         id: `assistant-${now.getTime()}`,
@@ -425,7 +509,7 @@ function ChatPageContent() {
         loading: true,
       },
     }
-  }, [initialPrompt, routeSessionId])
+  }, [initialPrompt, initialUploadedFiles, routeSessionId])
 
   const [messages, setMessages] = useState<ChatMessage[]>(() =>
     initialConversation ? [initialConversation.userMessage, initialConversation.loadingMessage] : [],
@@ -568,13 +652,11 @@ function ChatPageContent() {
 
   const fetchAgentDetail = useCallback(async (agentId: string, signal?: AbortSignal) => {
     try {
-      setAgentDetailLoading(true)
       const agentConfig = await loadCustomAgentApiConfig()
       const agent = await viewCustomAgent(agentConfig, agentId, signal)
       
-      setAgentDetail(agent)
       setAgentName(agent.agent_name)
-      setAgentWebSearchEnabled(agent.enable_web_search)
+      setWebSearchEnabled(agent.enable_web_search)
       setAgentWebSearchLocked(!agent.enable_web_search)
 
       const agentSkills: SkillItem[] = (agent.enabled_skills || []).map((skill: EnabledSkill) => ({
@@ -588,12 +670,8 @@ function ChatPageContent() {
       setSkills(agentSkills)
     } catch {
       if (!signal?.aborted) {
-        setAgentDetail(null)
         setSkills([])
-      }
-    } finally {
-      if (!signal?.aborted) {
-        setAgentDetailLoading(false)
+        setAgentWebSearchLocked(false)
       }
     }
   }, [])
@@ -604,6 +682,7 @@ function ChatPageContent() {
     loadingMessage: ChatMessage,
     baseMessages: ChatMessage[],
     _toolType: string | null = null,
+    uploadedFiles: UploadedFile[] = [],
   ) => {
     if (!chatApiConfig) {
       setRequestError('聊天配置读取失败，请检查 config.yaml')
@@ -624,6 +703,13 @@ function ChatPageContent() {
       return
     }
     setRequestError('')
+
+    const completedFiles = uploadedFiles.filter((f) => f.status === 'completed')
+    const uploadedFilesPayload = completedFiles.map((f) => ({
+      resource_id: f.resourceId ?? f.objectKey,
+      file_name: f.name,
+      url: f.url,
+    }))
 
     const controller = new AbortController()
     abortControllerRef.current = controller
@@ -685,6 +771,8 @@ function ChatPageContent() {
             message: prompt,
             enable_web_search: webSearchEnabled,
             include_tool_details: true,
+            uploaded_files: uploadedFilesPayload,
+            skill_name: _toolType || undefined,
           },
           messages: nextMessages,
           loadingMessageId: loadingMessage.id,
@@ -696,6 +784,7 @@ function ChatPageContent() {
         return
       }
 
+      console.log('[DEBUG] runAssistantReply _toolType:', _toolType, 'prompt:', prompt.substring(0, 50))
       const stream = await streamChatMessage(
         chatApiConfig,
         resolvedSessionId,
@@ -703,10 +792,12 @@ function ChatPageContent() {
           message: prompt,
           enable_web_search: webSearchEnabled,
           include_tool_details: true,
+          uploaded_files: uploadedFilesPayload,
+          skill_name: _toolType || undefined,
         },
         controller.signal,
       )
-
+      console.log('[DEBUG] stream payload:', { skill_name: _toolType || undefined })
       await readSseStream(stream, {
         onEventId(eventId) {
           const nextSequence = parseLastEventSequence(eventId)
@@ -890,13 +981,37 @@ function ChatPageContent() {
     }
   }
 
-  const startAssistantReply = async (prompt: string, toolType: string | null = null) => {
+  const handleStop = useCallback(() => {
+    // 优先尝试通过 SharedWorker 中断流式请求
+    if (streamBridgeRef.current && currentSessionId) {
+      streamBridgeRef.current.stopStream(currentSessionId)
+    }
+    // 备用：直接 abort（用于非 SharedWorker 路径）
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    setMessages((prev) => prev.map((m) =>
+      m.loading ? { ...m, loading: false } : m,
+    ))
+    setIsResponding(false)
+  }, [currentSessionId])
+
+  const startAssistantReply = async (prompt: string, toolType: string | null = null, uploadedFiles: UploadedFile[] = []) => {
     const now = new Date()
+    const completedFiles = uploadedFiles.filter((f) => f.status === 'completed')
     const userMessage: ChatMessage = {
       id: `user-${now.getTime()}`,
       role: 'user',
       content: prompt,
       timestamp: formatTime(now),
+      uploadedFiles: completedFiles.map((f) => ({
+        id: f.id,
+        name: f.name,
+        size: f.size,
+        ext: f.ext,
+        url: f.url,
+      })),
     }
     const loadingMessage: ChatMessage = {
       id: `assistant-${now.getTime()}`,
@@ -911,7 +1026,7 @@ function ChatPageContent() {
     setMessages(nextMessages)
     setIsResponding(true)
 
-    await runAssistantReply(prompt, userMessage, loadingMessage, nextMessages, toolType)
+    await runAssistantReply(prompt, userMessage, loadingMessage, nextMessages, toolType, uploadedFiles)
   }
 
   useEffect(() => {
@@ -922,20 +1037,22 @@ function ChatPageContent() {
     // 首页首轮自动发送放到下一个 tick，再由 cleanup 只取消定时器。
     // 这样 StrictMode 的首轮重挂载只会清掉第一次调度，不会把真正的流式请求 abort 掉。
     const initialPromptTimer = window.setTimeout(() => {
+      console.log('[DEBUG initialPromptTimer] resolvedInitialToolType:', resolvedInitialToolType, 'initialPrompt:', initialPrompt.substring(0, 50))
       setRequestError('')
       void runAssistantReply(
         initialPrompt,
         initialConversation.userMessage,
         initialConversation.loadingMessage,
         [initialConversation.userMessage, initialConversation.loadingMessage],
-        initialToolType,
+        resolvedInitialToolType,
+        initialUploadedFiles,
       )
     }, 0)
 
     return () => {
       window.clearTimeout(initialPromptTimer)
     }
-  }, [initialConversation, initialPrompt, initialToolType, routeSessionId])
+  }, [initialConversation, initialPrompt, resolvedInitialToolType, initialUploadedFiles, routeSessionId])
 
   useEffect(() => {
     if (!routeSessionId) {
@@ -1206,21 +1323,15 @@ function ChatPageContent() {
         setRequestError('')
         clearChatStreamSnapshot(routeSessionId)
         setSessionLoading(false)
-        
+
+        setAgentWebSearchLocked(false)
+
         // 如果session有agent_name字段，直接使用
         if (session.agent_name) {
           setAgentName(session.agent_name)
         } else if (session.theme_id) {
-          // 如果没有agent_name但有theme_id（可能是agent_id），则获取agent详情
-          try {
-            const agentConfig = await loadCustomAgentApiConfig()
-            const agent = await viewCustomAgent(agentConfig, session.theme_id, controller.signal)
-            if (!cancelled && agent.agent_name) {
-              setAgentName(agent.agent_name)
-            }
-          } catch {
-            // 获取agent详情失败时，保持默认显示
-          }
+          // 主题智能体存在时，把联网锁定状态和技能列表一并同步到输入框。
+          await fetchAgentDetail(session.theme_id, controller.signal)
         }
       } catch (error) {
         if (!controller.signal.aborted && !cancelled) {
@@ -1238,7 +1349,7 @@ function ChatPageContent() {
       streamBridgeRef.current?.unsubscribe(routeSessionId)
       controller?.abort()
     }
-  }, [chatApiConfig, routeSessionId])
+  }, [chatApiConfig, fetchAgentDetail, routeSessionId])
 
   // 当斜杠指令浮层打开时，自动加载技能列表
   useEffect(() => {
@@ -1269,19 +1380,17 @@ function ChatPageContent() {
   const handleSend = () => {
     const value = draft.trim()
     if (!value || isResponding) return
+    if (uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')) return
 
-    const outgoingPrompt = selectedSkillName
-      ? buildSkillInitialPrompt({
-          skillName: selectedSkillName,
-          template: value,
-          title: selectedSkillName,
-        })
-      : value
+    // draft 已由 handleSelectSkill 完成拼接，直接使用
+    const outgoingPrompt = value
     const outgoingToolType = selectedSkillName ? preferredToolType || selectedSkillName : null
+    const pendingFiles = [...uploadedFiles]
 
     setDraft('')
     clearSelectedSkill()
-    void startAssistantReply(outgoingPrompt, outgoingToolType)
+    setUploadedFiles([])
+    void startAssistantReply(outgoingPrompt, outgoingToolType, pendingFiles)
   }
 
   // 跳转到技能管理页面
@@ -1293,51 +1402,14 @@ function ChatPageContent() {
     })
   }
 
-  // 选择技能后先进入输入态，和技能管理页“使用”保持一致。
+  // 选择技能后先进入输入态，和技能管理页”使用”保持一致。
   const handleSelectSkill = (skill: SkillItem) => {
     // 加号选择技能后先进入输入态，用户还能继续补充模板参数，再统一发送。
     setSelectedSkillName(skill.skillName || skill.id)
-    setSelectedSkillDescription(skill.description)
     setPreferredToolType(skill.skillName || skill.id)
-    setDraft(skill.template)
-  }
-
-  const handleStop = () => {
-    if (currentSessionId && streamBridgeRef.current?.stopStream(currentSessionId)) {
-      setMessages((prev) =>
-        prev.map((item) =>
-          item.loading
-            ? {
-                ...item,
-                loading: false,
-              }
-            : item,
-        ),
-      )
-      setIsResponding(false)
-      return
-    }
-
-    if (currentSessionId && chatApiConfig) {
-      void stopChatMessageStream(chatApiConfig, currentSessionId).catch(() => {
-        // 直连流的停止请求失败时，至少先中断当前页面读取，避免界面继续卡在 loading。
-      })
-      clearChatStreamSnapshot(currentSessionId)
-    }
-
-    abortControllerRef.current?.abort()
-    abortControllerRef.current = null
-    setMessages((prev) =>
-      prev.map((item) =>
-        item.loading
-          ? {
-              ...item,
-              loading: false,
-            }
-          : item,
-      ),
-    )
-    setIsResponding(false)
+    skipSlashSelectRef.current = true
+    setDraft(buildSkillInitialPrompt(skill))
+    requestAnimationFrame(() => { skipSlashSelectRef.current = false })
   }
 
   const handleCopy = async (messageId: string, content: string) => {
@@ -1372,6 +1444,29 @@ function ChatPageContent() {
     }
   }
 
+  const handleSaveCommandSuccess = useCallback(() => {
+    setSaveCommandOpen(false)
+    message.success({
+      content: (
+        <span>
+          创建成功，可在首页{' '}
+          <a
+            onClick={() => {
+              navigate('/', {
+                state: { activateTabKey: 'my-prompts' },
+              })
+            }}
+            style={{ color: '#1677ff', cursor: 'pointer' }}
+          >
+            我的指令
+          </a>{' '}
+          中查看
+        </span>
+      ),
+      duration: 5,
+    })
+  }, [navigate])
+
   return (
     <main className={styles.page}>
       <div className={`${styles.splitContainer} ${artifactOpen ? styles.splitContainerOpen : ''}`}>
@@ -1396,6 +1491,17 @@ function ChatPageContent() {
                 </button>
                 {headerMenuOpen ? (
                   <div className={styles.headerMenuDropdown}>
+                    <button
+                      type="button"
+                      className={styles.headerMenuItem}
+                      onClick={() => {
+                        setHeaderMenuOpen(false)
+                        setSaveCommandOpen(true)
+                      }}
+                    >
+                      <SaveOutlined className={styles.headerMenuItemIcon} />
+                      <span>保存为指令</span>
+                    </button>
                     <button
                       type="button"
                       className={styles.headerMenuItem}
@@ -1430,180 +1536,112 @@ function ChatPageContent() {
 
           <div className={styles.composerArea}>
             <div className={styles.composerWrap}>
-              <div className={styles.inputWrap}>
-                {/* 斜杠指令浮层 */}
-                <SkillSlashCommand
-                  visible={slashCommandOpen}
-                  query={slashQuery}
-                  setQuery={(query) => {
-                    setSlashQuery(query)
-                    setDraft('/' + query)
-                  }}
-                  skills={skills.filter((skill) => {
-                    if (!slashQuery) return true
-                    const q = slashQuery.toLowerCase()
-                    return (
-                      skill.title.toLowerCase().includes(q) ||
-                      skill.description.toLowerCase().includes(q) ||
-                      skill.skillName.toLowerCase().includes(q)
-                    )
-                  })}
-                  loading={skillsLoading}
-                  selectedIndex={selectedSkillIndex}
-                  onSelectSkill={(skill) => {
-                    handleSelectSkill(skill)
+              <ChatComposer
+                variant="agentConversation"
+                value={draft}
+                onChange={(value) => {
+                  setDraft(value)
+
+                  // 检测斜杠指令触发
+                  if (skipSlashSelectRef.current) return
+                  if (value === '/' && !slashCommandOpen) {
+                    setSlashCommandOpen(true)
+                    setSlashQuery('')
+                    setSelectedSkillIndex(0)
+                  } else if (!value.startsWith('/')) {
                     setSlashCommandOpen(false)
-                    setDraft('')
-                  }}
-                  onClose={() => setSlashCommandOpen(false)}
-                  onManageSkills={handleManageSkills}
-                />
-                {/* 上方输入区域 */}
-                <div className={styles.inputTopArea}>
-                  {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
-                  {selectedSkillName ? (
-                    <span className={styles.skillTagWrap}>
-                      <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
-                      <button
-                        type="button"
-                        className={styles.skillRemoveButton}
-                        aria-label="移除已选技能"
-                        onClick={clearSelectedSkill}
-                      >
-                        <CloseOutlined />
-                      </button>
-                      {selectedSkillDescription ? (
-                        <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
-                      ) : null}
-                    </span>
-                  ) : null}
-                  <Input.TextArea
-                    value={draft}
-                    onChange={(event) => {
-                      const value = event.target.value
-                      setDraft(value)
-                      
-                      // 检测斜杠指令触发
-                      if (value === '/' && !slashCommandOpen) {
-                        setSlashCommandOpen(true)
-                        setSlashQuery('')
-                        setSelectedSkillIndex(0)
-                      } else if (!value.startsWith('/')) {
-                        setSlashCommandOpen(false)
-                      } else if (value.startsWith('/')) {
-                        setSlashQuery(value.slice(1))
-                      }
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
-                        return
-                      }
+                  } else if (value.startsWith('/')) {
+                    setSlashQuery(value.slice(1))
+                  }
 
-                      // 斜杠指令浮层打开时的键盘处理
-                      if (slashCommandOpen) {
-                        switch (event.key) {
-                          case 'ArrowDown':
-                            event.preventDefault()
-                            setSelectedSkillIndex((prev) =>
-                              prev < skills.length - 1 ? prev + 1 : prev
-                            )
-                            return
-                          case 'ArrowUp':
-                            event.preventDefault()
-                            setSelectedSkillIndex((prev) => (prev > 0 ? prev - 1 : 0))
-                            return
-                          case 'Enter':
-                            event.preventDefault()
-                            const filteredSkills = skills.filter((skill) => {
-                              if (!slashQuery) return true
-                              const q = slashQuery.toLowerCase()
-                              return (
-                                skill.title.toLowerCase().includes(q) ||
-                                skill.description.toLowerCase().includes(q) ||
-                                skill.skillName.toLowerCase().includes(q)
-                              )
-                            })
-                            if (filteredSkills[selectedSkillIndex]) {
-                              handleSelectSkill(filteredSkills[selectedSkillIndex])
-                              setSlashCommandOpen(false)
-                              setDraft('')
-                            }
-                            return
-                          case 'Escape':
-                            event.preventDefault()
-                            setSlashCommandOpen(false)
-                            return
+                  // 用户手动编辑输入框，删除已选技能的 /skillName 标记时，清空技能状态
+                  if (selectedSkillName) {
+                    const skillDisplayName = `/${selectedSkillName.replace(/^\/+/, '')}`
+                    if (!value.includes(skillDisplayName)) {
+                      clearSelectedSkill()
+                    }
+                  }
+                }}
+                onKeyDown={(event) => {
+                  if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+                    return
+                  }
+
+                  // 斜杠指令浮层打开时的键盘处理
+                  if (slashCommandOpen) {
+                    switch (event.key) {
+                      case 'ArrowDown':
+                        event.preventDefault()
+                        setSelectedSkillIndex((prev) =>
+                          prev < filteredSkills.length - 1 ? prev + 1 : prev
+                        )
+                        return
+                      case 'ArrowUp':
+                        event.preventDefault()
+                        setSelectedSkillIndex((prev) => (prev > 0 ? prev - 1 : 0))
+                        return
+                      case 'Enter':
+                        event.preventDefault()
+                        event.stopPropagation()
+                        if (filteredSkills[selectedSkillIndex]) {
+                          handleSelectSkill(filteredSkills[selectedSkillIndex])
+                          setSlashCommandOpen(false)
+                          setSlashQuery('')
                         }
-                      }
-
-                      if (event.key === 'Backspace' && !draft.trim() && selectedSkillName) {
-                        event.preventDefault()
-                        clearSelectedSkill()
                         return
-                      }
-
-                      // 支持 Enter 发送，Shift+Enter 换行
-                      if (event.key === 'Enter' && !event.shiftKey) {
+                      case 'Escape':
                         event.preventDefault()
-                        handleSend()
-                      }
-                    }}
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                      border: 'none',
-                      boxShadow: 'none',
-                      background: 'transparent',
-                      fontSize: 14,
-                      resize: 'none',
-                      minHeight: 24,
-                      maxHeight: 200,
-                      overflowY: 'auto',
-                      lineHeight: 1.5,
-                      padding: 0,
-                    }}
-                    variant="borderless"
-                    placeholder='输入你的想法或输入"/"选择想要使用技能'
-                    autoSize={{ minRows: 1, maxRows: 8 }}
-                  />
-                </div>
-                {/* 下方按钮区域 */}
-                <div className={styles.inputBottomArea}>
-                  <div className={styles.inputBottomLeft}>
-                    <AttachmentMenu
-                      placement="top"
-                      skills={skills}
-                      skillsLoading={skillsLoading}
-                      loadSkills={fetchSkills}
-                      onSelectSkill={handleSelectSkill}
-                      onManageSkills={handleManageSkills}
-                      showTools
-                      webSearchEnabled={webSearchEnabled}
-                      knowledgeEnabled={knowledgeEnabled}
-                      onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
-                      onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
-                    />
-                  </div>
-                  <div className={styles.inputBottomRight}>
-                    <div className={styles.inputActions}>
-                      {isResponding ? (
-                        <button type="button" className={`${styles.iconBtn} ${styles.stopBtn}`} onClick={handleStop}>
-                          <span className={styles.stopInner} />
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className={`${styles.iconBtn} ${styles.sendBtn} ${!draft.trim() ? styles.sendBtnDisabled : ''}`}
-                          onClick={handleSend}
-                          disabled={!draft.trim()}
-                        >
-                          <ArrowUpOutlined />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+                        setSlashCommandOpen(false)
+                        return
+                    }
+                  }
+
+                  if (event.key === 'Backspace' && !draft.trim() && selectedSkillName) {
+                    event.preventDefault()
+                    clearSelectedSkill()
+                    return
+                  }
+
+                  // 支持 Enter 发送，Shift+Enter 换行
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault()
+                    handleSend()
+                  }
+                }}
+                onSend={handleSend}
+                placeholder='输入你的想法或输入"/"选择想要使用技能'
+                slashCommandOpen={slashCommandOpen}
+                slashQuery={slashQuery}
+                onSlashQueryChange={setSlashQuery}
+                skills={skills}
+                filteredSkills={filteredSkills}
+                skillsLoading={skillsLoading}
+                loadSkills={fetchSkills}
+                selectedSkillIndex={selectedSkillIndex}
+                onSelectSkill={(skill) => {
+                  handleSelectSkill(skill)
+                  setSlashCommandOpen(false)
+                  setSlashQuery('')
+                }}
+                onCloseSlashCommand={() => setSlashCommandOpen(false)}
+                onManageSkills={handleManageSkills}
+                uploadedFiles={uploadedFiles}
+                onRemoveFile={handleRemoveFile}
+                fileInputRef={fileInputRef}
+                onFileChange={handleFileChange}
+                onUploadFile={handleUploadFile}
+                webSearchEnabled={webSearchEnabled}
+                webSearchLocked={agentWebSearchLocked}
+                knowledgeEnabled={false}
+                onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
+                onLockedWebSearchClick={() => {
+                  void message.info('当前主题智能体未开启联网检索，暂不可配置')
+                }}
+                onToggleKnowledge={() => {}}
+                sendDisabled={!draft.trim() || uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')}
+                isResponding={isResponding}
+                onStop={handleStop}
+              />
             </div>
             <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>
           </div>
@@ -1619,6 +1657,12 @@ function ChatPageContent() {
         loading={deleteLoading}
         onCancel={() => setDeleteConfirmOpen(false)}
         onConfirm={handleDeleteCurrentSession}
+      />
+      <SaveCommandModal
+        open={saveCommandOpen}
+        sessionId={currentSessionId ?? ''}
+        onClose={() => setSaveCommandOpen(false)}
+        onSuccess={handleSaveCommandSuccess}
       />
     </main>
   )

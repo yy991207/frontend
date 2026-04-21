@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Input } from 'antd'
+import { message } from 'antd'
+import { AppPageShell, AppSurfacePanel } from '../../components/layout/AppPageShell'
 import {
-  ArrowUpOutlined,
   BarsOutlined,
   CameraFilled,
   CloseOutlined,
@@ -15,8 +15,14 @@ import {
 import PartnerSkillManagement from '../../components/Partner/PartnerSkillManagement'
 import Workspace, { type FileNode } from '../../components/Partner/Workspace'
 import ModelManagement from '../../components/Partner/ModelManagement'
-import { AttachmentMenu } from '../../components/common/AttachmentMenu'
-import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
+import { ChatComposer } from '../../components/common/ChatComposer'
+import {
+  createPendingUploadedFile,
+  type UploadedFile,
+  isAllowedFileType,
+  ALLOWED_FILE_EXTENSIONS,
+} from '../../services/ossUploadService'
+import { uploadPendingFileToOssWithDocumentParse } from '../../services/agentFileUploadService'
 import chatConfigText from '../../../config.yaml?raw'
 import { useLocation, useNavigate } from 'react-router-dom'
 import homeAvatar from '../../assets/home-avatar.png'
@@ -33,7 +39,6 @@ import {
   parseCourseTableContent,
   readSseStream,
   resumeChatMessageStream,
-  stopChatMessageStream,
   streamChatMessage,
   type ChatApiConfig,
   type CourseItem,
@@ -67,11 +72,11 @@ import {
   type ChatSessionMessageToolCall,
 } from '../../services/chatSessionService'
 import {
-  buildSkillDisplayName,
   buildSkillInitialPrompt,
   extractSkillItemsFromResponse,
   type SkillApiResponse,
 } from '../../services/skillPromptService'
+import { API_PATHS, USER_ID_QUERY_PARAM, buildAbsoluteApiUrl } from '../../services/apiEndpoints'
 import { adaptChatMessages } from '../../core/messages/adapters'
 import {
   advanceAssistantMessageForNextModelPhase,
@@ -79,7 +84,6 @@ import {
 } from '../../core/messages/streaming'
 import type { LegacyChatMessage as ChatMessage } from '../../core/messages/types'
 import { groupMessages, resolveAssistantCopyTargets } from '../../core/messages/utils'
-import { getUrlUserId, getConfigUrl } from '../../utils/urlParams'
 import styles from './partner.module.less'
 
 type SettingMenuItem = {
@@ -123,34 +127,21 @@ function parseSimpleYaml(rawText: string) {
   }, {})
 }
 
-function buildAbsoluteUrl(baseUrl: string, path: string) {
-  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
-}
-
 function parseSkillApiConfig(rawText: string) {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
-  const managePath = parsedConfig.view_user_skills_path
-  const listPath = parsedConfig.list_user_skills_path
-  const userIdParam = parsedConfig.skill_user_id_param
-  const urlUserId = getUrlUserId()
-  const userId = urlUserId || ''
+  const userId = parsedConfig.user_id
+  const userIdParam = USER_ID_QUERY_PARAM
 
-  if (!baseUrl || !managePath || !userId || !userIdParam) {
-    throw new Error('config.yaml 缺少 url、view_user_skills_path、user_id 或 skill_user_id_param 配置')
+  if (!baseUrl || !userId) {
+    throw new Error('config.yaml 缺少 url 或 user_id 配置')
   }
 
-  const managePathWithUser = managePath.includes('{user_id}')
-    ? managePath.replace('{user_id}', encodeURIComponent(userId))
-    : managePath
-
-  const listEndpoint = listPath
-    ? buildAbsoluteUrl(baseUrl, listPath)
-    : null
+  const managePathWithUser = API_PATHS.viewUserSkills.replace('{user_id}', encodeURIComponent(userId))
 
   return {
-    manageEndpoint: buildAbsoluteUrl(baseUrl, managePathWithUser),
-    listEndpoint,
+    manageEndpoint: buildAbsoluteApiUrl(baseUrl, managePathWithUser),
+    listEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.listCustomSkills),
     userId,
     userIdParam,
   }
@@ -158,7 +149,7 @@ function parseSkillApiConfig(rawText: string) {
 
 async function loadChatSessionConfig(): Promise<ChatSessionConfig> {
   try {
-    const response = await fetch(getConfigUrl())
+    const response = await fetch('/config.yaml')
     if (response.ok) {
       const rawText = await response.text()
       return parseChatSessionConfig(rawText)
@@ -379,11 +370,9 @@ function PartnerPageContent() {
   const [skillsLoading, setSkillsLoading] = useState(false)
   const skillsFetchingRef = useRef(false)
   const [webSearchEnabled, setWebSearchEnabled] = useState(true)
-  const [knowledgeEnabled, setKnowledgeEnabled] = useState(false)
   const [draft, setDraft] = useState('')
   const [preferredToolType, setPreferredToolType] = useState<string | null>(null)
   const [selectedSkillName, setSelectedSkillName] = useState('')
-  const [selectedSkillDescription, setSelectedSkillDescription] = useState('')
   const [requestError, setRequestError] = useState('')
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [sessionLoading, setSessionLoading] = useState(false)
@@ -392,6 +381,24 @@ function PartnerPageContent() {
   const [slashCommandOpen, setSlashCommandOpen] = useState(false)
   const [slashQuery, setSlashQuery] = useState('')
   const [selectedSkillIndex, setSelectedSkillIndex] = useState(0)
+  const skipSlashSelectRef = useRef(false)
+  
+  // 上传文件相关状态
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const filteredSkills = useMemo(() => {
+    if (!slashQuery) {
+      return skills
+    }
+
+    const query = slashQuery.toLowerCase()
+    return skills.filter((skill) =>
+      skill.title.toLowerCase().includes(query) ||
+      skill.description.toLowerCase().includes(query) ||
+      skill.skillName.toLowerCase().includes(query),
+    )
+  }, [skills, slashQuery])
   
   const stickToBottom = useStickToBottom()
   const { containerRef: messagesViewportRef, scrollToBottom } = stickToBottom
@@ -403,7 +410,54 @@ function PartnerPageContent() {
   const clearSelectedSkill = () => {
     setPreferredToolType(null)
     setSelectedSkillName('')
-    setSelectedSkillDescription('')
+  }
+
+  // 处理上传文件
+  const handleUploadFile = () => {
+    fileInputRef.current?.click()
+  }
+
+  // 处理文件选择
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    for (const file of Array.from(files)) {
+      if (!isAllowedFileType(file.name)) {
+        message.warning(`不支持的文件类型: ${file.name}，仅支持 ${ALLOWED_FILE_EXTENSIONS.join('、')} 格式`)
+        continue
+      }
+
+      const pendingFile = createPendingUploadedFile(file)
+      setUploadedFiles((prev) => [...prev, pendingFile])
+
+      const uploadedFile = await uploadPendingFileToOssWithDocumentParse(pendingFile, file, {
+        onProgress: (progress) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
+            ),
+          )
+        },
+        onStatusChange: (nextFile) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) => (f.id === pendingFile.id ? nextFile : f)),
+          )
+        },
+      })
+
+      setUploadedFiles((prev) =>
+        prev.map((f) => (f.id === pendingFile.id ? uploadedFile : f)),
+      )
+    }
+    
+    // 清空 input 以便再次选择相同文件
+    event.target.value = ''
+  }
+
+  // 删除已添加的文件
+  const handleRemoveFile = (fileId: string) => {
+    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId))
   }
 
   // 单独维护助手名称编辑态，避免影响其他设置区域的展示逻辑。
@@ -562,9 +616,10 @@ function PartnerPageContent() {
   const handleSelectSkill = (skill: SkillItem) => {
     // 加号选择技能后先进入输入态，用户还能继续补充模板参数，再统一发送。
     setSelectedSkillName(skill.skillName || skill.id)
-    setSelectedSkillDescription(skill.description)
     setPreferredToolType(skill.skillName || skill.id)
-    setDraft(skill.template)
+    skipSlashSelectRef.current = true
+    setDraft(buildSkillInitialPrompt(skill))
+    requestAnimationFrame(() => { skipSlashSelectRef.current = false })
   }
 
 
@@ -701,6 +756,7 @@ function PartnerPageContent() {
     loadingMessage: ChatMessage,
     baseMessages: ChatMessage[],
     _toolType: string | null = null,
+    uploadedFiles: UploadedFile[] = [],
   ) => {
     if (!chatApiConfig) {
       setRequestError('聊天配置读取失败，请检查 config.yaml')
@@ -722,6 +778,13 @@ function PartnerPageContent() {
     }
 
     setRequestError('')
+
+    const completedFiles = uploadedFiles.filter((f) => f.status === 'completed')
+    const uploadedFilesPayload = completedFiles.map((f) => ({
+      resource_id: f.resourceId ?? f.objectKey,
+      file_name: f.name,
+      url: f.url,
+    }))
 
     const controller = new AbortController()
     abortControllerRef.current = controller
@@ -777,6 +840,7 @@ function PartnerPageContent() {
             message: prompt,
             enable_web_search: webSearchEnabled,
             include_tool_details: true,
+            uploaded_files: uploadedFilesPayload,
           },
           messages: nextMessages,
           loadingMessageId: loadingMessage.id,
@@ -795,6 +859,7 @@ function PartnerPageContent() {
           message: prompt,
           enable_web_search: webSearchEnabled,
           include_tool_details: true,
+          uploaded_files: uploadedFilesPayload,
         },
         controller.signal,
       )
@@ -982,13 +1047,21 @@ function PartnerPageContent() {
     }
   }
 
-  const startAssistantReply = async (prompt: string, toolType: string | null = null) => {
+  const startAssistantReply = async (prompt: string, toolType: string | null = null, uploadedFiles: UploadedFile[] = []) => {
     const now = new Date()
+    const completedFiles = uploadedFiles.filter((f) => f.status === 'completed')
     const userMessage: ChatMessage = {
       id: `user-${now.getTime()}`,
       role: 'user',
       content: prompt,
       timestamp: formatTime(now),
+      uploadedFiles: completedFiles.map((f) => ({
+        id: f.id,
+        name: f.name,
+        size: f.size,
+        ext: f.ext,
+        url: f.url,
+      })),
     }
     const loadingMessage: ChatMessage = {
       id: `assistant-${now.getTime()}`,
@@ -1003,7 +1076,7 @@ function PartnerPageContent() {
     setMessages(nextMessages)
     setIsResponding(true)
 
-    await runAssistantReply(prompt, userMessage, loadingMessage, nextMessages, toolType)
+    await runAssistantReply(prompt, userMessage, loadingMessage, nextMessages, toolType, uploadedFiles)
   }
 
   useEffect(() => {
@@ -1322,8 +1395,6 @@ function PartnerPageContent() {
     }
   }, [slashCommandOpen, skills.length, skillsLoading, fetchSkills])
 
-  // AttachmentMenu组件内部已处理点击外部关闭菜单的逻辑
-
   useEffect(() => {
     if (!isNameModalOpen) {
       return
@@ -1345,57 +1416,17 @@ function PartnerPageContent() {
   const handleSend = () => {
     const value = draft.trim()
     if (!value || isResponding) return
+    if (uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')) return
 
-    const outgoingPrompt = selectedSkillName
-      ? buildSkillInitialPrompt({
-          skillName: selectedSkillName,
-          template: value,
-          title: selectedSkillName,
-        })
-      : value
+    // draft 已由 handleSelectSkill 完成拼接，直接使用
+    const outgoingPrompt = value
     const outgoingToolType = selectedSkillName ? preferredToolType || selectedSkillName : null
+    const pendingFiles = [...uploadedFiles]
 
     setDraft('')
     clearSelectedSkill()
-    void startAssistantReply(outgoingPrompt, outgoingToolType)
-  }
-
-  const handleStop = () => {
-    if (currentSessionId && streamBridgeRef.current?.stopStream(currentSessionId)) {
-      setMessages((prev) =>
-        prev.map((item) =>
-          item.loading
-            ? {
-                ...item,
-                loading: false,
-              }
-            : item,
-        ),
-      )
-      setIsResponding(false)
-      return
-    }
-
-    if (currentSessionId && chatApiConfig) {
-      void stopChatMessageStream(chatApiConfig, currentSessionId).catch(() => {
-        // 直连流的停止请求失败时，至少先中断当前页面读取，避免界面继续卡在 loading。
-      })
-      clearChatStreamSnapshot(currentSessionId)
-    }
-
-    abortControllerRef.current?.abort()
-    abortControllerRef.current = null
-    setMessages((prev) =>
-      prev.map((item) =>
-        item.loading
-          ? {
-              ...item,
-              loading: false,
-            }
-          : item,
-      ),
-    )
-    setIsResponding(false)
+    setUploadedFiles([])
+    void startAssistantReply(outgoingPrompt, outgoingToolType, pendingFiles)
   }
 
   const handleCopy = async (messageId: string, content: string) => {
@@ -1634,7 +1665,6 @@ function PartnerPageContent() {
                 setIsSettingsOpen(false)
                 // 设置选中的技能状态（与加号选择技能一致）
                 setSelectedSkillName(skill.skillName || skill.id)
-                setSelectedSkillDescription(skill.description)
                 setPreferredToolType(skill.skillName || skill.id)
                 setDraft(skill.template)
               }}
@@ -1721,9 +1751,9 @@ function PartnerPageContent() {
   }
 
   return (
-    <main className={styles.page}>
+    <AppPageShell className={styles.page}>
       <div className={`${styles.splitContainer} ${artifactOpen ? styles.splitContainerOpen : ''}`}>
-        <section className={styles.panel}>
+        <AppSurfacePanel className={styles.panel}>
         {isSettingsOpen ? (
           <>
             <div className={styles.settingsTopBar}>
@@ -1826,190 +1856,107 @@ function PartnerPageContent() {
 
               <div className={styles.composerArea}>
                 <div ref={composerRef} className={styles.composerWrap}>
-                  <div className={styles.inputWrap}>
-                    {/* 斜杠指令浮层 */}
-                    <SkillSlashCommand
-                      visible={slashCommandOpen}
-                      query={slashQuery}
-                      setQuery={(query) => {
-                        setSlashQuery(query)
-                        setDraft('/' + query)
-                      }}
-                      skills={skills.filter((skill) => {
-                        if (!slashQuery) return true
-                        const q = slashQuery.toLowerCase()
-                        return (
-                          skill.title.toLowerCase().includes(q) ||
-                          skill.description.toLowerCase().includes(q) ||
-                          skill.skillName.toLowerCase().includes(q)
-                        )
-                      })}
-                      loading={skillsLoading}
-                      selectedIndex={selectedSkillIndex}
-                      onSelectSkill={(skill) => {
-                        handleSelectSkill(skill)
+                  <ChatComposer
+                    variant="agentConversation"
+                    value={draft}
+                    onChange={(value) => {
+                      setDraft(value)
+
+                      if (skipSlashSelectRef.current) return
+                      if (value === '/' && !slashCommandOpen) {
+                        setSlashCommandOpen(true)
+                        setSlashQuery('')
+                        setSelectedSkillIndex(0)
+                      } else if (!value.startsWith('/')) {
                         setSlashCommandOpen(false)
-                        setDraft('')
-                      }}
-                      onClose={() => setSlashCommandOpen(false)}
-                      onManageSkills={handleManageSkills}
-                    />
-                    {/* 上方输入区域 */}
-                    <div className={styles.inputTopArea}>
-                      {selectedSkillName ? <span className={styles.skillPrefix}>基于</span> : null}
-                      {selectedSkillName ? (
-                        <span className={styles.skillTagWrap}>
-                          <span className={styles.skillNameTag}>{buildSkillDisplayName(selectedSkillName)}</span>
-                          <button
-                            type="button"
-                            className={styles.skillRemoveButton}
-                            aria-label="移除已选技能"
-                            onClick={clearSelectedSkill}
-                          >
-                            <CloseOutlined />
-                          </button>
-                          {selectedSkillDescription ? (
-                            <span className={styles.skillDescriptionTooltip}>{selectedSkillDescription}</span>
-                          ) : null}
-                        </span>
-                      ) : null}
-                      <Input.TextArea
-                        value={draft}
-                        onChange={(event) => {
-                          const value = event.target.value
-                          setDraft(value)
-                          
-                          // 检测斜杠指令触发
-                          if (value === '/' && !slashCommandOpen) {
-                            setSlashCommandOpen(true)
-                            setSlashQuery('')
-                            setSelectedSkillIndex(0)
-                          } else if (!value.startsWith('/')) {
-                            setSlashCommandOpen(false)
-                          } else if (value.startsWith('/')) {
-                            setSlashQuery(value.slice(1))
-                          }
-                        }}
-                        onKeyDown={(event) => {
-                          if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
-                            return
-                          }
+                      } else if (value.startsWith('/')) {
+                        setSlashQuery(value.slice(1))
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+                        return
+                      }
 
-                          // 斜杠指令浮层打开时的键盘处理
-                          if (slashCommandOpen) {
-                            switch (event.key) {
-                              case 'ArrowDown':
-                                event.preventDefault()
-                                setSelectedSkillIndex((prev) =>
-                                  prev < skills.length - 1 ? prev + 1 : prev
-                                )
-                                return
-                              case 'ArrowUp':
-                                event.preventDefault()
-                                setSelectedSkillIndex((prev) => (prev > 0 ? prev - 1 : 0))
-                                return
-                              case 'Enter':
-                                event.preventDefault()
-                                const filteredSkills = skills.filter((skill) => {
-                                  if (!slashQuery) return true
-                                  const q = slashQuery.toLowerCase()
-                                  return (
-                                    skill.title.toLowerCase().includes(q) ||
-                                    skill.description.toLowerCase().includes(q) ||
-                                    skill.skillName.toLowerCase().includes(q)
-                                  )
-                                })
-                                if (filteredSkills[selectedSkillIndex]) {
-                                  handleSelectSkill(filteredSkills[selectedSkillIndex])
-                                  setSlashCommandOpen(false)
-                                  setDraft('')
-                                }
-                                return
-                              case 'Escape':
-                                event.preventDefault()
-                                setSlashCommandOpen(false)
-                                return
+                      if (slashCommandOpen) {
+                        switch (event.key) {
+                          case 'ArrowDown':
+                            event.preventDefault()
+                            setSelectedSkillIndex((prev) =>
+                              prev < filteredSkills.length - 1 ? prev + 1 : prev,
+                            )
+                            return
+                          case 'ArrowUp':
+                            event.preventDefault()
+                            setSelectedSkillIndex((prev) => (prev > 0 ? prev - 1 : 0))
+                            return
+                          case 'Enter':
+                            event.preventDefault()
+                            if (filteredSkills[selectedSkillIndex]) {
+                              event.stopPropagation()
+                              handleSelectSkill(filteredSkills[selectedSkillIndex])
+                              setSlashCommandOpen(false)
+                              setSlashQuery('')
                             }
-                          }
-
-                          if (event.key === 'Backspace' && !draft.trim() && selectedSkillName) {
-                            event.preventDefault()
-                            clearSelectedSkill()
                             return
-                          }
-
-                          // 支持 Enter 发送，Shift+Enter 换行
-                          if (event.key === 'Enter' && !event.shiftKey) {
+                          case 'Escape':
                             event.preventDefault()
-                            handleSend()
-                          }
-                        }}
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                          border: 'none',
-                          boxShadow: 'none',
-                          background: 'transparent',
-                          fontSize: 16,
-                          resize: 'none',
-                          minHeight: 24,
-                          maxHeight: 200,
-                          overflowY: 'auto',
-                          lineHeight: 1.5,
-                          padding: 0,
-                        }}
-                        variant="borderless"
-                        placeholder='输入你的想法或输入"/"选择想要使用技能'
-                        autoSize={{ minRows: 1, maxRows: 8 }}
-                      />
-                    </div>
-                    {/* 下方按钮区域 */}
-                    <div className={styles.inputBottomArea}>
-                      <div className={styles.inputBottomLeft}>
-                        <AttachmentMenu
-                          placement="top"
-                          skills={skills}
-                          skillsLoading={skillsLoading}
-                          loadSkills={fetchSkills}
-                          onSelectSkill={handleSelectSkill}
-                          onManageSkills={handleManageSkills}
-                          showTools
-                          webSearchEnabled={webSearchEnabled}
-                          knowledgeEnabled={knowledgeEnabled}
-                          onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
-                          onToggleKnowledge={() => setKnowledgeEnabled((value) => !value)}
-                        />
-                      </div>
-                      <div className={styles.inputBottomRight}>
-                        <div className={styles.inputActions}>
-                          {isResponding ? (
-                            <button type="button" className={`${styles.iconBtn} ${styles.stopBtn}`} onClick={handleStop}>
-                              <span className={styles.stopInner} />
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              className={`${styles.iconBtn} ${styles.sendBtn} ${!draft.trim() ? styles.sendBtnDisabled : ''}`}
-                              onClick={handleSend}
-                              disabled={!draft.trim()}
-                            >
-                              <ArrowUpOutlined />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                            setSlashCommandOpen(false)
+                            return
+                        }
+                      }
+
+                      if (event.key === 'Backspace' && !draft.trim() && selectedSkillName) {
+                        event.preventDefault()
+                        clearSelectedSkill()
+                        return
+                      }
+
+                      if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault()
+                        handleSend()
+                      }
+                    }}
+                    onSend={handleSend}
+                    placeholder='输入你的想法或输入"/"选择想要使用技能'
+                    slashCommandOpen={slashCommandOpen}
+                    slashQuery={slashQuery}
+                    onSlashQueryChange={setSlashQuery}
+                    skills={skills}
+                    filteredSkills={filteredSkills}
+                    skillsLoading={skillsLoading}
+                    loadSkills={fetchSkills}
+                    selectedSkillIndex={selectedSkillIndex}
+                    onSelectSkill={(skill) => {
+                      handleSelectSkill(skill)
+                      setSlashCommandOpen(false)
+                      setSlashQuery('')
+                    }}
+                    onCloseSlashCommand={() => setSlashCommandOpen(false)}
+                    onManageSkills={handleManageSkills}
+                    uploadedFiles={uploadedFiles}
+                    onRemoveFile={handleRemoveFile}
+                    fileInputRef={fileInputRef}
+                    onFileChange={handleFileChange}
+                    onUploadFile={handleUploadFile}
+                    webSearchEnabled={webSearchEnabled}
+                    webSearchLocked={false}
+                    knowledgeEnabled={false}
+                    onToggleWebSearch={() => setWebSearchEnabled((value) => !value)}
+                    onToggleKnowledge={() => {}}
+                    sendDisabled={!draft.trim() || uploadedFiles.some((f) => f.status === 'uploading' || f.status === 'parsing')}
+                    isResponding={isResponding}
+                  />
                 </div>
                 <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>
               </div>
             </div>
           </>
         )}
-      </section>
-        <section className={`${styles.artifactPanel} ${artifactOpen ? styles.artifactPanelOpen : styles.artifactPanelClosed}`}>
+      </AppSurfacePanel>
+        <AppSurfacePanel className={`${styles.artifactPanel} ${artifactOpen ? styles.artifactPanelOpen : styles.artifactPanelClosed}`}>
           <PartnerArtifactPanel />
-        </section>
+        </AppSurfacePanel>
       </div>
       {isNameModalOpen ? (
         <div className={styles.nameModalMask} onClick={handleCloseNameModal}>
@@ -2052,7 +1999,7 @@ function PartnerPageContent() {
           </div>
         </div>
       ) : null}
-    </main>
+    </AppPageShell>
   )
 }
 

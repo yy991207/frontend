@@ -1,10 +1,10 @@
+import { API_PATHS, USER_ID_QUERY_PARAM, buildAbsoluteApiUrl } from './apiEndpoints'
+
 export type SkillUploadApiConfig = {
   userId: string
   userIdParam: string
   uploadEndpoint: string
 }
-
-import { getUrlUserId } from '../utils/urlParams'
 
 export type UploadedSkillSummary = {
   skillId: string
@@ -49,10 +49,6 @@ function parseSimpleYaml(rawText: string) {
 
     return result
   }, {})
-}
-
-function buildAbsoluteUrl(baseUrl: string, path: string) {
-  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
 }
 
 function readStringField(record: Record<string, unknown>, keys: string[]) {
@@ -108,19 +104,17 @@ async function normalizeSkillUploadResponse(response: Response): Promise<SkillUp
 export function parseSkillUploadApiConfig(rawText: string): SkillUploadApiConfig {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
-  const uploadSkillPath = parsedConfig.upload_skill_path
-  const userIdParam = parsedConfig.skill_user_id_param
-  const urlUserId = getUrlUserId()
-  const userId = urlUserId || ''
+  const userId = parsedConfig.user_id
+  const userIdParam = USER_ID_QUERY_PARAM
 
-  if (!baseUrl || !uploadSkillPath || !userId || !userIdParam) {
-    throw new Error('config.yaml 缺少 url、upload_skill_path、user_id 或 skill_user_id_param 配置')
+  if (!baseUrl || !userId) {
+    throw new Error('config.yaml 缺少 url 或 user_id 配置')
   }
 
   return {
     userId,
     userIdParam,
-    uploadEndpoint: buildAbsoluteUrl(baseUrl, uploadSkillPath),
+    uploadEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.uploadCustomSkill),
   }
 }
 

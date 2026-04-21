@@ -28,6 +28,14 @@ export type SkillOutputItem = {
   size: number
 }
 
+export type UploadedFileRef = {
+  id: string
+  name: string
+  size: number
+  ext: string
+  url: string
+}
+
 export type LegacyChatMessage = {
   id: string
   role: 'user' | 'assistant'
@@ -41,6 +49,7 @@ export type LegacyChatMessage = {
   skillOutput?: SkillOutputItem[]
   reasoningContent?: string | null
   subagentLabel?: string | null
+  uploadedFiles?: UploadedFileRef[]
 }
 
 export type ContentBlock =
@@ -73,6 +82,7 @@ export type Message = {
   courses: CourseItem[]
   skillOutput: SkillOutputItem[]
   additional_kwargs: MessageAdditionalKwargs
+  uploadedFiles?: UploadedFileRef[]
 }
 
 export type MessageGroup =

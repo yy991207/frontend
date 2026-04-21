@@ -1,15 +1,15 @@
+import { API_PATHS, DEFAULT_API_BASE_URL, DEFAULT_USER_ID } from './apiEndpoints'
+
 export type ChatApiConfig = {
   userId: string
   createSessionEndpoint: string
   streamEndpointBase: string
 }
 
-import { getUrlUserId } from '../utils/urlParams'
-
 const DEFAULT_CHAT_API_CONFIG: ChatApiConfig = {
-  userId: '123456',
-  createSessionEndpoint: 'http://192.168.30.238:8000/api/v1/chat/sessions',
-  streamEndpointBase: 'http://192.168.30.238:8000/api/v1/chat/sessions',
+  userId: DEFAULT_USER_ID,
+  createSessionEndpoint: `${DEFAULT_API_BASE_URL.replace(/\/+$/, '')}${API_PATHS.createChatSession}`,
+  streamEndpointBase: `${DEFAULT_API_BASE_URL.replace(/\/+$/, '')}${API_PATHS.createChatSession}`,
 }
 
 export type ToolCall = {
@@ -41,10 +41,18 @@ type SessionResponse = Record<string, unknown> & {
   }
 }
 
+export type UploadedFileRef = {
+  resource_id: string
+  file_name: string
+  url: string
+}
+
 type StreamPayload = {
   message: string
   enable_web_search?: boolean
   include_tool_details?: boolean
+  uploaded_files?: UploadedFileRef[]
+  skill_name?: string
 }
 
 export type SkillOutputItem = {
@@ -141,14 +149,13 @@ function parseSimpleYaml(rawText: string) {
 export function parseChatApiConfig(rawText: string): ChatApiConfig {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url || new URL(DEFAULT_CHAT_API_CONFIG.createSessionEndpoint).origin
-  const urlUserId = getUrlUserId()
-  const userId = urlUserId || DEFAULT_CHAT_API_CONFIG.userId
+  const userId = parsedConfig.user_id || DEFAULT_CHAT_API_CONFIG.userId
 
   if (!baseUrl || !userId) {
     throw new Error('config.yaml 缺少 url 或 user_id 配置')
   }
 
-  const createChatSessionPath = parsedConfig.create_chat_session_path || '/api/v1/chat/sessions'
+  const createChatSessionPath = API_PATHS.createChatSession
   const sessionBaseUrl = new URL(createChatSessionPath, baseUrl).toString()
 
   return {
@@ -227,6 +234,8 @@ export async function streamChatMessage(
       enable_web_search: payload.enable_web_search ?? false,
       include_tool_details: payload.include_tool_details ?? true,
       message: payload.message,
+      uploaded_files: payload.uploaded_files ?? [],
+      ...(payload.skill_name ? { skill_name: payload.skill_name } : {}),
     }),
     signal,
   })

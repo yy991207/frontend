@@ -1,24 +1,32 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
-  AppstoreAddOutlined,
-  ArrowUpOutlined,
   CameraOutlined,
   EditOutlined,
   GlobalOutlined,
-  PaperClipOutlined,
   PlusOutlined,
   SafetyCertificateOutlined,
-  SoundOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   DeleteOutlined,
+  LoadingOutlined,
 } from '@ant-design/icons'
-import { message, Input } from 'antd'
+import { message, Tooltip } from 'antd'
 import EditAgentModal from '../../components/common/EditAgentModal'
 import SkillConfigModal from '../../components/common/SkillConfigModal'
 import KnowledgeSpaceModal from '../../components/common/KnowledgeSpaceModal'
 import SkillDetailPanel from '../../components/common/SkillDetailPanel'
+import { MessageList } from '../../components/chat/message-list'
+import { ChatComposer } from '../../components/common/ChatComposer'
+import { ArtifactsProvider, useArtifacts } from '../../components/chat/artifacts-context'
+import { ArtifactFileDetail } from '../../components/chat/artifact-file-detail'
+import {
+  createPendingUploadedFile,
+  type UploadedFile,
+  isAllowedFileType,
+  ALLOWED_FILE_EXTENSIONS,
+} from '../../services/ossUploadService'
+import { uploadPendingFileToOssWithDocumentParse } from '../../services/agentFileUploadService'
 import {
   loadCustomAgentApiConfig,
   createCustomAgent,
@@ -26,8 +34,16 @@ import {
   type EnabledSkill,
   type PresetQuestion,
   type CustomAgentApiConfig,
+  type RecommendedSkill,
+  type RecommendSkillsRequest,
 } from '../../services/customAgentService'
-import { MarkdownContent } from '../../components/chat/markdown-content'
+import type { ToolCall, ChatReference, SkillOutputItem } from '../../core/messages/types'
+import {
+  adaptChatMessages,
+} from '../../core/messages/adapters'
+import { groupMessages, resolveAssistantCopyTargets } from '../../core/messages/utils'
+import type { LegacyChatMessage as ChatMessage } from '../../core/messages/types'
+import chatStyles from '../../pages/Chat/chat.module.less'
 import styles from '../AgentDetail/agentDetail.module.less'
 
 type GeneratedTemplateState = {
@@ -36,6 +52,7 @@ type GeneratedTemplateState = {
     description: string
     agentPrompt: string
     presetQuestions: PresetQuestion[]
+    recommendedSkills?: RecommendedSkill[]
   }
 }
 
@@ -81,6 +98,14 @@ function ConfigCard({
 }
 
 export default function AgentCreatePage() {
+  return (
+    <ArtifactsProvider>
+      <AgentCreatePageContent />
+    </ArtifactsProvider>
+  )
+}
+
+function AgentCreatePageContent() {
   const navigate = useNavigate()
   const location = useLocation()
   const state = location.state as GeneratedTemplateState | null
@@ -104,11 +129,116 @@ export default function AgentCreatePage() {
   const messageShownRef = useRef(false)
 
   const [agentConfig, setAgentConfig] = useState<CustomAgentApiConfig | null>(null)
-  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string; reasoning?: string }[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const messagesRef = useRef<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
   const [isResponding, setIsResponding] = useState(false)
   const [requestError, setRequestError] = useState('')
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [recommendedSkills, setRecommendedSkills] = useState<RecommendedSkill[]>([])
+  const { addFile, selectFile, open: artifactOpen, selectedFile } = useArtifacts()
+  const sessionBaseUrl = useMemo(() => {
+    if (!agentConfig) return null
+    try {
+      const url = new URL(agentConfig.chatAgentEndpoint)
+      return `${url.protocol}//${url.host}`
+    } catch {
+      return null
+    }
+  }, [agentConfig])
+
+  const handleOpenFile = useCallback((filepath: string, originalUrl?: string) => {
+    if (!sessionBaseUrl) return
+    const artifactFile = { filepath, sessionId: 'create-preview', baseUrl: sessionBaseUrl, originalUrl }
+    addFile(artifactFile)
+    selectFile(artifactFile)
+  }, [sessionBaseUrl, addFile, selectFile])
+
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
+
+  const adaptedMessages = useMemo(() => adaptChatMessages(messages), [messages])
+  const groupedMessages = useMemo(() => groupMessages(adaptedMessages), [adaptedMessages])
+  const assistantCopyTargets = useMemo(
+    () => resolveAssistantCopyTargets(adaptedMessages, { excludeLastTurn: isResponding }),
+    [adaptedMessages, isResponding],
+  )
+
+  // 缓存 agentInfo，避免每次渲染创建新对象引用导致 SkillConfigModal 重复请求
+  const skillModalAgentInfo = useMemo<RecommendSkillsRequest | undefined>(() =>
+    agentName ? {
+      agent_name: agentName,
+      description: agentSubtitle || '',
+      agent_prompt: agentInstruction || null,
+    } : undefined,
+  [agentName, agentSubtitle, agentInstruction])
+
+  const handleCopy = useCallback(async (messageId: string, content: string) => {
+    if (!content) return
+    await navigator.clipboard.writeText(content)
+    setCopiedMessageId(messageId)
+    window.setTimeout(() => setCopiedMessageId((current) => (current === messageId ? null : current)), 1200)
+  }, [])
+
+  function getToolDisplayTitle(toolCall: ToolCall) {
+    const label = typeof toolCall.toolDisplay?.tool_label === 'string' ? toolCall.toolDisplay.tool_label : ''
+    return label || toolCall.name
+  }
+
+  function getToolDisplaySummary(toolCall: ToolCall) {
+    const items = Array.isArray(toolCall.toolDisplay?.items) ? toolCall.toolDisplay.items : []
+    if (toolCall.status === 'running') return '工具执行中...'
+    if (items.length > 0) return `已返回 ${items.length} 条结果`
+    return '工具执行完成'
+  }
+
+  const handleUploadFile = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    for (const file of Array.from(files)) {
+      if (!isAllowedFileType(file.name)) {
+        message.warning(`不支持的文件类型: ${file.name}，仅支持 ${ALLOWED_FILE_EXTENSIONS.join('、')} 格式`)
+        continue
+      }
+
+      const pendingFile = createPendingUploadedFile(file)
+      setUploadedFiles((prev) => [...prev, pendingFile])
+
+      const uploadedFile = await uploadPendingFileToOssWithDocumentParse(pendingFile, file, {
+        onProgress: (progress) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.id === pendingFile.id ? { ...f, uploadProgress: progress } : f,
+            ),
+          )
+        },
+        onStatusChange: (nextFile) => {
+          setUploadedFiles((prev) =>
+            prev.map((f) => (f.id === pendingFile.id ? nextFile : f)),
+          )
+        },
+      })
+
+      setUploadedFiles((prev) =>
+        prev.map((f) => (f.id === pendingFile.id ? uploadedFile : f)),
+      )
+    }
+
+    event.target.value = ''
+  }
+
+  const handleRemoveFile = (fileId: string) => {
+    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId))
+  }
 
   useEffect(() => {
     if (state?.generatedTemplate && !messageShownRef.current) {
@@ -118,6 +248,8 @@ export default function AgentCreatePage() {
       setAgentSubtitle(template.description || '')
       setAgentInstruction(template.agentPrompt || '')
       setAgentQuestions(template.presetQuestions || [])
+      // 创建页现在只在推荐完成后进入，这里直接落推荐结果，不再补推荐中态。
+      setRecommendedSkills(template.recommendedSkills ?? [])
       message.success('智能体配置已自动生成，请检查并完善后发布')
     }
   }, [state])
@@ -167,13 +299,39 @@ const handleModalSave = (data: { name: string; description: string }) => {
     if (!prompt || isResponding || !agentConfig) return
 
     setDraft('')
-    setMessages((prev) => [...prev, { role: 'user', content: prompt }])
     setIsResponding(true)
     setRequestError('')
     abortControllerRef.current = new AbortController()
 
-    let assistantContent = ''
-    let reasoningContent = ''
+    const now = new Date()
+    const timestamp = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })
+    const userMessage: ChatMessage = {
+      id: `user-${now.getTime()}`,
+      role: 'user',
+      content: prompt,
+      timestamp,
+      toolCalls: [],
+      references: [],
+      courses: [],
+      skillOutput: [],
+      reasoningContent: null,
+    }
+    const assistantMessage: ChatMessage = {
+      id: `assistant-${now.getTime()}`,
+      role: 'assistant',
+      content: '',
+      timestamp,
+      loading: true,
+      toolCalls: [],
+      references: [],
+      courses: [],
+      skillOutput: [],
+      reasoningContent: null,
+    }
+
+    const nextMessages = [...messagesRef.current, userMessage, assistantMessage]
+    messagesRef.current = nextMessages
+    setMessages(nextMessages)
 
     try {
       await chatCustomAgentStream(agentConfig, {
@@ -181,47 +339,103 @@ const handleModalSave = (data: { name: string; description: string }) => {
         agent_prompt: agentInstruction,
         description: agentSubtitle,
         message: prompt,
-        history: messages.map((m) => ({ role: m.role, content: m.content })),
+        history: messagesRef.current
+          .filter((m) => m.role === 'user' || (m.role === 'assistant' && !m.loading))
+          .map((m) => ({ role: m.role, content: m.content })),
         enabled_skills: agentSkills,
         resource_ids: resourceIds,
         enable_web_search: webSearchEnabled,
       }, abortControllerRef.current.signal, {
-        onTextDelta: (text) => {
-          assistantContent += text
+        onChatModelStart: () => {
           setMessages((prev) => {
-            const last = prev[prev.length - 1]
-            if (last?.role === 'assistant') {
-              return [...prev.slice(0, -1), { ...last, content: assistantContent, reasoning: reasoningContent }]
-            }
-            return [...prev, { role: 'assistant', content: assistantContent, reasoning: reasoningContent }]
+            const replyTime = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })
+            return prev.map((m) => {
+              if (m.id !== assistantMessage.id) return m
+              return { ...m, timestamp: replyTime, content: m.content || '', loading: false }
+            })
           })
         },
+        onTextDelta: (text) => {
+          setMessages((prev) => prev.map((m) => {
+            if (m.id !== assistantMessage.id) return m
+            return { ...m, content: m.content + text }
+          }))
+        },
         onReasoningDelta: (text) => {
-          reasoningContent += text
+          setMessages((prev) => prev.map((m) => {
+            if (m.id !== assistantMessage.id) return m
+            return { ...m, reasoningContent: (m.reasoningContent ?? '') + text }
+          }))
+        },
+        onToolStart: (toolCall: ToolCall) => {
+          setMessages((prev) => prev.map((m) => {
+            if (m.id !== assistantMessage.id) return m
+            const toolCalls = m.toolCalls ?? []
+            return { ...m, toolCalls: [...toolCalls, { ...toolCall, status: 'running' as const }] }
+          }))
+        },
+        onToolEnd: (toolCall: ToolCall) => {
+          setMessages((prev) => prev.map((m) => {
+            if (m.id !== assistantMessage.id) return m
+            return {
+              ...m,
+              toolCalls: (m.toolCalls ?? []).map((tc) =>
+                tc.runId === toolCall.runId ? { ...tc, ...toolCall, status: 'completed' as const } : tc,
+              ),
+            }
+          }))
+        },
+        onReferences: (references: ChatReference[]) => {
+          setMessages((prev) => prev.map((m) => {
+            if (m.id !== assistantMessage.id) return m
+            return { ...m, references }
+          }))
+        },
+        onSkillOutput: (skillOutput: SkillOutputItem[]) => {
+          setMessages((prev) => prev.map((m) => {
+            if (m.id !== assistantMessage.id) return m
+            return { ...m, skillOutput }
+          }))
         },
         onComplete: () => {
+          setMessages((prev) => prev.map((m) => {
+            if (m.id !== assistantMessage.id) return m
+            const replyTime = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })
+            return { ...m, loading: false, timestamp: replyTime }
+          }))
           setIsResponding(false)
         },
         onError: (error) => {
+          setMessages((prev) => prev.map((m) => {
+            if (m.id !== assistantMessage.id) return m
+            const replyTime = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })
+            return { ...m, content: m.content || '请求失败，请稍后重试。', loading: false, timestamp: replyTime }
+          }))
           setIsResponding(false)
           setRequestError(error.message)
         },
       })
     } catch (error) {
       if (!abortControllerRef.current?.signal.aborted) {
+        setMessages((prev) => prev.map((m) => {
+          if (m.id !== assistantMessage.id) return m
+          const replyTime = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })
+          return { ...m, content: m.content || '请求失败，请稍后重试。', loading: false, timestamp: replyTime }
+        }))
         setIsResponding(false)
         setRequestError(error instanceof Error ? error.message : '请求失败')
       }
     }
-  }, [draft, isResponding, agentConfig, agentName, agentInstruction, agentSubtitle, messages, agentSkills, resourceIds, webSearchEnabled])
+  }, [draft, isResponding, agentConfig, agentName, agentInstruction, agentSubtitle, agentSkills, resourceIds, webSearchEnabled])
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return
-    if (e.key === 'Enter' && !e.shiftKey && !isResponding) {
-      e.preventDefault()
-      handleSend()
-    }
-  }, [isResponding, handleSend])
+  const handleStop = useCallback(() => {
+    abortControllerRef.current?.abort()
+    abortControllerRef.current = null
+    setMessages((prev) => prev.map((m) =>
+      m.loading ? { ...m, loading: false } : m,
+    ))
+    setIsResponding(false)
+  }, [])
 
   const handlePublish = async () => {
     if (!agentName.trim()) {
@@ -287,44 +501,14 @@ const handleModalSave = (data: { name: string; description: string }) => {
 
   return (
     <div className={styles.page}>
-      <div className={styles.topBar}>
-        <div className={styles.topBarLeft}>
-          <span className={styles.topTitle}>{agentName}</span>
-          <EditOutlined className={styles.topEditIcon} onClick={handleEditClick} />
-        </div>
-
-        <div className={styles.topBarRight}>
-          <button
-            type="button"
-            className={`${styles.publishButton} ${publishStatus === 'success' ? styles.publishSuccess : ''} ${publishStatus === 'error' ? styles.publishError : ''}`}
-            onClick={handlePublish}
-            disabled={publishing}
-          >
-            {publishing ? (
-              '发布中...'
-            ) : publishStatus === 'success' ? (
-              <>
-                <CheckCircleOutlined /> 发布成功
-              </>
-            ) : publishStatus === 'error' ? (
-              <>
-                <CloseCircleOutlined /> 发布失败
-              </>
-            ) : (
-              '发布'
-            )}
-          </button>
-        </div>
-      </div>
-
-      <div className={styles.layout}>
+      <div className={`${styles.layout} ${artifactOpen ? styles.layoutArtifactOpen : ''}`}>
         <main className={styles.chatPanel}>
           <div className={styles.chatPanelInner}>
             <div className={styles.chatHeader}>
               <h2 className={styles.chatHeading}>测试与预览</h2>
             </div>
 
-            <div className={styles.messagesArea}>
+            <div className={styles.messagesArea} style={{ padding: '16px 0' }}>
               {messages.length === 0 ? (
                 <div className={styles.heroSection}>
                   <div className={styles.heroCard}>
@@ -332,7 +516,10 @@ const handleModalSave = (data: { name: string; description: string }) => {
                       <span className={styles.avatarLetter}>{getAvatarLetter(agentName)}</span>
                     </div>
                     <div className={styles.heroContent}>
-                      <h1 className={styles.heroTitle}>{agentName}</h1>
+                      <span className={styles.heroTitleWrap}>
+                        <h1 className={styles.heroTitle}>{agentName}</h1>
+                        <EditOutlined className={styles.heroEditIcon} onClick={handleEditClick} />
+                      </span>
                       <p className={styles.heroSubtitle}>{agentSubtitle || '请在右侧配置智能体信息'}</p>
                     </div>
                   </div>
@@ -356,26 +543,19 @@ const handleModalSave = (data: { name: string; description: string }) => {
                   )}
                 </div>
               ) : (
-                <div className={styles.messagesList}>
-                  {messages.map((msg, idx) => (
-                    <div key={idx} className={msg.role === 'user' ? styles.userMessage : styles.assistantMessage}>
-                      {msg.role === 'user' ? (
-                        <div className={styles.userBubble}>{msg.content}</div>
-                      ) : (
-                        <div className={styles.assistantBubble}>
-                          {msg.reasoning && (
-                            <div className={styles.reasoningBlock}>
-                              <details>
-                                <summary>思考过程</summary>
-                                <MarkdownContent content={msg.reasoning} isStreaming={false} />
-                              </details>
-                            </div>
-                          )}
-                          <MarkdownContent content={msg.content || '...'} isStreaming={isResponding && idx === messages.length - 1 && !msg.content} />
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                <div
+                  className={chatStyles.messageColumn}
+                  style={{ maxWidth: 780, margin: '0 auto' }}
+                >
+                  <MessageList
+                    groups={groupedMessages}
+                    copiedMessageId={copiedMessageId}
+                    assistantCopyTargets={assistantCopyTargets}
+                    onCopy={handleCopy}
+                    getToolDisplayTitle={getToolDisplayTitle}
+                    getToolDisplaySummary={getToolDisplaySummary}
+                    onOpenFile={handleOpenFile}
+                  />
                   {isResponding && messages[messages.length - 1]?.role === 'assistant' && !messages[messages.length - 1]?.content && (
                     <div className={styles.assistantMessage}>
                       <div className={styles.assistantBubble}>思考中...</div>
@@ -387,52 +567,40 @@ const handleModalSave = (data: { name: string; description: string }) => {
 
             <div className={styles.composerArea}>
               <div className={styles.composerWrap}>
-                <div className={styles.inputWrap}>
-                  <div className={styles.inputTopArea}>
-                    <Input.TextArea
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="输入问题进行测试..."
-                      className={styles.chatInput}
-                      autoSize={{ minRows: 1, maxRows: 6 }}
-                      disabled={isResponding}
-                      variant="borderless"
-                    />
-                  </div>
-                  <div className={styles.inputBottomArea}>
-                    <div className={styles.inputBottomLeft}>
-                      <button type="button" className={styles.toolPill} disabled style={{ opacity: 0.5 }}>
-                        <SoundOutlined />
-                        深度规划
-                      </button>
-                      <button type="button" className={`${styles.toolPill} ${webSearchEnabled ? styles.toolPillActive : ''}`}>
-                        <GlobalOutlined />
-                        联网
-                      </button>
-                      <button type="button" className={styles.toolPill} disabled style={{ opacity: 0.5 }}>
-                        <AppstoreAddOutlined />
-                        工具
-                        <span className={styles.toolCaret}>⌄</span>
-                      </button>
-                    </div>
-                    <div className={styles.inputBottomRight}>
-                      <div className={styles.inputActions}>
-                        <button type="button" className={styles.iconBtn} disabled style={{ opacity: 0.5 }} aria-label="附件">
-                          <PaperClipOutlined />
-                        </button>
-                        <button
-                          type="button"
-                          className={`${styles.iconBtn} ${styles.sendBtn} ${!draft.trim() ? styles.sendBtnDisabled : ''}`}
-                          onClick={handleSend}
-                          disabled={!draft.trim() || isResponding}
-                        >
-                          <ArrowUpOutlined />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ChatComposer
+                  variant="agentConversation"
+                  value={draft}
+                  onChange={setDraft}
+                  onSend={handleSend}
+                  placeholder="输入问题进行测试..."
+                  uploadedFiles={uploadedFiles}
+                  onRemoveFile={handleRemoveFile}
+                  fileInputRef={fileInputRef}
+                  onFileChange={handleFileChange}
+                  onUploadFile={handleUploadFile}
+                  webSearchEnabled={webSearchEnabled}
+                  webSearchLocked={!webSearchEnabled}
+                  knowledgeEnabled={false}
+                  onToggleWebSearch={() => setWebSearchEnabled(!webSearchEnabled)}
+                  onLockedWebSearchClick={() => {
+                    void message.warning('当前智能体未开启联网检索，无法配置')
+                  }}
+                  onToggleKnowledge={() => {}}
+                  sendDisabled={!draft.trim()}
+                  isResponding={isResponding}
+                  onStop={handleStop}
+                  showUpload={false}
+                  slashCommandOpen={false}
+                  slashQuery=""
+                  onSlashQueryChange={() => {}}
+                  skills={[]}
+                  filteredSkills={[]}
+                  skillsLoading={false}
+                  selectedSkillIndex={0}
+                  onSelectSkill={() => {}}
+                  onCloseSlashCommand={() => {}}
+                  onManageSkills={() => {}}
+                />
               </div>
               <div className={styles.footerHint}>{requestError || 'AI 生成内容可能有误，请核实重要信息'}</div>
             </div>
@@ -441,7 +609,33 @@ const handleModalSave = (data: { name: string; description: string }) => {
 
         <aside className={styles.configPanel}>
           <div className={styles.configPanelInner}>
-            <h2 className={styles.configHeading}>搭建</h2>
+            <div className={styles.configPanelHeader}>
+              <h2 className={styles.configHeading}>搭建</h2>
+              <Tooltip title="只有点击发布后才会保存个人智能体配置" placement="bottom" overlayInnerStyle={{ backgroundColor: '#000', color: '#fff' }}>
+                <button
+                  type="button"
+                  className={`${styles.publishButton} ${publishStatus === 'success' ? styles.publishSuccess : ''} ${publishStatus === 'error' ? styles.publishError : ''}`}
+                  onClick={handlePublish}
+                  disabled={publishing}
+                >
+                  {publishing ? (
+                    <>
+                      <LoadingOutlined spin /> 发布中
+                    </>
+                  ) : publishStatus === 'success' ? (
+                    <>
+                      <CheckCircleOutlined /> 发布成功
+                    </>
+                  ) : publishStatus === 'error' ? (
+                    <>
+                      <CloseCircleOutlined /> 发布失败
+                    </>
+                  ) : (
+                    '发布'
+                  )}
+                </button>
+              </Tooltip>
+            </div>
 
             <ConfigCard icon={null} title="指令">
               <textarea
@@ -501,6 +695,23 @@ const handleModalSave = (data: { name: string; description: string }) => {
                         <div className={styles.serviceActions}>
                           <button
                             type="button"
+                            className={styles.useSkillBtn}
+                            onClick={() => {
+                              const normalizedSkillName = skill.skill_name.trim().replace(/^\/+/, '')
+                              const skillPrefix = normalizedSkillName ? `/${normalizedSkillName}` : ''
+                              if (skill.template && skillPrefix) {
+                                setDraft(`基于 ${skillPrefix} ${skill.template}`)
+                              } else if (skill.template) {
+                                setDraft(skill.template)
+                              } else if (skillPrefix) {
+                                setDraft(skillPrefix)
+                              }
+                            }}
+                          >
+                            使用
+                          </button>
+                          <button
+                            type="button"
                             className={styles.smallIconButton}
                             onClick={() => {
                               setAgentSkills(agentSkills.filter((s) => s.skill_name !== skill.skill_name))
@@ -515,11 +726,12 @@ const handleModalSave = (data: { name: string; description: string }) => {
                           </button>
                         </div>
                       </div>
-                      {isExpanded && (
+                       {isExpanded && (
                         <div className={styles.serviceBody}>
                           <SkillDetailPanel
                             visible={true}
                             skillName={skill.skill_name}
+                            source={skill.source}
                           />
                         </div>
                       )}
@@ -718,6 +930,11 @@ const handleModalSave = (data: { name: string; description: string }) => {
             </ConfigCard>
           </div>
         </aside>
+        {artifactOpen && selectedFile && (
+          <aside className={`${styles.artifactPanel} ${styles.artifactPanelOpen}`}>
+            <ArtifactFileDetail file={selectedFile} />
+          </aside>
+        )}
       </div>
 
       <EditAgentModal
@@ -733,6 +950,8 @@ const handleModalSave = (data: { name: string; description: string }) => {
         onCancel={handleSkillModalCancel}
         onSkillChange={handleSkillChange}
         currentSkills={agentSkills}
+        recommendedSkills={recommendedSkills}
+        agentInfo={skillModalAgentInfo}
       />
 
       <KnowledgeSpaceModal

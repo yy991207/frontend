@@ -1,0 +1,177 @@
+import { fireEvent, render, screen } from '@testing-library/react'
+import { AttachmentMenu, type AttachmentSkillItem } from './AttachmentMenu'
+
+const MOCK_SKILLS: AttachmentSkillItem[] = [
+  {
+    id: 'skill-1',
+    skillName: 'imagegen',
+    title: '图片生成',
+    description: '根据描述生成图片',
+    template: '帮我生成一张图片',
+    isSelected: false,
+  },
+]
+
+describe('AttachmentMenu', () => {
+  it('在工具和技能之间切换时复用同一个子菜单外壳', () => {
+    const loadSkills = vi.fn().mockResolvedValue(undefined)
+    const { container } = render(
+      <AttachmentMenu
+        placement="top"
+        skills={MOCK_SKILLS}
+        skillsLoading={false}
+        loadSkills={loadSkills}
+        onSelectSkill={vi.fn()}
+        onManageSkills={vi.fn()}
+        showTools
+      />,
+    )
+
+    const trigger = container.querySelector('button[aria-haspopup="menu"]')
+    expect(trigger).not.toBeNull()
+
+    fireEvent.click(trigger!)
+    const toolButton = screen
+      .getAllByText('工具')
+      .map((node) => node.closest('button'))
+      .find((button) => button?.textContent?.trim() === '工具')
+    const skillButton = screen
+      .getAllByText('技能')
+      .map((node) => node.closest('button'))
+      .find((button) => button?.textContent?.trim() === '技能')
+
+    expect(toolButton).not.toBeNull()
+    expect(skillButton).not.toBeNull()
+
+    fireEvent.mouseEnter(toolButton!)
+
+    const sharedSubmenu = screen.getByTestId('attachment-submenu-surface')
+    expect(sharedSubmenu).toBeInTheDocument()
+    expect(sharedSubmenu).toHaveTextContent('工具')
+    expect(screen.getByText('互联网检索')).toBeInTheDocument()
+
+    fireEvent.mouseEnter(skillButton!)
+
+    expect(screen.getByTestId('attachment-submenu-surface')).toBe(sharedSubmenu)
+    expect(sharedSubmenu).toHaveTextContent('技能')
+    expect(screen.getByPlaceholderText('搜索技能')).toBeInTheDocument()
+  })
+
+  it('技能 loading 和内容列表共用固定尺寸的展示视口', () => {
+    const loadSkills = vi.fn().mockResolvedValue(undefined)
+    const { container, rerender } = render(
+      <AttachmentMenu
+        placement="top"
+        skills={MOCK_SKILLS}
+        skillsLoading
+        loadSkills={loadSkills}
+        onSelectSkill={vi.fn()}
+        onManageSkills={vi.fn()}
+        showTools
+      />,
+    )
+
+    const trigger = container.querySelector('button[aria-haspopup="menu"]')
+    expect(trigger).not.toBeNull()
+
+    fireEvent.click(trigger!)
+    const skillButton = screen
+      .getAllByText('技能')
+      .map((node) => node.closest('button'))
+      .find((button) => button?.textContent?.trim() === '技能')
+
+    expect(skillButton).not.toBeNull()
+
+    fireEvent.mouseEnter(skillButton!)
+
+    const skillViewport = screen.getByTestId('attachment-skill-viewport')
+    expect(skillViewport).toContainElement(screen.getByTestId('attachment-skill-loading'))
+
+    rerender(
+      <AttachmentMenu
+        placement="top"
+        skills={MOCK_SKILLS}
+        skillsLoading={false}
+        loadSkills={loadSkills}
+        onSelectSkill={vi.fn()}
+        onManageSkills={vi.fn()}
+        showTools
+      />,
+    )
+
+    expect(screen.getByTestId('attachment-skill-viewport')).toBe(skillViewport)
+    expect(skillViewport).toContainElement(screen.getByText('图片生成'))
+  })
+
+  it('点击技能项时会真正触发选择，而不是先被外部点击逻辑关掉', () => {
+    const loadSkills = vi.fn().mockResolvedValue(undefined)
+    const onSelectSkill = vi.fn()
+    const { container } = render(
+      <AttachmentMenu
+        placement="top"
+        skills={MOCK_SKILLS}
+        skillsLoading={false}
+        loadSkills={loadSkills}
+        onSelectSkill={onSelectSkill}
+        onManageSkills={vi.fn()}
+        showTools
+      />,
+    )
+
+    const trigger = container.querySelector('button[aria-haspopup="menu"]')
+    expect(trigger).not.toBeNull()
+
+    fireEvent.click(trigger!)
+
+    const skillButton = screen
+      .getAllByText('技能')
+      .map((node) => node.closest('button'))
+      .find((button) => button?.textContent?.trim() === '技能')
+
+    expect(skillButton).not.toBeNull()
+
+    fireEvent.mouseEnter(skillButton!)
+
+    const skillItem = screen.getByText('图片生成').closest('button')
+    expect(skillItem).not.toBeNull()
+
+    fireEvent.pointerDown(skillItem!)
+    fireEvent.click(skillItem!)
+
+    expect(onSelectSkill).toHaveBeenCalledWith(MOCK_SKILLS[0])
+  })
+
+  it('关闭主菜单后会卸载技能子菜单，避免残留白卡闪现', () => {
+    const loadSkills = vi.fn().mockResolvedValue(undefined)
+    const { container } = render(
+      <AttachmentMenu
+        placement="top"
+        skills={MOCK_SKILLS}
+        skillsLoading={false}
+        loadSkills={loadSkills}
+        onSelectSkill={vi.fn()}
+        onManageSkills={vi.fn()}
+        showTools
+      />,
+    )
+
+    const trigger = container.querySelector('button[aria-haspopup="menu"]')
+    expect(trigger).not.toBeNull()
+
+    fireEvent.click(trigger!)
+
+    const skillButton = screen
+      .getAllByText('技能')
+      .map((node) => node.closest('button'))
+      .find((button) => button?.textContent?.trim() === '技能')
+
+    expect(skillButton).not.toBeNull()
+
+    fireEvent.mouseEnter(skillButton!)
+    expect(screen.getByTestId('attachment-submenu-surface')).toBeInTheDocument()
+
+    fireEvent.click(trigger!)
+
+    expect(screen.queryByTestId('attachment-submenu-surface')).not.toBeInTheDocument()
+  })
+})

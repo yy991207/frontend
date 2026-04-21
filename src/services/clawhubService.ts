@@ -1,3 +1,4 @@
+import { API_PATHS, buildAbsoluteApiUrl } from './apiEndpoints'
 import type { SkillItem, SkillApiResponse } from './skillPromptService'
 import { normalizeSkillItems } from './skillPromptService'
 
@@ -33,6 +34,7 @@ export type ClawhubSkillDetail = {
 
 export type ClawhubDetailParams = {
   baseUrl: string
+  userId: string
   slug: string
   signal?: AbortSignal
 }
@@ -46,7 +48,7 @@ export type ClawhubDetailResult = {
 export async function fetchClawhubSkills(params: ClawhubBrowseParams): Promise<ClawhubBrowseResult> {
   const { baseUrl, userId, limit, offset = 0, signal } = params
 
-  const endpoint = `${baseUrl.replace(/\/+$/, '')}/api/v1/skills/clawhub/browse`
+  const endpoint = buildAbsoluteApiUrl(baseUrl, API_PATHS.clawhubBrowse)
   const requestUrl = new URL(endpoint)
 
   requestUrl.searchParams.set('user_id', userId)
@@ -104,7 +106,8 @@ export type ClawhubInstallResult = {
 export async function installClawhubSkill(params: ClawhubInstallParams): Promise<ClawhubInstallResult> {
   const { baseUrl, userId, slug, signal } = params
 
-  const endpoint = `${baseUrl.replace(/\/+$/, '')}/api/v1/skills/clawhub/${encodeURIComponent(slug)}/install`
+  const endpoint = buildAbsoluteApiUrl(baseUrl, API_PATHS.clawhubInstall)
+    .replace('{slug}', encodeURIComponent(slug))
   const requestUrl = new URL(endpoint)
 
   requestUrl.searchParams.set('user_id', userId)
@@ -143,13 +146,86 @@ export async function installClawhubSkill(params: ClawhubInstallParams): Promise
   }
 }
 
-export async function fetchClawhubSkillDetail(params: ClawhubDetailParams): Promise<ClawhubDetailResult> {
-  const { baseUrl, slug, signal } = params
+export type ClawhubSearchParams = {
+  baseUrl: string
+  userId: string
+  q: string
+  limit?: number
+  signal?: AbortSignal
+}
 
-  const endpoint = `${baseUrl.replace(/\/+$/, '')}/api/v1/skills/clawhub/${encodeURIComponent(slug)}`
+export type ClawhubSearchResult = {
+  success: boolean
+  skills: SkillItem[]
+  total: number
+  msg?: string
+}
+
+export async function searchClawhubSkills(params: ClawhubSearchParams): Promise<ClawhubSearchResult> {
+  const { baseUrl, userId, q, limit = 20, signal } = params
+
+  const endpoint = buildAbsoluteApiUrl(baseUrl, API_PATHS.clawhubSearch)
+  const requestUrl = new URL(endpoint)
+
+  requestUrl.searchParams.set('q', q)
+  requestUrl.searchParams.set('limit', String(limit))
+  requestUrl.searchParams.set('user_id', userId)
 
   try {
-    const response = await fetch(endpoint, { signal })
+    const response = await fetch(requestUrl.toString(), { signal })
+
+    if (!response.ok) {
+      throw new Error('Clawhub 搜索接口请求失败')
+    }
+
+    const data = (await response.json()) as SkillApiResponse
+
+    if (!data.success) {
+      throw new Error(data.msg || 'Clawhub 搜索接口返回失败')
+    }
+
+    const payload = data.data as Record<string, unknown> | undefined
+    const rawSkills = Array.isArray(payload?.skills) ? payload.skills : []
+    const total = typeof payload?.total === 'number' ? payload?.total : rawSkills.length
+
+    const skills = rawSkills.map((skill: Record<string, unknown>) => ({
+      id: String(skill.name || ''),
+      skillName: String(skill.name || ''),
+      title: String(skill.chinese_name || skill.name || ''),
+      description: String(skill.description || ''),
+      template: typeof skill.template === 'string' ? skill.template : '',
+      isSelected: Boolean(skill.is_selected),
+    }))
+
+    return {
+      success: true,
+      skills,
+      total,
+    }
+  } catch (error) {
+    if (signal?.aborted) {
+      return { success: false, skills: [], total: 0 }
+    }
+
+    return {
+      success: false,
+      skills: [],
+      total: 0,
+      msg: error instanceof Error ? error.message : 'Clawhub 搜索失败',
+    }
+  }
+}
+
+export async function fetchClawhubSkillDetail(params: ClawhubDetailParams): Promise<ClawhubDetailResult> {
+  const { baseUrl, userId, slug, signal } = params
+
+  const endpoint = buildAbsoluteApiUrl(baseUrl, API_PATHS.clawhubSkillDetail)
+    .replace('{slug}', encodeURIComponent(slug))
+  const requestUrl = new URL(endpoint)
+  requestUrl.searchParams.set('user_id', userId)
+
+  try {
+    const response = await fetch(requestUrl.toString(), { signal })
 
     if (!response.ok) {
       throw new Error('Clawhub 详情接口请求失败')
@@ -170,6 +246,7 @@ export async function fetchClawhubSkillDetail(params: ClawhubDetailParams): Prom
             stars: number
           }
         }
+        is_selected?: boolean
         latestVersion?: {
           version: string
         }
@@ -206,8 +283,8 @@ export async function fetchClawhubSkillDetail(params: ClawhubDetailParams): Prom
         skillName: skill.slug,
         title: skill.displayName,
         description,
+        isSelected: Boolean(payload.is_selected),
         template,
-        isSelected: false,
         tags: skill.tags || metaContent.Keywords || [],
         downloads: skill.stats?.downloads || 0,
         stars: skill.stats?.stars || 0,

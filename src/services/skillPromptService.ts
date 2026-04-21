@@ -5,6 +5,7 @@ export type SkillItem = {
   description: string
   template: string
   isSelected: boolean
+  source?: string
 }
 
 export type SkillApiResponse = {
@@ -35,6 +36,7 @@ export function normalizeSkillItems(items: unknown[]): SkillItem[] {
       const description = readSkillField(value, ['description', 'desc'])
       const skillName = readSkillField(value, ['skill_name', 'skillName', 'name'])
       const template = readSkillField(value, ['template', 'prompt_template', 'promptTemplate'])
+      const source = readSkillField(value, ['source'])
 
       if (!title) {
         return null
@@ -50,6 +52,7 @@ export function normalizeSkillItems(items: unknown[]): SkillItem[] {
         description,
         template,
         isSelected,
+        ...(source ? { source } : {}),
       }
     })
     .filter((item): item is SkillItem => item !== null)

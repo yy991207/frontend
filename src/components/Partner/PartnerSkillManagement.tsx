@@ -8,7 +8,6 @@ import {
   ThunderboltOutlined,
 } from '@ant-design/icons'
 import skillConfigText from '../../../config.yaml?raw'
-import { getUrlUserId } from '../../utils/urlParams'
 import {
   deleteCreatedSkill as deleteCreatedSkillFromApi,
   fetchCreatedSkills as fetchCreatedSkillsFromApi,
@@ -19,6 +18,7 @@ import {
   type SkillApiResponse,
   type SkillItem as SkillApiItem,
 } from '../../services/skillPromptService'
+import { API_PATHS, USER_ID_QUERY_PARAM, buildAbsoluteApiUrl } from '../../services/apiEndpoints'
 import styles from './PartnerSkillManagement.module.less'
 
 type ManageTab = 'added' | 'created'
@@ -79,40 +79,25 @@ function parseSimpleYaml(rawText: string) {
   }, {})
 }
 
-function buildAbsoluteUrl(baseUrl: string, path: string) {
-  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
-}
-
 function parseSkillApiConfig(rawText: string): SkillApiConfig {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
-  const skillPath = parsedConfig.skill_path
-  const managePath = parsedConfig.view_user_skills_path
-  const addPath = parsedConfig.add_user_skills_path
-  const removePath = parsedConfig.del_user_skills_path
-  const userIdParam = parsedConfig.skill_user_id_param
-  const urlUserId = getUrlUserId()
-  const userId = urlUserId || ''
+  const userId = parsedConfig.user_id
+  const userIdParam = USER_ID_QUERY_PARAM
 
-  if (!baseUrl || !skillPath || !managePath || !addPath || !removePath || !userId || !userIdParam) {
-    throw new Error('config.yaml 缺少 url、skill_path、view_user_skills_path、add_user_skills_path、del_user_skills_path、user_id 或 skill_user_id_param 配置')
+  if (!baseUrl || !userId) {
+    throw new Error('config.yaml 缺少 url 或 user_id 配置')
   }
 
-  const managePathWithUser = managePath.includes('{user_id}')
-    ? managePath.replace('{user_id}', encodeURIComponent(userId))
-    : managePath
-  const addPathWithUser = addPath.includes('{user_id}')
-    ? addPath.replace('{user_id}', encodeURIComponent(userId))
-    : addPath
-  const removePathWithUser = removePath.includes('{user_id}')
-    ? removePath.replace('{user_id}', encodeURIComponent(userId))
-    : removePath
+  const managePathWithUser = API_PATHS.viewUserSkills.replace('{user_id}', encodeURIComponent(userId))
+  const addPathWithUser = API_PATHS.addUserSkill.replace('{user_id}', encodeURIComponent(userId))
+  const removePathWithUser = API_PATHS.deleteUserSkill.replace('{user_id}', encodeURIComponent(userId))
 
   return {
-    featuredEndpoint: buildAbsoluteUrl(baseUrl, skillPath),
-    manageEndpoint: buildAbsoluteUrl(baseUrl, managePathWithUser),
-    addSkillEndpoint: buildAbsoluteUrl(baseUrl, addPathWithUser),
-    removeSkillEndpointTemplate: buildAbsoluteUrl(baseUrl, removePathWithUser),
+    featuredEndpoint: buildAbsoluteApiUrl(baseUrl, API_PATHS.skillList),
+    manageEndpoint: buildAbsoluteApiUrl(baseUrl, managePathWithUser),
+    addSkillEndpoint: buildAbsoluteApiUrl(baseUrl, addPathWithUser),
+    removeSkillEndpointTemplate: buildAbsoluteApiUrl(baseUrl, removePathWithUser),
     userId,
     userIdParam,
   }

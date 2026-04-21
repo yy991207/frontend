@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   CloseOutlined,
   FileAddOutlined,
@@ -14,6 +15,8 @@ import {
   ToolOutlined,
 } from '@ant-design/icons'
 import styles from './AttachmentMenu.module.less'
+
+type SubmenuKey = 'skill' | 'tool' | null
 
 export type AttachmentSkillItem = {
   id: string
@@ -31,6 +34,7 @@ type AttachmentMenuProps = {
   loadSkills: (signal?: AbortSignal) => Promise<void>
   onSelectSkill: (skill: AttachmentSkillItem) => void
   onManageSkills: () => void
+  onUploadFile?: () => void
   showTools?: boolean
   webSearchEnabled?: boolean
   webSearchLocked?: boolean
@@ -41,7 +45,7 @@ type AttachmentMenuProps = {
 }
 
 const ATTACHMENT_ACTIONS = [
-  { key: 'upload', label: '上传文件或图片', icon: <PaperClipOutlined /> },
+  { key: 'upload', label: '上传文档', icon: <PaperClipOutlined /> },
   { key: 'doc', label: '添加飞书云文档', icon: <FileAddOutlined /> },
   { key: 'skill', label: '技能', icon: <ThunderboltOutlined />, hasArrow: true },
   { key: 'tool', label: '工具', icon: <ToolOutlined />, hasArrow: true },
@@ -54,6 +58,7 @@ export function AttachmentMenu({
   loadSkills,
   onSelectSkill,
   onManageSkills,
+  onUploadFile,
   showTools = false,
   webSearchEnabled = false,
   webSearchLocked = false,
@@ -63,11 +68,16 @@ export function AttachmentMenu({
   hideManageSkills = false,
 }: AttachmentMenuProps) {
   const rootRef = useRef<HTMLDivElement | null>(null)
+  const menuSurfaceRef = useRef<HTMLDivElement | null>(null)
+  const submenuRef = useRef<HTMLDivElement | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [toolMenuOpen, setToolMenuOpen] = useState(false)
+  const [activeSubmenu, setActiveSubmenu] = useState<SubmenuKey>(null)
   const [toolInfoOpen, setToolInfoOpen] = useState(false)
-  const [skillMenuOpen, setSkillMenuOpen] = useState(false)
   const [skillSearchQuery, setSkillSearchQuery] = useState('')
+  const [submenuAlignTop, setSubmenuAlignTop] = useState(false)
+  const [menuReady, setMenuReady] = useState(false)
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 })
+  const [submenuPosition, setSubmenuPosition] = useState({ top: 0, left: 0 })
 
   const filteredSkills = useMemo(() => {
     if (!skillSearchQuery.trim()) {
@@ -84,7 +94,7 @@ export function AttachmentMenu({
   }, [skillSearchQuery, skills])
 
   useEffect(() => {
-    if (!skillMenuOpen) {
+    if (activeSubmenu !== 'skill') {
       return
     }
 
@@ -94,16 +104,42 @@ export function AttachmentMenu({
     return () => {
       controller.abort()
     }
-  }, [loadSkills, skillMenuOpen])
+  }, [activeSubmenu, loadSkills])
+
+  const resolveAnchorRect = useCallback(() => {
+    const rootEl = rootRef.current
+    if (!rootEl) {
+      return null
+    }
+
+    // 菜单需要贴着输入框外壳展开，优先使用外层壳子的定位框，避免被内部按钮位置带偏。
+    const anchorElement = rootEl.closest('[data-attachment-anchor="true"]') as HTMLElement | null
+    return (anchorElement ?? rootEl).getBoundingClientRect()
+  }, [])
+
+  const closeAllMenus = useCallback(() => {
+    setMenuOpen(false)
+    setActiveSubmenu(null)
+    setToolInfoOpen(false)
+    setSkillSearchQuery('')
+  }, [])
+
+  const handleSubmenuChange = (nextSubmenu: Exclude<SubmenuKey, null>) => {
+    // 子菜单共用一个稳定外壳，切换时只替换内容，避免两个浮层交叉淡出时露出背景。
+    setActiveSubmenu(nextSubmenu)
+
+    if (nextSubmenu !== 'tool') {
+      setToolInfoOpen(false)
+    }
+  }
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setMenuOpen(false)
-        setToolMenuOpen(false)
-        setToolInfoOpen(false)
-        setSkillMenuOpen(false)
-        setSkillSearchQuery('')
+      const targetNode = event.target as Node
+
+      // 子菜单挂在 portal 里，点击它也属于菜单内部交互。
+      if (!rootRef.current?.contains(targetNode) && !submenuRef.current?.contains(targetNode)) {
+        closeAllMenus()
       }
     }
 
@@ -111,7 +147,139 @@ export function AttachmentMenu({
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown)
     }
-  }, [])
+  }, [closeAllMenus])
+
+  useEffect(() => {
+    if (!menuOpen) {
+      setMenuReady(false)
+      return
+    }
+
+    const measure = () => {
+      const rootEl = rootRef.current
+      const menuEl = menuSurfaceRef.current
+      const anchorRect = resolveAnchorRect()
+      if (!rootEl || !menuEl || !anchorRect) {
+        return
+      }
+
+      const triggerRect = rootEl.getBoundingClientRect()
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
+      const menuRect = menuEl.getBoundingClientRect()
+      const horizontalPadding = 8
+
+      let left = triggerRect.left + 6
+      if (left + menuRect.width > viewportWidth - horizontalPadding) {
+        left = viewportWidth - menuRect.width - horizontalPadding
+      }
+      if (left < horizontalPadding) {
+        left = horizontalPadding
+      }
+
+      let top =
+        placement === 'bottom'
+          ? anchorRect.top - menuRect.height - 1
+          : anchorRect.bottom + 1
+
+      if (top < 8) {
+        top = 8
+      }
+      if (top + menuRect.height > viewportHeight - 8) {
+        top = Math.max(8, viewportHeight - menuRect.height - 8)
+      }
+
+      setMenuPosition({ top, left })
+      setMenuReady(true)
+    }
+
+    const frameId = requestAnimationFrame(() => {
+      requestAnimationFrame(measure)
+    })
+
+    window.addEventListener('resize', measure)
+    window.addEventListener('scroll', measure, true)
+    return () => {
+      cancelAnimationFrame(frameId)
+      window.removeEventListener('resize', measure)
+      window.removeEventListener('scroll', measure, true)
+    }
+  }, [menuOpen, placement, resolveAnchorRect])
+
+  // 计算子菜单位置
+  useEffect(() => {
+    if (!menuOpen || !activeSubmenu || !menuSurfaceRef.current || !menuReady) {
+      return
+    }
+
+    const measure = () => {
+      const menuEl = menuSurfaceRef.current
+      if (!menuEl) return
+
+      const viewportHeight = window.innerHeight
+      const viewportWidth = window.innerWidth
+      
+      // 主菜单位置
+      const menuRect = menuEl.getBoundingClientRect()
+      
+      if (!menuRect) return
+      
+      // 子菜单宽度 320px，主菜单宽度 280px，间距 6px
+      const submenuWidth = 320
+      const submenuHeight = 420 // 最大高度
+      
+      // 计算子菜单左侧位置：主菜单右侧 + 间距
+      const left = menuRect.right + 6
+      
+      // 计算子菜单顶部位置
+      // 默认与主菜单底部对齐
+      let top = menuRect.bottom - submenuHeight
+      let alignTop = false
+      
+      // 检查是否超出上边界
+      if (top < 8) {
+        top = 8
+        alignTop = true
+      }
+      
+      // 检查是否超出下边界
+      if (top + submenuHeight > viewportHeight - 8) {
+        top = viewportHeight - submenuHeight - 8
+        if (top < 8) {
+          top = 8
+          alignTop = true
+        }
+      }
+      
+      // 检查是否超出右边界
+      if (left + submenuWidth > viewportWidth - 8) {
+        // 如果超出右边界，将子菜单显示在主菜单左侧
+        // 但这种情况很少见，因为主菜单本身就在左侧
+      }
+      
+      setSubmenuPosition({ top, left })
+      setSubmenuAlignTop(alignTop)
+    }
+
+    // 等 DOM 渲染后再测量
+    const frameId = requestAnimationFrame(() => {
+      requestAnimationFrame(measure)
+    })
+    window.addEventListener('resize', measure)
+    window.addEventListener('scroll', measure, true)
+    return () => {
+      cancelAnimationFrame(frameId)
+      window.removeEventListener('resize', measure)
+      window.removeEventListener('scroll', measure, true)
+    }
+  }, [activeSubmenu, menuOpen, menuReady])
+
+  const handleActionClick = (actionKey: string) => {
+    if (actionKey === 'upload') {
+      closeAllMenus()
+      onUploadFile?.()
+    }
+  }
 
   return (
     <div ref={rootRef} className={`${styles.root} ${placement === 'top' ? styles.placementTop : styles.placementBottom}`}>
@@ -120,184 +288,241 @@ export function AttachmentMenu({
         className={`${styles.trigger} ${menuOpen ? styles.triggerActive : ''}`}
         aria-expanded={menuOpen}
         aria-haspopup="menu"
-        onClick={() => setMenuOpen((value) => !value)}
+        onClick={() => {
+          if (menuOpen) {
+            closeAllMenus()
+            return
+          }
+
+          setMenuOpen(true)
+        }}
       >
         {menuOpen ? <CloseOutlined /> : <PlusOutlined />}
       </button>
 
       {!menuOpen ? <div className={styles.tooltip}>上传附件/技能等</div> : null}
 
-      <div className={`${styles.menuSurface} ${menuOpen ? styles.menuSurfaceOpen : ''}`} role="menu">
-        {ATTACHMENT_ACTIONS.filter((action) => showTools || action.key !== 'tool').map((action) =>
-          action.key === 'tool' ? (
-            <button
-              key={action.key}
-              type="button"
-              className={`${styles.menuItem} ${toolMenuOpen ? styles.menuItemActive : ''}`}
-              onMouseEnter={() => {
-                setToolMenuOpen(true)
-                setSkillMenuOpen(false)
+      {menuOpen
+        ? createPortal(
+            <div
+              ref={menuSurfaceRef}
+              className={`${styles.menuSurface} ${styles.menuSurfaceOpen}`}
+              style={{
+                position: 'fixed',
+                top: menuPosition.top,
+                left: menuPosition.left,
+                zIndex: 999,
+                visibility: menuReady ? 'visible' : 'hidden',
               }}
+              role="menu"
             >
-              <span className={styles.menuMain}>
-                <span className={styles.menuIcon}>{action.icon}</span>
-                <span>{action.label}</span>
-              </span>
-              <RightOutlined className={styles.menuArrow} />
-            </button>
-          ) : action.key === 'skill' ? (
-            <button
-              key={action.key}
-              type="button"
-              className={`${styles.menuItem} ${skillMenuOpen ? styles.menuItemActive : ''}`}
-              onMouseEnter={() => {
-                setSkillMenuOpen(true)
-                setToolMenuOpen(false)
-              }}
-            >
-              <span className={styles.menuMain}>
-                <span className={styles.menuIcon}>{action.icon}</span>
-                <span>{action.label}</span>
-              </span>
-              <RightOutlined className={styles.menuArrow} />
-            </button>
-          ) : (
-            <button
-              key={action.key}
-              type="button"
-              className={styles.menuItem}
-              onMouseEnter={() => {
-                setToolMenuOpen(false)
-                setSkillMenuOpen(false)
-              }}
-            >
-              <span className={styles.menuMain}>
-                <span className={styles.menuIcon}>{action.icon}</span>
-                <span>{action.label}</span>
-              </span>
-            </button>
-          ),
-        )}
-
-        <div className={`${styles.submenu} ${skillMenuOpen ? styles.submenuOpen : ''}`}>
-          <div className={styles.submenuHeader}>
-            <span>技能</span>
-          </div>
-          <div className={styles.searchBox}>
-            <SearchOutlined className={styles.searchIcon} />
-            <input
-              type="text"
-              className={styles.searchInput}
-              placeholder="搜索技能"
-              value={skillSearchQuery}
-              onChange={(event) => setSkillSearchQuery(event.target.value)}
-            />
-          </div>
-          <div className={styles.skillList}>
-            {skillsLoading ? (
-              <div className={styles.loading}>加载中...</div>
-            ) : filteredSkills.length === 0 ? (
-              <div className={styles.empty}>{skillSearchQuery ? '未找到匹配的技能' : '暂无技能'}</div>
-            ) : (
-              filteredSkills.map((skill) => (
-                <button
-                  key={skill.id}
-                  type="button"
-                  className={styles.skillItem}
-                  onClick={() => {
-                    setMenuOpen(false)
-                    setSkillMenuOpen(false)
-                    setSkillSearchQuery('')
-                    onSelectSkill(skill)
-                  }}
-                >
-                  <div className={styles.skillItemIcon}>
-                    <ThunderboltOutlined />
+              {ATTACHMENT_ACTIONS.filter((action) => showTools || action.key !== 'tool').map((action) =>
+                action.key === 'upload' ? (
+                  <div key={action.key} className={styles.menuItemWrapper}>
+                    <button
+                      type="button"
+                      className={styles.menuItem}
+                      onMouseEnter={() => {
+                        setActiveSubmenu(null)
+                        setToolInfoOpen(false)
+                      }}
+                      onClick={() => handleActionClick(action.key)}
+                    >
+                      <span className={styles.menuMain}>
+                        <span className={styles.menuIcon}>{action.icon}</span>
+                        <span>{action.label}</span>
+                      </span>
+                    </button>
                   </div>
-                  <div className={styles.skillItemInfo}>
-                    <div className={styles.skillItemTitle}>{skill.title}</div>
-                    <div className={styles.skillItemDesc}>{skill.description}</div>
+                ) : action.key === 'tool' ? (
+                  <button
+                    key={action.key}
+                    type="button"
+                    className={`${styles.menuItem} ${activeSubmenu === 'tool' ? styles.menuItemActive : ''}`}
+                    onMouseEnter={() => handleSubmenuChange('tool')}
+                  >
+                    <span className={styles.menuMain}>
+                      <span className={styles.menuIcon}>{action.icon}</span>
+                      <span>{action.label}</span>
+                    </span>
+                    <RightOutlined className={styles.menuArrow} />
+                  </button>
+                ) : action.key === 'skill' ? (
+                  <button
+                    key={action.key}
+                    type="button"
+                    className={`${styles.menuItem} ${activeSubmenu === 'skill' ? styles.menuItemActive : ''}`}
+                    onMouseEnter={() => handleSubmenuChange('skill')}
+                  >
+                    <span className={styles.menuMain}>
+                      <span className={styles.menuIcon}>{action.icon}</span>
+                      <span>{action.label}</span>
+                    </span>
+                    <RightOutlined className={styles.menuArrow} />
+                  </button>
+                ) : (
+                  <button
+                    key={action.key}
+                    type="button"
+                    className={styles.menuItem}
+                    onMouseEnter={() => {
+                      setActiveSubmenu(null)
+                      setToolInfoOpen(false)
+                    }}
+                    onClick={() => handleActionClick(action.key)}
+                  >
+                    <span className={styles.menuMain}>
+                      <span className={styles.menuIcon}>{action.icon}</span>
+                      <span>{action.label}</span>
+                    </span>
+                  </button>
+                ),
+              )}
+            </div>,
+            document.body,
+          )
+        : null}
+      {menuOpen && activeSubmenu
+        ? createPortal(
+              <div
+                ref={submenuRef}
+                data-testid="attachment-submenu-surface"
+                className={`${styles.submenu} ${styles.submenuOpen} ${submenuAlignTop ? styles.submenuAlignTop : styles.submenuAlignBottom}`}
+                style={{
+                  position: 'fixed',
+                  top: submenuPosition.top,
+                  left: submenuPosition.left,
+                  zIndex: 1000,
+                  visibility: menuReady ? 'visible' : 'hidden',
+                }}
+                aria-hidden={false}
+              >
+                <div key={activeSubmenu} className={styles.submenuPane}>
+                {activeSubmenu === 'skill' ? (
+                  <div className={styles.skillPane}>
+                    <div className={styles.submenuHeader}>
+                      <span>技能</span>
+                    </div>
+                    <div className={styles.searchBox}>
+                      <SearchOutlined className={styles.searchIcon} />
+                      <input
+                        type="text"
+                        className={styles.searchInput}
+                        placeholder="搜索技能"
+                        value={skillSearchQuery}
+                        onChange={(event) => setSkillSearchQuery(event.target.value)}
+                      />
+                    </div>
+                    <div className={styles.skillViewport} data-testid="attachment-skill-viewport">
+                      {skillsLoading ? (
+                        <div className={styles.loading} data-testid="attachment-skill-loading">
+                          加载中...
+                        </div>
+                      ) : filteredSkills.length === 0 ? (
+                        <div className={styles.empty}>{skillSearchQuery ? '未找到匹配的技能' : '暂无技能'}</div>
+                      ) : (
+                        <div className={styles.skillList}>
+                          {filteredSkills.map((skill) => (
+                            <button
+                              key={skill.id}
+                              type="button"
+                              className={styles.skillItem}
+                              onClick={() => {
+                                closeAllMenus()
+                                onSelectSkill(skill)
+                              }}
+                            >
+                              <div className={styles.skillItemIcon}>
+                                <ThunderboltOutlined />
+                              </div>
+                              <div className={styles.skillItemInfo}>
+                                <div className={styles.skillItemTitle}>{skill.title}</div>
+                                <div className={styles.skillItemDesc}>{skill.description}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {hideManageSkills ? null : (
+                      <button type="button" className={styles.manageButton} onClick={onManageSkills}>
+                        <span className={styles.menuMain}>
+                          <span className={styles.toolItemMain}>
+                            <SettingOutlined />
+                            <span>管理技能</span>
+                          </span>
+                        </span>
+                      </button>
+                    )}
                   </div>
-                </button>
-              ))
-            )}
-          </div>
-          {hideManageSkills ? null : (
-            <button type="button" className={styles.manageButton} onClick={onManageSkills}>
-              <span className={styles.menuMain}>
-                <span className={styles.toolItemMain}>
-                  <SettingOutlined />
-                  <span>管理技能</span>
-                </span>
-              </span>
-            </button>
-          )}
-        </div>
+                ) : showTools ? (
+                  <>
+                    <div className={styles.submenuHeader}>
+                      <span>工具</span>
+                      <button
+                        type="button"
+                        className={styles.toolInfoButton}
+                        aria-label="工具说明"
+                        onClick={() => setToolInfoOpen((value) => !value)}
+                      >
+                        <InfoCircleOutlined />
+                      </button>
+                      {toolInfoOpen ? (
+                        <div className={styles.toolInfoPopover}>
+                          默认内置飞书相关工具：知识问答、消息、妙记、云文档、多维表格、日程、任务
+                        </div>
+                      ) : null}
+                    </div>
 
-        {showTools ? (
-          <div className={`${styles.submenu} ${toolMenuOpen ? styles.submenuOpen : ''}`}>
-            <div className={styles.submenuHeader}>
-              <span>工具</span>
-              <button
-                type="button"
-                className={styles.toolInfoButton}
-                aria-label="工具说明"
-                onClick={() => setToolInfoOpen((value) => !value)}
-              >
-                <InfoCircleOutlined />
-              </button>
-              {toolInfoOpen ? (
-                <div className={styles.toolInfoPopover}>
-                  默认内置飞书相关工具：知识问答、消息、妙记、云文档、多维表格、日程、任务
-                </div>
-              ) : null}
-            </div>
+                    <div className={styles.toolItem}>
+                      <span className={styles.toolItemMain}>
+                        <GlobalOutlined />
+                        <span>互联网检索</span>
+                      </span>
+                      <button
+                        type="button"
+                        className={`${styles.switchButton} ${webSearchEnabled ? styles.switchButtonOn : ''} ${webSearchLocked ? styles.switchButtonLocked : ''}`}
+                        onClick={webSearchLocked ? undefined : onToggleWebSearch}
+                        disabled={webSearchLocked}
+                      >
+                        <span className={styles.switchThumb} />
+                        {webSearchLocked ? (
+                          <svg className={styles.lockIcon} viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M4 7V5a4 4 0 1 1 8 0v2h.5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1V8a1 1 0 0 1-1-1H4zm1.5-2v2h5V5a2.5 2.5 0 0 0-5 0z" />
+                          </svg>
+                        ) : null}
+                      </button>
+                    </div>
 
-            <div className={styles.toolItem}>
-              <span className={styles.toolItemMain}>
-                <GlobalOutlined />
-                <span>互联网检索</span>
-              </span>
-              <button
-                type="button"
-                className={`${styles.switchButton} ${webSearchEnabled ? styles.switchButtonOn : ''} ${webSearchLocked ? styles.switchButtonLocked : ''}`}
-                onClick={webSearchLocked ? undefined : onToggleWebSearch}
-                disabled={webSearchLocked}
-              >
-                <span className={styles.switchThumb} />
-                {webSearchLocked ? (
-                  <svg className={styles.lockIcon} viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M4 7V5a4 4 0 1 1 8 0v2h.5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1V8a1 1 0 0 1-1-1H4zm1.5-2v2h5V5a2.5 2.5 0 0 0-5 0z" />
-                  </svg>
+                    <div className={styles.toolItem}>
+                      <span className={styles.toolItemMain}>
+                        <LinkOutlined />
+                        <span>自定义知识</span>
+                      </span>
+                      <button
+                        type="button"
+                        className={`${styles.switchButton} ${knowledgeEnabled ? styles.switchButtonOn : ''}`}
+                        onClick={onToggleKnowledge}
+                      >
+                        <span className={styles.switchThumb} />
+                      </button>
+                    </div>
+
+                    <button type="button" className={styles.toolManageButton}>
+                      <span className={styles.menuMain}>
+                        <span className={styles.toolItemMain}>
+                          <SettingOutlined />
+                          <span>工具管理</span>
+                        </span>
+                      </span>
+                    </button>
+                  </>
                 ) : null}
-              </button>
-            </div>
-
-            <div className={styles.toolItem}>
-              <span className={styles.toolItemMain}>
-                <LinkOutlined />
-                <span>自定义知识</span>
-              </span>
-              <button
-                type="button"
-                className={`${styles.switchButton} ${knowledgeEnabled ? styles.switchButtonOn : ''}`}
-                onClick={onToggleKnowledge}
-              >
-                <span className={styles.switchThumb} />
-              </button>
-            </div>
-
-            <button type="button" className={styles.toolManageButton}>
-              <span className={styles.menuMain}>
-                <span className={styles.toolItemMain}>
-                  <SettingOutlined />
-                  <span>工具管理</span>
-                </span>
-              </span>
-            </button>
-          </div>
-        ) : null}
-      </div>
+                </div>
+              </div>,
+              document.body,
+            )
+        : null}
     </div>
   )
 }

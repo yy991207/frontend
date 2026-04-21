@@ -21,10 +21,16 @@ export function useStickToBottom(threshold = 24) {
       return
     }
 
-    container.scrollTo({
-      top: container.scrollHeight,
-      behavior: smooth ? 'smooth' : 'auto',
-    })
+    // 某些测试环境和低能力容器节点没有 scrollTo，降级成直接改 scrollTop，避免运行期报错。
+    if (typeof container.scrollTo === 'function') {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: smooth ? 'smooth' : 'auto',
+      })
+      return
+    }
+
+    container.scrollTop = container.scrollHeight
   }, [isAtBottom])
 
   useEffect(() => {

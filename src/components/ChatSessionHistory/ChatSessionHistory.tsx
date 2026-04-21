@@ -12,13 +12,17 @@ import {
 } from '../../services/chatSessionService'
 import { CHAT_SESSION_HISTORY_REFRESH_EVENT } from '../../services/chatSessionEvents'
 import { DeleteConfirmModal } from '../common/DeleteConfirmModal'
-import { getConfigUrl } from '../../utils/urlParams'
 import styles from './chatSessionHistory.module.less'
+
+const CURRENT_SESSION_ITEM_STYLE = {
+  backgroundColor: '#ffffff',
+  color: '#1f2329',
+}
 
 // 加载配置
 async function loadConfig(): Promise<ChatSessionConfig> {
   try {
-    const response = await fetch(getConfigUrl())
+    const response = await fetch('/config.yaml')
     if (response.ok) {
       const rawText = await response.text()
       const { parseChatSessionConfig } = await import('../../services/chatSessionService')
@@ -281,15 +285,17 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
   const renderSessionItem = (session: ChatSession, options?: { collapsed?: boolean }) => {
     const isRemoving = removingSessionIds.has(session.session_id)
     const collapsed = options?.collapsed ?? false
-    const agentLabel = session.agent_id ? '个人智能体' : '通用智能体'
+    const isCurrentSession = getCurrentSessionId() === session.session_id
+    const agentLabel = session.agent_id ? '个人' : '通用'
     const agentLabelClass = session.agent_id ? styles.agentLabel : `${styles.agentLabel} ${styles.agentLabelDefault}`
     return (
       <div
         key={session.session_id}
-        className={`${styles.sessionItem} ${isRemoving ? styles.sessionItemRemoving : ''}`}
+        className={`${styles.sessionItem} ${isCurrentSession ? styles.sessionItemActive : ''} ${isRemoving ? styles.sessionItemRemoving : ''}`}
         onClick={() => handleSessionClick(session)}
         title={getSessionDisplayName(session)}
-        style={{ cursor: 'pointer' }}
+        aria-current={isCurrentSession ? 'page' : undefined}
+        style={isCurrentSession ? { ...CURRENT_SESSION_ITEM_STYLE, cursor: 'pointer' } : { cursor: 'pointer' }}
       >
         <span className={styles.iconCell}>
           <MessageOutlined />
@@ -338,46 +344,58 @@ export default function ChatSessionHistory({ expanded }: ChatSessionHistoryProps
     return sessions.beyond7Days[0] ?? null
   }, [sessions.beyond7Days, sessions.today, sessions.within7Days])
   const contentClassName = useMemo(
-    () => `${styles.content} ${expanded ? styles.contentExpanded : styles.contentCollapsed} ${contentScrolling ? styles.scrolling : ''}`,
-    [expanded, contentScrolling],
+    () => `${styles.content} ${styles.contentExpanded} ${contentScrolling ? styles.scrolling : ''}`,
+    [contentScrolling],
   )
-  const listClassName = useMemo(
-    () => `${styles.sessionList} ${expanded ? styles.sessionListExpanded : styles.sessionListCollapsed}`,
+  const expandedPanelClassName = useMemo(
+    () => `${styles.expandedPanel} ${expanded ? styles.panelVisible : styles.panelHidden}`,
+    [expanded],
+  )
+  const collapsedPanelClassName = useMemo(
+    () => `${styles.collapsedPanel} ${expanded ? styles.panelHidden : styles.panelVisible}`,
     [expanded],
   )
 
   return (
     <>
-      <div className={styles.container}>
+      <div className={styles.container} data-expanded={expanded ? 'true' : 'false'}>
         {expanded && <div className={styles.sectionTitle}>会话历史</div>}
 
-        <div className={listClassName}>
-          {shouldShowBlockingState && <div className={styles.loading}>加载中...</div>}
+        <div className={styles.sessionPanels}>
+          <div className={expandedPanelClassName}>
+            <div className={`${styles.sessionList} ${styles.sessionListExpanded}`}>
+              {shouldShowBlockingState && <div className={styles.loading}>加载中...</div>}
 
-          {!shouldShowBlockingState && error && !hasAnySessions && (
-            <div className={styles.error}>
-              <div>{error}</div>
-              <button onClick={() => void loadSessions()} className={styles.retryButton}>
-                重试
-              </button>
-            </div>
-          )}
+              {!shouldShowBlockingState && error && !hasAnySessions && (
+                <div className={styles.error}>
+                  <div>{error}</div>
+                  <button onClick={() => void loadSessions()} className={styles.retryButton}>
+                    重试
+                  </button>
+                </div>
+              )}
 
-          {!shouldShowBlockingState && shouldShowEmptyState && <div className={styles.empty}>暂无会话记录</div>}
+              {!shouldShowBlockingState && shouldShowEmptyState && <div className={styles.empty}>暂无会话记录</div>}
 
-          {!error && shouldShowList && (
-            <div ref={contentRef} className={contentClassName}>
-              {expanded ? (
-                <>
-                  {renderSection('今天', sessions.today)}
-                  {renderSection('7天内', sessions.within7Days, sessions.today.length > 0)}
-                  {renderSection('7天外', sessions.beyond7Days, sessions.today.length > 0 || sessions.within7Days.length > 0)}
-                </>
-              ) : (
-                collapsedLatestSession ? renderSessionItem(collapsedLatestSession, { collapsed: true }) : null
+              {!error && shouldShowList && (
+                <div ref={contentRef} className={contentClassName}>
+                  <>
+                    {renderSection('今天', sessions.today)}
+                    {renderSection('7天内', sessions.within7Days, sessions.today.length > 0)}
+                    {renderSection('7天外', sessions.beyond7Days, sessions.today.length > 0 || sessions.within7Days.length > 0)}
+                  </>
+                </div>
               )}
             </div>
-          )}
+          </div>
+
+          <div className={collapsedPanelClassName}>
+            <div className={`${styles.sessionList} ${styles.sessionListCollapsed}`}>
+              {!error && shouldShowList && collapsedLatestSession
+                ? renderSessionItem(collapsedLatestSession, { collapsed: true })
+                : null}
+            </div>
+          </div>
         </div>
       </div>
 

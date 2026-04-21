@@ -1,7 +1,7 @@
 // 参考 ChatPage 样式设计
 .page {
   --conversation-width: 780px;
-  --page-background: linear-gradient(180deg, #f4f7fb 0%, #eef3f8 100%);
+  --page-background: var(--app-shell-background);
   flex: 1;
   min-width: 0;
   padding: 12px;
@@ -97,14 +97,22 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #3370ff;
-  color: #fff;
+  background: #ffffff;
+  color: #1f2329;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 16px;
   font-weight: 600;
   flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(31, 35, 41, 0.08);
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .headerInfo {
@@ -141,6 +149,7 @@
 }
 
 .headerButton {
+  position: relative;
   width: 32px;
   height: 32px;
   border: 1px solid rgba(15, 23, 42, 0.08);
@@ -155,11 +164,37 @@
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
 
+  &::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-height: 30px;
+    padding: 0 10px;
+    border-radius: 10px;
+    background: rgba(17, 24, 39, 0.96);
+    color: #ffffff;
+    font-size: 12px;
+    line-height: 30px;
+    white-space: nowrap;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
+    opacity: 0;
+    transform: translateY(-4px);
+    pointer-events: none;
+    transition: opacity 0.16s ease, transform 0.16s ease;
+  }
+
   &:hover {
     background: #ffffff;
     border-color: rgba(15, 23, 42, 0.12);
     color: #27272a;
     box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  }
+
+  &:hover::after,
+  &:focus-visible::after {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -196,13 +231,21 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: #3370ff;
-  color: #fff;
+  background: #ffffff;
+  color: #1f2329;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 28px;
   font-weight: 600;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(31, 35, 41, 0.08);
+}
+
+.welcomeIconImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .welcomeTitle {
@@ -279,7 +322,12 @@
   bottom: 100%;
   left: 0;
   height: 72px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(244, 247, 251, 0.8), rgba(238, 243, 248, 0.96));
+  background: linear-gradient(
+    180deg,
+    rgba(var(--app-shell-background-rgb), 0),
+    rgba(var(--app-shell-background-rgb), 0.8),
+    rgba(var(--app-shell-background-rgb), 0.96)
+  );
   pointer-events: none;
 }
 
@@ -338,7 +386,65 @@
 .inputBottomLeft {
   display: flex;
   align-items: center;
+  gap: 8px;
   flex-shrink: 0;
+}
+
+.uploadAttachmentButton {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.16s ease, color 0.16s ease;
+
+  &:hover {
+    background: #f3f4f6;
+    color: #111827;
+  }
+}
+
+.inlineToolToggle {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+
+  &:hover {
+    background: #f3f4f6;
+  }
+}
+
+.inlineToolToggleOn {
+  color: #111827;
+  background: rgba(17, 24, 39, 0.08);
+}
+
+.inlineToolToggleOff {
+  color: #6b7280;
+}
+
+.inlineToolToggleLocked {
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.08);
+
+  &:hover {
+    background: rgba(148, 163, 184, 0.12);
+  }
 }
 
 .inputBottomRight {

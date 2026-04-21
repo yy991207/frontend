@@ -1,0 +1,11 @@
+registry=https://packages.aliyun.com/68dc89f5f3eec50950f542e2/npm/npm-registry/
+always-auth=true
+//packages.aliyun.com/68dc89f5f3eec50950f542e2/npm/npm-registry/:_authToken=YOUR_TOKEN_HERE
+
+sass_binary_site="https://npmmirror.com/mirrors/node-sass/"
+phantomjs_cdnurl="https://cdn.npmmirror.com/binaries/phantomjs"
+sqlite3_binary_host_mirror="https://foxgis.oss-cn-shanghai.aliyunclouds.com/"
+chromedriver_cdnurl="https://cdn.npmmirror.com/binaries/chromedriver"
+electron_mirror=https://npmmirror.com/mirrors/electron/
+electron_builder_binaries=http://npmmirror.com/mirrors/electron-builder-binaries/
+disturl=https://npmmirror.com/mirrors/node

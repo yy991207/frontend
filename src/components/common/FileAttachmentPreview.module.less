@@ -1,0 +1,113 @@
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-self: flex-start;
+  width: 100%;
+  padding: 0 0 4px;
+  margin-bottom: 8px;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 24px 6px 8px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 10px;
+  max-width: 190px;
+  position: relative;
+  transition: background 0.2s ease;
+}
+
+.fileItem:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.fileItemError {
+  background: rgba(255, 77, 79, 0.06);
+}
+
+.fileIcon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.iconText {
+  line-height: 1;
+}
+
+.loadingIcon {
+  color: #1890ff;
+  font-size: 16px;
+}
+
+.errorIcon {
+  color: #ff4d4f;
+  font-size: 16px;
+}
+
+.fileInfo {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.fileName {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.fileMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.45);
+  margin-top: 1px;
+}
+
+.fileProgress {
+  color: #1890ff;
+}
+
+.fileSize {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.fileStatusError {
+  color: #ff4d4f;
+}
+
+.removeBtn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 10px;
+  transition: all 0.2s ease;
+}
+
+.removeBtn:hover {
+  color: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.08);
+}

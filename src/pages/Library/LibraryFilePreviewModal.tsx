@@ -1,4 +1,4 @@
-import { Modal, Spin, message } from 'antd'
+import { Modal, message } from 'antd'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   fetchLibraryFileDetail,
@@ -7,6 +7,8 @@ import {
 } from '../../services/libraryFileService'
 import { checkCodeFile, isImageFile } from '../../core/utils/files'
 import { renderMarkdownToHtml, buildMarkdownPreviewHtml } from '../../core/artifacts/markdown-render'
+import { parseCourseTableArtifact, buildCourseTablePreviewHtml } from '../../core/artifacts/course-table'
+import { FilePreviewRenderer } from '../../components/file-preview/file-preview-renderer'
 import styles from './library-preview.module.less'
 
 type LibraryFilePreviewModalProps = {
@@ -52,6 +54,13 @@ export function LibraryFilePreviewModal({
   const previewable = useMemo(() => {
     return language === 'html' || language === 'markdown'
   }, [language])
+
+  const isJsonFile = language === 'json'
+
+  const courseTableArtifact = useMemo(() => {
+    if (!isJsonFile || !content) return null
+    return parseCourseTableArtifact(content)
+  }, [content, isJsonFile])
 
   useEffect(() => {
     if (!visible || !fileId) {
@@ -102,90 +111,84 @@ export function LibraryFilePreviewModal({
     onClose()
   }, [onClose])
 
-  const renderContent = useMemo(() => {
-    if (loading) {
-      return (
-        <div className={styles.previewLoading}>
-          <Spin size="large" />
-        </div>
-      )
+  const handleCopy = useCallback(async () => {
+    await navigator.clipboard.writeText(content)
+  }, [content])
+
+  const handleOpenInNewTab = useCallback(() => {
+    if (!fileDetail) return
+
+    if (courseTableArtifact) {
+      const newWindow = window.open('', '_blank')
+      if (newWindow) {
+        newWindow.document.open()
+        newWindow.document.write(buildCourseTablePreviewHtml(courseTableArtifact))
+        newWindow.document.close()
+      }
+      return
     }
 
-    if (!fileDetail) {
-      return null
+    if (language === 'markdown' && content) {
+      const htmlContent = renderMarkdownToHtml(content)
+      const fullHtml = buildMarkdownPreviewHtml(displayFilename, htmlContent)
+      const newWindow = window.open('', '_blank')
+      if (newWindow) {
+        newWindow.document.open()
+        newWindow.document.write(fullHtml)
+        newWindow.document.close()
+      }
+      return
+    }
+
+    if (language === 'html' && content) {
+      const newWindow = window.open('', '_blank')
+      if (newWindow) {
+        newWindow.document.open()
+        newWindow.document.write(content)
+        newWindow.document.close()
+      }
+      return
     }
 
     if (isImage) {
-      return (
-        <div className={styles.previewImageWrap}>
-          <img
-            className={styles.previewImage}
-            src={fileDetail.file_url}
-            alt={displayFilename}
-          />
-        </div>
-      )
+      const newWindow = window.open('', '_blank')
+      if (newWindow) {
+        newWindow.document.open()
+        newWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>${displayFilename}</title>
+            <style>
+              body { margin: 0; padding: 0; background: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+              img { max-width: 90vw; max-height: 90vh; object-fit: contain; }
+            </style>
+          </head>
+          <body>
+            <img src="${fileDetail.file_url}" alt="${displayFilename}">
+          </body>
+          </html>
+        `)
+        newWindow.document.close()
+      }
+      return
     }
 
-    if (previewable && language === 'html' && content) {
-      return (
-        <div className={styles.previewIframeWrap}>
-          <iframe
-            className={styles.previewIframe}
-            srcDoc={content}
-            sandbox="allow-scripts allow-same-origin allow-forms"
-            title="HTML Preview"
-          />
-        </div>
-      )
-    }
+    // Fallback: open file URL directly
+    window.open(fileDetail.file_url, '_blank')
+  }, [fileDetail, content, language, courseTableArtifact, displayFilename, isImage])
 
-    if (previewable && language === 'markdown' && content) {
-      const htmlContent = renderMarkdownToHtml(content)
-      const fullHtml = buildMarkdownPreviewHtml(displayFilename, htmlContent, true)
-      return (
-        <div className={styles.previewIframeWrap}>
-          <iframe
-            className={styles.previewIframe}
-            srcDoc={fullHtml}
-            sandbox="allow-same-origin"
-            title="Markdown Preview"
-          />
-        </div>
-      )
-    }
-
-    if (isCodeFile && content) {
-      return (
-        <div className={styles.previewCodeWrap}>
-          <pre className={styles.previewCode}>
-            <code>{content}</code>
-          </pre>
-        </div>
-      )
-    }
-
-    if (content) {
-      return (
-        <div className={styles.previewCodeWrap}>
-          <pre className={styles.previewCode}>
-            <code>{content}</code>
-          </pre>
-        </div>
-      )
-    }
-
-    return (
-      <div className={styles.previewEmpty}>
-        无法预览此文件类型
-      </div>
-    )
-  }, [loading, fileDetail, isImage, previewable, language, content, isCodeFile, displayFilename])
+  const handleDownload = useCallback(() => {
+    if (!fileDetail) return
+    window.open(fileDetail.file_url, '_blank')
+  }, [fileDetail])
 
   return (
     <Modal
       open={visible}
-      title={displayFilename || '文件预览'}
+      title={null}
+      closeIcon={null}
       onCancel={handleCancel}
       footer={null}
       width={800}
@@ -199,7 +202,21 @@ export function LibraryFilePreviewModal({
         },
       }}
     >
-      {renderContent}
+      <FilePreviewRenderer
+        content={content}
+        language={language}
+        fileName={displayFilename}
+        isImage={isImage}
+        isCodeFile={isCodeFile}
+        previewable={previewable}
+        courseTable={courseTableArtifact}
+        loading={loading && !fileDetail}
+        imageUrl={isImage ? fileDetail?.file_url : undefined}
+        onCopy={handleCopy}
+        onOpenInNewTab={handleOpenInNewTab}
+        onDownload={handleDownload}
+        onClose={handleCancel}
+      />
     </Modal>
   )
 }
