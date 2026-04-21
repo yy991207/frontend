@@ -1,0 +1,4 @@
+user_id: 123456
+url: http://192.168.30.238:8000/
+# url: http://127.0.0.1:8000/
+token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsb2dpblR5cGUiOiJsb2dpbiIsImxvZ2luSWQiOiJ3YW5naG8iLCJyblN0ciI6ImtvSDZ3SG9PWk9GVkRpbGFCT1M4V3J5QkppU0VieW9iIn0.2owuLNpTUuXo98AD_LijkA7ceKHWLewp8OADkoBRTrc
