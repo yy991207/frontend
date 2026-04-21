@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { CloseOutlined, CopyOutlined, LoadingOutlined } from '@ant-design/icons'
 import { MarkdownContent } from '../chat/markdown-content'
+import { getConfigUrl } from '../../utils/urlParams'
 import styles from './SkillDetailModal.module.less'
 
 export type SkillConfigField = {
@@ -48,7 +49,7 @@ type ParsedSkillDoc = {
 }
 
 async function loadApiConfig(): Promise<{ baseUrl: string; userId: string }> {
-  const response = await fetch('/config.yaml')
+  const response = await fetch(getConfigUrl())
   if (!response.ok) {
     throw new Error('加载配置文件失败')
   }
@@ -70,6 +71,7 @@ async function loadApiConfig(): Promise<{ baseUrl: string; userId: string }> {
 }
 
 async function fetchSkillDetail(baseUrl: string, userId: string, skillName: string): Promise<SkillDetail> {
+  console.log('Fetching skill detail...',userId)
   const url = `${baseUrl.replace(/\/+$/, '')}/api/v1/skills/${skillName}?user_id=${userId}`
   const response = await fetch(url, {
     method: 'GET',

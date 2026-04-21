@@ -111,7 +111,7 @@ export function parseSkillUploadApiConfig(rawText: string): SkillUploadApiConfig
   const uploadSkillPath = parsedConfig.upload_skill_path
   const userIdParam = parsedConfig.skill_user_id_param
   const urlUserId = getUrlUserId()
-  const userId = urlUserId || parsedConfig.user_id
+  const userId = urlUserId || ''
 
   if (!baseUrl || !uploadSkillPath || !userId || !userIdParam) {
     throw new Error('config.yaml 缺少 url、upload_skill_path、user_id 或 skill_user_id_param 配置')

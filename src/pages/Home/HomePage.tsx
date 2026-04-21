@@ -71,7 +71,7 @@ function parseSkillApiConfig(rawText: string) {
   const listPath = parsedConfig.list_user_skills_path
   const userIdParam = parsedConfig.skill_user_id_param
   const urlUserId = getUrlUserId()
-  const userId = urlUserId || parsedConfig.user_id
+  const userId = urlUserId || ''
 
   if (!baseUrl || !managePath || !userId || !userIdParam) {
     throw new Error('config.yaml 缺少 url、view_user_skills_path、user_id 或 skill_user_id_param 配置')

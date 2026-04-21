@@ -79,7 +79,7 @@ import {
 } from '../../core/messages/streaming'
 import type { LegacyChatMessage as ChatMessage } from '../../core/messages/types'
 import { groupMessages, resolveAssistantCopyTargets } from '../../core/messages/utils'
-import { getUrlUserId } from '../../utils/urlParams'
+import { getUrlUserId, getConfigUrl } from '../../utils/urlParams'
 import styles from './partner.module.less'
 
 type SettingMenuItem = {
@@ -134,7 +134,7 @@ function parseSkillApiConfig(rawText: string) {
   const listPath = parsedConfig.list_user_skills_path
   const userIdParam = parsedConfig.skill_user_id_param
   const urlUserId = getUrlUserId()
-  const userId = urlUserId || parsedConfig.user_id
+  const userId = urlUserId || ''
 
   if (!baseUrl || !managePath || !userId || !userIdParam) {
     throw new Error('config.yaml 缺少 url、view_user_skills_path、user_id 或 skill_user_id_param 配置')
@@ -158,7 +158,7 @@ function parseSkillApiConfig(rawText: string) {
 
 async function loadChatSessionConfig(): Promise<ChatSessionConfig> {
   try {
-    const response = await fetch('/config.yaml')
+    const response = await fetch(getConfigUrl())
     if (response.ok) {
       const rawText = await response.text()
       return parseChatSessionConfig(rawText)

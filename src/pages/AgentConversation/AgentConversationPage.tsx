@@ -13,6 +13,7 @@ import { SkillSlashCommand } from '../../components/common/SkillSlashCommand'
 import {
   buildSkillDisplayName,
 } from '../../services/skillPromptService'
+import { getConfigUrl } from '../../utils/urlParams'
 import styles from './agentConversation.module.less'
 
 type SkillItemType = AttachmentSkillItem
@@ -488,7 +489,7 @@ function AgentConversationArtifactPanel() {
 }
 
 async function loadChatApiConfig(): Promise<ChatApiConfig> {
-  const response = await fetch('/config.yaml')
+  const response = await fetch(getConfigUrl())
   if (!response.ok) {
     throw new Error('加载配置文件失败')
   }

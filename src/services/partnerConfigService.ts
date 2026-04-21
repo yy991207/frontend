@@ -66,7 +66,9 @@ export function parsePartnerApiConfig(rawText: string): PartnerApiConfig {
   const viewPartnerConfigPath = parsedConfig.view_partner_config_path
   const updatePartnerConfigPath = parsedConfig.update_partner_config_path
   const urlUserId = getUrlUserId()
-  const userId = urlUserId || parsedConfig.user_id
+  console.log('[partnerConfigService] parsePartnerApiConfig - urlUserId:', urlUserId)
+  const userId = urlUserId || ''
+  console.log('[partnerConfigService] parsePartnerApiConfig - final userId:', userId)
 
   if (!baseUrl || !viewPartnerConfigPath || !updatePartnerConfigPath || !userId) {
     throw new Error('config.yaml 缺少 url、view_partner_config_path、update_partner_config_path 或 user_id 配置')

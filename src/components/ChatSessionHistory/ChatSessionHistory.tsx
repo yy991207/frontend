@@ -12,12 +12,13 @@ import {
 } from '../../services/chatSessionService'
 import { CHAT_SESSION_HISTORY_REFRESH_EVENT } from '../../services/chatSessionEvents'
 import { DeleteConfirmModal } from '../common/DeleteConfirmModal'
+import { getConfigUrl } from '../../utils/urlParams'
 import styles from './chatSessionHistory.module.less'
 
 // 加载配置
 async function loadConfig(): Promise<ChatSessionConfig> {
   try {
-    const response = await fetch('/config.yaml')
+    const response = await fetch(getConfigUrl())
     if (response.ok) {
       const rawText = await response.text()
       const { parseChatSessionConfig } = await import('../../services/chatSessionService')

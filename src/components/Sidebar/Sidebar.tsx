@@ -69,7 +69,7 @@ export default function Sidebar() {
           setAgentList(logs)
         }
       } catch (error) {
-        console.error('获取智能体使用日志失败:', error)
+        console.error('获取智能体使用日志失败1:', error)
       } finally {
         if (!cancelled) {
           setAgentLoading(false)

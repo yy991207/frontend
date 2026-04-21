@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { MarkdownContent } from '../chat/markdown-content'
+import { getConfigUrl } from '../../utils/urlParams'
 import styles from './SkillDetailPanel.module.less'
 
 export type SkillConfigField = {
@@ -35,7 +36,7 @@ type SkillDetailPanelProps = {
 }
 
 async function loadApiConfig(): Promise<{ baseUrl: string; userId: string }> {
-  const response = await fetch('/config.yaml')
+  const response = await fetch(getConfigUrl())
   if (!response.ok) {
     throw new Error('加载配置文件失败')
   }

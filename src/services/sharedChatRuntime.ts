@@ -34,6 +34,7 @@ import {
   type ChatSessionMessage,
   type ChatSessionConfig,
 } from './chatSessionService'
+import { getConfigUrl } from '../utils/urlParams'
 
 function formatTime(date: Date) {
   return date.toLocaleTimeString('zh-CN', {
@@ -173,7 +174,7 @@ async function loadSessionHistoryMessages(
   signal: AbortSignal,
 ): Promise<ChatMessage[]> {
   try {
-    const response = await fetch('/config.yaml')
+    const response = await fetch(getConfigUrl())
     if (!response.ok) {
       return []
     }

@@ -12,6 +12,7 @@ import {
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import CreateAgentModal from '../../components/common/CreateAgentModal'
+import { getUrlUserId } from '../../utils/urlParams'
 import styles from './discover.module.less'
 
 function getAvatarLetter(name: string) {
@@ -102,11 +103,16 @@ export default function DiscoverPage() {
 
   useEffect(() => {
     let cancelled = false
+    const userId = getUrlUserId() || ''
 
     async function fetchMyCreatedAgents() {
+      if (!userId) {
+        console.warn('[DiscoverPage] 未获取到 user_id，跳过请求')
+        return
+      }
       setMyCreatedLoading(true)
       try {
-        const response = await fetch('http://192.168.30.238:8000/api/v1/custom-agents?user_id=123456', {
+        const response = await fetch(`http://192.168.30.238:8000/api/v1/custom-agents?user_id=${encodeURIComponent(userId)}`, {
           method: 'GET',
           headers: { Accept: 'application/json' },
         })

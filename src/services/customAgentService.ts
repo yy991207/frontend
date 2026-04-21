@@ -1,5 +1,5 @@
 import { readSseStream, type ChatReference, type SkillOutputItem, type ToolCall } from './chatService'
-import { getUrlUserId } from '../utils/urlParams'
+import { getUrlUserId, getConfigUrl } from '../utils/urlParams'
 
 export type CustomAgentApiConfig = {
   userId: string
@@ -95,14 +95,19 @@ function buildAbsoluteUrl(baseUrl: string, path: string) {
 }
 
 export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> {
-  const response = await fetch('/config.yaml')
+  const configUrl = getConfigUrl()
+  console.log('[customAgentService] Fetching config from:', configUrl)
+  const response = await fetch(configUrl)
 
   if (!response.ok) {
+    console.error('[customAgentService] Failed to fetch config.yaml, status:', response.status)
     throw new Error('加载配置文件失败')
   }
 
   const rawText = await response.text()
+  console.log('[customAgentService] config.yaml rawText:', rawText)
   const parsedConfig = parseSimpleYaml(rawText)
+  console.log('[customAgentService] parsedConfig:', parsedConfig)
 
   const baseUrl = parsedConfig.url
   const createAgentPath = parsedConfig.create_custom_agent_path
@@ -116,9 +121,24 @@ export async function loadCustomAgentApiConfig(): Promise<CustomAgentApiConfig> 
   const agentTemplateDetailPath = parsedConfig.agent_template_detail_path
   const agentUsageLogsPath = parsedConfig.agent_usage_logs_path
   const urlUserId = getUrlUserId()
-  const userId = urlUserId || parsedConfig.user_id
+  const userId = urlUserId || ''
 
-  if (!baseUrl || !createAgentPath || !listAgentPath || !viewAgentPath || !updateAgentPath || !chatAgentPath || !generateTemplatePath || !getTemplateTaskPath || !agentTemplatesPath || !agentTemplateDetailPath || !agentUsageLogsPath || !userId) {
+  const missingFields: string[] = []
+  if (!baseUrl) missingFields.push('url')
+  if (!createAgentPath) missingFields.push('create_custom_agent_path')
+  if (!listAgentPath) missingFields.push('list_custom_agent_path')
+  if (!viewAgentPath) missingFields.push('view_custom_agent_path')
+  if (!updateAgentPath) missingFields.push('update_custom_agent_path')
+  if (!chatAgentPath) missingFields.push('chat_custom_agent_path')
+  if (!generateTemplatePath) missingFields.push('generate_agent_template_path')
+  if (!getTemplateTaskPath) missingFields.push('get_agent_template_task_path')
+  if (!agentTemplatesPath) missingFields.push('agent_templates_path')
+  if (!agentTemplateDetailPath) missingFields.push('agent_template_detail_path')
+  if (!agentUsageLogsPath) missingFields.push('agent_usage_logs_path')
+  if (!userId) missingFields.push('userId')
+
+  if (missingFields.length > 0) {
+    console.error('[customAgentService] Missing config fields:', missingFields)
     throw new Error('config.yaml 缺少必要的接口配置')
   }
 
@@ -621,13 +641,13 @@ export async function getAgentUsageLogs(
   })
 
   if (!response.ok) {
-    throw new Error(`获取智能体使用日志失败: HTTP ${response.status}`)
+    throw new Error(`获取智能体使用日志失败2: HTTP ${response.status}`)
   }
 
   const data = (await response.json()) as AgentUsageLogsResponse
 
   if (!data.success) {
-    throw new Error(data.msg || '获取智能体使用日志失败')
+    throw new Error(data.msg || '获取智能体使用日志失败3')
   }
 
   const logs = data.data?.logs || []

@@ -65,7 +65,7 @@ function parseSkillApiConfig(rawText: string): SkillApiConfig {
   const removePath = parsedConfig.del_user_skills_path
   const userIdParam = parsedConfig.skill_user_id_param
   const urlUserId = getUrlUserId()
-  const userId = urlUserId || parsedConfig.user_id
+  const userId = urlUserId || ''
 
   if (!baseUrl || !skillPath || !managePath || !addPath || !removePath || !userId || !userIdParam) {
     throw new Error('config.yaml 缺少必要的技能接口配置')

@@ -97,7 +97,7 @@ export function parseChatSessionConfig(rawText: string): ChatSessionConfig {
 
   const baseUrl = config.url || DEFAULT_CONFIG.baseUrl
   const urlUserId = getUrlUserId()
-  const userId = urlUserId || config.user_id || DEFAULT_CONFIG.userId
+  const userId = urlUserId || DEFAULT_CONFIG.userId
   const viewChatSessionsPath = config.view_chat_sessions_path || DEFAULT_CONFIG.viewChatSessionsPath
   const delChatSessionPath = config.del_chat_session_path || DEFAULT_CONFIG.delChatSessionPath
   const getChatSessionPath = config.get_chat_session_path || DEFAULT_CONFIG.getChatSessionPath

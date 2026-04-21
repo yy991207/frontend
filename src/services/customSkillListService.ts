@@ -44,7 +44,9 @@ export function parseCustomSkillListApiConfig(rawText: string): CustomSkillListA
   const deleteUserSkillPath = parsedConfig.del_user_skill_path
   const userIdParam = parsedConfig.skill_user_id_param
   const urlUserId = getUrlUserId()
-  const userId = urlUserId || parsedConfig.user_id
+  console.log('[customSkillListService] parseCustomSkillListApiConfig - urlUserId:', urlUserId)
+  const userId = urlUserId || ''
+  console.log('[customSkillListService] parseCustomSkillListApiConfig - final userId:', userId)
 
   if (!baseUrl || !listUserSkillsPath || !userId || !userIdParam) {
     throw new Error('config.yaml 缺少 url、list_user_skills_path、user_id 或 skill_user_id_param 配置')

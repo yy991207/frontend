@@ -15,7 +15,7 @@ import {
   SearchOutlined,
   VideoCameraOutlined,
 } from '@ant-design/icons'
-import { getUrlUserId } from '../../utils/urlParams'
+import { getUrlUserId, getConfigUrl } from '../../utils/urlParams'
 import styles from './library.module.less'
 import { LibraryFilePreviewModal } from './LibraryFilePreviewModal'
 
@@ -114,7 +114,7 @@ function buildAbsoluteUrl(baseUrl: string, path: string) {
 }
 
 async function loadLibraryConfig(): Promise<LibraryConfig> {
-  const response = await fetch('/config.yaml')
+  const response = await fetch(getConfigUrl())
 
   if (!response.ok) {
     throw new Error('加载配置文件失败')
@@ -124,7 +124,7 @@ async function loadLibraryConfig(): Promise<LibraryConfig> {
   const parsedConfig = parseSimpleYaml(rawText)
   const baseUrl = parsedConfig.url
   const urlUserId = getUrlUserId()
-  const userId = urlUserId || parsedConfig.user_id
+  const userId = urlUserId || ''
 
   if (!baseUrl || !userId) {
     throw new Error('config.yaml 缺少 url 或 user_id 配置')
