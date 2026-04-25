@@ -1,0 +1,355 @@
+- generic [ref=e2]:
+  - region
+  - generic [ref=e3]:
+    - link "Skip to content" [ref=e4] [cursor=pointer]:
+      - /url: "#start-of-content"
+    - banner "Global Navigation Menu" [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - button "Open menu" [ref=e12] [cursor=pointer]:
+            - img [ref=e13]
+          - link "Homepage (g then d)" [ref=e15] [cursor=pointer]:
+            - /url: /
+            - img [ref=e16]
+        - button "Search or jump to…" [ref=e21] [cursor=pointer]:
+          - generic [ref=e22]:
+            - generic:
+              - img
+            - generic [ref=e23]: AgentNotch
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - generic [ref=e28]:
+              - link "Chat with Copilot" [ref=e30] [cursor=pointer]:
+                - /url: /copilot
+                - img [ref=e31]
+              - button "Open Copilot…" [ref=e35] [cursor=pointer]:
+                - generic:
+                  - img
+            - button "Create new..." [ref=e37] [cursor=pointer]:
+              - generic [ref=e38]:
+                - generic:
+                  - img
+              - generic:
+                - img
+            - link "Issues (g then i)" [ref=e39] [cursor=pointer]:
+              - /url: /issues
+              - img [ref=e40]
+            - link "Pull requests (g then p)" [ref=e43] [cursor=pointer]:
+              - /url: /pulls
+              - img [ref=e44]
+            - link "Repositories" [ref=e46] [cursor=pointer]:
+              - /url: /repos
+              - img [ref=e47]
+          - link "You have unread notifications (g then n)" [ref=e49] [cursor=pointer]:
+            - /url: /notifications
+            - img [ref=e50]
+          - button "Open user navigation menu" [ref=e53] [cursor=pointer]:
+            - img "你瞅我干啥" [ref=e54]
+  - main [ref=e57]:
+    - generic [ref=e60]:
+      - heading "repositories Search Results · AgentNotch" [level=1] [ref=e61]
+      - generic [ref=e64]:
+        - generic [ref=e65]:
+          - generic [ref=e66]:
+            - heading "Filter by" [level=2] [ref=e67]
+            - list "Filter by" [ref=e72]:
+              - listitem [ref=e73]:
+                - list [ref=e74]:
+                  - listitem [ref=e75]:
+                    - link "Code results" [ref=e76] [cursor=pointer]:
+                      - /url: https://github.com/search?q=AgentNotch&type=code
+                      - generic:
+                        - img
+                      - generic [ref=e77]:
+                        - generic [ref=e78]: Code
+                        - generic:
+                          - generic: results
+                  - listitem [ref=e79]:
+                    - link "Repositories results" [ref=e80] [cursor=pointer]:
+                      - /url: https://github.com/search?q=AgentNotch&type=repositories
+                      - generic:
+                        - img
+                      - generic [ref=e81]:
+                        - generic [ref=e82]: Repositories
+                        - generic:
+                          - generic: results
+                  - listitem [ref=e83]:
+                    - link "Issues results" [ref=e84] [cursor=pointer]:
+                      - /url: https://github.com/search?q=AgentNotch&type=issues
+                      - generic:
+                        - img
+                      - generic [ref=e85]:
+                        - generic [ref=e86]: Issues
+                        - generic:
+                          - generic: results
+                  - listitem [ref=e87]:
+                    - link "Pull requests results" [ref=e88] [cursor=pointer]:
+                      - /url: https://github.com/search?q=AgentNotch&type=pullrequests
+                      - generic:
+                        - img
+                      - generic [ref=e89]:
+                        - generic [ref=e90]: Pull requests
+                        - generic:
+                          - generic: results
+                  - listitem [ref=e91]:
+                    - link "Discussions results" [ref=e92] [cursor=pointer]:
+                      - /url: https://github.com/search?q=AgentNotch&type=discussions
+                      - generic:
+                        - img
+                      - generic [ref=e93]:
+                        - generic [ref=e94]: Discussions
+                        - generic:
+                          - generic: results
+                  - listitem [ref=e95]:
+                    - link "Users results" [ref=e96] [cursor=pointer]:
+                      - /url: https://github.com/search?q=AgentNotch&type=users
+                      - generic:
+                        - img
+                      - generic [ref=e97]:
+                        - generic [ref=e98]: Users
+                        - generic:
+                          - generic: results
+                  - listitem [ref=e99]:
+                    - button "More" [ref=e100] [cursor=pointer]:
+                      - generic:
+                        - img
+                      - generic [ref=e102]: More
+              - listitem [ref=e103]
+              - listitem [ref=e104]:
+                - heading "Languages" [level=3] [ref=e106]
+                - list "Languages" [ref=e107]:
+                  - listitem [ref=e108]:
+                    - link "Swift" [ref=e109] [cursor=pointer]:
+                      - /url: https://github.com/search?q=AgentNotch+language%3ASwift&type=repositories
+                      - generic "Swift" [ref=e113]
+                  - listitem [ref=e114]:
+                    - link "QML" [ref=e115] [cursor=pointer]:
+                      - /url: https://github.com/search?q=AgentNotch+language%3AQML&type=repositories
+                      - generic "QML" [ref=e119]
+                  - listitem [ref=e120]:
+                    - button "More languages..." [ref=e121] [cursor=pointer]:
+                      - generic:
+                        - img
+                      - generic "More languages..." [ref=e124]
+                  - listitem [ref=e125]
+              - listitem [ref=e126]:
+                - heading "Advanced" [level=3] [ref=e128]
+                - list "Advanced" [ref=e129]:
+                  - listitem [ref=e130]:
+                    - button "Owner" [ref=e131] [cursor=pointer]:
+                      - generic:
+                        - img
+                      - generic "Owner" [ref=e135]
+                  - listitem [ref=e136]:
+                    - button "Size" [ref=e137] [cursor=pointer]:
+                      - generic:
+                        - img
+                      - generic "Size" [ref=e141]
+                  - listitem [ref=e142]:
+                    - button "Number of followers" [ref=e143] [cursor=pointer]:
+                      - generic:
+                        - img
+                      - generic "Number of followers" [ref=e147]
+                  - listitem [ref=e148]:
+                    - button "Number of forks" [ref=e149] [cursor=pointer]:
+                      - generic:
+                        - img
+                      - generic "Number of forks" [ref=e153]
+                  - listitem [ref=e154]:
+                    - button "Number of stars" [ref=e155] [cursor=pointer]:
+                      - generic:
+                        - img
+                      - generic "Number of stars" [ref=e159]
+                  - listitem [ref=e160]:
+                    - button "Date created" [ref=e161] [cursor=pointer]:
+                      - generic:
+                        - img
+                      - generic "Date created" [ref=e165]
+                  - listitem [ref=e166]:
+                    - button "Date pushed" [ref=e167] [cursor=pointer]:
+                      - generic:
+                        - img
+                      - generic "Date pushed" [ref=e171]
+                  - listitem [ref=e172]:
+                    - button "Topic" [ref=e173] [cursor=pointer]:
+                      - generic:
+                        - img
+                      - generic "Topic" [ref=e177]
+                  - listitem [ref=e178]:
+                    - button "License" [ref=e179] [cursor=pointer]:
+                      - generic:
+                        - img
+                      - generic "License" [ref=e183]
+                  - listitem [ref=e184]:
+                    - button "Archived" [ref=e185] [cursor=pointer]:
+                      - generic:
+                        - img
+                      - generic "Archived" [ref=e189]
+                  - listitem [ref=e190]:
+                    - link "Public" [ref=e191] [cursor=pointer]:
+                      - /url: https://github.com/search?q=AgentNotch+is%3Apublic&type=repositories
+                      - generic:
+                        - img
+                      - generic "Public" [ref=e195]
+                  - listitem [ref=e196]:
+                    - link "Private" [ref=e197] [cursor=pointer]:
+                      - /url: https://github.com/search?q=AgentNotch+is%3Aprivate&type=repositories
+                      - generic:
+                        - img
+                      - generic "Private" [ref=e201]
+              - listitem [ref=e202]
+              - listitem [ref=e203]:
+                - link "Advanced search" [ref=e204] [cursor=pointer]:
+                  - /url: /search/advanced
+                  - generic:
+                    - img
+                  - generic [ref=e206]: Advanced search
+          - slider "Draggable pane splitter" [ref=e208]
+        - generic [ref=e211]:
+          - generic [ref=e212]:
+            - generic [ref=e214]:
+              - generic [ref=e215]:
+                - generic [ref=e216]:
+                  - generic [ref=e217]: 3 results
+                  - generic [ref=e218]: (174 ms)
+                - heading "3 results" [active] [level=2] [ref=e219]
+              - generic [ref=e220]:
+                - 'button "Sort by: Best match" [ref=e222] [cursor=pointer]':
+                  - generic [ref=e224]: "Sort by: Best match"
+                  - generic:
+                    - img
+                - button "Save" [ref=e226] [cursor=pointer]:
+                  - generic [ref=e229]:
+                    - img [ref=e230]
+                    - text: Save
+                - button "Open column options" [ref=e233] [cursor=pointer]:
+                  - img [ref=e234]
+            - generic [ref=e238]:
+              - generic [ref=e240]:
+                - generic [ref=e241]:
+                  - heading "AppGram/agentnotch" [level=3] [ref=e242]:
+                    - link "AppGram/agentnotch" [ref=e246] [cursor=pointer]:
+                      - /url: /AppGram/agentnotch
+                      - generic [ref=e247]:
+                        - text: AppGram/
+                        - emphasis [ref=e248]: agentnotch
+                  - generic [ref=e250]:
+                    - emphasis [ref=e251]: AgentNotch
+                    - text: is a sleek macOS menu bar app that lives in your Mac's notch, providing real-time visibility into your AI coding assistants. W…
+                  - generic [ref=e252]:
+                    - link "codex" [ref=e254] [cursor=pointer]:
+                      - /url: /topics/codex
+                    - link "notch" [ref=e256] [cursor=pointer]:
+                      - /url: /topics/notch
+                    - link "macos-app" [ref=e258] [cursor=pointer]:
+                      - /url: /topics/macos-app
+                    - link "cost-optimization" [ref=e260] [cursor=pointer]:
+                      - /url: /topics/cost-optimization
+                    - link "claude-ai" [ref=e262] [cursor=pointer]:
+                      - /url: /topics/claude-ai
+                  - list [ref=e263]:
+                    - listitem [ref=e264]:
+                      - generic "Swift language" [ref=e267]: Swift
+                    - generic [ref=e268]: ·
+                    - listitem [ref=e269]:
+                      - link "150 stars" [ref=e270] [cursor=pointer]:
+                        - /url: /AppGram/agentnotch/stargazers
+                        - img [ref=e271]
+                        - generic [ref=e273]: "150"
+                    - generic [ref=e274]: ·
+                    - listitem [ref=e275]:
+                      - generic [ref=e276]:
+                        - text: Updated
+                        - generic "2026年1月19日 GMT+8 21:56" [ref=e277]: on 1月19日
+                - button "Star" [ref=e280] [cursor=pointer]:
+                  - generic [ref=e281]:
+                    - generic:
+                      - img
+                    - generic [ref=e282]: Star
+              - generic [ref=e284]:
+                - generic [ref=e285]:
+                  - heading "ronilaukkarinen/dms-agentnotch" [level=3] [ref=e286]:
+                    - link "ronilaukkarinen/dms-agentnotch" [ref=e290] [cursor=pointer]:
+                      - /url: /ronilaukkarinen/dms-agentnotch
+                      - generic [ref=e291]:
+                        - text: ronilaukkarinen/dms-
+                        - emphasis [ref=e292]: agentnotch
+                  - generic [ref=e293]: DankMaterialShell plugin for real-time Claude Code telemetry in your DankBar
+                  - list [ref=e294]:
+                    - listitem [ref=e295]:
+                      - generic "QML language" [ref=e298]: QML
+                    - generic [ref=e299]: ·
+                    - listitem [ref=e300]:
+                      - link "0 stars" [ref=e301] [cursor=pointer]:
+                        - /url: /ronilaukkarinen/dms-agentnotch/stargazers
+                        - img [ref=e302]
+                        - generic [ref=e304]: "0"
+                    - generic [ref=e305]: ·
+                    - listitem [ref=e306]:
+                      - generic [ref=e307]:
+                        - text: Updated
+                        - generic "2026年3月23日 GMT+8 02:19" [ref=e308]: on 3月23日
+                - generic [ref=e309]:
+                  - button "Star" [ref=e311] [cursor=pointer]:
+                    - generic [ref=e312]:
+                      - generic:
+                        - img
+                      - generic [ref=e313]: Star
+                  - link "Sponsor @ronilaukkarinen" [ref=e316] [cursor=pointer]:
+                    - /url: /sponsors/ronilaukkarinen
+                    - generic [ref=e318]:
+                      - img [ref=e319]
+                      - text: Sponsor
+              - generic [ref=e322]:
+                - generic [ref=e323]:
+                  - heading "ShiHan97/AgentNotch" [level=3] [ref=e324]:
+                    - link "ShiHan97/AgentNotch" [ref=e328] [cursor=pointer]:
+                      - /url: /ShiHan97/AgentNotch
+                      - generic [ref=e329]:
+                        - text: ShiHan97/
+                        - emphasis [ref=e330]: AgentNotch
+                  - generic [ref=e331]: MacOS Agent Notch Tool
+                  - list [ref=e332]:
+                    - listitem [ref=e333]:
+                      - generic "Swift language" [ref=e336]: Swift
+                    - generic [ref=e337]: ·
+                    - listitem [ref=e338]:
+                      - link "0 stars" [ref=e339] [cursor=pointer]:
+                        - /url: /ShiHan97/AgentNotch/stargazers
+                        - img [ref=e340]
+                        - generic [ref=e342]: "0"
+                    - generic [ref=e343]: ·
+                    - listitem [ref=e344]:
+                      - generic [ref=e345]:
+                        - text: Updated
+                        - generic "2026年4月20日 GMT+8 12:02" [ref=e346]: yesterday
+                - generic [ref=e347]:
+                  - button "Star" [ref=e349] [cursor=pointer]:
+                    - generic [ref=e350]:
+                      - generic:
+                        - img
+                      - generic [ref=e351]: Star
+                  - button "Sponsor ShiHan97/AgentNotch" [ref=e354] [cursor=pointer]:
+                    - generic [ref=e356]:
+                      - img [ref=e357]
+                      - text: Sponsor
+          - generic [ref=e361]:
+            - generic [ref=e362]:
+              - img "Package icon" [ref=e364]
+              - heading "Sponsor open source projects you depend on" [level=2] [ref=e365]
+              - generic [ref=e366]: Contributors are working behind the scenes to make open source better for everyone—give them the help and recognition they deserve.
+              - link "Explore sponsorable projects" [ref=e367] [cursor=pointer]:
+                - /url: https://github.com/sponsors/explore
+                - text: Explore sponsorable projects
+                - img [ref=e368]
+            - generic [ref=e370]:
+              - heading "How can we improve search?" [level=2] [ref=e371]
+              - button "Give feedback" [ref=e372] [cursor=pointer]
+            - generic [ref=e373]:
+              - generic [ref=e374]:
+                - img [ref=e375]
+                - text: ProTip!
+              - generic [ref=e377]:
+                - text: Press the
+                - generic [ref=e378]: /
+                - text: key to activate the search input again and adjust your query.

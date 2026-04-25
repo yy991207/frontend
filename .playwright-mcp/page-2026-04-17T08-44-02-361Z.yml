@@ -1,0 +1,12 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - heading "任务中心" [level=4] [ref=e6]
+    - button "plus 新建任务" [ref=e8] [cursor=pointer]:
+      - img "plus" [ref=e10]:
+        - img [ref=e11]
+      - generic [ref=e14]: 新建任务
+  - generic [ref=e15]:
+    - img "No data" [ref=e17]
+    - generic [ref=e28]: 还没有任务，点击新建
+    - button "新建任务" [ref=e30] [cursor=pointer]:
+      - generic [ref=e31]: 新建任务

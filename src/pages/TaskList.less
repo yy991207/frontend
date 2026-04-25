@@ -1,0 +1,93 @@
+.app-layout {
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: row;
+}
+
+.app-sider {
+  background: #fff !important;
+  border-right: 1px solid #e5e6eb;
+  position: relative;
+  overflow: hidden;
+
+  .ant-layout-sider-children {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.sidebar-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 2;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 3px;
+    width: 2px;
+    height: 100%;
+    background: transparent;
+    transition: background-color 0.2s ease;
+  }
+
+  &:hover::before {
+    background: #3370ff;
+  }
+}
+
+body.sidebar-resizing {
+  cursor: col-resize;
+  user-select: none;
+
+  .app-sider {
+    transition: none !important;
+  }
+}
+
+.app-main-layout {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-content {
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+  overflow: hidden;
+  position: relative;
+}
+
+.sidebar-expand-btn {
+  position: absolute;
+  top: 14px;
+  left: 12px;
+  z-index: 100;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  font-size: 16px !important;
+  border-radius: 6px !important;
+  color: #1f2329 !important;
+
+  &:hover {
+    background: #f0f1f5 !important;
+    color: #3370ff !important;
+  }
+
+  /* 侧边栏收起时，主内容区头部预留按钮宽度 */
+  & ~ * {
+    .table-header-bar,
+    .activity-header {
+      padding-left: 52px !important;
+    }
+  }
+}

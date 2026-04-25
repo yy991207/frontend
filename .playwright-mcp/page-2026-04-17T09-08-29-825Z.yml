@@ -1,0 +1,72 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - img "unordered-list" [ref=e6]:
+        - img [ref=e7]
+      - generic [ref=e9]: 任务
+      - generic [ref=e10] [cursor=pointer]: ···
+    - generic [ref=e11]:
+      - generic [ref=e12] [cursor=pointer]:
+        - img "user" [ref=e13]:
+          - img [ref=e14]
+        - generic [ref=e16]: 我负责的
+        - generic [ref=e17]: "9"
+      - generic [ref=e18] [cursor=pointer]:
+        - img "eye" [ref=e19]:
+          - img [ref=e20]
+        - generic [ref=e22]: 我关注的
+      - generic [ref=e23] [cursor=pointer]:
+        - img "bell" [ref=e24]:
+          - img [ref=e25]
+        - generic [ref=e27]: 动态
+      - generic [ref=e28] [cursor=pointer]:
+        - img "project" [ref=e29]:
+          - img [ref=e30]
+        - generic [ref=e32]: 来自飞书项目
+    - generic [ref=e33]:
+      - generic [ref=e34] [cursor=pointer]:
+        - img "caret-down" [ref=e35]:
+          - img [ref=e36]
+        - generic [ref=e38]: 快速访问
+      - generic [ref=e39]:
+        - generic [ref=e40] [cursor=pointer]:
+          - img "file-text" [ref=e41]:
+            - img [ref=e42]
+          - generic [ref=e44]: 全部任务
+        - generic [ref=e45] [cursor=pointer]:
+          - img "ordered-list" [ref=e46]:
+            - img [ref=e47]
+          - generic [ref=e49]: 我创建的
+        - generic [ref=e50] [cursor=pointer]:
+          - img "appstore" [ref=e51]:
+            - img [ref=e52]
+          - generic [ref=e54]: 我分配的
+        - generic [ref=e55] [cursor=pointer]:
+          - img "star" [ref=e56]:
+            - img [ref=e57]
+          - generic [ref=e59]: 已完成
+    - generic [ref=e61] [cursor=pointer]:
+      - img "caret-down" [ref=e62]:
+        - img [ref=e63]
+      - generic [ref=e65]: 任务清单
+      - img "plus" [ref=e66]:
+        - img [ref=e67]
+    - generic [ref=e71] [cursor=pointer]:
+      - img "plus" [ref=e72]:
+        - img [ref=e73]
+      - generic [ref=e76]: 新建分组
+  - generic [ref=e80]:
+    - heading [level=3] [ref=e81]
+    - list [ref=e82]:
+      - listitem [ref=e83]
+      - listitem [ref=e84]
+      - listitem [ref=e85]
+      - listitem [ref=e86]
+      - listitem [ref=e87]
+      - listitem [ref=e88]
+      - listitem [ref=e89]
+      - listitem [ref=e90]
+  - button "plus 新建" [ref=e91] [cursor=pointer]:
+    - img "plus" [ref=e93]:
+      - img [ref=e94]
+    - generic [ref=e97]: 新建

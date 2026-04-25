@@ -1,0 +1,118 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - button "unordered-list" [ref=e9] [cursor=pointer]:
+          - img "unordered-list" [ref=e11]:
+            - img [ref=e12]
+        - heading "任务" [level=5] [ref=e14]
+        - button "bell" [ref=e17] [cursor=pointer]:
+          - img "bell" [ref=e19]:
+            - img [ref=e20]
+      - menu [ref=e22]:
+        - menuitem "user 我负责的" [ref=e23] [cursor=pointer]:
+          - img "user" [ref=e24]:
+            - img [ref=e25]
+          - generic [ref=e27]: 我负责的
+        - menuitem "eye 我关注的" [ref=e28] [cursor=pointer]:
+          - img "eye" [ref=e29]:
+            - img [ref=e30]
+          - generic [ref=e32]: 我关注的
+        - menuitem "history 动态" [ref=e33] [cursor=pointer]:
+          - img "history" [ref=e34]:
+            - img [ref=e35]
+          - generic [ref=e37]: 动态
+      - separator [ref=e38]
+      - menu [ref=e39]:
+        - text: 快速访问
+        - group [ref=e40]:
+          - menuitem "file-text 全部任务" [ref=e41] [cursor=pointer]:
+            - img "file-text" [ref=e42]:
+              - img [ref=e43]
+            - generic [ref=e45]: 全部任务
+          - menuitem "ordered-list 我创建的" [ref=e46] [cursor=pointer]:
+            - img "ordered-list" [ref=e47]:
+              - img [ref=e48]
+            - generic [ref=e50]: 我创建的
+          - menuitem "appstore 我分配的" [ref=e51] [cursor=pointer]:
+            - img "appstore" [ref=e52]:
+              - img [ref=e53]
+            - generic [ref=e55]: 我分配的
+          - menuitem "star 已完成" [ref=e56] [cursor=pointer]:
+            - img "star" [ref=e57]:
+              - img [ref=e58]
+            - generic [ref=e60]: 已完成
+      - separator [ref=e61]
+      - tree [ref=e64]:
+        - generic [ref=e67]:
+          - treeitem "任务清单 plus" [ref=e68]:
+            - generic [ref=e71] [cursor=pointer]:
+              - generic [ref=e74]: 任务清单
+              - button "plus" [ref=e77]:
+                - img "plus" [ref=e79]:
+                  - img [ref=e80]
+          - treeitem "drag caret-down 朱元璋吃西瓜 ellipsis plus" [expanded] [ref=e83]:
+            - img "drag" [ref=e85]:
+              - img [ref=e86]
+            - img "caret-down" [ref=e89] [cursor=pointer]:
+              - img [ref=e90]
+            - generic [ref=e94] [cursor=pointer]:
+              - generic [ref=e97]: 朱元璋吃西瓜
+              - generic [ref=e98]:
+                - button "ellipsis" [ref=e100]:
+                  - img "ellipsis" [ref=e102]:
+                    - img [ref=e103]
+                - button "plus" [ref=e106]:
+                  - img "plus" [ref=e108]:
+                    - img [ref=e109]
+          - treeitem "可拖拽清单加入该分组" [ref=e112]:
+            - generic [ref=e115] [cursor=pointer]: 可拖拽清单加入该分组
+          - treeitem "drag caret-down 银河传说 ellipsis plus" [expanded] [ref=e116]:
+            - img "drag" [ref=e118]:
+              - img [ref=e119]
+            - img "caret-down" [ref=e122] [cursor=pointer]:
+              - img [ref=e123]
+            - generic [ref=e127] [cursor=pointer]:
+              - generic [ref=e130]: 银河传说
+              - generic [ref=e131]:
+                - button "ellipsis" [ref=e133]:
+                  - img "ellipsis" [ref=e135]:
+                    - img [ref=e136]
+                - button "plus" [ref=e139]:
+                  - img "plus" [ref=e141]:
+                    - img [ref=e142]
+          - treeitem "可拖拽清单加入该分组" [ref=e145]:
+            - generic [ref=e148] [cursor=pointer]: 可拖拽清单加入该分组
+      - button "plus 新建清单分组" [ref=e150] [cursor=pointer]:
+        - img "plus" [ref=e152]:
+          - img [ref=e153]
+        - generic [ref=e156]: 新建清单分组
+  - main [ref=e158]:
+    - generic [ref=e159]:
+      - heading "我负责的" [level=5] [ref=e163]
+      - generic [ref=e165]:
+        - button "filter 全部任务" [ref=e168] [cursor=pointer]:
+          - img "filter" [ref=e170]:
+            - img [ref=e171]
+          - generic [ref=e173]: 全部任务
+        - button "filter 筛选" [ref=e175] [cursor=pointer]:
+          - img "filter" [ref=e177]:
+            - img [ref=e178]
+          - generic [ref=e180]: 筛选
+        - button "sort-ascending 排序 · 截止时间" [ref=e182] [cursor=pointer]:
+          - img "sort-ascending" [ref=e184]:
+            - img [ref=e185]
+          - generic [ref=e187]: 排序 · 截止时间
+        - button "setting 字段配置" [ref=e189] [cursor=pointer]:
+          - img "setting" [ref=e191]:
+            - img [ref=e192]
+          - generic [ref=e194]: 字段配置
+      - generic [ref=e198]:
+        - heading [level=3] [ref=e199]
+        - list [ref=e200]:
+          - listitem [ref=e201]
+          - listitem [ref=e202]
+          - listitem [ref=e203]
+          - listitem [ref=e204]
+          - listitem [ref=e205]
+          - listitem [ref=e206]

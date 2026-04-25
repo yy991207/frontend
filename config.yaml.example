@@ -1,0 +1,4 @@
+user_id: your_user_id
+team_id: your_team_id
+url: http://127.0.0.1:8000/
+token: your_token_here

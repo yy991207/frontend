@@ -12,7 +12,9 @@ export function useFileContent(
 
   useEffect(() => {
     if (!enabled) {
+      abortRef.current?.abort()
       setContent('')
+      setLoading(false)
       return
     }
 

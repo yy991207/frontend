@@ -1,0 +1,772 @@
+- generic [ref=e2]:
+  - region
+  - generic [ref=e3]:
+    - link "Skip to content" [ref=e4] [cursor=pointer]:
+      - /url: "#start-of-content"
+    - banner "Global Navigation Menu" [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - button "Open menu" [ref=e12] [cursor=pointer]:
+            - img [ref=e13]
+          - link "Homepage (g then d)" [ref=e15] [cursor=pointer]:
+            - /url: /
+            - img [ref=e16]
+        - generic [ref=e18]:
+          - navigation "Breadcrumbs" [ref=e19]:
+            - list [ref=e20]:
+              - listitem [ref=e21]:
+                - link "AppGram" [ref=e22] [cursor=pointer]:
+                  - /url: /AppGram
+                  - generic [ref=e23]: AppGram
+              - listitem [ref=e24]:
+                - link "agentnotch" [ref=e25] [cursor=pointer]:
+                  - /url: /AppGram/agentnotch
+                  - generic [ref=e26]: agentnotch
+          - button "Search or jump to…" [ref=e29] [cursor=pointer]:
+            - generic [ref=e30]:
+              - generic:
+                - img
+              - generic [ref=e31]:
+                - generic:
+                  - text: Type
+                  - generic: /
+                  - text: to search
+        - generic [ref=e32]:
+          - generic [ref=e33]:
+            - generic [ref=e36]:
+              - link "Chat with Copilot" [ref=e38] [cursor=pointer]:
+                - /url: /copilot
+                - img [ref=e39]
+              - button "Open Copilot…" [ref=e43] [cursor=pointer]:
+                - generic:
+                  - img
+            - button "Create new..." [ref=e45] [cursor=pointer]:
+              - generic [ref=e46]:
+                - generic:
+                  - img
+              - generic:
+                - img
+            - link "Issues" [ref=e47] [cursor=pointer]:
+              - /url: /issues
+              - img [ref=e48]
+            - link "Pull requests" [ref=e51] [cursor=pointer]:
+              - /url: /pulls
+              - img [ref=e52]
+            - link "Repositories" [ref=e54] [cursor=pointer]:
+              - /url: /repos
+              - img [ref=e55]
+          - link "You have no unread notifications (g then n)" [ref=e57] [cursor=pointer]:
+            - /url: /notifications
+            - img [ref=e58]
+          - button "Open user navigation menu" [ref=e61] [cursor=pointer]:
+            - img "你瞅我干啥" [ref=e62]
+      - heading "Repository navigation" [level=2] [ref=e63]
+      - navigation "Repository" [ref=e64]:
+        - list [ref=e65]:
+          - listitem [ref=e66]:
+            - link "Code" [ref=e67] [cursor=pointer]:
+              - /url: /AppGram/agentnotch
+              - img [ref=e69]
+              - generic [ref=e71]: Code
+          - listitem [ref=e72]:
+            - link "Issues (2)" [ref=e73] [cursor=pointer]:
+              - /url: /AppGram/agentnotch/issues
+              - img [ref=e75]
+              - generic [ref=e78]: Issues
+              - generic [ref=e79]:
+                - generic [ref=e80]: "2"
+                - generic [ref=e81]: (2)
+          - listitem [ref=e82]:
+            - link "Pull requests" [ref=e83] [cursor=pointer]:
+              - /url: /AppGram/agentnotch/pulls
+              - img [ref=e85]
+              - generic [ref=e87]: Pull requests
+          - listitem [ref=e88]:
+            - link "Agents" [ref=e89] [cursor=pointer]:
+              - /url: /AppGram/agentnotch/agents?author=yy991207
+              - img [ref=e91]
+              - generic [ref=e94]: Agents
+          - listitem [ref=e95]:
+            - link "Actions" [ref=e96] [cursor=pointer]:
+              - /url: /AppGram/agentnotch/actions
+              - img [ref=e98]
+              - generic [ref=e100]: Actions
+          - listitem [ref=e101]:
+            - link "Projects" [ref=e102] [cursor=pointer]:
+              - /url: /AppGram/agentnotch/projects
+              - img [ref=e104]
+              - generic [ref=e106]: Projects
+          - listitem [ref=e107]:
+            - link "Security and quality" [ref=e108] [cursor=pointer]:
+              - /url: /AppGram/agentnotch/security
+              - img [ref=e110]
+              - generic [ref=e112]: Security and quality
+          - listitem [ref=e113]:
+            - link "Insights" [ref=e114] [cursor=pointer]:
+              - /url: /AppGram/agentnotch/pulse
+              - img [ref=e116]
+              - generic [ref=e118]: Insights
+  - main [ref=e122]:
+    - generic [ref=e135]:
+      - generic [ref=e138]:
+        - generic [ref=e140]:
+          - generic [ref=e142]:
+            - img "Owner avatar" [ref=e143]
+            - strong [ref=e144]:
+              - link "agentnotch" [ref=e145] [cursor=pointer]:
+                - /url: /AppGram/agentnotch
+            - generic [ref=e146]: Public
+          - generic [ref=e147]:
+            - list:
+              - listitem [ref=e148]:
+                - 'button "Watch: Participating in AppGram/agentnotch" [ref=e151] [cursor=pointer]':
+                  - generic [ref=e152]:
+                    - generic:
+                      - img
+                    - generic [ref=e153]: Watch
+                    - generic:
+                      - generic: "1"
+                      - generic: (1)
+                  - generic:
+                    - img
+              - listitem [ref=e154]:
+                - generic [ref=e155]:
+                  - link "Fork 9" [ref=e156] [cursor=pointer]:
+                    - /url: /AppGram/agentnotch/fork
+                    - img [ref=e157]
+                    - text: Fork
+                    - generic "9" [ref=e159]
+                  - group [ref=e160]:
+                    - button "See your forks of this repository" [ref=e161] [cursor=pointer]:
+                      - img [ref=e162]
+              - listitem [ref=e164]:
+                - generic [ref=e166]:
+                  - button "Star this repository (150)" [ref=e168] [cursor=pointer]:
+                    - img [ref=e169]
+                    - text: Star
+                    - generic "150 users starred this repository" [ref=e171]: "150"
+                  - button "Add this repository to a list" [ref=e175] [cursor=pointer]:
+                    - img
+        - heading "AppGram/agentnotch" [level=1] [ref=e178]
+      - generic [ref=e179]:
+        - generic [ref=e182]:
+          - generic [ref=e183]:
+            - generic [ref=e184]:
+              - button "main branch" [ref=e186] [cursor=pointer]:
+                - generic [ref=e187]:
+                  - generic [ref=e189]:
+                    - img [ref=e191]
+                    - generic [ref=e194]: main
+                  - generic:
+                    - img
+              - generic [ref=e195]:
+                - link "1 Branch" [ref=e196] [cursor=pointer]:
+                  - /url: /AppGram/agentnotch/branches
+                  - generic [ref=e197]:
+                    - generic:
+                      - img
+                    - generic [ref=e199]:
+                      - strong [ref=e200]: "1"
+                      - text: Branch
+                - link "4 Tags" [ref=e201] [cursor=pointer]:
+                  - /url: /AppGram/agentnotch/tags
+                  - generic [ref=e202]:
+                    - generic:
+                      - img
+                    - generic [ref=e204]:
+                      - strong [ref=e205]: "4"
+                      - text: Tags
+            - generic [ref=e206]:
+              - generic [ref=e207]:
+                - generic [ref=e210]:
+                  - img [ref=e212]
+                  - combobox "Go to file" [ref=e214]
+                  - generic [ref=e217]:
+                    - generic [ref=e218]: t
+                    - generic [ref=e219]: T
+                - generic [ref=e220]:
+                  - heading "Add file" [level=2] [ref=e221]
+                  - button "Add file" [ref=e222] [cursor=pointer]:
+                    - generic [ref=e225]:
+                      - text: Add file
+                      - img [ref=e226]
+              - button "Code" [ref=e228] [cursor=pointer]:
+                - generic [ref=e229]:
+                  - generic:
+                    - img
+                  - generic [ref=e230]: Code
+                  - generic:
+                    - img
+          - generic [ref=e231]:
+            - generic [ref=e232]:
+              - heading "Folders and files" [level=2] [ref=e233]
+              - table "Folders and files" [ref=e234]:
+                - rowgroup:
+                  - row "Name Last commit message Last commit date":
+                    - columnheader "Name"
+                    - columnheader "Last commit message":
+                      - generic "Last commit message"
+                    - columnheader "Last commit date":
+                      - generic "Last commit date"
+                - rowgroup [ref=e235]:
+                  - 'row "Latest commit nedimf commits by nedimf Merge pull request #8 from 0x9317/fix/multi-session-discovery Open commit details Commit 4139d6f · Jan 19, 20263 months ago History 19 Commits" [ref=e236]':
+                    - 'cell "Latest commit nedimf commits by nedimf Merge pull request #8 from 0x9317/fix/multi-session-discovery Open commit details Commit 4139d6f · Jan 19, 20263 months ago History 19 Commits" [ref=e237]':
+                      - generic [ref=e238]:
+                        - heading "Latest commit" [level=2] [ref=e239]
+                        - generic [ref=e240]:
+                          - generic [ref=e242]:
+                            - link "nedimf" [ref=e243] [cursor=pointer]:
+                              - /url: /nedimf
+                              - img "nedimf" [ref=e244]
+                            - link "commits by nedimf" [ref=e245] [cursor=pointer]:
+                              - /url: /AppGram/agentnotch/commits?author=nedimf
+                              - text: nedimf
+                          - generic [ref=e246]:
+                            - generic [ref=e248]:
+                              - link "Merge pull request" [ref=e249] [cursor=pointer]:
+                                - /url: /AppGram/agentnotch/commit/4139d6fd7b90a060b90b17ed20e0878b0641cc1a
+                              - link "#8" [ref=e250] [cursor=pointer]:
+                                - /url: https://github.com/AppGram/agentnotch/pull/8
+                              - link "from 0x9317/fix/multi-session-discovery" [ref=e251] [cursor=pointer]:
+                                - /url: /AppGram/agentnotch/commit/4139d6fd7b90a060b90b17ed20e0878b0641cc1a
+                            - button "Open commit details" [ref=e252] [cursor=pointer]:
+                              - img [ref=e253]
+                        - generic [ref=e255]:
+                          - generic [ref=e257]:
+                            - link "Commit 4139d6f" [ref=e258] [cursor=pointer]:
+                              - /url: /AppGram/agentnotch/commit/4139d6fd7b90a060b90b17ed20e0878b0641cc1a
+                              - text: 4139d6f
+                            - text: ·
+                            - generic "Jan 19, 2026, 9:44 PM GMT+8" [ref=e259]: Jan 19, 20263 months ago
+                          - generic [ref=e260]:
+                            - heading "History" [level=2] [ref=e261]
+                            - link "19 Commits" [ref=e262] [cursor=pointer]:
+                              - /url: /AppGram/agentnotch/commits/main/
+                              - generic [ref=e263]:
+                                - generic:
+                                  - img
+                                - generic [ref=e264]: 19 Commits
+                  - row "AgentNotch.xcodeproj, (Directory) Fix force unwrap in ClaudeUsageManager Jan 12, 20263 months ago" [ref=e265]:
+                    - cell "AgentNotch.xcodeproj, (Directory)" [ref=e266]:
+                      - generic [ref=e267]:
+                        - img [ref=e268]
+                        - link "AgentNotch.xcodeproj, (Directory)" [ref=e273] [cursor=pointer]:
+                          - /url: /AppGram/agentnotch/tree/main/AgentNotch.xcodeproj
+                          - text: AgentNotch.xcodeproj
+                    - cell "Fix force unwrap in ClaudeUsageManager" [ref=e274]:
+                      - link "Fix force unwrap in ClaudeUsageManager" [ref=e277] [cursor=pointer]:
+                        - /url: /AppGram/agentnotch/commit/f1cccca6cf1b3d1902a3582d1f42526f4f09d327
+                    - cell "Jan 12, 20263 months ago" [ref=e278]:
+                      - generic [ref=e279]: Jan 12, 20263 months ago
+                  - 'row "AgentNotch, (Directory) fix: discover all active sessions including multiple per workspace Jan 19, 20263 months ago" [ref=e280]':
+                    - cell "AgentNotch, (Directory)" [ref=e281]:
+                      - generic [ref=e282]:
+                        - img [ref=e283]
+                        - link "AgentNotch, (Directory)" [ref=e288] [cursor=pointer]:
+                          - /url: /AppGram/agentnotch/tree/main/AgentNotch
+                          - text: AgentNotch
+                    - 'cell "fix: discover all active sessions including multiple per workspace" [ref=e289]':
+                      - 'link "fix: discover all active sessions including multiple per workspace" [ref=e292] [cursor=pointer]':
+                        - /url: /AppGram/agentnotch/commit/073a0125e97150ce98fb540af0ea01c72fb96ec4
+                    - cell "Jan 19, 20263 months ago" [ref=e293]:
+                      - generic [ref=e294]: Jan 19, 20263 months ago
+                  - row ".gitignore, (File) initial commit Jan 7, 20263 months ago" [ref=e295]:
+                    - cell ".gitignore, (File)" [ref=e296]:
+                      - generic [ref=e297]:
+                        - img [ref=e298]
+                        - link ".gitignore, (File)" [ref=e303] [cursor=pointer]:
+                          - /url: /AppGram/agentnotch/blob/main/.gitignore
+                          - text: .gitignore
+                    - cell "initial commit" [ref=e304]:
+                      - link "initial commit" [ref=e307] [cursor=pointer]:
+                        - /url: /AppGram/agentnotch/commit/1d8d71179ce4caf492745f3faa4b0cd9e4d10384
+                    - cell "Jan 7, 20263 months ago" [ref=e308]:
+                      - generic [ref=e309]: Jan 7, 20263 months ago
+                  - row "AgentNotch.entitlements, (File) v1.1.0 Jan 8, 20263 months ago" [ref=e310]:
+                    - cell "AgentNotch.entitlements, (File)" [ref=e311]:
+                      - generic [ref=e312]:
+                        - img [ref=e313]
+                        - link "AgentNotch.entitlements, (File)" [ref=e318] [cursor=pointer]:
+                          - /url: /AppGram/agentnotch/blob/main/AgentNotch.entitlements
+                          - text: AgentNotch.entitlements
+                    - cell "v1.1.0" [ref=e319]:
+                      - link "v1.1.0" [ref=e322] [cursor=pointer]:
+                        - /url: /AppGram/agentnotch/commit/855531e7f87cf9e006949c530e53effca5aebe76
+                    - cell "Jan 8, 20263 months ago" [ref=e323]:
+                      - generic [ref=e324]: Jan 8, 20263 months ago
+                  - row "CLAUDE.md, (File) codex improvments Jan 10, 20263 months ago" [ref=e325]:
+                    - cell "CLAUDE.md, (File)" [ref=e326]:
+                      - generic [ref=e327]:
+                        - img [ref=e328]
+                        - link "CLAUDE.md, (File)" [ref=e333] [cursor=pointer]:
+                          - /url: /AppGram/agentnotch/blob/main/CLAUDE.md
+                          - text: CLAUDE.md
+                    - cell "codex improvments" [ref=e334]:
+                      - link "codex improvments" [ref=e337] [cursor=pointer]:
+                        - /url: /AppGram/agentnotch/commit/ca8d5f0b6ffc7e2aad0b86dd211e660256d1bb94
+                    - cell "Jan 10, 20263 months ago" [ref=e338]:
+                      - generic [ref=e339]: Jan 10, 20263 months ago
+                  - row "Info.plist, (File) initial commit Jan 7, 20263 months ago" [ref=e340]:
+                    - cell "Info.plist, (File)" [ref=e341]:
+                      - generic [ref=e342]:
+                        - img [ref=e343]
+                        - link "Info.plist, (File)" [ref=e348] [cursor=pointer]:
+                          - /url: /AppGram/agentnotch/blob/main/Info.plist
+                          - text: Info.plist
+                    - cell "initial commit" [ref=e349]:
+                      - link "initial commit" [ref=e352] [cursor=pointer]:
+                        - /url: /AppGram/agentnotch/commit/1d8d71179ce4caf492745f3faa4b0cd9e4d10384
+                    - cell "Jan 7, 20263 months ago" [ref=e353]:
+                      - generic [ref=e354]: Jan 7, 20263 months ago
+                  - row "README.md, (File) Enhance README with demo image and description Jan 10, 20263 months ago" [ref=e355]:
+                    - cell "README.md, (File)" [ref=e356]:
+                      - generic [ref=e357]:
+                        - img [ref=e358]
+                        - link "README.md, (File)" [ref=e363] [cursor=pointer]:
+                          - /url: /AppGram/agentnotch/blob/main/README.md
+                          - text: README.md
+                    - cell "Enhance README with demo image and description" [ref=e364]:
+                      - link "Enhance README with demo image and description" [ref=e367] [cursor=pointer]:
+                        - /url: /AppGram/agentnotch/commit/f7add006ca18cfdb59b2f3014d7c5b032e404e90
+                    - cell "Jan 10, 20263 months ago" [ref=e368]:
+                      - generic [ref=e369]: Jan 10, 20263 months ago
+                  - row "agentnotch-demo.png, (File) Add files via upload Jan 10, 20263 months ago" [ref=e370]:
+                    - cell "agentnotch-demo.png, (File)" [ref=e371]:
+                      - generic [ref=e372]:
+                        - img [ref=e373]
+                        - link "agentnotch-demo.png, (File)" [ref=e378] [cursor=pointer]:
+                          - /url: /AppGram/agentnotch/blob/main/agentnotch-demo.png
+                          - text: agentnotch-demo.png
+                    - cell "Add files via upload" [ref=e379]:
+                      - link "Add files via upload" [ref=e382] [cursor=pointer]:
+                        - /url: /AppGram/agentnotch/commit/9aaba605f068f6d75caaf7a52e891e0d75de6539
+                    - cell "Jan 10, 20263 months ago" [ref=e383]:
+                      - generic [ref=e384]: Jan 10, 20263 months ago
+                  - row "icon.png, (File) initial commit Jan 7, 20263 months ago" [ref=e385]:
+                    - cell "icon.png, (File)" [ref=e386]:
+                      - generic [ref=e387]:
+                        - img [ref=e388]
+                        - link "icon.png, (File)" [ref=e393] [cursor=pointer]:
+                          - /url: /AppGram/agentnotch/blob/main/icon.png
+                          - text: icon.png
+                    - cell "initial commit" [ref=e394]:
+                      - link "initial commit" [ref=e397] [cursor=pointer]:
+                        - /url: /AppGram/agentnotch/commit/1d8d71179ce4caf492745f3faa4b0cd9e4d10384
+                    - cell "Jan 7, 20263 months ago" [ref=e398]:
+                      - generic [ref=e399]: Jan 7, 20263 months ago
+            - generic [ref=e401]:
+              - generic [ref=e402]:
+                - heading "Repository files navigation" [level=2] [ref=e403]
+                - navigation "Repository files" [ref=e404]:
+                  - list [ref=e405]:
+                    - listitem [ref=e406]:
+                      - link "README" [ref=e407] [cursor=pointer]:
+                        - /url: "#"
+                        - img [ref=e409]
+                        - generic [ref=e411]: README
+                - button "Edit file" [ref=e412] [cursor=pointer]:
+                  - img [ref=e413]
+                - button "Outline" [ref=e415] [cursor=pointer]:
+                  - img [ref=e416]
+              - article [ref=e419]:
+                - generic [ref=e420]:
+                  - heading "AgentNotch" [level=1] [ref=e421]
+                  - 'link "Permalink: AgentNotch" [ref=e422] [cursor=pointer]':
+                    - /url: "#agentnotch"
+                    - img [ref=e423]
+                - paragraph [ref=e425]:
+                  - link "AgentNotch Icon" [ref=e426] [cursor=pointer]:
+                    - /url: https://raw.githubusercontent.com/AppGram/agentnotch/main/agentnotch-demo.png
+                    - img "AgentNotch Icon" [ref=e427]
+                - paragraph [ref=e428]:
+                  - strong [ref=e429]: Real-time AI coding assistant telemetry in your Mac's notch
+                - paragraph [ref=e430]:
+                  - link "Features" [ref=e431] [cursor=pointer]:
+                    - /url: "#features"
+                  - text: •
+                  - link "Installation" [ref=e432] [cursor=pointer]:
+                    - /url: "#installation"
+                  - text: •
+                  - link "Usage" [ref=e433] [cursor=pointer]:
+                    - /url: "#usage"
+                  - text: •
+                  - link "Requirements" [ref=e434] [cursor=pointer]:
+                    - /url: "#requirements"
+                - separator [ref=e435]
+                - generic [ref=e436]:
+                  - heading "What is AgentNotch?" [level=2] [ref=e437]
+                  - 'link "Permalink: What is AgentNotch?" [ref=e438] [cursor=pointer]':
+                    - /url: "#what-is-agentnotch"
+                    - img [ref=e439]
+                - paragraph [ref=e441]:
+                  - text: AgentNotch is a sleek macOS menu bar app that lives in your Mac's notch, providing real-time visibility into your AI coding assistants. Watch as
+                  - strong [ref=e442]: Claude Code
+                  - text: and
+                  - strong [ref=e443]: OpenAI Codex
+                  - text: think, read files, and execute tools — all without leaving your editor.
+                - generic [ref=e444]:
+                  - heading "Features" [level=2] [ref=e445]
+                  - 'link "Permalink: Features" [ref=e446] [cursor=pointer]':
+                    - /url: "#features"
+                    - img [ref=e447]
+                - generic [ref=e449]:
+                  - heading "🎯 Real-Time Tool Tracking" [level=3] [ref=e450]:
+                    - text: 🎯
+                    - strong [ref=e451]: Real-Time Tool Tracking
+                  - 'link "Permalink: 🎯 Real-Time Tool Tracking" [ref=e452] [cursor=pointer]':
+                    - /url: "#-real-time-tool-tracking"
+                    - img [ref=e453]
+                - paragraph [ref=e455]: See every tool call as it happens — file reads, code edits, shell commands, and more. Know exactly what your AI assistant is doing at any moment.
+                - generic [ref=e456]:
+                  - heading "📊 Token & Cost Monitoring" [level=3] [ref=e457]:
+                    - text: 📊
+                    - strong [ref=e458]: Token & Cost Monitoring
+                  - 'link "Permalink: 📊 Token & Cost Monitoring" [ref=e459] [cursor=pointer]':
+                    - /url: "#-token--cost-monitoring"
+                    - img [ref=e460]
+                - paragraph [ref=e462]: Track token usage (input/output) and estimated costs in real-time. Never be surprised by API bills again.
+                - generic [ref=e463]:
+                  - heading "🎨 Source-Aware Design" [level=3] [ref=e464]:
+                    - text: 🎨
+                    - strong [ref=e465]: Source-Aware Design
+                  - 'link "Permalink: 🎨 Source-Aware Design" [ref=e466] [cursor=pointer]':
+                    - /url: "#-source-aware-design"
+                    - img [ref=e467]
+                - list [ref=e469]:
+                  - listitem [ref=e470]:
+                    - strong [ref=e471]: Orange
+                    - text: indicator for Claude Code
+                  - listitem [ref=e472]:
+                    - strong [ref=e473]: Blue
+                    - text: indicator for Codex
+                  - listitem [ref=e474]:
+                    - strong [ref=e475]: Light blue
+                    - text: for unknown sources
+                - paragraph [ref=e476]: Visual distinction lets you know which AI is active at a glance.
+                - generic [ref=e477]:
+                  - heading "🔔 Completion Detection" [level=3] [ref=e478]:
+                    - text: 🔔
+                    - strong [ref=e479]: Completion Detection
+                  - 'link "Permalink: 🔔 Completion Detection" [ref=e480] [cursor=pointer]':
+                    - /url: "#-completion-detection"
+                    - img [ref=e481]
+                - paragraph [ref=e483]: Get notified when your AI assistant finishes a task. No more wondering "is it still thinking?"
+                - generic [ref=e484]:
+                  - heading "⚡ Lightweight & Native" [level=3] [ref=e485]:
+                    - text: ⚡
+                    - strong [ref=e486]: Lightweight & Native
+                  - 'link "Permalink: ⚡ Lightweight & Native" [ref=e487] [cursor=pointer]':
+                    - /url: "#-lightweight--native"
+                    - img [ref=e488]
+                - list [ref=e490]:
+                  - listitem [ref=e491]: Lives in your Mac's notch — zero screen real estate used
+                  - listitem [ref=e492]: Native macOS app — fast, efficient, battery-friendly
+                  - listitem [ref=e493]: Expands on hover to show details
+                - generic [ref=e494]:
+                  - heading "⚙️ Configurable" [level=3] [ref=e495]:
+                    - text: ⚙️
+                    - strong [ref=e496]: Configurable
+                  - 'link "Permalink: ⚙️ Configurable" [ref=e497] [cursor=pointer]':
+                    - /url: "#️-configurable"
+                    - img [ref=e498]
+                - list [ref=e500]:
+                  - listitem [ref=e501]: Show/hide token counts
+                  - listitem [ref=e502]: Show/hide cost estimates
+                  - listitem [ref=e503]: Filter by source (Claude/Codex)
+                  - listitem [ref=e504]: Toggle menu bar icon
+                - generic [ref=e505]:
+                  - heading "Installation" [level=2] [ref=e506]
+                  - 'link "Permalink: Installation" [ref=e507] [cursor=pointer]':
+                    - /url: "#installation"
+                    - img [ref=e508]
+                - generic [ref=e510]:
+                  - heading "Homebrew (Recommended)" [level=3] [ref=e511]
+                  - 'link "Permalink: Homebrew (Recommended)" [ref=e512] [cursor=pointer]':
+                    - /url: "#homebrew-recommended"
+                    - img [ref=e513]
+                - generic [ref=e515]:
+                  - generic [ref=e516]: brew tap AppGram/tap brew install --cask agentnotch
+                  - button "Copy" [ref=e518] [cursor=pointer]:
+                    - img [ref=e519]
+                - generic [ref=e522]:
+                  - heading "Manual Download" [level=3] [ref=e523]
+                  - 'link "Permalink: Manual Download" [ref=e524] [cursor=pointer]':
+                    - /url: "#manual-download"
+                    - img [ref=e525]
+                - list [ref=e527]:
+                  - listitem [ref=e528]:
+                    - text: Download
+                    - code [ref=e529]: AgentNotch-1.0.0.zip
+                    - text: from
+                    - link "Releases" [ref=e530] [cursor=pointer]:
+                      - /url: https://github.com/AppGram/agentnotch/releases
+                  - listitem [ref=e531]:
+                    - text: Unzip and drag
+                    - code [ref=e532]: AgentNotch.app
+                    - text: to
+                    - code [ref=e533]: /Applications
+                  - listitem [ref=e534]: Open AgentNotch
+                - generic [ref=e535]:
+                  - heading "Usage" [level=2] [ref=e536]
+                  - 'link "Permalink: Usage" [ref=e537] [cursor=pointer]':
+                    - /url: "#usage"
+                    - img [ref=e538]
+                - generic [ref=e540]:
+                  - heading "Setup with Claude Code" [level=3] [ref=e541]
+                  - 'link "Permalink: Setup with Claude Code" [ref=e542] [cursor=pointer]':
+                    - /url: "#setup-with-claude-code"
+                    - img [ref=e543]
+                - paragraph [ref=e545]: "Add to your Claude Code configuration to send telemetry:"
+                - generic [ref=e546]:
+                  - generic [ref=e547]:
+                    - generic [ref=e548]: "# Set OTEL endpoint to AgentNotch (default port 4318)"
+                    - text: export OTEL_EXPORTER_OTLP_ENDPOINT=
+                    - generic [ref=e549]: "\"http://localhost:4318\""
+                  - button "Copy" [ref=e551] [cursor=pointer]:
+                    - img [ref=e552]
+                - generic [ref=e555]:
+                  - heading "Setup with Codex" [level=3] [ref=e556]
+                  - 'link "Permalink: Setup with Codex" [ref=e557] [cursor=pointer]':
+                    - /url: "#setup-with-codex"
+                    - img [ref=e558]
+                - paragraph [ref=e560]:
+                  - text: AgentNotch listens for
+                  - strong [ref=e561]: OTLP/HTTP
+                  - text: on port
+                  - strong [ref=e562]: "4318"
+                  - text: by default, and currently decodes
+                  - strong [ref=e563]: OTLP logs
+                  - text: (
+                  - code [ref=e564]: /v1/logs
+                  - text: ) and
+                  - strong [ref=e565]: metrics
+                  - text: (
+                  - code [ref=e566]: /v1/metrics
+                  - text: ).
+                - paragraph [ref=e567]:
+                  - text: Codex CLI (v0.79+) uses
+                  - code [ref=e568]: ~/.codex/config.toml
+                  - text: with an
+                  - code [ref=e569]: "[otel]"
+                  - text: section (not
+                  - code [ref=e570]: "[telemetry]"
+                  - text: "). Add:"
+                - generic [ref=e571]:
+                  - generic [ref=e572]:
+                    - text: "[analytics] enabled = true [otel]"
+                    - generic [ref=e573]: "# AgentNotch currently does not decode OTLP traces, so disable trace export to avoid noisy errors."
+                    - text: trace_exporter =
+                    - generic [ref=e574]: "\"none\""
+                    - text: "[otel.exporter.otlp-http] endpoint ="
+                    - generic [ref=e575]: "\"http://localhost:4318/v1/logs\""
+                    - text: protocol =
+                    - generic [ref=e576]: "\"binary\""
+                  - button "Copy" [ref=e578] [cursor=pointer]:
+                    - img [ref=e579]
+                - generic [ref=e582]:
+                  - heading "Using the App" [level=3] [ref=e583]
+                  - 'link "Permalink: Using the App" [ref=e584] [cursor=pointer]':
+                    - /url: "#using-the-app"
+                    - img [ref=e585]
+                - list [ref=e587]:
+                  - listitem [ref=e588]:
+                    - strong [ref=e589]: Launch
+                    - text: — AgentNotch appears in your notch (or menu bar on non-notch Macs)
+                  - listitem [ref=e590]:
+                    - strong [ref=e591]: Hover
+                    - text: — Expand to see recent tool calls with details
+                  - listitem [ref=e592]:
+                    - strong [ref=e593]: Click
+                    - text: — Open full view with token breakdown and settings
+                  - listitem [ref=e594]:
+                    - strong [ref=e595]: Settings
+                    - text: — Configure display options via the gear icon
+                - generic [ref=e596]:
+                  - heading "Screenshots" [level=2] [ref=e597]
+                  - 'link "Permalink: Screenshots" [ref=e598] [cursor=pointer]':
+                    - /url: "#screenshots"
+                    - img [ref=e599]
+                - table [ref=e602]:
+                  - rowgroup [ref=e603]:
+                    - row "Collapsed Expanded" [ref=e604]:
+                      - columnheader "Collapsed" [ref=e605]
+                      - columnheader "Expanded" [ref=e606]
+                  - rowgroup [ref=e607]:
+                    - row "Minimal notch indicator Full tool call history" [ref=e608]:
+                      - cell "Minimal notch indicator" [ref=e609]
+                      - cell "Full tool call history" [ref=e610]
+                - generic [ref=e611]:
+                  - heading "Requirements" [level=2] [ref=e612]
+                  - 'link "Permalink: Requirements" [ref=e613] [cursor=pointer]':
+                    - /url: "#requirements"
+                    - img [ref=e614]
+                - list [ref=e616]:
+                  - listitem [ref=e617]: macOS 14.0 (Sonoma) or later
+                  - listitem [ref=e618]: Mac with notch (MacBook Pro 14"/16" 2021+) or any Mac (falls back to menu bar)
+                - generic [ref=e619]:
+                  - heading "Privacy" [level=2] [ref=e620]
+                  - 'link "Permalink: Privacy" [ref=e621] [cursor=pointer]':
+                    - /url: "#privacy"
+                    - img [ref=e622]
+                - paragraph [ref=e624]:
+                  - text: AgentNotch runs
+                  - strong [ref=e625]: 100% locally
+                  - text: . No data is sent anywhere — it only receives telemetry from your local AI tools.
+                - generic [ref=e626]:
+                  - heading "License" [level=2] [ref=e627]
+                  - 'link "Permalink: License" [ref=e628] [cursor=pointer]':
+                    - /url: "#license"
+                    - img [ref=e629]
+                - paragraph [ref=e631]:
+                  - text: MIT License — see
+                  - link "LICENSE" [ref=e632] [cursor=pointer]:
+                    - /url: /AppGram/agentnotch/blob/main/LICENSE
+                  - text: for details.
+                - separator [ref=e633]
+                - paragraph [ref=e634]: Made with ❤️ for developers who love AI coding assistants
+        - generic [ref=e638]:
+          - generic [ref=e641]:
+            - heading "About" [level=2] [ref=e642]
+            - paragraph [ref=e643]: AgentNotch is a sleek macOS menu bar app that lives in your Mac's notch, providing real-time visibility into your AI coding assistants. Watch as Claude Code and OpenAI Codex think, read files, and execute tools — all without leaving your editor.
+            - heading "Topics" [level=3] [ref=e644]
+            - generic [ref=e646]:
+              - link "codex" [ref=e647] [cursor=pointer]:
+                - /url: /topics/codex
+              - link "notch" [ref=e648] [cursor=pointer]:
+                - /url: /topics/notch
+              - link "macos-app" [ref=e649] [cursor=pointer]:
+                - /url: /topics/macos-app
+              - link "cost-optimization" [ref=e650] [cursor=pointer]:
+                - /url: /topics/cost-optimization
+              - link "claude-ai" [ref=e651] [cursor=pointer]:
+                - /url: /topics/claude-ai
+              - link "usage-analytics" [ref=e652] [cursor=pointer]:
+                - /url: /topics/usage-analytics
+              - link "claude-code" [ref=e653] [cursor=pointer]:
+                - /url: /topics/claude-code
+            - heading "Resources" [level=3] [ref=e654]
+            - link "Readme" [ref=e656] [cursor=pointer]:
+              - /url: "#readme-ov-file"
+              - img [ref=e657]
+              - text: Readme
+            - link "Activity" [ref=e660] [cursor=pointer]:
+              - /url: /AppGram/agentnotch/activity
+              - img [ref=e661]
+              - text: Activity
+            - link "Custom properties" [ref=e664] [cursor=pointer]:
+              - /url: /AppGram/agentnotch/custom-properties
+              - img [ref=e665]
+              - text: Custom properties
+            - heading "Stars" [level=3] [ref=e667]
+            - link "150 stars" [ref=e669] [cursor=pointer]:
+              - /url: /AppGram/agentnotch/stargazers
+              - img [ref=e670]
+              - strong [ref=e672]: "150"
+              - text: stars
+            - heading "Watchers" [level=3] [ref=e673]
+            - link "1 watching" [ref=e675] [cursor=pointer]:
+              - /url: /AppGram/agentnotch/watchers
+              - img [ref=e676]
+              - strong [ref=e678]: "1"
+              - text: watching
+            - heading "Forks" [level=3] [ref=e679]
+            - link "9 forks" [ref=e681] [cursor=pointer]:
+              - /url: /AppGram/agentnotch/forks
+              - img [ref=e682]
+              - strong [ref=e684]: "9"
+              - text: forks
+            - link "Report repository" [ref=e686] [cursor=pointer]:
+              - /url: /contact/report-content?content_url=https%3A%2F%2Fgithub.com%2FAppGram%2Fagentnotch&report=AppGram+%28user%29
+          - generic [ref=e688]:
+            - heading "Releases 4" [level=2] [ref=e689]:
+              - link "Releases 4" [ref=e690] [cursor=pointer]:
+                - /url: /AppGram/agentnotch/releases
+                - text: Releases
+                - generic "4" [ref=e691]
+            - link "v1.1.2 Latest Jan 19, 2026on Jan 19" [ref=e692] [cursor=pointer]:
+              - /url: /AppGram/agentnotch/releases/tag/v1.1.2
+              - img [ref=e693]
+              - generic [ref=e695]:
+                - generic [ref=e696]:
+                  - generic [ref=e697]: v1.1.2
+                  - 'generic "Label: Latest" [ref=e698]': Latest
+                - generic [ref=e699]: Jan 19, 2026on Jan 19
+            - link "+ 3 releases" [ref=e701] [cursor=pointer]:
+              - /url: /AppGram/agentnotch/releases
+          - generic [ref=e703]:
+            - heading "Packages" [level=2] [ref=e704]:
+              - link "Packages" [ref=e705] [cursor=pointer]:
+                - /url: /orgs/AppGram/packages?repo_name=agentnotch
+            - generic [ref=e706]: No packages published
+          - generic [ref=e708]:
+            - heading "Contributors 5" [level=2] [ref=e709]:
+              - link "Contributors 5" [ref=e710] [cursor=pointer]:
+                - /url: /AppGram/agentnotch/graphs/contributors
+                - text: Contributors
+                - generic "5" [ref=e711]
+            - list [ref=e712]:
+              - listitem [ref=e713]:
+                - link "@nedimf" [ref=e714] [cursor=pointer]:
+                  - /url: https://github.com/nedimf
+                  - img "@nedimf" [ref=e715]
+              - listitem [ref=e716]:
+                - link "@claude" [ref=e717] [cursor=pointer]:
+                  - /url: https://github.com/claude
+                  - img "@claude" [ref=e718]
+              - listitem [ref=e719]:
+                - link "@serrrfirat" [ref=e720] [cursor=pointer]:
+                  - /url: https://github.com/serrrfirat
+                  - img "@serrrfirat" [ref=e721]
+              - listitem [ref=e722]:
+                - link "@0x8205" [ref=e723] [cursor=pointer]:
+                  - /url: https://github.com/0x8205
+                  - img "@0x8205" [ref=e724]
+              - listitem [ref=e725]:
+                - link "@FlorianZimmer" [ref=e726] [cursor=pointer]:
+                  - /url: https://github.com/FlorianZimmer
+                  - img "@FlorianZimmer" [ref=e727]
+          - generic [ref=e729]:
+            - heading "Languages" [level=2] [ref=e730]
+            - list [ref=e734]:
+              - listitem [ref=e735]:
+                - link "Swift 100.0%" [ref=e736] [cursor=pointer]:
+                  - /url: /AppGram/agentnotch/search?l=swift
+                  - img [ref=e737]
+                  - generic [ref=e739]: Swift
+                  - generic [ref=e740]: 100.0%
+  - contentinfo [ref=e742]:
+    - heading "Footer" [level=2] [ref=e743]
+    - generic [ref=e744]:
+      - generic [ref=e745]:
+        - link "GitHub Homepage" [ref=e746] [cursor=pointer]:
+          - /url: https://github.com
+          - img [ref=e747]
+        - generic [ref=e749]: © 2026 GitHub, Inc.
+      - navigation "Footer" [ref=e750]:
+        - heading "Footer navigation" [level=3] [ref=e751]
+        - list "Footer navigation" [ref=e752]:
+          - listitem [ref=e753]:
+            - link "Terms" [ref=e754] [cursor=pointer]:
+              - /url: https://docs.github.com/site-policy/github-terms/github-terms-of-service
+          - listitem [ref=e755]:
+            - link "Privacy" [ref=e756] [cursor=pointer]:
+              - /url: https://docs.github.com/site-policy/privacy-policies/github-privacy-statement
+          - listitem [ref=e757]:
+            - link "Security" [ref=e758] [cursor=pointer]:
+              - /url: https://github.com/security
+          - listitem [ref=e759]:
+            - link "Status" [ref=e760] [cursor=pointer]:
+              - /url: https://www.githubstatus.com/
+          - listitem [ref=e761]:
+            - link "Community" [ref=e762] [cursor=pointer]:
+              - /url: https://github.community/
+          - listitem [ref=e763]:
+            - link "Docs" [ref=e764] [cursor=pointer]:
+              - /url: https://docs.github.com/
+          - listitem [ref=e765]:
+            - link "Contact" [ref=e766] [cursor=pointer]:
+              - /url: https://support.github.com?tags=dotcom-footer
+          - listitem [ref=e767]:
+            - button "Manage cookies" [ref=e769] [cursor=pointer]
+          - listitem [ref=e770]:
+            - button "Do not share my personal information" [ref=e772] [cursor=pointer]

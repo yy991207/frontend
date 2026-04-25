@@ -1,0 +1,110 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - button "unordered-list" [ref=e9] [cursor=pointer]:
+          - img "unordered-list" [ref=e11]:
+            - img [ref=e12]
+        - heading "任务" [level=5] [ref=e14]
+        - button "bell" [ref=e17] [cursor=pointer]:
+          - img "bell" [ref=e19]:
+            - img [ref=e20]
+      - menu [ref=e22]:
+        - menuitem "user 我负责的" [ref=e23] [cursor=pointer]:
+          - img "user" [ref=e24]:
+            - img [ref=e25]
+          - generic [ref=e27]: 我负责的
+        - menuitem "eye 我关注的" [ref=e28] [cursor=pointer]:
+          - img "eye" [ref=e29]:
+            - img [ref=e30]
+          - generic [ref=e32]: 我关注的
+        - menuitem "history 动态" [ref=e33] [cursor=pointer]:
+          - img "history" [ref=e34]:
+            - img [ref=e35]
+          - generic [ref=e37]: 动态
+      - separator [ref=e38]
+      - menu [ref=e39]:
+        - text: 快速访问
+        - group [ref=e40]:
+          - menuitem "file-text 全部任务" [ref=e41] [cursor=pointer]:
+            - img "file-text" [ref=e42]:
+              - img [ref=e43]
+            - generic [ref=e45]: 全部任务
+          - menuitem "ordered-list 我创建的" [ref=e46] [cursor=pointer]:
+            - img "ordered-list" [ref=e47]:
+              - img [ref=e48]
+            - generic [ref=e50]: 我创建的
+          - menuitem "appstore 我分配的" [ref=e51] [cursor=pointer]:
+            - img "appstore" [ref=e52]:
+              - img [ref=e53]
+            - generic [ref=e55]: 我分配的
+          - menuitem "star 已完成" [ref=e56] [cursor=pointer]:
+            - img "star" [ref=e57]:
+              - img [ref=e58]
+            - generic [ref=e60]: 已完成
+      - separator [ref=e61]
+      - tree [ref=e64]:
+        - generic [ref=e67]:
+          - treeitem "任务清单 plus" [ref=e68]:
+            - generic [ref=e71] [cursor=pointer]:
+              - generic [ref=e74]: 任务清单
+              - button "plus" [ref=e77]:
+                - img "plus" [ref=e79]:
+                  - img [ref=e80]
+          - treeitem "drag 朱元璋吃西瓜 ellipsis plus" [ref=e83]:
+            - img "drag" [ref=e85]:
+              - img [ref=e86]
+            - generic [ref=e90] [cursor=pointer]:
+              - generic [ref=e93]: 朱元璋吃西瓜
+              - generic [ref=e94]:
+                - button "ellipsis" [ref=e96]:
+                  - img "ellipsis" [ref=e98]:
+                    - img [ref=e99]
+                - button "plus" [ref=e102]:
+                  - img "plus" [ref=e104]:
+                    - img [ref=e105]
+          - treeitem "drag 银河传说 ellipsis plus" [ref=e108]:
+            - img "drag" [ref=e110]:
+              - img [ref=e111]
+            - generic [ref=e115] [cursor=pointer]:
+              - generic [ref=e118]: 银河传说
+              - generic [ref=e119]:
+                - button "ellipsis" [ref=e121]:
+                  - img "ellipsis" [ref=e123]:
+                    - img [ref=e124]
+                - button "plus" [ref=e127]:
+                  - img "plus" [ref=e129]:
+                    - img [ref=e130]
+      - button "plus 新建清单分组" [ref=e134] [cursor=pointer]:
+        - img "plus" [ref=e136]:
+          - img [ref=e137]
+        - generic [ref=e140]: 新建清单分组
+  - main [ref=e142]:
+    - generic [ref=e143]:
+      - heading "我负责的" [level=5] [ref=e147]
+      - generic [ref=e149]:
+        - button "filter 全部任务" [ref=e152] [cursor=pointer]:
+          - img "filter" [ref=e154]:
+            - img [ref=e155]
+          - generic [ref=e157]: 全部任务
+        - button "filter 筛选" [ref=e159] [cursor=pointer]:
+          - img "filter" [ref=e161]:
+            - img [ref=e162]
+          - generic [ref=e164]: 筛选
+        - button "sort-ascending 排序 · 截止时间" [ref=e166] [cursor=pointer]:
+          - img "sort-ascending" [ref=e168]:
+            - img [ref=e169]
+          - generic [ref=e171]: 排序 · 截止时间
+        - button "setting 字段配置" [ref=e173] [cursor=pointer]:
+          - img "setting" [ref=e175]:
+            - img [ref=e176]
+          - generic [ref=e178]: 字段配置
+      - generic [ref=e182]:
+        - heading [level=3] [ref=e183]
+        - list [ref=e184]:
+          - listitem [ref=e185]
+          - listitem [ref=e186]
+          - listitem [ref=e187]
+          - listitem [ref=e188]
+          - listitem [ref=e189]
+          - listitem [ref=e190]

@@ -1,0 +1,436 @@
+.sidebar {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  user-select: none;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #ddd;
+    border-radius: 2px;
+  }
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 12px 8px;
+  gap: 8px;
+
+  .sidebar-toggle-btn {
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    font-size: 16px !important;
+    color: #1f2329 !important;
+    flex-shrink: 0;
+
+    &:hover {
+      background: #f0f1f5 !important;
+      color: #3370ff !important;
+    }
+  }
+
+  .sidebar-title {
+    flex: 1;
+    margin: 0 !important;
+    color: #1f2329;
+  }
+}
+
+.sidebar-menu {
+  border-inline-end: none !important;
+  background: transparent !important;
+
+  .ant-menu-item {
+    margin: 2px 8px !important;
+    padding-inline: 12px !important;
+    width: calc(100% - 16px) !important;
+    height: 34px !important;
+    line-height: 34px !important;
+    border-radius: 6px !important;
+  }
+  .ant-menu-item-group-title {
+    padding: 8px 16px 4px !important;
+    font-size: 12px;
+    color: #1f2329;
+    font-weight: 500;
+  }
+
+  .menu-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+
+    .ant-badge-count {
+      font-size: 11px;
+      min-width: 20px;
+      height: 16px;
+      line-height: 16px;
+      padding: 0 5px;
+    }
+  }
+}
+
+.sidebar-divider {
+  margin: 4px 12px !important;
+}
+
+.tasklist-tree-wrap {
+  padding: 0 8px;
+  flex-shrink: 0;
+
+  .ant-tree {
+    background: transparent;
+    font-size: 14px;
+    color: #1f2329;
+  }
+
+  .ant-tree .ant-tree-treenode {
+    padding: 0 !important;
+    width: 100%;
+    align-items: center;
+  }
+
+  /* 缩进单元：去掉子节点的额外缩进，让子清单与父"任务清单"左对齐
+     （父节点的 switcher 和子节点的 switcher-noop 都占 16px，起点自然对齐） */
+  .ant-tree .ant-tree-indent-unit {
+    width: 0 !important;
+  }
+  .ant-tree .ant-tree-indent-unit:before {
+    display: none !important;
+  }
+
+  .ant-tree .ant-tree-node-content-wrapper {
+    padding: 6px 8px !important;
+    border-radius: 6px;
+    transition: background 0.15s;
+    min-height: 34px;
+    display: flex !important;
+    align-items: center;
+    flex: 1;
+    overflow: hidden;
+    line-height: 22px !important;
+
+    &:hover {
+      background: #f0f1f5;
+    }
+  }
+
+  /* Tree 默认 title 容器不会自动撑满整行。
+     这里让 antd 的标题层参与 flex，分组右侧操作按钮才能稳定贴到最右边。 */
+  .ant-tree .ant-tree-node-content-wrapper .ant-tree-title {
+    display: block;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .ant-tree .ant-tree-node-selected {
+    background: transparent !important;
+  }
+
+  /* switcher 图标：默认 24px 太宽，压到 16px */
+  .ant-tree .ant-tree-switcher {
+    align-self: center;
+    font-size: 10px;
+    color: #8f959e;
+    line-height: 34px;
+    width: 16px !important;
+    flex-shrink: 0;
+  }
+  .ant-tree .ant-tree-switcher-noop {
+    width: 16px !important;
+  }
+
+  .ant-tree .tree-section {
+    > .ant-tree-node-content-wrapper {
+      color: #1f2329;
+      font-size: 12px;
+      font-weight: 500;
+
+      &:hover {
+        background: transparent;
+        color: #1f2329;
+
+        .group-action-btn {
+          opacity: 1;
+        }
+      }
+    }
+  }
+
+  .ant-tree .empty-group-placeholder {
+    align-items: flex-start;
+
+    > .ant-tree-node-content-wrapper {
+      min-height: 30px;
+      padding: 6px 8px 8px !important;
+
+      &:hover {
+        background: transparent;
+      }
+    }
+  }
+
+  .empty-group-drop-hint {
+    font-size: 12px;
+    line-height: 20px;
+    color: #8f959e;
+    padding-left: 2px;
+  }
+
+  .group-title-row {
+    width: 100%;
+    min-height: 22px;
+
+    .group-title-main {
+      flex: 1;
+      min-width: 0;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .group-name {
+      flex: 1;
+      min-width: 0;
+      color: #1f2329;
+      cursor: pointer;
+    }
+
+    .group-actions {
+      flex-shrink: 0;
+    }
+
+    .group-action-btn {
+      opacity: 0;
+      transition: opacity 0.15s;
+      width: 26px !important;
+      height: 26px !important;
+      min-width: 26px;
+      padding: 0 !important;
+      font-size: 15px !important;
+      font-weight: 700;
+      color: #1f2329 !important;
+
+      .anticon svg {
+        stroke: currentColor;
+        stroke-width: 14;
+      }
+
+      &.always-visible {
+        opacity: 1;
+      }
+      &:hover {
+        background: #e5e6eb !important;
+        color: #1f2329 !important;
+      }
+    }
+  }
+
+  .tasklist-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    font-size: 14px;
+    color: #1f2329;
+
+    .tasklist-icon {
+      flex-shrink: 0;
+      font-size: 15px;
+      color: #8f959e;
+      line-height: 1;
+    }
+
+    .tasklist-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      cursor: pointer;
+    }
+
+    .tasklist-name-editor {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tasklist-action-btn {
+      opacity: 0;
+      transition: opacity 0.15s;
+      width: 26px !important;
+      height: 26px !important;
+      min-width: 26px;
+      padding: 0 !important;
+      font-size: 15px !important;
+      font-weight: 700;
+      color: #1f2329 !important;
+      flex-shrink: 0;
+
+      .anticon svg {
+        stroke: currentColor;
+        stroke-width: 14;
+      }
+
+      &.always-visible {
+        opacity: 1;
+      }
+      &:hover {
+        background: #e5e6eb !important;
+        color: #1f2329 !important;
+      }
+    }
+
+    &:hover .tasklist-action-btn {
+      opacity: 1;
+    }
+
+    &.editing {
+      gap: 6px;
+    }
+
+    &.active {
+      color: #3370ff;
+      font-weight: 500;
+
+      .tasklist-icon {
+        color: currentColor;
+      }
+    }
+  }
+
+  .tasklist-drag-handle {
+    width: 16px;
+    font-size: 13px;
+    color: #b0b7c3;
+  }
+
+  .ant-tree .ant-tree-node-content-wrapper:has(.tasklist-title.active) {
+    background: #e1eaff;
+  }
+
+  .ant-tree .ant-input {
+    height: 24px;
+    font-size: 13px;
+    padding-inline: 8px;
+  }
+}
+
+.tasklist-share-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__summary {
+    color: #1f2329;
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__label {
+    color: #1f2329;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  &__loading {
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+  }
+}
+
+  .create-group-wrap {
+  padding: 4px 16px;
+
+  .create-group-btn {
+    color: #1f2329 !important;
+    font-size: 13px !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    height: 30px !important;
+
+    &:hover {
+      color: #3370ff !important;
+      background: #f0f1f5 !important;
+    }
+  }
+}
+
+.tasklist-tree-wrap {
+  .ant-tree-treenode.dragging {
+    opacity: 0.58;
+
+    > .ant-tree-node-content-wrapper {
+      background: linear-gradient(135deg, #eef4ff 0%, #e6efff 100%) !important;
+      box-shadow: 0 10px 24px rgba(20, 86, 240, 0.12);
+      border: 1px solid rgba(51, 112, 255, 0.18);
+    }
+  }
+
+  .ant-tree .ant-tree-draggable-icon {
+    width: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s, transform 0.15s;
+    color: #b0b7c3;
+    cursor: grab;
+  }
+
+  /* 清单分组行默认不显示拖拽图标，但 rc-tree 仍会预留 16px 占位。
+     这里单独把分组行的隐藏占位收窄到 9px，让展开箭头和左侧菜单图标列对齐。 */
+  .ant-tree .tree-section > .ant-tree-draggable-icon {
+    width: 9px;
+    min-width: 9px;
+  }
+
+  .ant-tree .ant-tree-treenode:hover .ant-tree-draggable-icon {
+    opacity: 1;
+    color: #6b778c;
+  }
+
+  .ant-tree .ant-tree-treenode .ant-tree-draggable-icon:active {
+    cursor: grabbing;
+  }
+
+  .ant-tree .ant-tree-treenode.drop-target-inner > .ant-tree-node-content-wrapper {
+    background: #f3f7ff !important;
+    box-shadow: inset 0 0 0 1px rgba(51, 112, 255, 0.18);
+  }
+
+  .drag-drop-indicator {
+    position: absolute;
+    height: 3px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #3370ff 0%, #69a1ff 100%);
+    box-shadow: 0 0 0 3px rgba(51, 112, 255, 0.14);
+    pointer-events: none;
+    z-index: 2;
+
+    &.gap-top {
+      top: -4px;
+    }
+
+    &.gap-bottom,
+    &.inner {
+      bottom: -4px;
+    }
+  }
+
+  .ant-tree .ant-tree-drop-indicator {
+    background-color: transparent;
+  }
+}
